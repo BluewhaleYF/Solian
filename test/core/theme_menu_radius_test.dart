@@ -65,10 +65,7 @@ void main() {
         home: Scaffold(
           body: MenuAnchor(
             menuChildren: [
-              MenuItemButton(
-                onPressed: () {},
-                child: const Text('entry'),
-              ),
+              MenuItemButton(onPressed: () {}, child: const Text('entry')),
             ],
             builder: (context, controller, _) => TextButton(
               onPressed: controller.open,
@@ -83,9 +80,14 @@ void main() {
     expect(find.text('entry'), findsOneWidget);
     final panels = tester
         .widgetList<Material>(
-          find.ancestor(of: find.text('entry'), matching: find.byType(Material)),
+          find.ancestor(
+            of: find.text('entry'),
+            matching: find.byType(Material),
+          ),
         )
-        .where((m) => m.shape is RoundedRectangleBorder && _radius(m.shape) > 0);
+        .where(
+          (m) => m.shape is RoundedRectangleBorder && _radius(m.shape) > 0,
+        );
     expect(_radius(panels.single.shape), kMenuBorderRadius);
   });
 }
