@@ -89,6 +89,19 @@ class ResponsiveSidebar extends HookConsumerWidget {
 
     final showDrawer = useState(false);
 
+    // `listener` below is installed once, on the first build, so anything it
+    // reads from `widget` is frozen at that first frame. The phone sheet is
+    // opened later — after the caller has put something in the sidebar — so it
+    // has to read the *current* props through refs; reading them directly
+    // opened an empty sheet (a bare scrim) whenever the sidebar had been empty
+    // on the first build.
+    final sidebarContentRef = useRef(sidebarContent);
+    final drawerWidgetRef = useRef(drawerWidget);
+    final drawerBuilderRef = useRef(drawerBuilder);
+    sidebarContentRef.value = sidebarContent;
+    drawerWidgetRef.value = drawerWidget;
+    drawerBuilderRef.value = drawerBuilder;
+
     useEffect(() {
       void listener() {
         final currentIsWide = isWideScreen(context);
@@ -104,7 +117,13 @@ class ResponsiveSidebar extends HookConsumerWidget {
             showDrawer.value = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (sheetContextRef.value == null) {
-                _openSheet(context, sheetContextRef);
+                _openSheet(
+                  context,
+                  sheetContextRef,
+                  sidebarContentRef,
+                  drawerWidgetRef,
+                  drawerBuilderRef,
+                );
               }
             });
           } else if (!showSidebar.value && showDrawer.value) {
@@ -314,18 +333,28 @@ class ResponsiveSidebar extends HookConsumerWidget {
     );
   }
 
-  void _openSheet(BuildContext context, ObjectRef<BuildContext?> sheetContextRef) {
+  void _openSheet(
+    BuildContext context,
+    ObjectRef<BuildContext?> sheetContextRef,
+    ObjectRef<Widget> sidebarContentRef,
+    ObjectRef<Widget?> drawerWidgetRef,
+    ObjectRef<WidgetBuilder?> drawerBuilderRef,
+  ) {
     showModalBottomSheet(
       context: context,
+      // The shell's bottom navigation bar lives on the shell scaffold, so the
+      // sheet has to ride the root navigator to cover it.
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (sheetContext) {
         sheetContextRef.value = sheetContext;
-        if (drawerBuilder != null) {
-          return drawerBuilder!(sheetContext);
-        }
-        return drawerWidget ??
-            SheetScaffold(showHeader: false, child: sidebarContent);
+        return drawerBuilderRef.value?.call(sheetContext) ??
+            drawerWidgetRef.value ??
+            SheetScaffold(
+              showHeader: false,
+              child: sidebarContentRef.value,
+            );
       },
     ).then((_) {
       sheetContextRef.value = null;
