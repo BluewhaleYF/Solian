@@ -52,7 +52,10 @@ class ChatRoomState {
   final SnChatMessage? threadReplyTarget;
 
   // Scroll state (not persisted - fresh on each navigation)
-  final bool isScrollingToMessage;
+  // Set while a jump to this message is in flight and until the list widget
+  // has revealed it. The list widget resolves the render index, so the index
+  // is never stored here.
+  final String? pendingJumpMessageId;
   final MessageLoadGap? messageLoadGap;
 
   // Read receipt state
@@ -70,7 +73,7 @@ class ChatRoomState {
     this.messageForwardingTo,
     this.embeds = const [],
     this.threadReplyTarget,
-    this.isScrollingToMessage = false,
+    this.pendingJumpMessageId,
     this.messageLoadGap,
     required this.roomOpenTime,
     this.lastReadAnchorMessageId,
@@ -87,7 +90,8 @@ class ChatRoomState {
     SnChatMessage? messageForwardingTo,
     List<Map<String, dynamic>>? embeds,
     SnChatMessage? threadReplyTarget,
-    bool? isScrollingToMessage,
+    String? pendingJumpMessageId,
+    bool clearPendingJump = false,
     MessageLoadGap? messageLoadGap,
     DateTime? roomOpenTime,
     String? lastReadAnchorMessageId,
@@ -119,7 +123,9 @@ class ChatRoomState {
       threadReplyTarget: clearThreadReplyTarget
           ? null
           : (threadReplyTarget ?? this.threadReplyTarget),
-      isScrollingToMessage: isScrollingToMessage ?? this.isScrollingToMessage,
+      pendingJumpMessageId: clearPendingJump
+          ? null
+          : (pendingJumpMessageId ?? this.pendingJumpMessageId),
       messageLoadGap: clearMessageLoadGap
           ? null
           : (messageLoadGap ?? this.messageLoadGap),
@@ -158,6 +164,21 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
   // Scroll loading tracking
   bool _isLoadingMore = false;
 
+  /// Hard cap on frames spent settling a jump before giving up and releasing
+  /// the latch, so a target that can never be revealed (filtered out of the
+  /// timeline, empty list) cannot wedge the room.
+  static const int _kMaxJumpSettleFrames = 8;
+
+  /// Releases the pending-jump latch if the list widget never resolves the
+  /// target id (for example a message the display filter hides).
+  static const Duration _kPendingJumpTimeout = Duration(seconds: 5);
+
+  Timer? _pendingJumpWatchdog;
+  String? _settleMessageId;
+  int? _settleIndex;
+  int _settleFrames = 0;
+  bool _settleScheduled = false;
+
   ChatRoomStateNotifier(this.arg) {
     roomId = arg;
   }
@@ -180,6 +201,8 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
       scrollController.removeListener(_onScroll);
       scrollController.dispose();
       listController.dispose();
+      _pendingJumpWatchdog?.cancel();
+      _pendingJumpWatchdog = null;
     });
 
     return ChatRoomState(roomOpenTime: DateTime.now());
@@ -199,6 +222,9 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
   void _onScroll() {
     final position = _getSingleScrollPosition();
     if (position == null) return;
+    // The reveal drives the offset across the whole history for a deep jump;
+    // paging from that transient position would corrupt the loaded window.
+    if (state.pendingJumpMessageId != null) return;
 
     if (position.pixels >= position.maxScrollExtent - 200) {
       if (!_isLoadingMore) {
@@ -231,6 +257,7 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     if (_autoFillInProgress) return;
     final position = _getSingleScrollPosition();
     if (position == null) return;
+    if (state.pendingJumpMessageId != null) return;
 
     final isScrollable = position.maxScrollExtent > 0;
     if (isScrollable) {
@@ -676,81 +703,161 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
 
   // ==================== Scroll Actions ====================
 
+  /// Starts a jump to [messageId].
+  ///
+  /// The render index is resolved by the list widget against the list it
+  /// actually renders, so this hands off an id, never an index. Loads the
+  /// message window when the target is not in memory, then records the gap the
+  /// jump left between the previously loaded newest region and that window.
   Future<void> scrollToMessage({
     required String messageId,
-    required List<LocalChatMessage> messageList,
-    required Future<int> Function(String) jumpToMessage,
+    required Future<bool> Function(String) jumpToMessage,
     required Future<bool> Function(String, String) hasMessagesBetween,
   }) async {
-    if (state.isScrollingToMessage) return;
+    if (state.pendingJumpMessageId != null) return;
+    state = state.copyWith(pendingJumpMessageId: messageId);
+    _armPendingJumpWatchdog(messageId);
 
-    state = state.copyWith(isScrollingToMessage: true);
+    final before =
+        ref.read(messagesProvider(roomId)).value ?? const <LocalChatMessage>[];
+    // Already rendered: the list widget reveals it as soon as it resolves the id.
+    if (before.any((message) => message.id == messageId)) return;
 
-    final messageIndex = messageList.indexWhere((m) => m.id == messageId);
-
-    if (messageIndex == -1) {
-      // Message not loaded, need to jump
-      final index = await jumpToMessage(messageId);
-      if (index != -1) {
-        state = state.copyWith(clearMessageLoadGap: true);
-        final updatedMessages = ref.read(messagesProvider(roomId)).value ?? [];
-        if (messageList.isNotEmpty) {
-          final newerIndex = updatedMessages.indexWhere(
-            (message) => message.id == messageList.last.id,
-          );
-          if (newerIndex != -1 && newerIndex + 1 < updatedMessages.length) {
-            final newerMessageId = updatedMessages[newerIndex].id;
-            final olderMessageId = updatedMessages[newerIndex + 1].id;
-            if (await hasMessagesBetween(newerMessageId, olderMessageId)) {
-              state = state.copyWith(
-                messageLoadGap: MessageLoadGap(
-                  newerMessageId: newerMessageId,
-                  olderMessageId: olderMessageId,
-                ),
-              );
-            }
-          }
-        }
-        _performScrollAnimation(index: index, messageId: messageId);
-      } else {
-        state = state.copyWith(isScrollingToMessage: false);
-      }
-    } else {
-      _performScrollAnimation(index: messageIndex, messageId: messageId);
+    final found = await jumpToMessage(messageId);
+    if (!ref.mounted) return;
+    if (!found) {
+      _clearPendingJump(messageId);
+      return;
     }
+    state = state.copyWith(clearMessageLoadGap: true);
+
+    // Record the hole the jump left between the previously loaded newest
+    // region and the window loaded around the target.
+    if (before.isEmpty) return;
+    final updated =
+        ref.read(messagesProvider(roomId)).value ?? const <LocalChatMessage>[];
+    final newerIndex = updated.indexWhere(
+      (message) => message.id == before.last.id,
+    );
+    if (newerIndex == -1 || newerIndex + 1 >= updated.length) return;
+    final newerMessageId = updated[newerIndex].id;
+    final olderMessageId = updated[newerIndex + 1].id;
+    if (!await hasMessagesBetween(newerMessageId, olderMessageId) ||
+        !ref.mounted) {
+      return;
+    }
+    state = state.copyWith(
+      messageLoadGap: MessageLoadGap(
+        newerMessageId: newerMessageId,
+        olderMessageId: olderMessageId,
+      ),
+    );
+  }
+
+  /// Reveals the pending jump target once the list widget has resolved
+  /// [displayIndex] against the list it actually renders.
+  void revealPendingJump(int displayIndex) {
+    final messageId = state.pendingJumpMessageId;
+    if (messageId == null || !ref.mounted) return;
+    if (_settleMessageId != messageId || _settleIndex != displayIndex) {
+      _settleMessageId = messageId;
+      _settleIndex = displayIndex;
+      _settleFrames = 0;
+      _settleScheduled = false;
+      _pendingJumpWatchdog?.cancel();
+      _pendingJumpWatchdog = null;
+      ref.read(flashingMessagesProvider.notifier).trigger(messageId);
+      _revealJumpFrame(messageId, displayIndex);
+      return;
+    }
+    if (!_settleScheduled) _revealJumpFrame(messageId, displayIndex);
+  }
+
+  /// One reveal attempt per frame. A single `animateToItem` cannot be trusted
+  /// for an off-screen target: every unmeasured row is estimated at a flat
+  /// 40 px, so the estimated destination is far short of the real one, and the
+  /// per-frame clamp pins that undershoot to `minScrollExtent`, which in a
+  /// reversed list is the newest messages. Re-running `jumpToItem` from the
+  /// new position lets the list measure the rows in between, so each frame's
+  /// estimate improves.
+  void _revealJumpFrame(String messageId, int displayIndex) {
+    _settleScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!ref.mounted || state.pendingJumpMessageId != messageId) {
+        _settleScheduled = false;
+        return;
+      }
+      if (!listController.isAttached) {
+        _clearPendingJump(messageId);
+        return;
+      }
+      final maxIndex = listController.numberOfItems - 1;
+      if (maxIndex < 0) {
+        _clearPendingJump(messageId);
+        return;
+      }
+      final target = displayIndex.clamp(0, maxIndex);
+      final range = listController.visibleRange;
+      final onScreen =
+          range != null && target >= range.$1 && target <= range.$2;
+      if (onScreen) {
+        // The row is built, so its extent is measured and the animated
+        // reveal cannot undershoot.
+        listController.animateToItem(
+          index: target,
+          scrollController: scrollController,
+          alignment: 0.5,
+          duration: (distance) =>
+              Duration(milliseconds: (distance * 0.5).clamp(200, 800).toInt()),
+          curve: (_) => Curves.easeOutCubic,
+        );
+        _clearPendingJump(messageId);
+        return;
+      }
+      if (_settleFrames >= _kMaxJumpSettleFrames) {
+        Logger.root.info(
+          'Jump to $messageId did not settle within '
+          '$_kMaxJumpSettleFrames frames (roomId=$roomId)',
+        );
+        _clearPendingJump(messageId);
+        return;
+      }
+      _settleFrames += 1;
+      listController.jumpToItem(
+        index: target,
+        scrollController: scrollController,
+        alignment: 0.5,
+      );
+      _revealJumpFrame(messageId, displayIndex);
+    });
+  }
+
+  void _clearPendingJump(String messageId) {
+    _pendingJumpWatchdog?.cancel();
+    _pendingJumpWatchdog = null;
+    _settleMessageId = null;
+    _settleIndex = null;
+    _settleFrames = 0;
+    _settleScheduled = false;
+    if (!ref.mounted || state.pendingJumpMessageId != messageId) return;
+    state = state.copyWith(clearPendingJump: true);
+  }
+
+  void _armPendingJumpWatchdog(String messageId) {
+    _pendingJumpWatchdog?.cancel();
+    _pendingJumpWatchdog = Timer(_kPendingJumpTimeout, () {
+      if (!ref.mounted || state.pendingJumpMessageId != messageId) return;
+      // The target never resolved (filtered out of the timeline, plugin
+      // cancelled, list never attached): release the latch.
+      Logger.root.info('Pending jump to $messageId timed out (roomId=$roomId)');
+      _clearPendingJump(messageId);
+    });
   }
 
   void updateMessageLoadGap(MessageLoadGap? gap) {
     state = gap == null
         ? state.copyWith(clearMessageLoadGap: true)
         : state.copyWith(messageLoadGap: gap);
-  }
-
-  void _performScrollAnimation({
-    required int index,
-    required String messageId,
-  }) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        ref.read(flashingMessagesProvider.notifier).trigger(messageId);
-
-        listController.animateToItem(
-          index: index,
-          scrollController: scrollController,
-          alignment: 0.5,
-          duration: (estimatedDistance) => Duration(
-            milliseconds: (estimatedDistance * 0.5).clamp(200, 800).toInt(),
-          ),
-          curve: (estimatedDistance) => Curves.easeOutCubic,
-        );
-
-        Future.delayed(const Duration(milliseconds: 800), () {
-          state = state.copyWith(isScrollingToMessage: false);
-        });
-      } catch (e) {
-        state = state.copyWith(isScrollingToMessage: false);
-      }
-    });
   }
 
   void jumpToBottom() {

@@ -98,22 +98,28 @@ class _PostDetailMediaBackdrop extends ConsumerWidget {
       child = const ColoredBox(color: Colors.black);
     }
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(child: child),
-        const Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x22000000), Color(0x66000000)],
+    // Load-bearing clip: a [BackdropFilter] paints its scrim across the child
+    // bounds unioned with the inherited cull rect, so without it the scrim's
+    // save layer covers the whole viewport and the blur bleeds over the page
+    // behind as soon as the route fades during a transition.
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(child: child),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x22000000), Color(0x66000000)],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

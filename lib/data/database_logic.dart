@@ -194,6 +194,7 @@ class AppDatabase {
           .where(
             (message) =>
                 message.roomId == roomId &&
+                message.threadId == null &&
                 message.createdAt.isAfter(createdAt),
           )
           .length;

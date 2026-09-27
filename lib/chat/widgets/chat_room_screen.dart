@@ -921,19 +921,12 @@ class ChatRoomScreen extends HookConsumerWidget {
 
     final onJump = useCallback((String messageId) {
       showThreadSidebar.value = false;
-      messages.when(
-        data: (messageList) {
-          chatStateNotifier.scrollToMessage(
-            messageId: messageId,
-            messageList: messageList,
-            jumpToMessage: messagesNotifier.jumpToMessage,
-            hasMessagesBetween: messagesNotifier.hasMessagesBetween,
-          );
-        },
-        loading: () {},
-        error: (_, _) {},
+      chatStateNotifier.scrollToMessage(
+        messageId: messageId,
+        jumpToMessage: messagesNotifier.jumpToMessage,
+        hasMessagesBetween: messagesNotifier.hasMessagesBetween,
       );
-    }, [messages, chatStateNotifier, messagesNotifier, showThreadSidebar]);
+    }, [chatStateNotifier, messagesNotifier, showThreadSidebar]);
 
     final jumpAndRevealMessage = useCallback(
       (String messageId) => onJump(messageId),

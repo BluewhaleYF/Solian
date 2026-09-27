@@ -262,6 +262,12 @@ void main() {
       final list = await database.getMessagesForRoom('room-1');
       expect(list.map((m) => m.id), ['top-level']);
       expect(await database.getTotalMessagesForRoom('room-1'), 1);
+      // Pagination offsets compare against this count, so it must skip
+      // in-thread replies exactly like the list query above.
+      expect(
+        await database.countMessagesNewerThan('room-1', DateTime.utc(2025)),
+        1,
+      );
     });
   });
 

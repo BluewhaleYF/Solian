@@ -275,6 +275,109 @@ class _CountingMessagesAdapter implements HttpClientAdapter {
   }
 }
 
+/// Serves a single fetchable target message plus a newest page, so a jump can
+/// load the target's window while the loaded timeline stays observable.
+class _JumpTargetAdapter implements HttpClientAdapter {
+  final Map<String, dynamic> target;
+  final List<Map<String, dynamic>> newestMessages;
+  int targetFetches = 0;
+
+  _JumpTargetAdapter({required this.target, required this.newestMessages});
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? _,
+    Future<void>? _,
+  ) async {
+    if (options.path.endsWith('/members')) {
+      return ResponseBody.fromString(
+        '[]',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+          'x-total': ['0'],
+        },
+      );
+    }
+    // GET .../messages/<id> — the single-message fetch a jump uses when the
+    // target is not stored locally.
+    if (options.path.contains('/messages/')) {
+      targetFetches += 1;
+      return ResponseBody.fromString(
+        jsonEncode(target),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
+    final offset = int.tryParse(options.queryParameters['offset'].toString());
+    final messages = offset == 0
+        ? newestMessages
+        : const <Map<String, dynamic>>[];
+    return ResponseBody.fromString(
+      jsonEncode(messages),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+        'x-total': ['${newestMessages.length}'],
+      },
+    );
+  }
+}
+
+/// Records every requested pagination offset so the offset `loadMore` derives
+/// from the in-memory row count is assertable.
+class _OffsetRecordingAdapter implements HttpClientAdapter {
+  final List<Map<String, dynamic>> newestMessages;
+  final int totalCount;
+  final List<int> requestedOffsets = [];
+
+  _OffsetRecordingAdapter({
+    required this.newestMessages,
+    required this.totalCount,
+  });
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? _,
+    Future<void>? _,
+  ) async {
+    if (options.path.endsWith('/members')) {
+      return ResponseBody.fromString(
+        '[]',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+          'x-total': ['0'],
+        },
+      );
+    }
+    final offset =
+        int.tryParse(options.queryParameters['offset'].toString()) ?? 0;
+    requestedOffsets.add(offset);
+    final messages = offset == 0
+        ? newestMessages
+        : const <Map<String, dynamic>>[];
+    return ResponseBody.fromString(
+      jsonEncode(messages),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+        'x-total': ['$totalCount'],
+      },
+    );
+  }
+}
+
 Map<String, dynamic> messageJson(String id, DateTime createdAt) {
   final json = message('room-1').toJson();
   json['id'] = id;
@@ -285,8 +388,7 @@ Map<String, dynamic> messageJson(String id, DateTime createdAt) {
 
 /// Seeds [total] locally synced rows for room-1. The first twenty carry the
 /// ids the newest page serves, so a forced reload finds them already cached
-/// and adds no rows — otherwise the fetch itself would push a just-below-limit
-/// backlog across the limit.
+/// and adds no rows.
 Future<void> _seedLocalHistory(
   AppDatabase database,
   int total, {
@@ -847,110 +949,151 @@ void main() {
     );
 
     test(
-      'room with a huge remote total but no local backlog is not wiped and '
-      'reloaded',
+      'a reload keeps the loaded timeline and merges the newest page in',
       () async {
         final now = DateTime.utc(2026, 1, 1, 12);
-        final newest = List.generate(
+        await _seedLocalHistory(database, 300, newest: now);
+
+        final notifier = container.read(messagesProvider('room-1').notifier);
+        // Load the newest page, then page back through the local history the
+        // way a user scrolling up does, so the reload below has a loaded
+        // window to preserve.
+        await notifier.loadInitial(forceRemoteRefresh: false);
+        for (var i = 0; i < 15; i++) {
+          await notifier.loadMore();
+        }
+        await pumpEventQueue();
+        expect(
+          container.read(messagesProvider('room-1')).value,
+          hasLength(300),
+        );
+
+        final adapter = _CountingMessagesAdapter(
+          newestMessages: List.generate(
+            20,
+            (index) => messageJson(
+              'new-$index',
+              now.subtract(Duration(minutes: index)),
+            ),
+          ),
+          totalCount: 5000,
+        );
+        container.read(apiClientProvider).httpClientAdapter = adapter;
+
+        await notifier.loadInitial(forceRemoteRefresh: true);
+        for (var i = 0; i < 10; i++) {
+          await pumpEventQueue();
+        }
+
+        final ids = container
+            .read(messagesProvider('room-1'))
+            .value!
+            .map((item) => item.id)
+            .toSet();
+        expect(
+          adapter.pageZeroFetches,
+          1,
+          reason: 'the reload must not drop history and fetch page zero twice',
+        );
+        expect(
+          ids,
+          contains('local-299'),
+          reason: 'the loaded window survives the reload',
+        );
+        expect(ids, contains('new-0'), reason: 'the newest page is merged in');
+        expect(ids, hasLength(300));
+        expect(await database.getTotalMessagesForRoom('room-1'), 300);
+      },
+    );
+
+    test(
+      'jumpToMessage loads the target and keeps the loaded window',
+      () async {
+        final now = DateTime.utc(2026, 1, 1, 12);
+        await _seedLocalHistory(database, 60, newest: now);
+        final adapter = _JumpTargetAdapter(
+          target: messageJson(
+            'old-target',
+            now.subtract(const Duration(days: 30)),
+          ),
+          newestMessages: List.generate(
+            20,
+            (index) => messageJson(
+              'new-$index',
+              now.subtract(Duration(minutes: index)),
+            ),
+          ),
+        );
+        container.read(apiClientProvider).httpClientAdapter = adapter;
+
+        final notifier = container.read(messagesProvider('room-1').notifier);
+        await notifier.loadInitial(forceRemoteRefresh: false);
+
+        expect(await notifier.jumpToMessage('old-target'), isTrue);
+        expect(
+          adapter.targetFetches,
+          1,
+          reason: 'the unloaded target is fetched from the server',
+        );
+        final ids = container
+            .read(messagesProvider('room-1'))
+            .value!
+            .map((item) => item.id)
+            .toList();
+        expect(ids, contains('old-target'));
+        expect(
+          ids,
+          contains('new-0'),
+          reason: 'the jump must not drop the loaded window',
+        );
+      },
+    );
+
+    test('an in-thread reply never shifts the loadMore offset', () async {
+      final now = DateTime.utc(2026, 1, 1, 12);
+      await _seedLocalHistory(database, 20, newest: now);
+
+      final adapter = _OffsetRecordingAdapter(
+        newestMessages: List.generate(
           20,
           (index) =>
               messageJson('new-$index', now.subtract(Duration(minutes: index))),
-        );
-        final adapter = _CountingMessagesAdapter(
-          newestMessages: newest,
-          totalCount: 5000,
-        );
-        container.read(apiClientProvider).httpClientAdapter = adapter;
+        ),
+        totalCount: 500,
+      );
+      container.read(apiClientProvider).httpClientAdapter = adapter;
 
-        final notifier = container.read(messagesProvider('room-1').notifier);
-        await notifier.loadInitial(forceRemoteRefresh: true);
+      final notifier = container.read(messagesProvider('room-1').notifier);
+      await notifier.loadInitial(forceRemoteRefresh: false);
+      // Drain the unawaited background prefetch, which pages from offset 20.
+      for (var i = 0; i < 10; i++) {
+        await pumpEventQueue();
+      }
+      adapter.requestedOffsets.clear();
 
-        // Drain the unawaited background prefetch before teardown.
-        for (var i = 0; i < 10; i++) {
-          await pumpEventQueue();
-        }
+      final reply = SnChatMessage.fromJson({
+        ...messageJson('reply-1', now),
+        'thread_id': 'thread-1',
+      });
+      await database.saveMessageWithSender(
+        LocalChatMessage.fromRemoteMessage(reply, MessageStatus.sent),
+      );
+      await notifier.receiveMessageUpdate(reply);
+      await pumpEventQueue();
 
-        // Nothing local to drop: one page-0 fetch, no wipe, no second fetch.
-        // This is the state right after the user cleared local data, so the
-        // guard must not turn the clear into an immediate re-download loop.
-        expect(adapter.pageZeroFetches, 1);
-        expect(
-          container.read(messagesProvider('room-1')).value,
-          hasLength(20),
-        );
-        expect(await database.getTotalMessagesForRoom('room-1'), 20);
-      },
-    );
+      expect(
+        container.read(messagesProvider('room-1')).value!.map((m) => m.id),
+        isNot(contains('reply-1')),
+        reason: 'in-thread replies must not enter the main timeline',
+      );
 
-    test(
-      'room whose locally synced backlog stays below the limit keeps it',
-      () async {
-        final now = DateTime.utc(2026, 1, 1, 12);
-        await _seedLocalHistory(database, 4999, newest: now);
+      await notifier.loadMore();
+      await pumpEventQueue();
 
-        final adapter = _CountingMessagesAdapter(
-          newestMessages: List.generate(
-            20,
-            (index) =>
-                messageJson('new-$index', now.subtract(Duration(minutes: index))),
-          ),
-          totalCount: 5000,
-        );
-        container.read(apiClientProvider).httpClientAdapter = adapter;
-
-        final notifier = container.read(messagesProvider('room-1').notifier);
-        await notifier.loadInitial(forceRemoteRefresh: true);
-
-        // Drain the unawaited background prefetch before teardown.
-        for (var i = 0; i < 10; i++) {
-          await pumpEventQueue();
-        }
-
-        // 4999 rows is under the limit: no drop, no second page-0 fetch, and
-        // the backlog is untouched.
-        expect(adapter.pageZeroFetches, 1);
-        expect(await database.getTotalMessagesForRoom('room-1'), 4999);
-        expect(
-          container.read(messagesProvider('room-1')).value!.first.id,
-          'new-0',
-        );
-      },
-    );
-
-    test(
-      'room whose locally synced backlog reaches the limit drops old messages '
-      'and loads as new',
-      () async {
-        final now = DateTime.utc(2026, 1, 1, 12);
-        await _seedLocalHistory(database, 5000, newest: now);
-
-        final adapter = _CountingMessagesAdapter(
-          newestMessages: List.generate(
-            20,
-            (index) =>
-                messageJson('new-$index', now.subtract(Duration(minutes: index))),
-          ),
-          totalCount: 5000,
-        );
-        container.read(apiClientProvider).httpClientAdapter = adapter;
-
-        final notifier = container.read(messagesProvider('room-1').notifier);
-        await notifier.loadInitial(forceRemoteRefresh: true);
-
-        // Drain the unawaited background prefetch before teardown.
-        for (var i = 0; i < 10; i++) {
-          await pumpEventQueue();
-        }
-
-        // The 5000-row backlog is dropped and the room reloads as new: the
-        // newest page is fetched twice and only it remains locally.
-        expect(adapter.pageZeroFetches, 2);
-        expect(await database.getTotalMessagesForRoom('room-1'), 20);
-        expect(
-          container.read(messagesProvider('room-1')).value,
-          hasLength(20),
-        );
-      },
-    );
+      // The next page starts after the twenty top-level rows in memory; a
+      // reply counted as a row would push the offset to 21 and skip a message.
+      expect(adapter.requestedOffsets, contains(20));
+      expect(adapter.requestedOffsets, isNot(contains(21)));
+    });
   });
 }

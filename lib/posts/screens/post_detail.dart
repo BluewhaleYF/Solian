@@ -2750,29 +2750,36 @@ class _DesktopMediaBackground extends ConsumerWidget {
       child = const ColoredBox(color: Colors.black);
     }
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 320),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      child: ColoredBox(
-        key: ValueKey(file.id),
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Positioned.fill(child: child),
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x22000000), Color(0x66000000)],
+    // Load-bearing clip: a [BackdropFilter] paints its scrim across the child
+    // bounds unioned with the inherited cull rect, and nothing between the
+    // route and this pane clips. Without it the scrim's save layer spans the
+    // whole window and the blur covers the screen as soon as the page fades
+    // out (or in) during a route transition.
+    return ClipRect(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 320),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: ColoredBox(
+          key: ValueKey(file.id),
+          color: Colors.black,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(child: child),
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x22000000), Color(0x66000000)],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

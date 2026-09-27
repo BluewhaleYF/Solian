@@ -120,14 +120,9 @@ class MessagesNotifier extends _$MessagesNotifier {
   static const int _backgroundPrefetchTarget = 60;
   static const int _backgroundPrefetchMaxBatches = 3;
 
-  /// Rooms whose synced history reaches this many messages are treated as
-  /// oversized: the backlog is dropped and the room reloads as new so sync
-  /// and pagination never churn through the entire history.
-  static const int _maxSyncedMessageCount = 5000;
   bool _hasMore = true;
   bool _isSyncing = false;
   bool _isJumping = false;
-  bool _hasPendingRealtimeRefresh = false;
   bool _isUpdatingState = false;
   List<LocalChatMessage> _messages = [];
 
@@ -748,6 +743,9 @@ class MessagesNotifier extends _$MessagesNotifier {
               .read(chatRoomStateProvider(roomId).notifier)
               .updateAttachmentProgress(messageWithSequence.id, null);
         }
+        // In-thread replies live in the thread panel; the main timeline never
+        // renders them and timeline pagination counts top-level rows only.
+        if (messageWithSequence.threadId != null) return;
         final list = _messages;
         final index = list.indexWhere((m) => m.id == messageWithSequence.id);
         if (index >= 0) {
@@ -772,6 +770,9 @@ class MessagesNotifier extends _$MessagesNotifier {
           _scheduleEmit();
           return;
         }
+        // In-thread replies live in the thread panel; the main timeline never
+        // renders them and timeline pagination counts top-level rows only.
+        if (messageWithSequence.threadId != null) return;
         final list = _messages;
         final index = list.indexWhere((m) => m.id == messageWithSequence.id);
         if (index >= 0) {
@@ -1123,6 +1124,12 @@ class MessagesNotifier extends _$MessagesNotifier {
   }
 
   List<LocalChatMessage> get _currentMessages => _messages;
+
+  /// True while the room is revealing a jump target. Timeline mutations that
+  /// page or rewrite the list from a transient scroll position are suppressed
+  /// for the duration.
+  bool get _isJumpPending =>
+      ref.read(chatRoomStateProvider(roomId)).pendingJumpMessageId != null;
 
   /// Scans the active timeline for messages whose sender member/account is
   /// missing or bare and asynchronously repairs the member directory from the
@@ -1926,32 +1933,9 @@ class MessagesNotifier extends _$MessagesNotifier {
     );
     try {
       final previous = _currentMessages;
-      var messages = await _loadInitialMessages(
+      final messages = await _loadInitialMessages(
         forceRemoteRefresh: forceRemoteRefresh,
       );
-
-      // A room whose synced history has grown past the sync limit is dropped
-      // and reloaded as new. Keeping thousands of rows makes initial load,
-      // pagination and normalization degenerate.
-      //
-      // The trigger is the locally synced backlog, not the remote total: the
-      // app never bulk-syncs a room's remote history (it pages on demand via
-      // loadMore), so a small local set is already the "as new" view. Wiping
-      // it because the remote room is merely large would throw away and
-      // re-download the page just fetched — the post-clear case, where the
-      // user explicitly asked for the local data to be gone.
-      final localCount = await _repository.getTotalCount();
-      if (localCount >= _maxSyncedMessageCount) {
-        Logger.root.info(
-          'Room $roomId has $localCount synced messages (remote: '
-          '${_syncService.totalRemoteCount ?? 'unknown'}); exceeding limit '
-          '$_maxSyncedMessageCount, dropping old messages and loading as new',
-        );
-        await _dropOversizedHistory();
-        if (!ref.mounted) return;
-        messages = await _loadInitialMessages(forceRemoteRefresh: true);
-        if (!ref.mounted) return;
-      }
 
       if (ref.mounted) {
         if (messages.isEmpty && previous.isNotEmpty && !forceRemoteRefresh) {
@@ -1965,7 +1949,11 @@ class MessagesNotifier extends _$MessagesNotifier {
             }
           });
         } else {
-          _emitMessages(messages);
+          // A refresh only tops the timeline up with the newest page.
+          // Replacing the list here dropped every older message the user had
+          // loaded, including a jump window, which left the viewport at the
+          // newest messages.
+          _emitMessages([...previous, ...messages]);
         }
       }
       _scheduleOlderMessagesPrefetch();
@@ -1978,17 +1966,6 @@ class MessagesNotifier extends _$MessagesNotifier {
     _scheduleSenderRepair();
   }
 
-  /// Clears the room's synced history (DB rows, in-memory cache and loaded
-  /// timeline) so the room reloads as new. In-flight pending sends are kept;
-  /// their placeholders are re-merged into the timeline at offset 0.
-  Future<void> _dropOversizedHistory() async {
-    _messages = [];
-    await _repository.deleteAllMessages();
-    // A dropped gap range is intentional, not a sequence hole to recover.
-    _latestObservedRoomSequence = null;
-    _queuedMissingRoomSequences.clear();
-  }
-
   void resetPaginationState() {
     _hasMore = true;
     _allRemoteMessagesFetched = false;
@@ -1997,9 +1974,12 @@ class MessagesNotifier extends _$MessagesNotifier {
 
   Future<void> loadMore({int? offset}) async {
     await _waitForOlderMessagesPrefetch();
-    if (!_hasMore || state is AsyncLoading || _isLoadingMore) {
+    if (!_hasMore ||
+        state is AsyncLoading ||
+        _isLoadingMore ||
+        _isJumpPending) {
       Logger.root.info(
-        'Skipping loadMore (hasMore=$_hasMore, isAsyncLoading=${state is AsyncLoading}, isLoadingMore=$_isLoadingMore)',
+        'Skipping loadMore (hasMore=$_hasMore, isAsyncLoading=${state is AsyncLoading}, isLoadingMore=$_isLoadingMore, isJumpPending=$_isJumpPending)',
       );
       return;
     }
@@ -2773,11 +2753,17 @@ class MessagesNotifier extends _$MessagesNotifier {
     }
   }
 
-  Future<int> jumpToMessage(String messageId) async {
+  /// Loads the window around [messageId] into the room's timeline.
+  ///
+  /// Returns whether the message is present in the in-memory timeline
+  /// afterwards. The list widget resolves the render index, so this never
+  /// reports a position.
+  Future<bool> jumpToMessage(String messageId) async {
     Logger.root.info('Starting jump to message $messageId');
     if (_isJumping) {
       Logger.root.info('Jump already in progress, skipping');
-      return -1;
+      // A jump for this room is already loading; not a "not found".
+      return true;
     }
     _isJumping = true;
 
@@ -2794,28 +2780,13 @@ class MessagesNotifier extends _$MessagesNotifier {
       if (!jump.found || jump.targetMessage == null) {
         Logger.root.info('Message $messageId not found');
         showSnackBar('messageNotFound'.tr());
-        return -1;
+        return false;
       }
-
-      // Check if message is already in current state to avoid duplicate loading
-      final currentMessages = (ref.mounted ? state.value : null) ?? [];
-      final existingIndex = currentMessages.indexWhere(
-        (m) => m.id == messageId,
-      );
-      if (existingIndex >= 0) {
-        Logger.root.info(
-          'Message $messageId already in current state at index $existingIndex, jumping directly',
-        );
-        return existingIndex;
-      }
-
-      Logger.root.info(
-        'Message $messageId not in current state, calculating position and loading messages around it',
-      );
 
       final loadedMessages = jump.messages;
 
       // Check if loaded messages are already in current state
+      final currentMessages = _currentMessages;
       final currentIds = currentMessages.map((m) => m.id).toSet();
       final newMessages = loadedMessages
           .where((m) => !currentIds.contains(m.id))
@@ -2840,45 +2811,26 @@ class MessagesNotifier extends _$MessagesNotifier {
         );
       }
 
-      // Wait a bit for the UI to rebuild with new messages
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      final finalIndex = _currentMessages.indexWhere((m) => m.id == messageId);
-      Logger.root.info('Final index for message $messageId is $finalIndex');
-
-      // Verify the message is actually in the list before returning
-      if (finalIndex == -1) {
-        Logger.root.info(
-          'Message $messageId still not found after loading, trying direct fetch',
-        );
-        // Try to fetch and add the specific message if it's still not found
-        final directMessage = await fetchMessageById(messageId);
-        if (directMessage != null) {
-          final currentList = _currentMessages;
-          final updatedList = [...currentList, directMessage];
-          await _updateStateSafely(updatedList);
-          final newIndex = updatedList.indexWhere((m) => m.id == messageId);
-          Logger.root.info('Added message directly, new index: $newIndex');
-          return newIndex;
-        }
+      if (_currentMessages.any((message) => message.id == messageId)) {
+        return true;
       }
 
-      return finalIndex;
+      final directMessage = await fetchMessageById(messageId);
+      if (directMessage != null && ref.mounted) {
+        await _updateStateSafely([..._currentMessages, directMessage]);
+      }
+      return _currentMessages.any((message) => message.id == messageId);
     } finally {
       _isJumping = false;
-      if (_hasPendingRealtimeRefresh && ref.mounted) {
-        _hasPendingRealtimeRefresh = false;
-        Logger.root.info(
-          'Applying queued post-jump refresh for room $roomId after realtime events',
-        );
-        unawaited(loadInitial(forceRemoteRefresh: false));
-      }
     }
   }
 
   /// Loads one batch from a deliberately unloaded range in a sparse message
   /// timeline. A null result means the two loaded sections now meet.
   Future<MessageLoadGap?> loadMessagesBetween(MessageLoadGap gap) async {
+    // The gap marker auto-loads from the room screen's initState and inserts
+    // rows in the middle of the list; that would fight the reveal.
+    if (_isJumpPending) return gap;
     final newerMessage = await _repository.getLocalMessage(gap.newerMessageId);
     final olderMessage = await _repository.getLocalMessage(gap.olderMessageId);
     if (newerMessage == null || olderMessage == null) return gap;
@@ -2944,6 +2896,9 @@ class MessagesNotifier extends _$MessagesNotifier {
   Future<MessageLoadGap?> compactForOlderScroll({
     int retainedMessagesPerSection = 100,
   }) async {
+    // Compaction drops everything between the two retained sections, which
+    // can include the window a jump just loaded.
+    if (_isJumpPending) return null;
     final messages = _currentMessages;
     final olderSectionStart = messages.length - retainedMessagesPerSection;
     if (messages.length <= retainedMessagesPerSection * 2 + 1 ||

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:island/core/services/time.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -95,7 +95,7 @@ class NotificationTile extends ConsumerWidget {
             spacing: 6,
             children: [
               Text(
-                DateFormat().format(notification.createdAt.toLocal()),
+                notification.createdAt.toLocal().formatSystem(),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(fontSize: compact ? 10 : 11),

@@ -110,27 +110,9 @@ class MessageRepository {
     _messageCache.remove(messageId);
   }
 
-  /// Deletes all messages for this room.
-  Future<void> deleteAllMessages() async {
-    await _database.deleteMessagesForRoom(_roomId);
-    // Clear only cached messages for this room
-    final toRemove = _messageCache.values
-        .where((m) => m.roomId == _roomId)
-        .map((m) => m.id)
-        .toList();
-    for (final id in toRemove) {
-      _messageCache.remove(id);
-    }
-  }
-
   /// Counts messages newer than a timestamp.
   Future<int> countMessagesNewerThan(DateTime timestamp) async {
     return _database.countMessagesNewerThan(_roomId, timestamp);
-  }
-
-  /// Gets total message count.
-  Future<int> getTotalCount() async {
-    return _database.getTotalMessagesForRoom(_roomId);
   }
 
   // ── Remote API Operations ───────────────────────────────────────────────

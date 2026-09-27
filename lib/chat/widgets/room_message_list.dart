@@ -248,12 +248,37 @@ class RoomMessageList extends HookConsumerWidget {
     // the gutter here would shift the avatar twice in selection mode.
     const stickyAvatarLeft = 12.0;
 
-    final messageIndexById = useMemoized(() {
-      return {
-        for (var i = 0; i < displayMessages.length; i++)
-          displayMessages[i].clientMessageId ?? displayMessages[i].id: i,
-      };
+    final messageIndexes = useMemoized(() {
+      final byKey = <String, int>{};
+      final byId = <String, int>{};
+      for (var i = 0; i < displayMessages.length; i++) {
+        byKey[displayMessages[i].clientMessageId ?? displayMessages[i].id] = i;
+        byId[displayMessages[i].id] = i;
+      }
+      return (byKey: byKey, byId: byId);
     }, [displayMessages]);
+    final messageIndexById = messageIndexes.byKey;
+    final messageIndexByServerId = messageIndexes.byId;
+
+    final pendingJumpMessageId = ref.watch(
+      chatRoomStateProvider(
+        roomId,
+      ).select((state) => state.pendingJumpMessageId),
+    );
+    useEffect(() {
+      if (pendingJumpMessageId == null) return null;
+      final index = messageIndexByServerId[pendingJumpMessageId];
+      if (index == null) {
+        // The id is not in the rendered list yet; a later list change re-runs
+        // this effect with a fresh index.
+        return null;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        chatStateNotifier.revealPendingJump(index);
+      });
+      return null;
+    }, [pendingJumpMessageId, messageIndexByServerId]);
 
     final listWidget = SuperListView.builder(
       listController: chatStateNotifier.listController,
