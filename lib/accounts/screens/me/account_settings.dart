@@ -31,6 +31,7 @@ import 'package:island/chat/widgets/chat_groups_manager.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/server_compatibility.dart';
+import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -729,6 +730,15 @@ class AccountSettingsScreen extends HookConsumerWidget {
             }
           });
         },
+      ),
+      ListTile(
+        minLeadingWidth: 48,
+        leading: const Icon(Symbols.notifications_active),
+        title: Text('postWatchSettings').tr(),
+        subtitle: Text('postWatchSettingsDescription').tr().fontSize(12),
+        contentPadding: const EdgeInsets.only(left: 24, right: 17),
+        trailing: const Icon(Symbols.chevron_right),
+        onTap: () => showPostWatchSheet(context),
       ),
     ];
 
