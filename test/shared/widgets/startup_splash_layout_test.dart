@@ -74,9 +74,15 @@ void main() {
       find.byKey(const Key('startup-portrait-image')),
     );
     expect(imageSize.width / imageSize.height, closeTo(9 / 16, 0.01));
-    // Horizontally centered, anchored to the top.
+    // Horizontally centered, inset from the safe-area top.
     expect(portrait.dx, closeTo(390 / 2, 1));
     expect(portrait.dy, lessThan(844 * 0.5));
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('startup-portrait-image')))
+          .dy,
+      closeTo(kSplashImageTopInset, 1),
+    );
 
     final bar = tester.getCenter(find.byType(StartupProgressBar));
     expect(bar.dy, greaterThan(844 * 0.8));
@@ -118,12 +124,12 @@ void main() {
     // Not full-bleed: capped to a centered 9:16 poster.
     expect(imageSize.width, lessThan(600));
     expect(portrait.dx, closeTo(1440 / 2, 1));
-    // Flush with the safe-area top, portrait rides as high as possible.
+    // Inset from the safe-area top by the artwork top margin.
     expect(
       tester
           .getTopLeft(find.byKey(const Key('startup-portrait-image')))
           .dy,
-      closeTo(0, 1),
+      closeTo(kSplashImageTopInset, 1),
     );
   });
 }

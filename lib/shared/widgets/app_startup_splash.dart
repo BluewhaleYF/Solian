@@ -36,6 +36,16 @@ const kDefaultBootstrapRetryTimeouts = <Duration>[
 /// overlap; kept in sync with the bottom scrim height.
 const kSplashBottomReserve = 280.0;
 
+/// Top margin of the portrait: slides the artwork down from the safe-area
+/// edge, so it reads as a poster rather than a full-bleed header.
+const kSplashImageTopInset = 32.0;
+
+/// Bottom clearance of the portrait, deliberately smaller than
+/// [kSplashBottomReserve] so the 9:16 poster grows to its widest possible
+/// size. The artwork is capped by its aspect ratio, so this only has to keep
+/// it clear of the progress cluster; the bottom scrim fades its lower edge.
+const kSplashImageBottomInset = 200.0;
+
 class StartupSplashScreen extends HookConsumerWidget {
   final bool runBootstrap;
   final VoidCallback onCompleted;
@@ -343,13 +353,13 @@ class StartupSplashScreen extends HookConsumerWidget {
             children: [
               // Portrait artwork capped at 9:16, top-centered. The reserved
               // bottom margin keeps it clear of the progress cluster below,
-              // and the top frame is dropped so the picture rides as high as
-              // the safe area allows.
+              // and the top inset slides the picture slightly down from the
+              // safe-area edge so it reads as a poster.
               Positioned(
-                top: 0,
+                top: kSplashImageTopInset,
                 left: 0,
                 right: 0,
-                bottom: kSplashBottomReserve,
+                bottom: kSplashImageBottomInset,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Align(
