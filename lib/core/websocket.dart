@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/network/relay.dart';
 import 'package:logging/logging.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -140,7 +141,10 @@ class WebSocketService {
     ).replace(queryParameters: {'namespace': kWebsocketNamespace});
 
     Logger.root.info(
-      '[WebSocket] Trying connecting to $uri (namespace=$kWebsocketNamespace)',
+      '[WebSocket] Trying connecting to $uri (namespace=$kWebsocketNamespace)'
+      // A web build dials with the browser's own stack, which never sees the
+      // connection factory, so the route only applies to the io platforms.
+      '${kIsWeb ? '' : relayLogSuffix(uri: uri, serverUrl: baseUrl, route: ref.read(relayRouteProvider))}',
     );
     try {
       if (kIsWeb) {

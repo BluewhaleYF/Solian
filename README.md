@@ -80,13 +80,20 @@ direct connection so a broken relay can never hide its own picker). Selecting a
 route applies immediately: HTTP clients are rebuilt and the realtime channel is
 re-dialed; the selection persists across launches.
 
-The reusable pieces — catalog client, models, and the connection factory — live
-in [`solar_network_foundation`](packages/solar_network_foundation) so other
+Opening the picker also measures every announced relay — one TLS handshake
+through each node, the same dial real traffic makes, so a relay that cannot
+carry the server's SNI fails it — and shows the round trip beside the node.
+**Auto (fastest)** takes the lowest measured round trip and stores that route;
+it picks once, it does not keep re-picking on its own.
+
+The reusable pieces — catalog client, models, the connection factory, and the
+latency probe — live in
+[`solar_network_foundation`](packages/solar_network_foundation) so other
 Solar Network clients can route through the same relays.
 
 Not routed through a relay: native transports that never touch Dart's HTTP
 stack (media playback, WebRTC, in-app webviews, platform notification/native
-plugins).
+plugins), and the web build, which dials with the browser's own stack.
 
 ---
 

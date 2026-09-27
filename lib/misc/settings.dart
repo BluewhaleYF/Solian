@@ -27,6 +27,7 @@ import 'package:solsynth_express/solsynth_express.dart';
 import 'package:island/activity/activity_rpc.dart';
 import 'package:island/misc/connectivity_self_check_screen.dart';
 import 'package:island/misc/about_content.dart';
+import 'package:island/misc/widgets/relay_route_sheet.dart';
 import 'package:island/misc/widgets/server_capabilities_preview.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
@@ -37,7 +38,6 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/config.dart';
-import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/drive/screens/file_pool.dart';
 import 'package:island/plugins/screens/plugin_manager_screen.dart';
 import 'package:island/route.gr.dart';
@@ -828,7 +828,7 @@ class SettingsScreen extends HookConsumerWidget {
                         if (colors.isEmpty) {
                           if (context.mounted) hideLoadingModal(context);
                           showErrorAlert(
-                            'Unable to calculate the dominant color of the background image.',
+                            'settingsBackgroundGenerateColorFailed'.tr(),
                           );
                           return;
                         }
@@ -861,8 +861,7 @@ class SettingsScreen extends HookConsumerWidget {
                   return const SizedBox.shrink();
                 }
                 final isMacOs = !kIsWeb && Platform.isMacOS;
-                final isMember =
-                    stellarAsync.value?.isActive == true;
+                final isMember = stellarAsync.value?.isActive == true;
                 final subtitle = isMacOs
                     ? 'settingsAppIconHelperMac'.tr()
                     : 'settingsAppIconHelper'.tr();
@@ -1282,7 +1281,6 @@ class SettingsScreen extends HookConsumerWidget {
       ),
     );
 
-
     if (isDesktop) {
       categories.add(
         _SettingCategory(
@@ -1436,8 +1434,15 @@ class SettingsScreen extends HookConsumerWidget {
                 subtitle: Text(
                   relay == null
                       ? 'settingsRelayRouteDirectHelper'.tr()
+                      : relay.region.trim().isEmpty
+                      ? 'settingsRelayRouteViaHost'.tr(
+                          args: [relay.displayHost],
+                        )
                       : 'settingsRelayRouteVia'.tr(
-                          args: [relay.displayHost, relay.regionLabel],
+                          args: [
+                            relay.displayHost,
+                            relayDisplayName(relay.region, relay.host),
+                          ],
                         ),
                 ),
                 contentPadding: _kSettingsTilePadding,
@@ -1448,7 +1453,7 @@ class SettingsScreen extends HookConsumerWidget {
                     context: context,
                     isScrollControlled: true,
                     useSafeArea: true,
-                    builder: (_) => _RelayRouteSheet(ref: ref),
+                    builder: (_) => const RelayRouteSheet(),
                   );
                 },
               );
@@ -1525,10 +1530,10 @@ class SettingsScreen extends HookConsumerWidget {
           ),
           ListTile(
             minLeadingWidth: 48,
-            title: const Text('Weak connection mode'),
-            subtitle: const Text(
-              'Periodically runs timestamp-based chat sync while the room is open.',
-            ),
+            title: Text('settingsWeakConnectionMode').tr(),
+            subtitle: Text(
+              'settingsWeakConnectionModeHelper',
+            ).tr().fontSize(12),
             contentPadding: _kSettingsTilePadding,
             leading: const Icon(Symbols.network_check),
             trailing: Switch(
@@ -1695,15 +1700,15 @@ class SettingsScreen extends HookConsumerWidget {
                   ),
                 );
               },
-              loading: () => const ListTile(
+              loading: () => ListTile(
                 minLeadingWidth: 48,
-                title: Text('Loading pools...'),
-                leading: CircularProgressIndicator(),
+                title: Text('loading'.tr()),
+                leading: const CircularProgressIndicator(),
               ),
               error: (err, st) => ListTile(
                 minLeadingWidth: 48,
                 title: Text('settingsDefaultPool').tr(),
-                subtitle: Text('Error: $err'),
+                subtitle: Text('errorGeneric'.tr(args: ['$err'])),
                 leading: const Icon(Symbols.error, color: Colors.red),
               ),
             ),
@@ -1762,8 +1767,8 @@ class SettingsScreen extends HookConsumerWidget {
           ),
           ListTile(
             minLeadingWidth: 48,
-            title: Text('Developer mode').tr(),
-            subtitle: Text('Enable debug tools and developer features'),
+            title: Text('settingsDeveloperMode').tr(),
+            subtitle: Text('settingsDeveloperModeHelper').tr(),
             contentPadding: _kSettingsTilePadding,
             leading: const Icon(Symbols.developer_mode),
             trailing: Switch(
@@ -1940,11 +1945,11 @@ class SettingsScreen extends HookConsumerWidget {
           ),
           ListTile(
             minLeadingWidth: 48,
-            title: const Text('Release channel'),
+            title: Text('settingsReleaseChannel').tr(),
             subtitle: remoteChannels.connectionState == ConnectionState.waiting
-                ? const Text('Fetching available channels...')
+                ? Text('settingsReleaseChannelFetching'.tr())
                 : remoteChannels.hasError
-                ? const Text('Unable to fetch channels; using stable')
+                ? Text('settingsReleaseChannelFetchFailed'.tr())
                 : null,
             contentPadding: _kSettingsTilePadding,
             leading: const Icon(Symbols.tune),
@@ -2451,7 +2456,7 @@ class _ColorPickerTile extends StatelessWidget {
                       onColorChanged(null);
                       Navigator.of(context).pop();
                     },
-                    child: Text('Reset').tr(),
+                    child: Text('reset').tr(),
                   ),
                 ],
               );
@@ -2980,152 +2985,6 @@ class _IpOverrideModeSheet extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _RelayRouteSheet extends StatelessWidget {
-  final WidgetRef ref;
-
-  const _RelayRouteSheet({required this.ref});
-
-  @override
-  Widget build(BuildContext context) {
-    final selected = ref.watch(relayRouteProvider);
-    final catalog = ref.watch(relayCatalogProvider);
-
-    return SheetScaffold(
-      titleText: 'settingsRelayRoute'.tr(),
-      actions: [
-        IconButton(
-          icon: const Icon(Symbols.refresh),
-          tooltip: 'refresh'.tr(),
-          onPressed: () => ref.invalidate(relayCatalogProvider),
-        ),
-      ],
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          Text('settingsRelayRouteHelper'.tr()),
-          const SizedBox(height: 8),
-          _RelayRouteOption(
-            icon: Symbols.public,
-            title: 'settingsRelayRouteDirect'.tr(),
-            subtitle: 'settingsRelayRouteDirectHelper'.tr(),
-            selected: selected == null,
-            onTap: () {
-              ref.read(relayRouteProvider.notifier).select(null);
-              context.pop();
-            },
-          ),
-          const Divider(height: 24),
-          ..._buildCatalogOptions(context, catalog, selected),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildCatalogOptions(
-    BuildContext context,
-    AsyncValue<List<RelayEntry>> catalog,
-    RelayRoute? selected,
-  ) {
-    final current = selected;
-    final currentId = selected?.id;
-
-    return catalog.when(
-      loading: () => [
-        ListTile(
-          leading: const SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          title: Text('loading'.tr()),
-        ),
-      ],
-      error: (error, _) => [
-        ListTile(
-          leading: const Icon(Symbols.error),
-          title: Text('settingsRelayRouteError').tr(),
-          subtitle: Text('$error'),
-          trailing: IconButton(
-            icon: const Icon(Symbols.refresh),
-            onPressed: () => ref.invalidate(relayCatalogProvider),
-          ),
-        ),
-      ],
-      data: (entries) {
-        if (entries.isEmpty) {
-          return [ListTile(title: Text('settingsRelayRouteEmpty').tr())];
-        }
-        // A route picked from an earlier catalog may not be announced anymore;
-        // keep it visible so the selection is never invisible.
-        final announced = entries.any((entry) => entry.id == currentId);
-        return [
-          if (current != null && !announced)
-            _RelayRouteOption(
-              icon: Symbols.help,
-              title: current.regionLabel,
-              subtitle: current.displayHost,
-              selected: true,
-              onTap: () => context.pop(),
-            ),
-          for (final entry in entries)
-            _RelayRouteOption(
-              icon: Symbols.dns,
-              title: entry.regionLabel,
-              subtitle: [
-                entry.displayEndpoint,
-                'w${entry.weight}',
-                entry.healthy
-                    ? 'settingsRelayRouteHealthy'.tr()
-                    : 'settingsRelayRouteUnhealthy'.tr(),
-              ].join(' · '),
-              selected: currentId == entry.id,
-              onTap: () {
-                ref
-                    .read(relayRouteProvider.notifier)
-                    .select(RelayRoute.fromEntry(entry));
-                context.pop();
-              },
-            ),
-        ];
-      },
-    );
-  }
-}
-
-class _RelayRouteOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _RelayRouteOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      minLeadingWidth: 40,
-      leading: Icon(icon, color: selected ? scheme.primary : null),
-      title: Text(
-        title,
-        style: selected
-            ? TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)
-            : null,
-      ),
-      subtitle: Text(subtitle),
-      trailing: selected ? Icon(Symbols.check, color: scheme.primary) : null,
-      onTap: onTap,
     );
   }
 }

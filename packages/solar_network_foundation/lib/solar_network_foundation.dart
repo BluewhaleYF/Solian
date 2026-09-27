@@ -20,3 +20,4 @@ export 'src/drive/upload_tasks.dart';
 // Relays.
 export 'src/relay/relay_catalog.dart';
 export 'src/relay/relay_connection.dart';
+export 'src/relay/relay_latency.dart';

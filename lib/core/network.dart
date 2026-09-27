@@ -222,6 +222,13 @@ List<String> _readIpOverrideDomains(SharedPreferences prefs, String serverUrl) {
   return defaults;
 }
 
+/// Whether an IP override is configured, and therefore whether the clients this
+/// app builds already accept untrusted certificates.
+bool hasIpOverrideConfigured({
+  required IpOverrideMode mode,
+  required IpOverrideSettings settings,
+}) => mode != IpOverrideMode.off && settings.overrides.isNotEmpty;
+
 /// Builds the IP-override connection factory for the current mode, or null when
 /// the feature is off or unusable.
 IpOverrideConnectionFactory? _buildIpOverrideFactory({
@@ -230,7 +237,7 @@ IpOverrideConnectionFactory? _buildIpOverrideFactory({
   required List<String> domains,
   required String serverUrl,
 }) {
-  if (mode == IpOverrideMode.off || settings.overrides.isEmpty) {
+  if (!hasIpOverrideConfigured(mode: mode, settings: settings)) {
     return null;
   }
 
@@ -284,12 +291,44 @@ IpOverrideConnectionFactory? _buildIpOverrideFactory({
   };
 }
 
+/// Trailing ` via <relay id>` for a log line about [uri].
+///
+/// A selected relay only carries traffic to the configured server, so this asks
+/// the same gate the dial asks: a request to any other host or port goes direct
+/// and must not be logged as relayed. Returns `''` when [uri] goes direct.
+///
+/// A WebSocket URL is read as the `http`/`https` URL dart:io rewrites it into,
+/// which is the form `HttpClient` and the gate see.
+String relayLogSuffix({
+  required Uri uri,
+  required String serverUrl,
+  required RelayRoute? route,
+}) {
+  if (route == null) return '';
+  final server = Uri.tryParse(serverUrl) ?? Uri();
+  final request = uri.isScheme('wss')
+      ? uri.replace(scheme: 'https')
+      : uri.isScheme('ws')
+      ? uri.replace(scheme: 'http')
+      : uri;
+  final carried =
+      resolveRelayDialTarget(
+        uri: request,
+        serverHost: server.host,
+        serverPort: relayRequestPort(server),
+        route: route,
+      ) !=
+      null;
+  return carried ? ' via ${route.id}' : '';
+}
+
 /// Composes the connection factory installed on every [HttpClient].
 ///
-/// A selected [relay] wins for traffic to the configured server host — only the
-/// socket moves, so SNI, `Host`, and certificate verification stay on the real
-/// server — while the IP override keeps handling everything else. Returns null
-/// to leave the platform transport untouched when neither is configured.
+/// A selected [relay] wins for traffic to the configured server host and port —
+/// only the socket moves, so SNI, `Host`, and certificate verification stay on
+/// the real server — while the IP override keeps handling everything else.
+/// Returns null to leave the platform transport untouched when neither is
+/// configured.
 HttpOverrides? createAppHttpOverrides({
   required IpOverrideMode mode,
   required IpOverrideSettings settings,
@@ -308,9 +347,11 @@ HttpOverrides? createAppHttpOverrides({
     return null;
   }
 
+  final server = Uri.tryParse(serverUrl) ?? Uri();
   return ConnectionFactoryHttpOverrides(
     connectionFactory: createRelayConnectionFactory(
-      serverHost: Uri.tryParse(serverUrl)?.host ?? '',
+      serverHost: server.host,
+      serverPort: relayRequestPort(server),
       route: relay,
       fallback: ipFactory,
       // An active IP override already means "trust every certificate" for this
@@ -440,16 +481,56 @@ final mediaIpOverrideConnectionFactoryProvider =
         return null;
       }
 
+      final server = Uri.tryParse(serverUrl) ?? Uri();
       return createRelayConnectionFactory(
-        serverHost: Uri.tryParse(serverUrl)?.host ?? '',
+        serverHost: server.host,
+        serverPort: relayRequestPort(server),
         route: relay,
         fallback: ipFactory,
         allowUntrustedCertificate: true,
       );
     });
 
+/// What a relay probe dials: the configured server, with the trust posture the
+/// installed overrides already give it.
+///
+/// A probe that verified strictly would fail on the same self-signed setups the
+/// IP override exists for, and would then report a working relay as dead.
+final relayProbeTargetProvider = Provider<RelayProbeTarget>((ref) {
+  final mode = ref.watch(ipOverrideModeProvider);
+  final settings = ref.watch(ipOverrideSettingsProvider);
+  final server = Uri.tryParse(ref.watch(serverUrlProvider)) ?? Uri();
+  return RelayProbeTarget(
+    serverHost: server.host,
+    serverPort: relayRequestPort(server),
+    allowUntrustedCertificate: hasIpOverrideConfigured(
+      mode: mode,
+      settings: settings,
+    ),
+  );
+});
+
+/// Latency of every announced relay, measured as soon as the sheet asks.
+///
+/// Reads the catalog, so `ref.invalidate(relayCatalogProvider)` refreshes the
+/// measurements too, and disposes with the widget that watched it: opening the
+/// picker again measures again instead of showing an old round trip.
+final relayProbeResultsProvider =
+    FutureProvider.autoDispose<Map<String, RelayProbeResult>>((ref) async {
+      final target = ref.watch(relayProbeTargetProvider);
+      final catalog = await ref.watch(relayCatalogProvider.future);
+      final results = await probeRelays(
+        catalog.where((entry) => entry.isDialable).map(RelayRoute.fromEntry),
+        target: target,
+      );
+      return {for (final result in results) result.route.id: result};
+    });
+
 final stargateApiClientProvider = Provider<Dio>((ref) {
   final serverUrl = ref.watch(serverUrlProvider);
+  // Read at build time: a route change rebuilds this client (see the
+  // relayRouteProvider listener in main), so the log label never goes stale.
+  final relay = ref.read(relayRouteProvider);
   final dio = Dio(
     BaseOptions(
       baseUrl: '$serverUrl/stargate',
@@ -544,7 +625,10 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
     ),
     InterceptorsWrapper(
       onRequest: (options, handler) {
-        Logger.root.fine('[API] ${options.method} ${options.uri}');
+        Logger.root.fine(
+          '[API] ${options.method} ${options.uri}'
+          '${relayLogSuffix(uri: options.uri, serverUrl: serverUrl, route: relay)}',
+        );
         handler.next(options);
       },
       onResponse: (options, handler) {
@@ -552,11 +636,13 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
             options.statusCode! >= 200 &&
             options.statusCode! < 300) {
           Logger.root.fine(
-            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}',
+            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
+            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}',
           );
         } else {
           Logger.root.warning(
-            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
+            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
+            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
           );
         }
         handler.next(options);
@@ -581,6 +667,9 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
 
 final apiClientProvider = Provider<Dio>((ref) {
   final serverUrl = ref.watch(serverUrlProvider);
+  // Read at build time: a route change rebuilds this client (see the
+  // relayRouteProvider listener in main), so the log label never goes stale.
+  final relay = ref.read(relayRouteProvider);
   final dio = Dio(
     BaseOptions(
       baseUrl: serverUrl,
@@ -596,7 +685,10 @@ final apiClientProvider = Provider<Dio>((ref) {
   dio.interceptors.addAll([
     InterceptorsWrapper(
       onRequest: (options, handler) {
-        Logger.root.fine('[API] ${options.method} ${options.uri}');
+        Logger.root.fine(
+          '[API] ${options.method} ${options.uri}'
+          '${relayLogSuffix(uri: options.uri, serverUrl: serverUrl, route: relay)}',
+        );
         handler.next(options);
       },
       onResponse: (options, handler) {
@@ -604,11 +696,13 @@ final apiClientProvider = Provider<Dio>((ref) {
             options.statusCode! >= 200 &&
             options.statusCode! < 300) {
           Logger.root.fine(
-            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}',
+            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
+            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}',
           );
         } else {
           Logger.root.warning(
-            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
+            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
+            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
           );
         }
         handler.next(options);

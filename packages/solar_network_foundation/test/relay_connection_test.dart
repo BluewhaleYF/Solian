@@ -30,6 +30,21 @@ bool _contains(List<int> haystack, List<int> needle) {
   return false;
 }
 
+/// The URI `WebSocket.connect` hands to `HttpClient.openUrl` for [wssUrl].
+///
+/// `Uri` knows no default port for `ws`/`wss`, so the rewrite carries an
+/// explicit `:0` for every portless WebSocket URL.
+Uri _websocketRewrite(String wssUrl) {
+  final uri = Uri.parse(wssUrl);
+  return Uri(
+    scheme: uri.isScheme('wss') ? 'https' : 'http',
+    host: uri.host,
+    port: uri.port,
+    path: uri.path,
+    query: uri.query,
+  );
+}
+
 void main() {
   const relay = RelayRoute(
     id: 'jp-01',
@@ -89,6 +104,51 @@ void main() {
       );
     });
 
+    test('routes the URL WebSocket.connect rewrites a wss URL into', () {
+      final rewritten = _websocketRewrite('wss://api.solian.app/ws');
+      expect(rewritten.port, 0, reason: 'dart:io sends the port verbatim');
+
+      expect(
+        resolveRelayDialTarget(
+          uri: rewritten,
+          serverHost: 'api.solian.app',
+          route: relay,
+        ),
+        const RelayDialTarget(host: '127.0.0.1', port: 7443),
+      );
+    });
+
+    test('routes only the port the configured server answers on', () {
+      expect(
+        resolveRelayDialTarget(
+          uri: Uri.parse('https://api.solian.app:8443/'),
+          serverHost: 'api.solian.app',
+          serverPort: 8443,
+          route: relay,
+        ),
+        const RelayDialTarget(host: '127.0.0.1', port: 7443),
+      );
+      expect(
+        resolveRelayDialTarget(
+          uri: _websocketRewrite('wss://api.solian.app:8443/ws'),
+          serverHost: 'api.solian.app',
+          serverPort: 8443,
+          route: relay,
+        ),
+        const RelayDialTarget(host: '127.0.0.1', port: 7443),
+      );
+      expect(
+        resolveRelayDialTarget(
+          uri: Uri.parse('https://api.solian.app/'),
+          serverHost: 'api.solian.app',
+          serverPort: 8443,
+          route: relay,
+        ),
+        isNull,
+        reason: 'the port read off the server URL is the only relayable one',
+      );
+    });
+
     test('leaves other hosts and unconfigured routes direct', () {
       expect(
         resolveRelayDialTarget(
@@ -120,6 +180,19 @@ void main() {
           route: relay,
         ),
         isNull,
+      );
+    });
+  });
+
+  group('relayRequestPort', () {
+    test('reads the port a request is dialed on', () {
+      expect(relayRequestPort(Uri.parse('https://api.solian.app/')), 443);
+      expect(relayRequestPort(Uri.parse('https://api.solian.app:8443/')), 8443);
+      expect(relayRequestPort(Uri.parse('http://api.solian.app/')), 80);
+      expect(
+        relayRequestPort(Uri.parse('wss://api.solian.app/ws')),
+        443,
+        reason: 'a scheme without a default port still dials the TLS port',
       );
     });
   });
@@ -163,6 +236,40 @@ void main() {
         _contains(clientHello, ascii.encode('api.solian.app')),
         isTrue,
         reason: 'ClientHello must request the logical server, not the relay',
+      );
+    });
+
+    test('dials the relay for a rewritten WebSocket URL', () async {
+      final relayServer = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(relayServer.close);
+      final accepted = Completer<bool>();
+      relayServer.listen((socket) {
+        if (!accepted.isCompleted) accepted.complete(true);
+        socket.destroy();
+      });
+
+      final factory = createRelayConnectionFactory(
+        serverHost: 'api.solian.app',
+        route: RelayRoute(
+          id: 'local',
+          host: relayServer.address.address,
+          port: relayServer.port,
+        ),
+      );
+
+      final task = await factory(
+        _websocketRewrite('wss://api.solian.app/ws'),
+        null,
+        null,
+      );
+      // Handshaking is not what this test checks, and the relay hangs up: the
+      // dial landing on the relay is the proof.
+      task.socket.ignore();
+
+      expect(
+        await accepted.future.timeout(const Duration(seconds: 5)),
+        isTrue,
+        reason: 'a realtime channel must dial the relay, not the server',
       );
     });
 
