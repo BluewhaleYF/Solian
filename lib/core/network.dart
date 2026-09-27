@@ -1315,6 +1315,30 @@ final solarNetworkClientProvider = Provider<SolarNetworkClient>((ref) {
   return client;
 });
 
+/// Rebuilds every route-dependent client and flushes the result.
+///
+/// Call this instead of a bare `ref.invalidate(apiClientProvider)`: Riverpod
+/// skips invalidated providers that currently have no active subscribers, so a
+/// chain invalidated while its screens are unmounted stays dirty until the
+/// next widget watches a dependent — and that flush happens *inside* that
+/// widget's build. The rebuild then hands the dependent a new client, which
+/// invalidates it mid-build, and Riverpod answers with `setState()` on the
+/// ProviderScope during build ("This UncontrolledProviderScope widget cannot
+/// be marked as needing to build…"). Reading the chain here rebuilds it up
+/// front, outside any build, so the later rebuild has nothing left to change.
+///
+/// [mediaProxyServerProvider] is invalidated but not read: only widgets depend
+/// on it, and reading it would spin the proxy up before it is needed.
+void refreshNetworkClients(WidgetRef ref) {
+  ref.invalidate(apiClientProvider);
+  ref.invalidate(stargateApiClientProvider);
+  ref.invalidate(mediaProxyServerProvider);
+
+  ref.read(apiClientProvider);
+  ref.read(stargateApiClientProvider);
+  ref.read(solarNetworkClientProvider);
+}
+
 // ==========================================
 // Media Proxy Server Providers
 // ==========================================

@@ -1406,6 +1406,7 @@ class SettingsScreen extends HookConsumerWidget {
                         kNetworkServerDefault,
                       );
                       ref.invalidate(serverUrlProvider);
+                      refreshNetworkClients(ref);
                       showSnackBar('settingsApplied'.tr());
                     },
                   ),
@@ -1418,6 +1419,7 @@ class SettingsScreen extends HookConsumerWidget {
                   if (value.isNotEmpty) {
                     prefs.setString(kNetworkServerStoreKey, value);
                     ref.invalidate(serverUrlProvider);
+                    refreshNetworkClients(ref);
                     showSnackBar('settingsApplied'.tr());
                   }
                 },

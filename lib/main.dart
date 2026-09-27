@@ -514,9 +514,9 @@ class IslandApp extends HookConsumerWidget {
               serverPort: relayRequestPort(server),
             )}'}',
         );
-        ref.invalidate(apiClientProvider);
-        ref.invalidate(stargateApiClientProvider);
-        ref.invalidate(mediaProxyServerProvider);
+        // The route changed, so every client built under the old overrides has
+        // to be rebuilt (and flushed — see [refreshNetworkClients]).
+        refreshNetworkClients(ref);
         unawaited(ref.read(websocketProvider).reconnect());
       });
 
