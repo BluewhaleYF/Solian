@@ -45,7 +45,11 @@ Widget _app({
   required SharedPreferences prefs,
   required Future<List<RelayEntry>> Function() catalog,
   required Widget child,
-  Map<String, RelayProbeResult> probes = const {},
+  RelayProbeReport report = const RelayProbeReport(
+    direct: RelayProbeResult(),
+    relays: [],
+  ),
+  RelaySuspension? suspension,
 }) {
   return ProviderScope(
     // Riverpod retries failed providers on a timer by default; the error test
@@ -53,10 +57,14 @@ Widget _app({
     retry: (count, error) => null,
     overrides: [
       sharedPreferencesProvider.overrideWith((ref) => prefs),
-      relayCatalogProvider.overrideWith((ref) => catalog()),
+      relayCatalogProvider.overrideWith(() => _StubCatalog(catalog)),
+      if (suspension != null)
+        relaySuspensionProvider.overrideWith(
+          () => _SuspendedRelay(suspension),
+        ),
       // Stubbed, so no test dials the announced relays: the tests below are
       // about what the sheet does with a measurement, not about measuring.
-      relayProbeResultsProvider.overrideWith((ref) => probes),
+      relayProbeResultsProvider.overrideWith((ref) => report),
     ],
     child: EasyLocalization(
       supportedLocales: const [Locale('en', 'US')],
@@ -102,6 +110,35 @@ Future<SharedPreferences> _prefs({RelayRoute? storedRoute}) async {
         : {kNetworkRelayRouteStoreKey: jsonEncode(storedRoute.toJson())},
   );
   return SharedPreferences.getInstance();
+}
+
+/// A catalog that answers from memory, [load] being what the server would say.
+///
+/// The real notifier fetches, and no test here may: retry has to be covered
+/// too, and it would otherwise reach the network.
+class _StubCatalog extends RelayCatalogNotifier {
+  _StubCatalog(this.load);
+
+  final Future<List<RelayEntry>> Function() load;
+
+  @override
+  Future<List<RelayEntry>> build() => load();
+
+  @override
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(load);
+  }
+}
+
+/// A relay the app already dropped, so the sheet has to explain the gap.
+class _SuspendedRelay extends RelaySuspensionNotifier {
+  _SuspendedRelay(this.suspension);
+
+  final RelaySuspension suspension;
+
+  @override
+  RelaySuspension? build() => suspension;
 }
 
 /// Pumps with a real async window so EasyLocalization's file-backed load
@@ -257,6 +294,49 @@ void main() {
     expect(find.text('hk-01.relay.example'), findsOneWidget);
   });
 
+  testWidgets('a dropped relay is announced and can be tried again', (
+    tester,
+  ) async {
+    final prefs = await _prefs(
+      storedRoute: const RelayRoute(
+        id: 'hk-01',
+        host: 'hk-01.relay.example',
+        port: 443,
+        region: 'Hong Kong',
+      ),
+    );
+    await _pumpApp(
+      tester,
+      _app(
+        prefs: prefs,
+        catalog: () async => [_healthy],
+        suspension: RelaySuspension(
+          route: _hkRoute,
+          failure: RelayDialFailure.certificate,
+          error: 'CERTIFICATE_VERIFY_FAILED',
+          at: DateTime(2026),
+        ),
+        child: _opener(),
+      ),
+    );
+    await _openSheet(tester);
+
+    expect(
+      find.textContaining('was disabled after a failed connection'),
+      findsOneWidget,
+      reason: 'the picker must not look like it ignored the selection',
+    );
+    expect(find.text('CERTIFICATE_VERIFY_FAILED'), findsOneWidget);
+
+    await tester.tap(find.text('Use it again'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RelayRouteSheet), findsNothing);
+    final stored = prefs.getString(kNetworkRelayRouteStoreKey);
+    expect(stored, isNotNull);
+    expect(jsonDecode(stored!), containsPair('id', 'hk-01'));
+  });
+
   testWidgets('empty catalog explains itself', (tester) async {
     final prefs = await _prefs();
     await _pumpApp(
@@ -372,6 +452,28 @@ void main() {
     );
   });
 
+  testWidgets('an airport code region is spelled out for the reader', (
+    tester,
+  ) async {
+    final prefs = await _prefs();
+    await _pumpApp(
+      tester,
+      _app(prefs: prefs, catalog: () async => [], child: _opener()),
+    );
+
+    // The fleet names regions by airport code; the reader gets the name.
+    expect(relayDisplayName('can', 'net.cnlongy.cc'), 'Guangzhou');
+    expect(relayDisplayName('CAN', 'net.cnlongy.cc'), 'Guangzhou');
+    expect(relayDisplayName('szx', 'net.cnlongy.cc'), 'Shenzhen');
+    expect(relayDisplayName('nrt', 'net.cnlongy.cc'), 'Tokyo');
+    expect(relayDisplayName('sin', 'net.cnlongy.cc'), 'Singapore');
+    expect(
+      relayDisplayName('zzz', 'net.cnlongy.cc'),
+      'ZZZ',
+      reason: 'a code no language names is still shown as the code',
+    );
+  });
+
   test('a relay without a region falls back to its host label', () {
     expect(relayDisplayName('', 'de-fra-01.relay.example'), 'de-fra-01');
     expect(relayDisplayName('  ', 'de-fra-01.relay.example'), 'de-fra-01');
@@ -389,16 +491,19 @@ void main() {
       _app(
         prefs: prefs,
         catalog: () async => [_healthy, _unhealthy],
-        probes: const {
-          'hk-01': RelayProbeResult(
-            route: _hkRoute,
-            latency: Duration(milliseconds: 42),
-          ),
-          'fra-01': RelayProbeResult(
-            route: _fraRoute,
-            error: RelayProbeException('no answer'),
-          ),
-        },
+        report: const RelayProbeReport(
+          direct: RelayProbeResult(latency: Duration(milliseconds: 30)),
+          relays: [
+            RelayProbeResult(
+              route: _hkRoute,
+              latency: Duration(milliseconds: 42),
+            ),
+            RelayProbeResult(
+              route: _fraRoute,
+              error: RelayProbeException('no answer'),
+            ),
+          ],
+        ),
         child: _opener(),
       ),
     );
@@ -406,11 +511,16 @@ void main() {
 
     expect(find.text('42 ms'), findsOneWidget);
     expect(
+      find.text('30 ms'),
+      findsOneWidget,
+      reason: 'the direct row is measured too, so it can be compared',
+    );
+    expect(
       find.text('—'),
       findsOneWidget,
       reason: 'a relay that never answered is not left looking untested',
     );
-    expect(find.textContaining('Measure every relay'), findsOneWidget);
+    expect(find.textContaining('and the direct connection'), findsOneWidget);
   });
 
   testWidgets('auto picks the fastest measured relay', (tester) async {
@@ -420,18 +530,21 @@ void main() {
       _app(
         prefs: prefs,
         catalog: () async => [_healthy, _unhealthy],
-        probes: const {
-          'hk-01': RelayProbeResult(
-            route: _hkRoute,
-            latency: Duration(milliseconds: 90),
-          ),
-          // Faster than a relay the catalog calls healthy, and the measurement
-          // is the one that knows about this network.
-          'fra-01': RelayProbeResult(
-            route: _fraRoute,
-            latency: Duration(milliseconds: 12),
-          ),
-        },
+        report: const RelayProbeReport(
+          direct: RelayProbeResult(latency: Duration(milliseconds: 40)),
+          relays: [
+            RelayProbeResult(
+              route: _hkRoute,
+              latency: Duration(milliseconds: 90),
+            ),
+            // Faster than a relay the catalog calls healthy, and the
+            // measurement is the one that knows about this network.
+            RelayProbeResult(
+              route: _fraRoute,
+              latency: Duration(milliseconds: 12),
+            ),
+          ],
+        ),
         child: _opener(),
       ),
     );
@@ -446,6 +559,47 @@ void main() {
     expect(jsonDecode(stored!), containsPair('id', 'fra-01'));
   });
 
+  testWidgets('auto takes the direct connection when it is the fastest', (
+    tester,
+  ) async {
+    final prefs = await _prefs(
+      storedRoute: const RelayRoute(
+        id: 'hk-01',
+        host: 'hk-01.relay.example',
+        port: 443,
+        region: 'Hong Kong',
+      ),
+    );
+    await _pumpApp(
+      tester,
+      _app(
+        prefs: prefs,
+        catalog: () async => [_healthy, _unhealthy],
+        report: const RelayProbeReport(
+          direct: RelayProbeResult(latency: Duration(milliseconds: 8)),
+          relays: [
+            RelayProbeResult(
+              route: _hkRoute,
+              latency: Duration(milliseconds: 90),
+            ),
+          ],
+        ),
+        child: _opener(),
+      ),
+    );
+    await _openSheet(tester);
+
+    await tester.tap(find.text('Auto (fastest)'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RelayRouteSheet), findsNothing);
+    expect(
+      prefs.getString(kNetworkRelayRouteStoreKey),
+      isNull,
+      reason: 'the fastest candidate is no relay, so nothing is stored',
+    );
+  });
+
   testWidgets('auto stays unavailable until something answers', (tester) async {
     final prefs = await _prefs();
     await _pumpApp(
@@ -453,12 +607,15 @@ void main() {
       _app(
         prefs: prefs,
         catalog: () async => [_healthy],
-        probes: const {
-          'hk-01': RelayProbeResult(
-            route: _hkRoute,
-            error: RelayProbeException('no answer'),
-          ),
-        },
+        report: const RelayProbeReport(
+          direct: RelayProbeResult(error: RelayProbeException('no answer')),
+          relays: [
+            RelayProbeResult(
+              route: _hkRoute,
+              error: RelayProbeException('no answer'),
+            ),
+          ],
+        ),
         child: _opener(),
       ),
     );

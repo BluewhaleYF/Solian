@@ -9,19 +9,35 @@ import 'package:solar_network_foundation/solar_network_foundation.dart';
 
 /// Name shown for a relay: its region, or the leading label of the host when
 /// the catalog did not announce a region.
+///
+/// Regions are airport codes — `can` is Guangzhou — so a code is looked up in
+/// the translation files (`relayRegionCAN`) and falls back to the code itself,
+/// which a reader can still place. Anything that is not a three-letter code is
+/// already a name and is shown as it arrived.
 String relayDisplayName(String region, String host) {
   final trimmed = region.trim();
-  if (trimmed.isNotEmpty) return trimmed;
+  if (trimmed.isNotEmpty) {
+    if (!_looksLikeAirportCode(trimmed)) return trimmed;
+    final code = trimmed.toUpperCase();
+    final key = 'relayRegion$code';
+    final localized = key.tr();
+    return localized == key ? code : localized;
+  }
   final label = host.split('.').first;
   return label.isEmpty ? host : label;
 }
 
+/// Whether [region] is an airport code rather than a name someone wrote out.
+bool _looksLikeAirportCode(String region) =>
+    region.length == 3 && RegExp(r'^[A-Za-z]{3}$').hasMatch(region);
+
 /// Picks the relay the app dials through.
 ///
-/// Reads [relayRouteProvider] for the current choice, [relayCatalogProvider]
-/// for the announced relays, and [relayProbeResultsProvider] for what each of
-/// them measures — the catalog is fetched over a direct connection, so this
-/// sheet still works while the selected relay is down.
+/// Reads [relayRouteProvider] for the current choice, [activeRelayRouteProvider]
+/// for the choice as it will actually be dialed, [relayCatalogProvider] for the
+/// announced relays, and [relayProbeResultsProvider] for what each of them
+/// measures — the catalog is fetched over a direct connection, so this sheet
+/// still works while the selected relay is down.
 ///
 /// One accent per selected row and one alert mark per unhealthy relay: a
 /// healthy relay is silent, which keeps a long catalog quiet to scan. A
@@ -31,10 +47,12 @@ class RelayRouteSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(relayRouteProvider);
+    final selected = ref.watch(activeRelayRouteProvider);
+    final suspended = ref.watch(relaySuspensionProvider);
     final catalog = ref.watch(relayCatalogProvider);
     final probes = ref.watch(relayProbeResultsProvider);
     final scheme = Theme.of(context).colorScheme;
+    final report = probes.value;
 
     void select(RelayRoute? route) {
       ref.read(relayRouteProvider.notifier).select(route);
@@ -51,7 +69,7 @@ class RelayRouteSheet extends ConsumerWidget {
             tooltip: 'refresh'.tr(),
             onPressed: catalog.isLoading
                 ? null
-                : () => ref.invalidate(relayCatalogProvider),
+                : () => ref.read(relayCatalogProvider.notifier).refresh(),
             icon: catalog.isLoading
                 ? const _Spinner()
                 : const Icon(Symbols.refresh),
@@ -70,11 +88,30 @@ class RelayRouteSheet extends ConsumerWidget {
               ),
             ),
           ),
+          // The app dropped the chosen node itself: without this the picker
+          // would look like it simply ignored the selection.
+          if (suspended != null)
+            _SheetNotice(
+              icon: Symbols.link_off,
+              title: 'settingsRelayRouteSuspended'.tr(
+                args: [relayDisplayName(suspended.route.region, suspended.route.host)],
+              ),
+              detail: '${suspended.error}',
+              action: TextButton.icon(
+                // Re-selecting is the retry, and it closes the sheet like any
+                // other selection: the notice has said what happened.
+                onPressed: () => select(suspended.route),
+                icon: const Icon(Symbols.refresh, size: 18),
+                label: Text('settingsRelayRouteRetry'.tr()),
+              ),
+            ),
           _RelayOption(
             icon: Symbols.public,
             title: 'settingsRelayRouteDirect'.tr(),
             subtitle: 'settingsRelayRouteDirectHelper'.tr(),
             selected: selected == null,
+            latency: report?.direct.latency,
+            silent: probes.hasValue && report!.direct.reachable == false,
             onTap: () => select(null),
           ),
           ..._buildCatalog(context, ref, catalog, probes, selected, select),
@@ -87,7 +124,7 @@ class RelayRouteSheet extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<List<RelayEntry>> catalog,
-    AsyncValue<Map<String, RelayProbeResult>> probes,
+    AsyncValue<RelayProbeReport> probes,
     RelayRoute? selected,
     void Function(RelayRoute?) select,
   ) {
@@ -99,7 +136,7 @@ class RelayRouteSheet extends ConsumerWidget {
           title: 'settingsRelayRouteError'.tr(),
           detail: error is RelayCatalogException ? error.message : '$error',
           action: TextButton.icon(
-            onPressed: () => ref.invalidate(relayCatalogProvider),
+            onPressed: () => ref.read(relayCatalogProvider.notifier).refresh(),
             icon: const Icon(Symbols.refresh, size: 18),
             label: Text('retry'.tr()),
           ),
@@ -109,8 +146,10 @@ class RelayRouteSheet extends ConsumerWidget {
         final currentId = selected?.id;
         final announced = entries.any((entry) => entry.id == currentId);
         final current = selected;
-        final measured = probes.value ?? const {};
-        final fastest = fastestRelay(measured.values);
+        final report = probes.value;
+        // Direct is a candidate like any relay: when it is the fastest one, the
+        // picker takes it.
+        final fastest = report?.fastest;
         final probing = probes.isLoading;
 
         return [
@@ -141,7 +180,9 @@ class RelayRouteSheet extends ConsumerWidget {
               selected: false,
               // Measuring, or nothing answered: there is no best yet, so the
               // row says so instead of pretending to be pickable.
-              onTap: fastest == null ? null : () => select(fastest.route),
+              onTap: fastest == null
+                  ? null
+                  : () => select(fastest.route),
               trailing: probing ? const _Spinner() : null,
             ),
           for (final entry in entries)
@@ -153,8 +194,10 @@ class RelayRouteSheet extends ConsumerWidget {
               warning: entry.healthy
                   ? null
                   : 'settingsRelayRouteUnhealthy'.tr(),
-              latency: measured[entry.id]?.latency,
-              silent: probes.hasValue && measured[entry.id]?.reachable == false,
+              latency: report?.forId(entry.id)?.latency,
+              silent:
+                  probes.hasValue &&
+                  report?.forId(entry.id)?.reachable == false,
               onTap: () => select(RelayRoute.fromEntry(entry)),
             ),
         ];

@@ -6,7 +6,7 @@ import 'package:logging/logging.dart';
 import 'relay_catalog.dart';
 import 'relay_connection.dart';
 
-/// Where a relay probe dials, and how it trusts the origin.
+/// Where a probe dials, and how it trusts the origin.
 ///
 /// The host and port are the configured server URL's, and
 /// [allowUntrustedCertificate] mirrors the posture the client's own dials use —
@@ -35,7 +35,7 @@ class RelayProbeTarget {
       '${allowUntrustedCertificate ? ' (untrusted certificates allowed)' : ''}';
 }
 
-/// Raised when a route cannot carry a probe at all.
+/// Raised when a candidate cannot carry a probe at all.
 class RelayProbeException implements Exception {
   final String message;
 
@@ -45,28 +45,72 @@ class RelayProbeException implements Exception {
   String toString() => 'RelayProbeException: $message';
 }
 
-/// What one relay answered.
+/// What one candidate answered.
 class RelayProbeResult {
-  /// The relay that was probed.
-  final RelayRoute route;
+  /// The relay that was probed, or null for the direct connection.
+  final RelayRoute? route;
 
-  /// Time from dialing the relay to a completed TLS handshake with the server,
-  /// or null when the probe did not get that far.
+  /// Time from dialing to a completed TLS handshake with the server, or null
+  /// when the probe did not get that far.
   final Duration? latency;
 
   /// Why the probe failed, or null when it answered.
   final Object? error;
 
-  const RelayProbeResult({required this.route, this.latency, this.error});
+  const RelayProbeResult({this.route, this.latency, this.error});
 
-  /// Whether the relay carried a usable connection.
+  /// Whether this measured the connection the client makes without a relay.
+  bool get isDirect => route == null;
+
+  /// Whether the candidate carried a usable connection.
   bool get reachable => latency != null;
 
   @override
   String toString() => reachable
-      ? 'RelayProbeResult($route, ${latency!.inMilliseconds} ms)'
-      : 'RelayProbeResult($route, failed: $error)';
+      ? 'RelayProbeResult(${route ?? 'direct'}, ${latency!.inMilliseconds} ms)'
+      : 'RelayProbeResult(${route ?? 'direct'}, failed: $error)';
 }
+
+/// What every candidate measured: the direct connection, and each relay.
+class RelayProbeReport {
+  /// The connection with no relay in the path.
+  final RelayProbeResult direct;
+
+  /// Every relay that was probed, in the order it was asked for.
+  final List<RelayProbeResult> relays;
+
+  const RelayProbeReport({required this.direct, required this.relays});
+
+  /// The reachable candidate with the lowest round trip, direct included.
+  ///
+  /// A picker takes this as its answer: when it is [RelayProbeResult.isDirect],
+  /// the direct connection is the fastest one available.
+  RelayProbeResult? get fastest => fastestRelay([direct, ...relays]);
+
+  /// What the relay [id] measured, or null when it was not probed.
+  RelayProbeResult? forId(String id) {
+    for (final result in relays) {
+      if (result.route?.id == id) return result;
+    }
+    return null;
+  }
+}
+
+/// Times a direct connection to the server, with no relay in the path.
+///
+/// This is the alternative a picker offers beside the relays, measured through
+/// the very factory the client would use for it ([fallback], its IP override),
+/// so the numbers compare fairly.
+Future<RelayProbeResult> probeDirect({
+  required RelayProbeTarget target,
+  NetworkConnectionFactory? fallback,
+  Duration timeout = const Duration(seconds: 5),
+}) => _measure(
+  route: null,
+  target: target,
+  fallback: fallback,
+  timeout: timeout,
+);
 
 /// Times a connection through [route] up to a completed TLS handshake with the
 /// configured server.
@@ -89,6 +133,53 @@ Future<RelayProbeResult> probeRelay(
   RelayRoute route, {
   required RelayProbeTarget target,
   Duration timeout = const Duration(seconds: 5),
+}) => _measure(route: route, target: target, timeout: timeout);
+
+/// Probes the direct connection and every route in [routes] at once.
+Future<RelayProbeReport> probeAll(
+  Iterable<RelayRoute> routes, {
+  required RelayProbeTarget target,
+  NetworkConnectionFactory? fallback,
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final measured = await Future.wait([
+    probeDirect(target: target, fallback: fallback, timeout: timeout),
+    for (final route in routes)
+      probeRelay(route, target: target, timeout: timeout),
+  ]);
+  return RelayProbeReport(direct: measured.first, relays: measured.sublist(1));
+}
+
+/// Probes every route in [routes] at once, preserving their order.
+Future<List<RelayProbeResult>> probeRelays(
+  Iterable<RelayRoute> routes, {
+  required RelayProbeTarget target,
+  Duration timeout = const Duration(seconds: 5),
+}) => Future.wait([
+  for (final route in routes)
+    probeRelay(route, target: target, timeout: timeout),
+]);
+
+/// The reachable candidate with the lowest latency, or null when none answered.
+///
+/// A failed probe never wins a race, so an unreachable node cannot be picked
+/// for being quiet.
+RelayProbeResult? fastestRelay(Iterable<RelayProbeResult> results) {
+  RelayProbeResult? best;
+  for (final result in results) {
+    final latency = result.latency;
+    if (latency == null) continue;
+    if (best == null || latency < best.latency!) best = result;
+  }
+  return best;
+}
+
+/// Times one candidate, [route] being null for the direct connection.
+Future<RelayProbeResult> _measure({
+  required RelayRoute? route,
+  required RelayProbeTarget target,
+  NetworkConnectionFactory? fallback,
+  required Duration timeout,
 }) async {
   final uri = Uri(
     scheme: 'https',
@@ -96,20 +187,24 @@ Future<RelayProbeResult> probeRelay(
     port: target.serverPort,
     path: '/',
   );
-  final dialable =
-      resolveRelayDialTarget(
-        uri: uri,
-        serverHost: target.serverHost,
-        serverPort: target.serverPort,
-        route: route,
-      ) !=
-      null;
-  if (!dialable) {
-    // Dialing anyway would measure the direct route and call it a relay.
+  final applies =
+      target.serverHost.trim().isNotEmpty &&
+      (route == null ||
+          (route.isValid &&
+              resolveRelayDialTarget(
+                    uri: uri,
+                    serverHost: target.serverHost,
+                    serverPort: target.serverPort,
+                    route: route,
+                  ) !=
+                  null));
+  if (!applies) {
+    // Dialing anyway would measure a different connection and call it this
+    // candidate's.
     return RelayProbeResult(
       route: route,
       error: const RelayProbeException(
-        'the route does not apply to this server',
+        'the candidate does not apply to this server',
       ),
     );
   }
@@ -118,7 +213,11 @@ Future<RelayProbeResult> probeRelay(
     serverHost: target.serverHost,
     serverPort: target.serverPort,
     route: route,
+    fallback: fallback,
     allowUntrustedCertificate: target.allowUntrustedCertificate,
+    // A probe measures the candidate, never the direct path a broken node
+    // would fall back to.
+    failOpen: false,
   );
 
   final stopwatch = Stopwatch()..start();
@@ -144,33 +243,9 @@ Future<RelayProbeResult> probeRelay(
     stopwatch.stop();
     task?.cancel();
     Logger.root.fine(
-      '[relay] Probe of $route failed after ${stopwatch.elapsedMilliseconds} ms: '
-      '$error',
+      '[relay] Probe of ${route ?? 'direct'} failed after '
+      '${stopwatch.elapsedMilliseconds} ms: $error',
     );
     return RelayProbeResult(route: route, error: error);
   }
-}
-
-/// Probes every route in [routes] at once, preserving their order.
-Future<List<RelayProbeResult>> probeRelays(
-  Iterable<RelayRoute> routes, {
-  required RelayProbeTarget target,
-  Duration timeout = const Duration(seconds: 5),
-}) => Future.wait([
-  for (final route in routes)
-    probeRelay(route, target: target, timeout: timeout),
-]);
-
-/// The reachable relay with the lowest latency, or null when none answered.
-///
-/// A failed probe never wins a race, so an unreachable node cannot be picked
-/// for being quiet.
-RelayProbeResult? fastestRelay(Iterable<RelayProbeResult> results) {
-  RelayProbeResult? best;
-  for (final result in results) {
-    final latency = result.latency;
-    if (latency == null) continue;
-    if (best == null || latency < best.latency!) best = result;
-  }
-  return best;
 }

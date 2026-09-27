@@ -329,37 +329,96 @@ String relayLogSuffix({
 /// the real server — while the IP override keeps handling everything else.
 /// Returns null to leave the platform transport untouched when neither is
 /// configured.
+///
+/// [relay] is read for every dial rather than captured: an `HttpClient` keeps
+/// the overrides it was created with, so a client built while a relay was
+/// selected would otherwise keep relaying after the user switched to direct.
+/// [onRelayFailure] is told which route the failed dial was aimed at.
+///
+/// A relay dial that fails falls through to [fallback] (or the direct dial) so
+/// a broken node degrades the route instead of breaking the request.
 HttpOverrides? createAppHttpOverrides({
   required IpOverrideMode mode,
   required IpOverrideSettings settings,
   required List<String> domains,
   required String serverUrl,
-  RelayRoute? relay,
+  RelayRoute? Function()? relay,
+  NetworkConnectionFactory? fallback,
+  void Function(RelayRoute route, RelayDialFailure failure, Object error)?
+  onRelayFailure,
 }) {
-  final ipFactory = _buildIpOverrideFactory(
-    mode: mode,
-    settings: settings,
-    domains: domains,
-    serverUrl: serverUrl,
-  );
-  final hasRelay = relay != null && relay.isValid;
+  final ipFactory =
+      fallback ??
+      _buildIpOverrideFactory(
+        mode: mode,
+        settings: settings,
+        domains: domains,
+        serverUrl: serverUrl,
+      );
+  final selected = relay?.call();
+  final hasRelay = selected != null && selected.isValid;
   if (ipFactory == null && !hasRelay) {
     return null;
   }
 
   final server = Uri.tryParse(serverUrl) ?? Uri();
+  final serverHost = server.host;
+  final serverPort = relayRequestPort(server);
+  // An active IP override already means "trust every certificate" for this
+  // client, so the relay path keeps that posture to avoid breaking the
+  // self-signed setups the override exists for.
+  final trust = ipFactory != null;
   return ConnectionFactoryHttpOverrides(
-    connectionFactory: createRelayConnectionFactory(
-      serverHost: server.host,
-      serverPort: relayRequestPort(server),
-      route: relay,
-      fallback: ipFactory,
-      // An active IP override already means "trust every certificate" for this
-      // client, so the relay path keeps that posture to avoid breaking the
-      // self-signed setups the override exists for.
-      allowUntrustedCertificate: ipFactory != null,
-    ),
+    connectionFactory: (uri, proxyHost, proxyPort) {
+      final route = relay?.call();
+      return createRelayConnectionFactory(
+        serverHost: serverHost,
+        serverPort: serverPort,
+        route: route,
+        fallback: ipFactory,
+        allowUntrustedCertificate: trust,
+        onRelayFailure: route == null
+            ? null
+            : (failure, error) => onRelayFailure?.call(route, failure, error),
+      )(uri, proxyHost, proxyPort);
+    },
   );
+}
+
+/// The factory dials a request with when no relay carries it: the IP override,
+/// or null when the transport is left alone.
+///
+/// Also what the picker measures as the "direct" alternative, so the number it
+/// shows is the number this client would really get.
+final directConnectionFactoryProvider = Provider<NetworkConnectionFactory?>((
+  ref,
+) {
+  final mode = ref.watch(ipOverrideModeProvider);
+  final settings = ref.watch(ipOverrideSettingsProvider);
+  final domains = ref.watch(ipOverrideDomainsProvider);
+  final serverUrl = ref.watch(serverUrlProvider);
+  return _buildIpOverrideFactory(
+    mode: mode,
+    settings: settings,
+    domains: domains,
+    serverUrl: serverUrl,
+  );
+});
+
+/// Reports a failed relay dial to [relaySuspensionProvider], which decides when
+/// to stop using the node. Best effort: the overrides outlive the provider that
+/// built them, so a report can arrive after its scope is gone.
+void _reportRelayFailure(
+  Ref ref,
+  RelayRoute route,
+  RelayDialFailure failure,
+  Object error,
+) {
+  try {
+    ref.read(relaySuspensionProvider.notifier).report(route, failure, error);
+  } catch (error) {
+    Logger.root.fine('[relay] Dropped a stale relay failure report: $error');
+  }
 }
 
 HttpOverrides? createAppHttpOverridesFromPrefs(SharedPreferences prefs) {
@@ -376,7 +435,49 @@ HttpOverrides? createAppHttpOverridesFromPrefs(SharedPreferences prefs) {
     settings: settings,
     domains: domains,
     serverUrl: serverUrl,
-    relay: readRelayRoute(prefs),
+    relay: () => readRelayRoute(prefs),
+  );
+}
+
+/// Writes down the relay configuration the app starts with, before anything
+/// dials: the node, where it is dialed, what it has to carry, and the addresses
+/// its name resolves to.
+///
+/// The first thing to look at when a selected relay breaks: a node that
+/// announced the wrong port, or a name that points somewhere else entirely, is
+/// otherwise only visible as a handshake that failed for no stated reason.
+Future<void> logRelayConfig(SharedPreferences prefs) async {
+  final serverUrl =
+      prefs.getString(kNetworkServerStoreKey) ?? kNetworkServerDefault;
+  final server = Uri.tryParse(serverUrl) ?? Uri();
+  final serverHost = server.host;
+  final serverPort = relayRequestPort(server);
+  final route = readRelayRoute(prefs);
+  if (route == null) {
+    Logger.root.info(
+      '[relay] Config: direct, no relay selected for '
+      '${serverHost.isEmpty ? serverUrl : '$serverHost:$serverPort'}',
+    );
+    return;
+  }
+  final mode = _readIpOverrideMode(prefs);
+  Logger.root.info(
+    '[relay] Config: ${describeRelayConfig(
+      route: route,
+      serverHost: serverHost,
+      serverPort: serverPort,
+      allowUntrustedCertificate: hasIpOverrideConfigured(
+        mode: mode,
+        settings: IpOverrideSettings(
+          enabled: mode != IpOverrideMode.off,
+          overrides: _readIpOverrideList(prefs),
+        ),
+      ),
+    )}',
+  );
+  Logger.root.info(
+    '[relay] Destination ${route.displayHost} resolves to '
+    '${await describeRelayDestination(route.host)}',
   );
 }
 
@@ -385,13 +486,17 @@ final appHttpOverridesProvider = Provider<HttpOverrides?>((ref) {
   final settings = ref.watch(ipOverrideSettingsProvider);
   final domains = ref.watch(ipOverrideDomainsProvider);
   final serverUrl = ref.watch(serverUrlProvider);
-  final relay = ref.watch(relayRouteProvider);
   return createAppHttpOverrides(
     mode: mode,
     settings: settings,
     domains: domains,
     serverUrl: serverUrl,
-    relay: relay,
+    // Read per dial, so a client that outlives a route change still follows
+    // the route in force.
+    relay: () => ref.read(activeRelayRouteProvider),
+    fallback: ref.watch(directConnectionFactoryProvider),
+    onRelayFailure: (route, failure, error) =>
+        _reportRelayFailure(ref, route, failure, error),
   );
 });
 
@@ -439,7 +544,7 @@ final mediaIpOverrideConnectionFactoryProvider =
       final settings = ref.watch(ipOverrideSettingsProvider);
       final domains = ref.watch(ipOverrideDomainsProvider);
       final serverUrl = ref.watch(serverUrlProvider);
-      final relay = ref.watch(relayRouteProvider);
+      final relay = ref.watch(activeRelayRouteProvider);
 
       IpOverrideConnectionFactory? ipFactory;
       final override = settings.overrides.firstOrNull;
@@ -510,27 +615,81 @@ final relayProbeTargetProvider = Provider<RelayProbeTarget>((ref) {
   );
 });
 
-/// Latency of every announced relay, measured as soon as the sheet asks.
+/// What every candidate measures: the direct connection, measured through the
+/// factory this client would really use for it, and each announced relay.
 ///
-/// Reads the catalog, so `ref.invalidate(relayCatalogProvider)` refreshes the
+/// Reads the catalog, so [RelayCatalogNotifier.refresh] refreshes the
 /// measurements too, and disposes with the widget that watched it: opening the
 /// picker again measures again instead of showing an old round trip.
-final relayProbeResultsProvider =
-    FutureProvider.autoDispose<Map<String, RelayProbeResult>>((ref) async {
-      final target = ref.watch(relayProbeTargetProvider);
-      final catalog = await ref.watch(relayCatalogProvider.future);
-      final results = await probeRelays(
-        catalog.where((entry) => entry.isDialable).map(RelayRoute.fromEntry),
-        target: target,
-      );
-      return {for (final result in results) result.route.id: result};
-    });
+final relayProbeResultsProvider = FutureProvider.autoDispose<RelayProbeReport>((
+  ref,
+) async {
+  final target = ref.watch(relayProbeTargetProvider);
+  final direct = ref.watch(directConnectionFactoryProvider);
+  final catalog = await ref.watch(relayCatalogProvider.future);
+  return probeAll(
+    catalog.where((entry) => entry.isDialable).map(RelayRoute.fromEntry),
+    target: target,
+    fallback: direct,
+  );
+});
+
+/// The `[API]` line logger both Dio clients share.
+///
+/// The relay is read when the line is written, never when the client is built:
+/// an `HttpClient` (and the Dio holding it) keeps the overrides and the state it
+/// was created with, so a client built while a relay was selected would
+/// otherwise keep naming that relay after the user switched to direct. The
+/// route a request was sent with is remembered on the request, so its response
+/// line repeats the route that request travelled rather than the one in force
+/// when it came back.
+InterceptorsWrapper apiLogInterceptor({
+  required Ref ref,
+  required String serverUrl,
+}) {
+  String current(Uri uri) => relayLogSuffix(
+    uri: uri,
+    serverUrl: serverUrl,
+    route: ref.read(activeRelayRouteProvider),
+  );
+
+  String sent(RequestOptions options) =>
+      options.extra[_kRelaySentVia] as String? ?? current(options.uri);
+
+  return InterceptorsWrapper(
+    onRequest: (options, handler) {
+      final suffix = current(options.uri);
+      options.extra[_kRelaySentVia] = suffix;
+      Logger.root.fine('[API] ${options.method} ${options.uri}$suffix');
+      handler.next(options);
+    },
+    onResponse: (options, handler) {
+      final request = options.requestOptions;
+      final suffix = sent(request);
+      if (options.statusCode != null &&
+          options.statusCode! >= 200 &&
+          options.statusCode! < 300) {
+        Logger.root.fine(
+          '[API] OK ${options.statusCode} ${request.method} ${request.uri}$suffix',
+        );
+      } else {
+        Logger.root.warning(
+          '[API] FAIL ${options.statusCode} ${request.method} ${request.uri}$suffix\n'
+          'Headers: ${request.headers}\n'
+          'Request: ${request.data}\n'
+          'Response: ${options.data}',
+        );
+      }
+      handler.next(options);
+    },
+  );
+}
+
+/// `options.extra` key holding the relay a request was logged as using.
+const _kRelaySentVia = 'relay_sent_via';
 
 final stargateApiClientProvider = Provider<Dio>((ref) {
   final serverUrl = ref.watch(serverUrlProvider);
-  // Read at build time: a route change rebuilds this client (see the
-  // relayRouteProvider listener in main), so the log label never goes stale.
-  final relay = ref.read(relayRouteProvider);
   final dio = Dio(
     BaseOptions(
       baseUrl: '$serverUrl/stargate',
@@ -623,31 +782,7 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
         return handler.next(error);
       },
     ),
-    InterceptorsWrapper(
-      onRequest: (options, handler) {
-        Logger.root.fine(
-          '[API] ${options.method} ${options.uri}'
-          '${relayLogSuffix(uri: options.uri, serverUrl: serverUrl, route: relay)}',
-        );
-        handler.next(options);
-      },
-      onResponse: (options, handler) {
-        if (options.statusCode != null &&
-            options.statusCode! >= 200 &&
-            options.statusCode! < 300) {
-          Logger.root.fine(
-            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
-            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}',
-          );
-        } else {
-          Logger.root.warning(
-            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
-            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
-          );
-        }
-        handler.next(options);
-      },
-    ),
+    apiLogInterceptor(ref: ref, serverUrl: serverUrl),
     RetryInterceptor(
       dio: dio,
       retries: 3,
@@ -667,9 +802,6 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
 
 final apiClientProvider = Provider<Dio>((ref) {
   final serverUrl = ref.watch(serverUrlProvider);
-  // Read at build time: a route change rebuilds this client (see the
-  // relayRouteProvider listener in main), so the log label never goes stale.
-  final relay = ref.read(relayRouteProvider);
   final dio = Dio(
     BaseOptions(
       baseUrl: serverUrl,
@@ -683,31 +815,7 @@ final apiClientProvider = Provider<Dio>((ref) {
   );
 
   dio.interceptors.addAll([
-    InterceptorsWrapper(
-      onRequest: (options, handler) {
-        Logger.root.fine(
-          '[API] ${options.method} ${options.uri}'
-          '${relayLogSuffix(uri: options.uri, serverUrl: serverUrl, route: relay)}',
-        );
-        handler.next(options);
-      },
-      onResponse: (options, handler) {
-        if (options.statusCode != null &&
-            options.statusCode! >= 200 &&
-            options.statusCode! < 300) {
-          Logger.root.fine(
-            '[API] OK ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
-            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}',
-          );
-        } else {
-          Logger.root.warning(
-            '[API] FAIL ${options.statusCode} ${options.requestOptions.method} ${options.requestOptions.uri}'
-            '${relayLogSuffix(uri: options.requestOptions.uri, serverUrl: serverUrl, route: relay)}\nHeaders: ${options.requestOptions.headers}\nRequest: ${options.requestOptions.data}\nResponse: ${options.data}',
-          );
-        }
-        handler.next(options);
-      },
-    ),
+    apiLogInterceptor(ref: ref, serverUrl: serverUrl),
     InterceptorsWrapper(
       onRequest:
           (RequestOptions options, RequestInterceptorHandler handler) async {

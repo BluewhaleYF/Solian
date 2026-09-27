@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:island/core/media_kit_init.dart';
 import 'package:island/shared/widgets/content/media_playback.dart';
+import 'package:solar_network_foundation/solar_network_foundation.dart';
 
 /// Sentinel default for [UniversalVideo.controls]: replaced in [build] with
 /// the platform's built-in controls. An explicit `null` (i.e.

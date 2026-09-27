@@ -3,12 +3,12 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:island/core/media_kit_init.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/shared/widgets/content/video.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:styled_widget/styled_widget.dart';
 
 enum MediaPlaybackKind { audio, video }

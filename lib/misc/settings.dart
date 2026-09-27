@@ -1427,7 +1427,7 @@ class SettingsScreen extends HookConsumerWidget {
           ServerCapabilitiesPreview(serverUrl: serverUrl),
           Builder(
             builder: (context) {
-              final relay = ref.watch(relayRouteProvider);
+              final relay = ref.watch(activeRelayRouteProvider);
               return ListTile(
                 minLeadingWidth: 48,
                 title: Text('settingsRelayRoute').tr(),

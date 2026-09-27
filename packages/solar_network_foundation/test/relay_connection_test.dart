@@ -215,6 +215,9 @@ void main() {
           host: relayServer.address.address,
           port: relayServer.port,
         ),
+        // The dial target is what this test asserts; the relay never finishes a
+        // handshake, so the fail-open path would swallow the dial.
+        failOpen: false,
       );
 
       final task = await factory(
@@ -255,6 +258,9 @@ void main() {
           host: relayServer.address.address,
           port: relayServer.port,
         ),
+        // The rewrite is what this test asserts; the relay hangs up, so the
+        // fail-open path would swallow the dial.
+        failOpen: false,
       );
 
       final task = await factory(

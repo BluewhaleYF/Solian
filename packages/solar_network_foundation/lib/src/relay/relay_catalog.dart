@@ -53,6 +53,16 @@ class RelayEntry {
     healthy: json['healthy'] as bool? ?? false,
   );
 
+  /// The gateway's shape, so a client can cache what it was told.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'endpoint': endpoint,
+    'port': port,
+    'region': region,
+    'weight': weight,
+    'healthy': healthy,
+  };
+
   /// Whether the entry carries enough information to dial it.
   bool get isDialable =>
       id.isNotEmpty && endpoint.isNotEmpty && port > 0 && port <= 65535;

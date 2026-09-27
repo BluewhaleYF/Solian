@@ -27,7 +27,6 @@ import 'package:island/shared/widgets/app_wrapper.dart';
 import 'package:island/firebase_options.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/drive_wiring.dart';
-import 'package:island/core/media_kit_init.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/core/websocket.dart';
@@ -44,6 +43,7 @@ import 'package:island/plugins/plugin.dart';
 import 'package:logging/logging.dart';
 import 'package:relative_time/relative_time.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:window_manager/window_manager.dart';
@@ -313,6 +313,9 @@ void main(List<String> args) async {
     }
 
     HttpOverrides.global = createAppHttpOverridesFromPrefs(prefs);
+    // Written down before anything dials, so the route in use — and where its
+    // name resolves — is the first thing in the log.
+    unawaited(logRelayConfig(prefs));
 
     if (!kIsWeb &&
         (Platform.isMacOS || Platform.isLinux || Platform.isWindows)) {
@@ -495,12 +498,22 @@ class IslandApp extends HookConsumerWidget {
         HttpOverrides.global = overrides;
       });
 
-      // A route change only reaches clients created afterwards: the Dio
-      // providers cache one HttpClient each, and a live websocket keeps the
-      // socket it was opened with. Rebuild the clients and re-dial the channel.
-      ref.listen(relayRouteProvider, (previous, next) {
+      // The dial follows the route in force (the overrides read it per dial),
+      // so this is about what a route change cannot reach: a connection that is
+      // already open — the realtime channel above all — and the clients' cached
+      // HttpClients, which were built under the previous overrides.
+      ref.listen(activeRelayRouteProvider, (previous, next) {
         if (previous == next) return;
-        Logger.root.info('[relay] Network route changed: ${previous ?? 'direct'} -> ${next ?? 'direct'}');
+        final server = Uri.tryParse(ref.read(serverUrlProvider)) ?? Uri();
+        Logger.root.info(
+          '[relay] Route changed from ${previous ?? 'direct'} to '
+          '${next ?? 'direct'}'
+          '${next == null ? '' : ' — ${describeRelayConfig(
+              route: next,
+              serverHost: server.host,
+              serverPort: relayRequestPort(server),
+            )}'}',
+        );
         ref.invalidate(apiClientProvider);
         ref.invalidate(stargateApiClientProvider);
         ref.invalidate(mediaProxyServerProvider);

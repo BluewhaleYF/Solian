@@ -144,7 +144,7 @@ class WebSocketService {
       '[WebSocket] Trying connecting to $uri (namespace=$kWebsocketNamespace)'
       // A web build dials with the browser's own stack, which never sees the
       // connection factory, so the route only applies to the io platforms.
-      '${kIsWeb ? '' : relayLogSuffix(uri: uri, serverUrl: baseUrl, route: ref.read(relayRouteProvider))}',
+      '${kIsWeb ? '' : relayLogSuffix(uri: uri, serverUrl: baseUrl, route: ref.read(activeRelayRouteProvider))}',
     );
     try {
       if (kIsWeb) {
