@@ -15,7 +15,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart'
     show DraggableOverlaySheet;
 import 'package:island/core/config.dart';
-import 'package:island/core/server_compatibility.dart';
 import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/translate.dart';
@@ -1838,17 +1837,13 @@ class _PostActionsMenu extends HookConsumerWidget {
           icon: post.isBookmarked ? Symbols.bookmark_added : Symbols.bookmark,
         ),
       ),
-      if (serverFeatureEnabled(
-        ref.watch(serverCapabilitiesProvider).value,
-        'posts.watch',
-      ))
-        PopupMenuItem<String>(
-          value: 'postWatch',
-          child: buildMenuItem(
-            label: 'postWatchSettings'.tr(),
-            icon: Symbols.notifications_active,
-          ),
+      PopupMenuItem<String>(
+        value: 'postWatch',
+        child: buildMenuItem(
+          label: 'postWatchSettings'.tr(),
+          icon: Symbols.notifications_active,
         ),
+      ),
       const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: 'share',

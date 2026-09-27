@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:island/core/server_compatibility.dart';
 import 'package:island/posts/pods/bookmarks.dart';
 import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -19,13 +18,6 @@ class PostWatchIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!serverFeatureEnabled(
-      ref.watch(serverCapabilitiesProvider).value,
-      'posts.watch',
-    )) {
-      return const SizedBox.shrink();
-    }
-
     final bookmarked =
         ref.watch(bookmarkStatusProvider(post.id)).value != null ||
         post.isBookmarked;

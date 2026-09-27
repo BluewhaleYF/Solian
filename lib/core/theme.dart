@@ -18,6 +18,17 @@ class ThemeSet {
   ThemeSet({required this.light, required this.dark});
 }
 
+/// Radius of every menu surface: `PopupMenuButton` popups and `MenuAnchor`
+/// menus (MD3 "medium" shape token, matching the 12px input/card radius used
+/// elsewhere in the app). The framework default is 4px, so this is applied
+/// globally here; a caller that needs another radius must override it on the
+/// widget itself.
+const kMenuBorderRadius = 12.0;
+
+const _menuShape = RoundedRectangleBorder(
+  borderRadius: BorderRadius.all(Radius.circular(kMenuBorderRadius)),
+);
+
 ThemeSet createAppThemeSet(AppSettings settings) {
   return ThemeSet(
     light: createAppTheme(Brightness.light, settings),
@@ -117,6 +128,10 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(year2023: false),
     sliderTheme: SliderThemeData(year2023: false),
+    popupMenuTheme: const PopupMenuThemeData(shape: _menuShape),
+    menuTheme: const MenuThemeData(
+      style: MenuStyle(shape: WidgetStatePropertyAll<OutlinedBorder>(_menuShape)),
+    ),
     pageTransitionsTheme: PageTransitionsTheme(
       builders: {
         TargetPlatform.android: ZoomPageTransitionsBuilder(),
