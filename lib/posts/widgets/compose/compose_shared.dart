@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/services/attachment_upload_manager.dart';
 import 'package:island/posts/widgets/compose/compose_calendar_event_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_fund.dart';
 import 'package:island/posts/widgets/compose/compose_link_attachments.dart';
@@ -79,6 +80,11 @@ class ComposeState {
   /// True while [contentQuillController] and [contentController] are being
   /// synced, to prevent listener loops.
   bool _syncingContent = false;
+
+  /// Set by [ComposeLogic.dispose]. Attachment uploads that outlive the
+  /// composer (a background publish, or an upload the user abandoned) must not
+  /// write into the disposed notifiers.
+  bool disposed = false;
 
   /// Text of [contentController] at the last successful sync. Used to diff
   /// external changes so the editor caret lands after the edit.
@@ -598,9 +604,14 @@ class ComposeLogic {
       await _persistLocalDraft(ref, state);
 
       // Upload any local attachments first
+      final uploadManager = ref.read(attachmentUploadManagerProvider);
       for (int i = 0; i < state.attachments.value.length; i++) {
         final attachment = state.attachments.value[i];
         if (attachment.data is! SnCloudFile) {
+          // Auto upload already has this file in flight; it writes the cloud
+          // file into the list when it settles, so uploading it here too would
+          // duplicate the request (and the drive file).
+          if (uploadManager.entryFor(attachment) != null) continue;
           try {
             final cloudFile = await ref
                 .read(driveFileUploaderProvider)
@@ -959,11 +970,16 @@ class ComposeLogic {
     }
 
     state.attachments.value = [...state.attachments.value, ...newFiles];
+    autoUploadAttachments(ref, state);
   }
 
   /// Converts dropped desktop files into typed [UniversalFile]s and appends them.
   /// Returns the number of files added.
-  static int addDroppedFiles(ComposeState state, List<XFile> files) {
+  static int addDroppedFiles(
+    WidgetRef ref,
+    ComposeState state,
+    List<XFile> files,
+  ) {
     if (files.isEmpty) return 0;
 
     final newFiles = <UniversalFile>[];
@@ -984,6 +1000,7 @@ class ComposeLogic {
 
     if (newFiles.isEmpty) return 0;
     state.attachments.value = [...state.attachments.value, ...newFiles];
+    autoUploadAttachments(ref, state);
     return newFiles.length;
   }
 
@@ -1060,6 +1077,7 @@ class ComposeLogic {
     }
     if (newFiles.isEmpty) return 0;
     state.attachments.value = [...state.attachments.value, ...newFiles];
+    autoUploadAttachments(ref, state);
     return newFiles.length;
   }
 
@@ -1130,6 +1148,7 @@ class ComposeLogic {
         (xfile) => UniversalFile(data: xfile, type: UniversalFileType.image),
       ),
     ];
+    autoUploadAttachments(ref, state);
   }
 
   static Future<void> pickVideoMedia(WidgetRef ref, ComposeState state) async {
@@ -1144,6 +1163,7 @@ class ComposeLogic {
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.video),
       ),
     ];
+    autoUploadAttachments(ref, state);
   }
 
   static Future<void> recordAudioMedia(
@@ -1164,6 +1184,7 @@ class ComposeLogic {
         type: UniversalFileType.audio,
       ),
     ];
+    autoUploadAttachments(ref, state);
   }
 
   static Future<void> linkAttachment(
@@ -1213,9 +1234,11 @@ class ComposeLogic {
       ...state.attachments.value,
       ...linkedAttachments,
     ];
+    autoUploadAttachments(ref, state);
   }
 
   static void updateAttachment(
+    WidgetRef ref,
     ComposeState state,
     UniversalFile value,
     int index,
@@ -1224,8 +1247,112 @@ class ComposeLogic {
       if (idx == index) return value;
       return ele;
     }).toList();
+    // A replaced attachment (image editor, re-pick) is a new local file.
+    autoUploadAttachments(ref, state);
   }
 
+  /// Writes [progress] for [attachment] into [ComposeState.attachmentProgress].
+  ///
+  /// The attachment is looked up by identity so the bar follows the card when
+  /// attachments are reordered or removed while the upload is running.
+  static void _reportAttachmentProgress(
+    ComposeState state,
+    UniversalFile attachment, {
+    required double? progress,
+  }) {
+    if (state.disposed) return;
+    final index = state.attachments.value.indexOf(attachment);
+    if (index == -1) return;
+    state.attachmentProgress.value = {
+      ...state.attachmentProgress.value,
+      // The uploader reports `null` between phases; the card keeps showing a
+      // (0%) progress bar until the upload settles.
+      index: progress ?? 0.0,
+    };
+  }
+
+  /// Drops the progress row of [attachment] once its upload settled.
+  ///
+  /// The attachment is usually replaced by its cloud file at this point, so
+  /// the row is cleared before the list changes; rows that no longer belong to
+  /// an uploading attachment are removed as a fallback (the card may have been
+  /// reordered or deleted while the upload ran).
+  static void _clearAttachmentProgress(
+    ComposeState state,
+    UniversalFile attachment, {
+    int? index,
+  }) {
+    if (state.disposed) return;
+    final attachments = state.attachments.value;
+    final next = Map<int, double?>.from(state.attachmentProgress.value);
+    if (index != null) {
+      next.remove(index);
+    }
+    final attachmentIndex = attachments.indexOf(attachment);
+    if (attachmentIndex != -1) {
+      next.remove(attachmentIndex);
+    }
+    next.removeWhere(
+      (key, _) =>
+          key < 0 || key >= attachments.length || attachments[key].isOnCloud,
+    );
+    state.attachmentProgress.value = next;
+  }
+
+  /// Uploads [entry]'s file, stores the resulting cloud file in [state] and
+  /// completes with it so send flows joining the entry get the file.
+  static Future<SnCloudFile?> _runAttachmentUpload(
+    WidgetRef ref,
+    ComposeState state,
+    AttachmentUploadEntry entry, {
+    String? poolId,
+    bool? imageCompressionEnabled,
+    int? imageCompressionQuality,
+  }) async {
+    final attachment = entry.file;
+    try {
+      final pools = await ref.read(poolsProvider.future);
+      final selectedPoolId = resolveDefaultPoolId(
+        ref.read(appSettingsProvider),
+        pools,
+      );
+
+      final cloudFile = await ref
+          .read(driveFileUploaderProvider)
+          .createCloudFile(
+            fileData: attachment,
+            poolId: poolId ?? selectedPoolId,
+            usage: 'post',
+            mode: attachment.type == UniversalFileType.file
+                ? FileUploadMode.generic
+                : FileUploadMode.mediaSafe,
+            imageCompressionEnabled: imageCompressionEnabled,
+            imageCompressionQuality: imageCompressionQuality,
+            cancelToken: entry.cancelToken,
+            onProgress: (progress, _) => entry.report(progress),
+          )
+          .future;
+
+      if (cloudFile == null) {
+        throw ArgumentError('Failed to upload the file...');
+      }
+
+      if (state.disposed || !state.attachments.value.contains(attachment)) {
+        return cloudFile;
+      }
+      final index = state.attachments.value.indexOf(attachment);
+      final clone = List.of(state.attachments.value);
+      clone[index] = UniversalFile(data: cloudFile, type: attachment.type);
+      _clearAttachmentProgress(state, attachment, index: index);
+      state.attachments.value = clone;
+      return cloudFile;
+    } finally {
+      _clearAttachmentProgress(state, attachment);
+    }
+  }
+
+  /// Uploads the attachment at [index], joining the upload that is already
+  /// running for it (auto upload, or a send that already took it over).
   static Future<void> uploadAttachment(
     WidgetRef ref,
     ComposeState state,
@@ -1237,53 +1364,74 @@ class ComposeLogic {
     final attachment = state.attachments.value[index];
     if (attachment.isOnCloud) return;
 
+    final manager = ref.read(attachmentUploadManagerProvider);
+    final startedHere = manager.entryFor(attachment) == null;
+    final entry = manager.start(
+      attachment,
+      onProgress: (progress) =>
+          _reportAttachmentProgress(state, attachment, progress: progress),
+      upload: (entry) => _runAttachmentUpload(
+        ref,
+        state,
+        entry,
+        poolId: poolId,
+        imageCompressionEnabled: imageCompressionEnabled,
+        imageCompressionQuality: imageCompressionQuality,
+      ),
+    );
+
+    if (startedHere) {
+      _reportAttachmentProgress(state, attachment, progress: 0.0);
+    }
+
+    // Joining (instead of returning early) is what lets the publish flow wait
+    // for an upload that auto upload already started.
     try {
-      state.attachmentProgress.value = {
-        ...state.attachmentProgress.value,
-        index: 0.0,
-      };
-
-      SnCloudFile? cloudFile;
-
-      final pools = await ref.read(poolsProvider.future);
-      final selectedPoolId = resolveDefaultPoolId(
-        ref.read(appSettingsProvider),
-        pools,
-      );
-
-      cloudFile = await ref
-          .read(driveFileUploaderProvider)
-          .createCloudFile(
-            fileData: attachment,
-            poolId: poolId ?? selectedPoolId,
-            usage: 'post',
-            mode: attachment.type == UniversalFileType.file
-                ? FileUploadMode.generic
-                : FileUploadMode.mediaSafe,
-            imageCompressionEnabled: imageCompressionEnabled,
-            imageCompressionQuality: imageCompressionQuality,
-            onProgress: (progress, _) {
-              state.attachmentProgress.value = {
-                ...state.attachmentProgress.value,
-                index: progress ?? 0.0,
-              };
-            },
-          )
-          .future;
-
+      final cloudFile = await entry.completer.future;
       if (cloudFile == null) {
         throw ArgumentError('Failed to upload the file...');
       }
-
-      final clone = List.of(state.attachments.value);
-      clone[index] = UniversalFile(data: cloudFile, type: attachment.type);
-      state.attachments.value = clone;
     } catch (err) {
-      showErrorAlert(err);
-    } finally {
-      state.attachmentProgress.value = {...state.attachmentProgress.value}
-        ..remove(index);
+      // Cancelling an upload is a user action, and an upload taken over by the
+      // send process reports its own failures there.
+      if (startedHere && !entry.isCancelled && !entry.isAdopted) {
+        showErrorAlert(err);
+      }
     }
+  }
+
+  /// Starts uploads for every local attachment that is not uploading yet.
+  ///
+  /// Called whenever attachments are added; gated by the "auto upload
+  /// attachments" setting. Picking the same file twice, sending while an
+  /// upload is running, or re-picking after a cancel all converge here and on
+  /// [uploadAttachment] joining the running entry.
+  static void autoUploadAttachments(WidgetRef ref, ComposeState state) {
+    if (state.disposed) return;
+    if (!ref.read(appSettingsProvider).autoUploadAttachments) return;
+
+    final manager = ref.read(attachmentUploadManagerProvider);
+    final attachments = state.attachments.value;
+    for (var index = 0; index < attachments.length; index++) {
+      final attachment = attachments[index];
+      if (attachment.isOnCloud) continue;
+      if (manager.entryFor(attachment) != null) continue;
+      unawaited(uploadAttachment(ref, state, index));
+    }
+  }
+
+  /// Cancels the upload running for the attachment at [index].
+  ///
+  /// The file stays attached and can be uploaded again (or picked up by the
+  /// publish flow) afterwards.
+  static void cancelAttachmentUpload(
+    WidgetRef ref,
+    ComposeState state,
+    int index,
+  ) {
+    final attachment = state.attachments.value[index];
+    ref.read(attachmentUploadManagerProvider).cancel(attachment);
+    _clearAttachmentProgress(state, attachment, index: index);
   }
 
   static List<UniversalFile> moveAttachment(
@@ -1313,6 +1461,7 @@ class ComposeLogic {
         // Silently fail, we will attempt to delete the cloud file again on upload if it still exists
       }
     }
+    ref.read(attachmentUploadManagerProvider).cancel(attachment);
     final clone = List.of(state.attachments.value);
     clone.removeAt(index);
     state.attachments.value = clone;
@@ -1536,8 +1685,28 @@ class ComposeLogic {
         ).toMap(),
       );
 
-      // Upload any local attachments first
+      // Upload any local attachments first. Uploads that auto upload already
+      // started are joined here: their progress is handed over to this task
+      // (the attachment cards in the composer stop driving it) and the bytes
+      // already sent are not uploaded again.
       if (localAttachments.isNotEmpty) {
+        final manager = ref.read(attachmentUploadManagerProvider);
+        for (var i = 0; i < localAttachments.length; i++) {
+          final index = i;
+          final attachment = localAttachments[index].value;
+          manager.entryFor(attachment)?.adoptProgress(
+            (progress) => tasks.updateTask(
+              taskId,
+              progress:
+                  0.1 +
+                  ((index + (progress ?? 0.0)) / localAttachments.length) * 0.5,
+              statusMessage: _taskUploadingProgressMessage(
+                index + 1,
+                localAttachments.length,
+              ),
+            ),
+          );
+        }
         tasks.updateTask(
           taskId,
           progress: 0.1,
@@ -1778,6 +1947,7 @@ class ComposeLogic {
           deleteLocalDraft: database.deletePostDraft,
           client: client,
           uploader: uploader,
+          uploadManager: ref.read(attachmentUploadManagerProvider),
           selectedPoolId: selectedPoolId,
           onSuccess: onSuccess,
         ),
@@ -1823,6 +1993,7 @@ class ComposeLogic {
     required Future<void> Function(String draftId) deleteLocalDraft,
     required dynamic client,
     required FileUploader uploader,
+    required AttachmentUploadManager uploadManager,
     required String? selectedPoolId,
     VoidCallback? onSuccess,
   }) async {
@@ -1846,23 +2017,41 @@ class ComposeLogic {
 
         for (var i = 0; i < localAttachmentIndexes.length; i++) {
           final index = localAttachmentIndexes[i];
-          attachments[index] = await _uploadAttachmentForSnapshot(
-            uploader,
-            attachments[index],
-            selectedPoolId: selectedPoolId,
-            onProgress: (progress) {
-              final base = i / localAttachmentIndexes.length;
-              final step = progress / localAttachmentIndexes.length;
-              tasks.updateTask(
-                taskId,
-                progress: 0.1 + ((base + step) * 0.5),
-                statusMessage: _taskUploadingProgressMessage(
-                  i + 1,
-                  localAttachmentIndexes.length,
-                ),
-              );
-            },
-          );
+          final attachment = attachments[index];
+          void reportProgress(double? progress) {
+            final base = i / localAttachmentIndexes.length;
+            final step = (progress ?? 0.0) / localAttachmentIndexes.length;
+            tasks.updateTask(
+              taskId,
+              progress: 0.1 + ((base + step) * 0.5),
+              statusMessage: _taskUploadingProgressMessage(
+                i + 1,
+                localAttachmentIndexes.length,
+              ),
+            );
+          }
+
+          // Take over an upload that auto upload already started: its progress
+          // now drives this task instead of the composer's attachment card.
+          final running = uploadManager.entryFor(attachment);
+          if (running != null) {
+            running.adoptProgress(reportProgress);
+            final cloudFile = await running.completer.future;
+            if (cloudFile == null) {
+              throw ArgumentError('Failed to upload the file...');
+            }
+            attachments[index] = UniversalFile(
+              data: cloudFile,
+              type: attachment.type,
+            );
+          } else {
+            attachments[index] = await _uploadAttachmentForSnapshot(
+              uploader,
+              attachment,
+              selectedPoolId: selectedPoolId,
+              onProgress: reportProgress,
+            );
+          }
           await _saveLocalDraftSnapshot(
             snapshot,
             attachments: attachments,
@@ -2050,7 +2239,7 @@ class ComposeLogic {
     );
   }
 
-  static Future<void> handlePaste(ComposeState state) async {
+  static Future<void> handlePaste(WidgetRef ref, ComposeState state) async {
     final clipboard = await Pasteboard.image;
     if (clipboard == null) return;
 
@@ -2066,6 +2255,7 @@ class ComposeLogic {
         type: UniversalFileType.image,
       ),
     ];
+    autoUploadAttachments(ref, state);
   }
 
   static KeyEventResult handleKeyPress(
@@ -2087,7 +2277,7 @@ class ComposeLogic {
     final isSubmit = event.logicalKey == LogicalKeyboardKey.enter;
 
     if (isPaste && isModifierPressed) {
-      handlePaste(state);
+      handlePaste(ref, state);
       return KeyEventResult.handled;
     } else if (isSave && isModifierPressed) {
       saveDraftManually(ref, state, context);
@@ -2107,6 +2297,7 @@ class ComposeLogic {
   }
 
   static void dispose(ComposeState state) {
+    state.disposed = true;
     state.stopAutoSave();
     state.titleController.dispose();
     state.descriptionController.dispose();

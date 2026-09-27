@@ -576,6 +576,7 @@ class _ExpandedSection extends StatefulWidget {
   final VoidCallback onPickGeneralFile;
   final List<UniversalFile> attachments;
   final Function(int, {String? encryptKey}) onUploadAttachment;
+  final Function(int) onCancelUploadAttachment;
   final Function(int) onDeleteAttachment;
   final Function(int, int) onMoveAttachment;
   final Function(List<UniversalFile>) onAttachmentsChanged;
@@ -598,6 +599,7 @@ class _ExpandedSection extends StatefulWidget {
     required this.onPickGeneralFile,
     required this.attachments,
     required this.onUploadAttachment,
+    required this.onCancelUploadAttachment,
     required this.onDeleteAttachment,
     required this.onMoveAttachment,
     required this.onAttachmentsChanged,
@@ -959,6 +961,7 @@ class _ExpandedSectionState extends State<_ExpandedSection>
                     onPickGeneralFile: widget.onPickGeneralFile,
                     attachments: widget.attachments,
                     onUploadAttachment: widget.onUploadAttachment,
+                    onCancelUploadAttachment: widget.onCancelUploadAttachment,
                     onDeleteAttachment: widget.onDeleteAttachment,
                     onMoveAttachment: widget.onMoveAttachment,
                     onAttachmentsChanged: widget.onAttachmentsChanged,
@@ -1016,6 +1019,7 @@ class _AttachmentsExpandedTab extends StatelessWidget {
   final VoidCallback onPickGeneralFile;
   final List<UniversalFile> attachments;
   final Function(int, {String? encryptKey}) onUploadAttachment;
+  final Function(int) onCancelUploadAttachment;
   final Function(int) onDeleteAttachment;
   final Function(int, int) onMoveAttachment;
   final Function(List<UniversalFile>) onAttachmentsChanged;
@@ -1029,6 +1033,7 @@ class _AttachmentsExpandedTab extends StatelessWidget {
     required this.onPickGeneralFile,
     required this.attachments,
     required this.onUploadAttachment,
+    required this.onCancelUploadAttachment,
     required this.onDeleteAttachment,
     required this.onMoveAttachment,
     required this.onAttachmentsChanged,
@@ -1160,6 +1165,7 @@ class _AttachmentsExpandedTab extends StatelessWidget {
                     child: _AttachmentPreviewStrip(
                       attachments: attachments,
                       onUploadAttachment: onUploadAttachment,
+                      onCancelUploadAttachment: onCancelUploadAttachment,
                       onDeleteAttachment: onDeleteAttachment,
                       onMoveAttachment: onMoveAttachment,
                       onAttachmentsChanged: onAttachmentsChanged,
@@ -1191,6 +1197,7 @@ class _AttachmentsExpandedTab extends StatelessWidget {
 class _AttachmentPreviewStrip extends StatelessWidget {
   final List<UniversalFile> attachments;
   final Function(int, {String? encryptKey}) onUploadAttachment;
+  final Function(int) onCancelUploadAttachment;
   final Function(int) onDeleteAttachment;
   final Function(int, int) onMoveAttachment;
   final Function(List<UniversalFile>) onAttachmentsChanged;
@@ -1200,6 +1207,7 @@ class _AttachmentPreviewStrip extends StatelessWidget {
   const _AttachmentPreviewStrip({
     required this.attachments,
     required this.onUploadAttachment,
+    required this.onCancelUploadAttachment,
     required this.onDeleteAttachment,
     required this.onMoveAttachment,
     required this.onAttachmentsChanged,
@@ -1224,6 +1232,7 @@ class _AttachmentPreviewStrip extends StatelessWidget {
                 attachmentProgress['chat-upload']?.containsKey(idx) ?? false,
             onRequestUpload: () =>
                 onUploadAttachment(idx, encryptKey: roomEncryptKey),
+            onCancelUpload: () => onCancelUploadAttachment(idx),
             onDelete: () => onDeleteAttachment(idx),
             onUpdate: (value) {
               final clone = List<UniversalFile>.of(attachments);
@@ -1253,6 +1262,7 @@ class ChatInput extends HookConsumerWidget {
   final SnChatMessage? messageEditingTo;
   final List<UniversalFile> attachments;
   final Function(int, {String? encryptKey}) onUploadAttachment;
+  final Function(int) onCancelUploadAttachment;
   final Function(int) onDeleteAttachment;
   final Function(int, int) onMoveAttachment;
   final Function(List<UniversalFile>) onAttachmentsChanged;
@@ -1277,6 +1287,7 @@ class ChatInput extends HookConsumerWidget {
     required this.messageEditingTo,
     required this.attachments,
     required this.onUploadAttachment,
+    required this.onCancelUploadAttachment,
     required this.onDeleteAttachment,
     required this.onMoveAttachment,
     required this.onAttachmentsChanged,
@@ -1731,6 +1742,8 @@ class ChatInput extends HookConsumerWidget {
                               child: _AttachmentPreviewStrip(
                                 attachments: attachments,
                                 onUploadAttachment: onUploadAttachment,
+                                onCancelUploadAttachment:
+                                    onCancelUploadAttachment,
                                 onDeleteAttachment: onDeleteAttachment,
                                 onMoveAttachment: onMoveAttachment,
                                 onAttachmentsChanged: onAttachmentsChanged,
@@ -2773,6 +2786,8 @@ class ChatInput extends HookConsumerWidget {
                               onPickGeneralFile: onPickGeneralFile,
                               attachments: attachments,
                               onUploadAttachment: onUploadAttachment,
+                              onCancelUploadAttachment:
+                                  onCancelUploadAttachment,
                               onDeleteAttachment: onDeleteAttachment,
                               onMoveAttachment: onMoveAttachment,
                               onAttachmentsChanged: onAttachmentsChanged,

@@ -43,7 +43,6 @@ import 'package:island/core/services/ios_share_suggestions.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/core/services/analytics_service.dart';
 import 'package:island/data/message.dart';
-import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/route.gr.dart';
 
 import 'package:island/shared/widgets/alert.dart';
@@ -909,61 +908,15 @@ class ChatRoomScreen extends HookConsumerWidget {
       );
       if (config == null) return;
 
-      var trackedIndex = index;
-      try {
-        chatStateNotifier.updateAttachmentUploadProgress(trackedIndex, 0);
-
-        final cloudFile = await ref
-            .read(driveFileUploaderProvider)
-            .createCloudFile(
-              fileData: attachment,
-              poolId: config.poolId,
-              encryptPassword: encryptKey,
-              usage: 'chat_message',
-              mode: attachment.type == UniversalFileType.file
-                  ? FileUploadMode.generic
-                  : FileUploadMode.mediaSafe,
-              imageCompressionEnabled: config.imageCompressionEnabled,
-              imageCompressionQuality: config.imageCompressionQuality,
-              onProgress: (progress, _) {
-                final latestAttachments = ref
-                    .read(chatRoomStateProvider(id))
-                    .attachments;
-                final currentIndex = latestAttachments.indexOf(attachment);
-                if (currentIndex == -1) return;
-                if (currentIndex != trackedIndex) {
-                  chatStateNotifier.clearAttachmentUploadProgress(trackedIndex);
-                  trackedIndex = currentIndex;
-                }
-                chatStateNotifier.updateAttachmentUploadProgress(
-                  currentIndex,
-                  progress ?? 0.0,
-                );
-              },
-            )
-            .future;
-
-        if (cloudFile == null) {
-          throw ArgumentError('Failed to upload file...');
-        }
-
-        final latestAttachments = ref
-            .read(chatRoomStateProvider(id))
-            .attachments;
-        final currentIndex = latestAttachments.indexOf(attachment);
-        if (currentIndex == -1) return;
-
-        final clone = List<UniversalFile>.of(latestAttachments);
-        clone[currentIndex] = UniversalFile(
-          data: cloudFile,
-          type: attachment.type,
-        );
-        chatStateNotifier.updateAttachments(clone);
-      } catch (err) {
-        showErrorAlert(err.toString());
-      } finally {
-        chatStateNotifier.clearAttachmentUploadProgress(trackedIndex);
-      }
+      // Uploads (or joins) the upload and stores the cloud file in the
+      // composer; see [ChatRoomStateNotifier.uploadAttachment].
+      await chatStateNotifier.uploadAttachment(
+        index,
+        poolId: config.poolId,
+        imageCompressionEnabled: config.imageCompressionEnabled,
+        imageCompressionQuality: config.imageCompressionQuality,
+        encryptKey: encryptKey,
+      );
     }, [chatStateNotifier, ref, context, id, chatRoom.value?.encryptionMode]);
 
     final onJump = useCallback((String messageId) {
@@ -1457,9 +1410,16 @@ class ChatRoomScreen extends HookConsumerWidget {
                                           .linkAttachment(context),
                                       attachments: inputState.attachments,
                                       onUploadAttachment: uploadAttachment,
+                                      onCancelUploadAttachment: (index) =>
+                                          chatStateNotifier
+                                              .cancelAttachmentUpload(index),
                                       onDeleteAttachment: (index) async {
                                         final attachment =
                                             inputState.attachments[index];
+                                        // Stop the upload that is running for
+                                        // this attachment, if any.
+                                        chatStateNotifier
+                                            .cancelAttachmentUpload(index);
                                         if (attachment.isOnCloud &&
                                             !attachment.isLink) {
                                           final client = ref.read(

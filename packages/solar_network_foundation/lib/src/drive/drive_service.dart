@@ -328,6 +328,47 @@ class DriveQuotaExceededException implements Exception {
   String toString() => message;
 }
 
+/// Error surfaced when an upload is aborted through its [CancelToken].
+///
+/// In-flight HTTP requests fail with dio's own cancellation error; upload
+/// steps that cannot be interrupted (local chunk reads, queued uploads,
+/// presign calls already in flight) report this one instead so callers can
+/// treat every cancellation the same way.
+DioException uploadCancelledError([String message = 'Upload cancelled']) {
+  return DioException(
+    requestOptions: RequestOptions(path: ''),
+    type: DioExceptionType.cancel,
+    error: message,
+    message: message,
+  );
+}
+
+/// True when [error] was produced by cancelling an upload.
+bool isUploadCancelledError(Object? error) {
+  return error is DioException && error.type == DioExceptionType.cancel;
+}
+
+/// Throws [uploadCancelledError] when [cancelToken] has been cancelled.
+///
+/// Upload steps that cannot be aborted by the token itself call this at their
+/// boundaries so a cancellation stops the upload at the first opportunity.
+void throwIfUploadCancelled(CancelToken? cancelToken) {
+  if (cancelToken != null && cancelToken.isCancelled) {
+    throw uploadCancelledError();
+  }
+}
+
+/// Task status for a failed upload step: a cancellation is not a failure, so
+/// it is reported as [DriveTaskStatus.cancelled] instead.
+DriveTaskStatus driveTaskStatusForError(
+  Object error,
+  CancelToken? cancelToken,
+) {
+  return (cancelToken?.isCancelled ?? false) || isUploadCancelledError(error)
+      ? DriveTaskStatus.cancelled
+      : DriveTaskStatus.failed;
+}
+
 /// Runs tasks while at most [maxConcurrent] are in flight, preserving task
 /// order of arrival. Shared across upload paths so a batch of files never
 /// exceeds the configured limit.
@@ -1184,13 +1225,16 @@ class FileUploader {
   Future<void> _putClientDerivative(
     String url,
     Uint8List body,
-    String contentType,
-  ) async {
+    String contentType, {
+    CancelToken? cancelToken,
+  }) async {
+    throwIfUploadCancelled(cancelToken);
     final client = Dio();
     try {
       await client.put<dynamic>(
         url,
         data: body,
+        cancelToken: cancelToken,
         options: Options(
           headers: {'Content-Type': contentType},
           sendTimeout: const Duration(minutes: 2),
@@ -1213,12 +1257,15 @@ class FileUploader {
     required Uint8List? byteData,
     Function(double? progress, Duration estimate)? onProgress,
     void Function(String stage, double progress)? onStage,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     if (xfile != null && !kIsWeb) {
       await _putXFileToPresignedUrl(
         uploadUrl: uploadUrl,
         file: xfile,
         contentType: contentType,
+        cancelToken: cancelToken,
         onProgress: (progress, estimate) {
           onStage?.call('uploading_source', progress ?? 0);
           onProgress?.call(progress, estimate);
@@ -1233,6 +1280,7 @@ class FileUploader {
         await putClient.put<dynamic>(
           uploadUrl,
           data: body,
+          cancelToken: cancelToken,
           options: Options(
             headers: {'Content-Type': contentType},
             sendTimeout: const Duration(minutes: 10),
@@ -1295,7 +1343,9 @@ class FileUploader {
     String? usage,
     String? applicationType,
     ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     late final Uint8List bytes;
     if (fileData is XFile) {
       bytes = Uint8List.fromList(await fileData.readAsBytes());
@@ -1345,6 +1395,7 @@ class FileUploader {
         '/drive/files/upload/direct',
         data: FormData.fromMap(payload),
         onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 5),
           receiveTimeout: const Duration(minutes: 5),
@@ -1393,7 +1444,9 @@ class FileUploader {
     int? imageCompressionQuality,
     Function(double? progress, Duration estimate)? onProgress,
     void Function(String stage, double progress)? onStage,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     final xfile = fileData is XFile ? fileData : null;
     final byteData = fileData is Uint8List ? fileData : null;
     if (xfile == null && byteData == null) {
@@ -1481,6 +1534,7 @@ class FileUploader {
                 !contentType.toLowerCase().startsWith('video/'),
             'compression_mime_type': clientMedia?.compressionMimeType,
           },
+          cancelToken: cancelToken,
           options: Options(
             sendTimeout: const Duration(minutes: 2),
             receiveTimeout: const Duration(minutes: 2),
@@ -1542,6 +1596,7 @@ class FileUploader {
           thumbnailUploadUrl,
           clientMedia!.thumbnail!,
           'image/jpeg',
+          cancelToken: cancelToken,
         ),
       );
     }
@@ -1552,6 +1607,7 @@ class FileUploader {
           compressionUploadUrl,
           clientMedia!.compression!,
           clientMedia.compressionMimeType!,
+          cancelToken: cancelToken,
         ),
       );
     }
@@ -1567,16 +1623,22 @@ class FileUploader {
         byteData: byteData,
         onProgress: onProgress,
         onStage: onStage,
+        cancelToken: cancelToken,
       ),
       ...derivativeFutures,
     ], eagerError: true);
     putTimer.stop();
     debugPrint('[DriveUpload] S3 PUT took: ${putTimer.elapsedMilliseconds}ms');
+    throwIfUploadCancelled(cancelToken);
     onStage?.call('uploading_source', 1);
     if (hasThumbnail) onStage?.call('uploading_thumbnail', 1);
     if (hasCompression) onStage?.call('uploading_compression', 1);
     onStage?.call('finalizing', 0);
-    final result = await _completeS3DirectUpload(taskId, onProgress);
+    final result = await _completeS3DirectUpload(
+      taskId,
+      onProgress,
+      cancelToken: cancelToken,
+    );
     onStage?.call('finalizing', 1);
     return result;
   }
@@ -1586,13 +1648,16 @@ class FileUploader {
   /// creating the visible file.
   Future<SnCloudFile> _completeS3DirectUpload(
     String taskId,
-    Function(double? progress, Duration estimate)? onProgress,
-  ) async {
+    Function(double? progress, Duration estimate)? onProgress, {
+    CancelToken? cancelToken,
+  }) async {
+    throwIfUploadCancelled(cancelToken);
     onProgress?.call(null, Duration.zero);
     final completeTimer = Stopwatch()..start();
     final response = await _guardUploadQuotaExceeded(
       () => _client.post(
         '/drive/files/upload/$taskId/complete',
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 5),
           receiveTimeout: const Duration(minutes: 5),
@@ -1630,6 +1695,7 @@ class FileUploader {
     required String fileName,
     _ClientMediaUpload? clientMedia,
     required String contentType,
+    CancelToken? cancelToken,
     String? poolId,
     String? expiredAt,
     String? parentId,
@@ -1674,6 +1740,7 @@ class FileUploader {
                 !contentType.toLowerCase().startsWith('video/'),
             'compression_mime_type': clientMedia?.compressionMimeType,
           },
+          cancelToken: cancelToken,
           options: Options(
             sendTimeout: const Duration(minutes: 2),
             receiveTimeout: const Duration(minutes: 2),
@@ -1756,6 +1823,7 @@ class FileUploader {
           thumbnailUploadUrl,
           clientMedia!.thumbnail!,
           'image/jpeg',
+          cancelToken: cancelToken,
         ),
       );
     }
@@ -1766,6 +1834,7 @@ class FileUploader {
           compressionUploadUrl,
           clientMedia!.compression!,
           clientMedia.compressionMimeType!,
+          cancelToken: cancelToken,
         ),
       );
     }
@@ -1782,6 +1851,7 @@ class FileUploader {
         fileSize: fileSize,
         uploadedParts: uploadedParts,
         contentType: resolvedContentType,
+        cancelToken: cancelToken,
         onProgress: (progress) {
           onStage?.call('uploading_source', progress);
           onProgress?.call(progress, Duration.zero);
@@ -1794,11 +1864,16 @@ class FileUploader {
       '[DriveUpload] S3 multipart PUT took: '
       '${putTimer.elapsedMilliseconds}ms',
     );
+    throwIfUploadCancelled(cancelToken);
     onStage?.call('uploading_source', 1);
     if (hasThumbnail) onStage?.call('uploading_thumbnail', 1);
     if (hasCompression) onStage?.call('uploading_compression', 1);
     onStage?.call('finalizing', 0);
-    final result = await _completeS3DirectUpload(taskId, onProgress);
+    final result = await _completeS3DirectUpload(
+      taskId,
+      onProgress,
+      cancelToken: cancelToken,
+    );
     onStage?.call('finalizing', 1);
     return result;
   }
@@ -1816,6 +1891,7 @@ class FileUploader {
     required Set<int> uploadedParts,
     required String contentType,
     void Function(double progress)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final limiter = ConcurrencyLimiter(driveChunkUploadConcurrency);
     final partProgress = <int, int>{};
@@ -1845,6 +1921,7 @@ class FileUploader {
       final batchEnd = (batchStart + driveChunkUploadConcurrency > partCount)
           ? partCount + 1
           : batchStart + driveChunkUploadConcurrency;
+      throwIfUploadCancelled(cancelToken);
       await Future.wait([
         for (var partNumber = batchStart; partNumber < batchEnd; partNumber++)
           if (uploadedParts.contains(partNumber))
@@ -1861,6 +1938,7 @@ class FileUploader {
                     partSize: partSize,
                     fileSize: fileSize,
                     contentType: contentType,
+                    cancelToken: cancelToken,
                     onProgress: (bytes) =>
                         reportPartProgress(partNumber, bytes),
                   ).then((bytes) {
@@ -1881,11 +1959,14 @@ class FileUploader {
     required int fileSize,
     required String contentType,
     void Function(int bytesSent)? onProgress,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     final presignResponse = await _guardUploadQuotaExceeded(
       () => _client.post(
         '/drive/files/upload/$taskId/part',
         data: {'part_number': partNumber},
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 2),
           receiveTimeout: const Duration(minutes: 2),
@@ -1906,11 +1987,13 @@ class FileUploader {
         : fileSize;
     final body = await _readFileRange(xfile, start, end);
 
+    throwIfUploadCancelled(cancelToken);
     final putClient = Dio();
     try {
       await putClient.put<dynamic>(
         partUrl,
         data: body,
+        cancelToken: cancelToken,
         options: Options(
           headers: {'Content-Type': contentType},
           sendTimeout: const Duration(minutes: 10),
@@ -1949,10 +2032,21 @@ class FileUploader {
     required XFile file,
     required String contentType,
     Function(double? progress, Duration estimate)? onProgress,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     final uri = Uri.parse(uploadUrl);
     final total = await file.length();
     final client = HttpClient();
+    // The raw client cannot take a CancelToken; closing it forcefully is what
+    // tears down the in-flight PUT when the upload is cancelled.
+    var completed = false;
+    unawaited(
+      (cancelToken?.whenCancel ?? Completer<void>().future).then((_) {
+        if (completed) return;
+        client.close(force: true);
+      }),
+    );
     try {
       final request = await client
           .putUrl(uri)
@@ -1990,7 +2084,15 @@ class FileUploader {
           ),
         );
       }
+    } catch (error) {
+      // A cancellation closes the client, which surfaces as a connection
+      // error; report it as a cancellation so callers stop cleanly.
+      if (cancelToken != null && cancelToken.isCancelled) {
+        throw uploadCancelledError();
+      }
+      rethrow;
     } finally {
+      completed = true;
       client.close(force: true);
     }
   }
@@ -2050,7 +2152,9 @@ class FileUploader {
     String? workspaceId,
     String? usage,
     String? applicationType,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     final stepTimer = Stopwatch()..start();
 
     String hash;
@@ -2095,6 +2199,7 @@ class FileUploader {
       () => _client.post(
         '/drive/files/upload/create',
         data: payload,
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 2),
           receiveTimeout: const Duration(minutes: 2),
@@ -2115,7 +2220,9 @@ class FileUploader {
     required int chunkIndex,
     required Uint8List chunkData,
     ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     final stepTimer = Stopwatch()..start();
     final formData = FormData.fromMap({
       'chunk': MultipartFile.fromBytes(
@@ -2129,6 +2236,7 @@ class FileUploader {
         '/drive/files/upload/chunk/$taskId/$chunkIndex',
         data: formData,
         onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 2),
           receiveTimeout: const Duration(minutes: 2),
@@ -2154,8 +2262,12 @@ class FileUploader {
     return Map<String, dynamic>.from(response.data);
   }
 
-  Future<SnCloudFile> _waitForUploadComplete(String taskId) async {
+  Future<SnCloudFile> _waitForUploadComplete(
+    String taskId, {
+    CancelToken? cancelToken,
+  }) async {
     while (true) {
+      throwIfUploadCancelled(cancelToken);
       final progress = await getUploadProgress(taskId);
       final status = progress['status']?.toString();
 
@@ -2177,11 +2289,16 @@ class FileUploader {
   }
 
   /// Completes the upload and returns the CloudFile object.
-  Future<SnCloudFile> completeUpload(String taskId) async {
+  Future<SnCloudFile> completeUpload(
+    String taskId, {
+    CancelToken? cancelToken,
+  }) async {
+    throwIfUploadCancelled(cancelToken);
     final stepTimer = Stopwatch()..start();
     final response = await _guardUploadQuotaExceeded(
       () => _client.post(
         '/drive/files/upload/complete/$taskId',
+        cancelToken: cancelToken,
         options: Options(
           sendTimeout: const Duration(minutes: 5),
           receiveTimeout: const Duration(minutes: 5),
@@ -2194,7 +2311,7 @@ class FileUploader {
     );
 
     if (response.statusCode == 202) {
-      return _waitForUploadComplete(taskId);
+      return _waitForUploadComplete(taskId, cancelToken: cancelToken);
     }
 
     return SnCloudFile.fromJson(response.data);
@@ -2208,7 +2325,9 @@ class FileUploader {
     required int totalSize,
     int completedBytes = 0,
     Function(double? progress, Duration estimate)? onProgress,
+    CancelToken? cancelToken,
   }) async {
+    throwIfUploadCancelled(cancelToken);
     var bytesUploaded = 0;
     final bytesBeingUploaded = List<int>.filled(chunks.length, 0);
     final futures = <Future<void>>[];
@@ -2232,6 +2351,7 @@ class FileUploader {
             taskId: taskId,
             chunkIndex: chunkIndex,
             chunkData: chunk,
+            cancelToken: cancelToken,
             onSendProgress: (sent, total) {
               // Dio reports multipart bytes, including form-data overhead. Use
               // the chunk length so the task represents file bytes only.
@@ -2267,8 +2387,10 @@ class FileUploader {
     bool? imageCompressionEnabled,
     int? imageCompressionQuality,
     Function(double? progress, Duration estimate)? onProgress,
+    CancelToken? cancelToken,
   }) {
     return fileUploadLimiter.run(() async {
+      throwIfUploadCancelled(cancelToken);
       final overallTimer = Stopwatch()..start();
       dynamic uploadData = fileData;
       String? encryptionScheme;
@@ -2328,6 +2450,7 @@ class FileUploader {
           imageCompressionEnabled: imageCompressionEnabled,
           imageCompressionQuality: imageCompressionQuality,
           onProgress: onProgress,
+          cancelToken: cancelToken,
         );
         if (s3Uploaded != null) {
           overallTimer.stop();
@@ -2355,6 +2478,7 @@ class FileUploader {
           workspaceId: workspaceId,
           usage: usage,
           applicationType: applicationType,
+          cancelToken: cancelToken,
           onSendProgress: (sent, total) {
             if (total > 0) {
               onProgress?.call(sent / total, Duration.zero);
@@ -2393,6 +2517,7 @@ class FileUploader {
         workspaceId: workspaceId,
         usage: usage,
         applicationType: applicationType,
+        cancelToken: cancelToken,
       );
       createTimer.stop();
       debugPrint(
@@ -2436,6 +2561,7 @@ class FileUploader {
               : batchStart + driveChunkUploadConcurrency;
           final batch = chunks.sublist(batchStart, batchEnd);
 
+          throwIfUploadCancelled(cancelToken);
           await uploadChunksBatch(
             taskId: taskId,
             chunks: batch,
@@ -2443,6 +2569,7 @@ class FileUploader {
             totalSize: totalSize,
             completedBytes: bytesUploaded,
             onProgress: onProgress,
+            cancelToken: cancelToken,
           );
           bytesUploaded += batch.fold(0, (sum, chunk) => sum + chunk.length);
         }
@@ -2467,6 +2594,7 @@ class FileUploader {
               : batchStart + driveChunkUploadConcurrency;
           final batch = chunks.sublist(batchStart, batchEnd);
 
+          throwIfUploadCancelled(cancelToken);
           await uploadChunksBatch(
             taskId: taskId,
             chunks: batch,
@@ -2474,6 +2602,7 @@ class FileUploader {
             totalSize: totalSize,
             completedBytes: bytesUploaded,
             onProgress: onProgress,
+            cancelToken: cancelToken,
           );
           bytesUploaded += batch.fold(0, (sum, chunk) => sum + chunk.length);
         }
@@ -2488,7 +2617,8 @@ class FileUploader {
       // Step 3: Complete upload
       onProgress?.call(null, Duration.zero);
       final completeTimer = Stopwatch()..start();
-      final uploaded = await completeUpload(taskId);
+      throwIfUploadCancelled(cancelToken);
+      final uploaded = await completeUpload(taskId, cancelToken: cancelToken);
       completeTimer.stop();
       debugPrint(
         '[DriveUpload] Step 3 (Complete upload) took: ${completeTimer.elapsedMilliseconds}ms',
@@ -2526,8 +2656,14 @@ class FileUploader {
     bool? imageCompressionEnabled,
     int? imageCompressionQuality,
     Function(double? progress, Duration estimate)? onProgress,
+    CancelToken? cancelToken,
   }) {
     final completer = Completer<SnCloudFile?>();
+
+    if (cancelToken != null && cancelToken.isCancelled) {
+      completer.completeError(uploadCancelledError(), StackTrace.current);
+      return completer;
+    }
 
     final effectiveMode =
         mode ??
@@ -2571,6 +2707,7 @@ class FileUploader {
                 applicationType: applicationType,
                 imageCompressionEnabled: imageCompressionEnabled,
                 imageCompressionQuality: imageCompressionQuality,
+                cancelToken: cancelToken,
               ),
             )
             .catchError((e) {
@@ -2587,6 +2724,7 @@ class FileUploader {
                 applicationType: applicationType,
                 imageCompressionEnabled: imageCompressionEnabled,
                 imageCompressionQuality: imageCompressionQuality,
+                cancelToken: cancelToken,
               );
             });
 
@@ -2606,6 +2744,7 @@ class FileUploader {
       applicationType: applicationType,
       imageCompressionEnabled: imageCompressionEnabled,
       imageCompressionQuality: imageCompressionQuality,
+      cancelToken: cancelToken,
     );
     return completer;
   }
@@ -2623,6 +2762,7 @@ class FileUploader {
     String? applicationType,
     bool? imageCompressionEnabled,
     int? imageCompressionQuality,
+    CancelToken? cancelToken,
   }) {
     String actualMimetype = getMimeType(fileData);
     String actualFilename = fileData.displayName ?? 'randomly_file';
@@ -2646,6 +2786,7 @@ class FileUploader {
         applicationType: applicationType,
         imageCompressionEnabled: imageCompressionEnabled,
         imageCompressionQuality: imageCompressionQuality,
+        cancelToken: cancelToken,
       );
       return completer;
     } else if (data is List<int> || data is Uint8List) {
@@ -2679,6 +2820,7 @@ class FileUploader {
         applicationType: applicationType,
         imageCompressionEnabled: imageCompressionEnabled,
         imageCompressionQuality: imageCompressionQuality,
+        cancelToken: cancelToken,
       );
     }
 
@@ -2700,36 +2842,41 @@ class FileUploader {
     int? imageCompressionQuality,
     Function(double? progress, Duration estimate)? onProgress,
     required Completer<SnCloudFile?> completer,
+    CancelToken? cancelToken,
   }) {
     // Use the enhanced uploader with task tracking
     final uploader = EnhancedFileUploader(ref);
 
     // Call progress start
     onProgress?.call(null, Duration.zero);
-    uploader
-        .uploadFile(
-          fileData: fileData,
-          fileName: fileName,
-          contentType: contentType,
-          poolId: poolId,
-          parentId: parentId,
-          path: path,
-          workspaceId: workspaceId,
-          encryptPassword: encryptPassword,
-          applicationType: applicationType,
-          imageCompressionEnabled: imageCompressionEnabled,
-          imageCompressionQuality: imageCompressionQuality,
-          onProgress: onProgress,
-        )
-        .then((result) {
-          // Call progress end
-          onProgress?.call(null, Duration.zero);
-          completer.complete(result);
-        })
-        .catchError((e) {
-          completer.completeError(e);
-          throw e;
-        });
+    unawaited(
+      uploader
+          .uploadFile(
+            fileData: fileData,
+            fileName: fileName,
+            contentType: contentType,
+            poolId: poolId,
+            parentId: parentId,
+            path: path,
+            workspaceId: workspaceId,
+            encryptPassword: encryptPassword,
+            applicationType: applicationType,
+            imageCompressionEnabled: imageCompressionEnabled,
+            imageCompressionQuality: imageCompressionQuality,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          )
+          .then((result) {
+            // Call progress end
+            onProgress?.call(null, Duration.zero);
+            completer.complete(result);
+          })
+          .catchError((Object e, StackTrace stackTrace) {
+            // The error is delivered through the completer; rethrowing here
+            // would surface it as an unhandled async error on top of it.
+            completer.completeError(e, stackTrace);
+          }),
+    );
   }
 
   /// Gets the MIME type of a UniversalFile.

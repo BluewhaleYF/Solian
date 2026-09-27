@@ -93,8 +93,10 @@ class ComposeAttachments extends ConsumerWidget {
           );
         }
       },
+      onCancelUpload: () => ComposeLogic.cancelAttachmentUpload(ref, state, idx),
       onDelete: () => ComposeLogic.deleteAttachment(ref, state, idx),
-      onUpdate: (value) => ComposeLogic.updateAttachment(state, value, idx),
+      onUpdate: (value) =>
+          ComposeLogic.updateAttachment(ref, state, value, idx),
       onMove: (delta) {
         state.attachments.value = ComposeLogic.moveAttachment(
           state.attachments.value,
@@ -119,10 +121,11 @@ class ArticleComposeAttachments extends HookConsumerWidget {
   });
 
   Future<void> _handleDroppedFiles(
+    WidgetRef ref,
     DropDoneDetails details,
     ComposeState state,
   ) async {
-    final added = ComposeLogic.addDroppedFiles(state, details.files);
+    final added = ComposeLogic.addDroppedFiles(ref, state, details.files);
     if (added > 0) {
       onAttachmentAdded?.call();
     }
@@ -143,7 +146,7 @@ class ArticleComposeAttachments extends HookConsumerWidget {
                   final isDragging = useState(false);
                   return DropTarget(
                     onDragDone: (details) async =>
-                        await _handleDroppedFiles(details, state),
+                        await _handleDroppedFiles(ref, details, state),
                     onDragEntered: (details) => isDragging.value = true,
                     onDragExited: (details) => isDragging.value = false,
                     child: AnimatedContainer(
@@ -264,8 +267,15 @@ class ArticleComposeAttachments extends HookConsumerWidget {
                                               );
                                             }
                                           },
+                                          onCancelUpload: () =>
+                                              ComposeLogic.cancelAttachmentUpload(
+                                                ref,
+                                                state,
+                                                idx,
+                                              ),
                                           onUpdate: (value) =>
                                               ComposeLogic.updateAttachment(
+                                                ref,
                                                 state,
                                                 value,
                                                 idx,
@@ -308,6 +318,7 @@ class _AnimatedAttachmentItem extends HookWidget {
   final String? thumbnailId;
   final Function(String?) onSetThumbnail;
   final VoidCallback onRequestUpload;
+  final VoidCallback onCancelUpload;
   final Function(UniversalFile) onUpdate;
   final VoidCallback onDelete;
   final VoidCallback onInsert;
@@ -320,6 +331,7 @@ class _AnimatedAttachmentItem extends HookWidget {
     required this.thumbnailId,
     required this.onSetThumbnail,
     required this.onRequestUpload,
+    required this.onCancelUpload,
     required this.onUpdate,
     required this.onDelete,
     required this.onInsert,
@@ -363,6 +375,7 @@ class _AnimatedAttachmentItem extends HookWidget {
           thumbnailId: thumbnailId,
           onSetThumbnail: onSetThumbnail,
           onRequestUpload: onRequestUpload,
+          onCancelUpload: onCancelUpload,
           onUpdate: onUpdate,
           onDelete: onDelete,
           onInsert: onInsert,

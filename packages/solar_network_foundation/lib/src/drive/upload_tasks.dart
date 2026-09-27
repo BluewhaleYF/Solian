@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:cross_file/cross_file.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'drive_task.dart';
 import 'drive_service.dart';
@@ -58,8 +59,10 @@ class EnhancedFileUploader extends FileUploader {
     bool? imageCompressionEnabled,
     int? imageCompressionQuality,
     Function(double? progress, Duration estimate)? onProgress,
+    CancelToken? cancelToken,
   }) {
     return FileUploader.fileUploadLimiter.run(() async {
+      throwIfUploadCancelled(cancelToken);
       final overallTimer = Stopwatch()..start();
       final tasks = ref.read(driveTaskSinkProvider);
       final taskId = tasks.addTask(
@@ -193,6 +196,7 @@ class EnhancedFileUploader extends FileUploader {
             applicationType: applicationType,
             imageCompressionEnabled: imageCompressionEnabled,
             imageCompressionQuality: imageCompressionQuality,
+            cancelToken: cancelToken,
             onStage: reportStage,
             onProgress: (progress, estimate) {
               onProgress?.call(progress, estimate);
@@ -221,7 +225,7 @@ class EnhancedFileUploader extends FileUploader {
         } catch (err) {
           tasks.updateTask(
             taskId,
-            status: DriveTaskStatus.failed,
+            status: driveTaskStatusForError(err, cancelToken),
             errorMessage: err.toString(),
           );
           rethrow;
@@ -254,6 +258,7 @@ class EnhancedFileUploader extends FileUploader {
             parentId: parentId,
             workspaceId: workspaceId,
             path: path,
+            cancelToken: cancelToken,
             onSendProgress: (sent, total) {
               if (total <= 0) return;
               final progress = sent / total;
@@ -312,7 +317,7 @@ class EnhancedFileUploader extends FileUploader {
         } catch (err) {
           tasks.updateTask(
             taskId,
-            status: DriveTaskStatus.failed,
+            status: driveTaskStatusForError(err, cancelToken),
             errorMessage: err.toString(),
           );
           rethrow;
@@ -343,6 +348,7 @@ class EnhancedFileUploader extends FileUploader {
         workspaceId: workspaceId,
         usage: usage,
         applicationType: applicationType,
+        cancelToken: cancelToken,
       );
       createTimer.stop();
       debugPrint(
@@ -393,6 +399,7 @@ class EnhancedFileUploader extends FileUploader {
         final subscription = uploadData.openRead().listen(null);
         subscription.pause();
         for (int i = 0; i < chunksCount; i++) {
+          throwIfUploadCancelled(cancelToken);
           subscription.resume();
           final chunkData = await _readNextChunkFromStream(
             subscription,
@@ -402,6 +409,7 @@ class EnhancedFileUploader extends FileUploader {
             taskId: serverTaskId,
             chunkIndex: i,
             chunkData: chunkData,
+            cancelToken: cancelToken,
             onSendProgress: (sent, total) {
               final overallProgress = (bytesUploaded + sent) / totalSize;
               onProgress?.call(overallProgress, Duration.zero);
@@ -444,10 +452,12 @@ class EnhancedFileUploader extends FileUploader {
         }
 
         for (int i = 0; i < chunks.length; i++) {
+          throwIfUploadCancelled(cancelToken);
           await uploadChunk(
             taskId: serverTaskId,
             chunkIndex: i,
             chunkData: chunks[i],
+            cancelToken: cancelToken,
             onSendProgress: (sent, total) {
               final overallProgress = (bytesUploaded + sent) / totalSize;
               onProgress?.call(overallProgress, Duration.zero);
@@ -500,7 +510,11 @@ class EnhancedFileUploader extends FileUploader {
       );
       onProgress?.call(null, Duration.zero);
       final completeTimer = Stopwatch()..start();
-      final uploaded = await completeUpload(serverTaskId);
+      throwIfUploadCancelled(cancelToken);
+      final uploaded = await completeUpload(
+        serverTaskId,
+        cancelToken: cancelToken,
+      );
       completeTimer.stop();
       debugPrint(
         '[DriveUpload] Step 3 (Complete upload) took: ${completeTimer.elapsedMilliseconds}ms',

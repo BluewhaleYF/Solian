@@ -1746,9 +1746,21 @@ class SettingsScreen extends HookConsumerWidget {
           'startup',
           'search engine',
           'web search',
+          'weather',
+          'geolocation',
+          'location services',
+          'gps',
+          'ip location',
+          'auto upload',
+          'automatic upload',
+          'upload attachments',
           'settingsDisableAnimation',
           'settingsDefaultScreen',
           'settingsDashSearchEngine',
+          'settingsWeatherNoGeolocation',
+          'settingsWeatherNoGeolocationHelper',
+          'settingsAutoUploadAttachments',
+          'settingsAutoUploadAttachmentsHelper',
         ],
         children: [
           ListTile(
@@ -1864,6 +1876,38 @@ class SettingsScreen extends HookConsumerWidget {
                   showSnackBar('settingsApplied'.tr());
                 },
               ),
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('settingsWeatherNoGeolocation').tr(),
+            subtitle: Text('settingsWeatherNoGeolocationHelper').tr(),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.location_off),
+            trailing: Switch(
+              value: settings.weatherNoGeolocation,
+              onChanged: (value) {
+                ref
+                    .read(appSettingsProvider.notifier)
+                    .setWeatherNoGeolocation(value);
+                showSnackBar('settingsApplied'.tr());
+              },
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('settingsAutoUploadAttachments').tr(),
+            subtitle: Text('settingsAutoUploadAttachmentsHelper').tr(),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.cloud_upload),
+            trailing: Switch(
+              value: settings.autoUploadAttachments,
+              onChanged: (value) {
+                ref
+                    .read(appSettingsProvider.notifier)
+                    .setAutoUploadAttachments(value);
+                showSnackBar('settingsApplied'.tr());
+              },
             ),
           ),
         ],

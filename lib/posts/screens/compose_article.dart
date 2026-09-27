@@ -348,7 +348,7 @@ class ArticleComposeScreen extends HookConsumerWidget {
         onDragExited: (_) => isDragging.value = false,
         onDragDone: (details) {
           isDragging.value = false;
-          final added = ComposeLogic.addDroppedFiles(state, details.files);
+          final added = ComposeLogic.addDroppedFiles(ref, state, details.files);
           if (added > 0) {
             showSidebar.value = true;
           }

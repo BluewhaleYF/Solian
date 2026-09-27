@@ -247,7 +247,7 @@ class PostComposeDialog extends HookConsumerWidget {
       onDragExited: (_) => isDragging.value = false,
       onDragDone: (details) {
         isDragging.value = false;
-        ComposeLogic.addDroppedFiles(state, details.files);
+        ComposeLogic.addDroppedFiles(ref, state, details.files);
       },
       child: Stack(
         children: [

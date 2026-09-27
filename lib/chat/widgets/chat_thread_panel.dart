@@ -8,13 +8,14 @@ import 'package:gap/gap.dart';
 import 'package:island/chat/messages_notifier.dart';
 import 'package:island/chat/pods/chat_room.dart';
 import 'package:island/chat/pods/chat_room_state.dart';
+import 'package:island/chat/services/chat_attachment_upload.dart';
 import 'package:island/chat/widgets/chat_input.dart';
 import 'package:island/chat/widgets/chat_link_attachments.dart';
 import 'package:island/chat/widgets/message_item_wrapper.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/data/message.dart';
-import 'package:solar_network_foundation/solar_network_foundation.dart';
+import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/attachment_uploader.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -176,6 +177,113 @@ class _ChatThreadPanelState extends ConsumerState<ChatThreadPanel> {
         ..clear()
         ..addAll(attachments),
     );
+    _syncAttachmentUploads();
+  }
+
+  /// Uploads newly picked attachments (auto upload) and stops the uploads of
+  /// attachments that were removed.
+  void _syncAttachmentUploads() {
+    final uploads = ref.read(chatAttachmentUploadsProvider(widget.roomId));
+    uploads.cancelMissing(_attachments);
+    if (!uploads.canAutoUpload) return;
+
+    for (final attachment in _attachments) {
+      if (attachment.isOnCloud) continue;
+      if (uploads.manager.entryFor(attachment) != null) continue;
+      unawaited(_startUpload(attachment));
+    }
+  }
+
+  /// Reports [progress] for [attachment] wherever it sits in the composer.
+  void _reportProgress(UniversalFile attachment, double? progress) {
+    if (!mounted) return;
+    final index = _attachments.indexOf(attachment);
+    if (index == -1) return;
+    setState(() {
+      _attachmentProgress['chat-upload'] ??= {};
+      _attachmentProgress['chat-upload']![index] = progress ?? 0.0;
+    });
+  }
+
+  /// Clears the upload progress rows of [attachment].
+  void _clearProgress(UniversalFile attachment, {int? index}) {
+    if (!mounted) return;
+    setState(() {
+      final rows = Map<int, double?>.from(
+        _attachmentProgress['chat-upload'] ?? const {},
+      );
+      if (index != null) rows.remove(index);
+      final currentIndex = _attachments.indexOf(attachment);
+      if (currentIndex != -1) rows.remove(currentIndex);
+      rows.removeWhere(
+        (key, _) =>
+            key < 0 || key >= _attachments.length || _attachments[key].isOnCloud,
+      );
+      if (rows.isEmpty) {
+        _attachmentProgress.remove('chat-upload');
+      } else {
+        _attachmentProgress['chat-upload'] = rows;
+      }
+    });
+  }
+
+  /// Uploads [attachment] and stores the resulting cloud file in the composer.
+  Future<void> _startUpload(
+    UniversalFile attachment, {
+    String? poolId,
+    bool? imageCompressionEnabled,
+    int? imageCompressionQuality,
+    String? encryptKey,
+  }) async {
+    if (attachment.isOnCloud) return;
+
+    final uploads = ref.read(chatAttachmentUploadsProvider(widget.roomId));
+    final startedHere = uploads.manager.entryFor(attachment) == null;
+    final entry = uploads.start(
+      attachment,
+      poolId: poolId,
+      imageCompressionEnabled: imageCompressionEnabled,
+      imageCompressionQuality: imageCompressionQuality,
+      encryptKey: encryptKey,
+      onProgress: (progress) => _reportProgress(attachment, progress),
+    );
+    if (startedHere) _reportProgress(attachment, 0);
+
+    try {
+      final cloudFile = await entry.completer.future;
+      if (cloudFile == null) return;
+
+      final currentIndex = _attachments.indexOf(attachment);
+      if (currentIndex == -1) return;
+
+      final clone = List<UniversalFile>.of(_attachments);
+      clone[currentIndex] = UniversalFile(
+        data: cloudFile,
+        type: attachment.type,
+      );
+      _clearProgress(attachment, index: currentIndex);
+      setState(() {
+        _attachments
+          ..clear()
+          ..addAll(clone);
+      });
+    } catch (err) {
+      // Cancelling is a user action, and an upload taken over by the send
+      // process reports its own failures there.
+      if (startedHere && !entry.isCancelled && !entry.isAdopted) {
+        showErrorAlert(err);
+      }
+    } finally {
+      _clearProgress(attachment);
+    }
+  }
+
+  /// Cancels the upload running for the attachment at [index].
+  void _cancelAttachmentUpload(int index) {
+    if (index < 0 || index >= _attachments.length) return;
+    final attachment = _attachments[index];
+    ref.read(chatAttachmentUploadsProvider(widget.roomId)).cancel(attachment);
+    _clearProgress(attachment, index: index);
   }
 
   Future<void> _pickPhotos() async {
@@ -264,46 +372,13 @@ class _ChatThreadPanelState extends ConsumerState<ChatThreadPanel> {
     );
     if (config == null) return;
 
-    setState(() {
-      _attachmentProgress['chat-upload'] ??= {};
-      _attachmentProgress['chat-upload']![index] = 0;
-    });
-
-    try {
-      final cloudFile = await ref
-          .read(driveFileUploaderProvider)
-          .createCloudFile(
-            fileData: attachment,
-            poolId: config.poolId,
-            encryptPassword: encryptKey,
-            usage: 'chat_message',
-            mode: attachment.type == UniversalFileType.file
-                ? FileUploadMode.generic
-                : FileUploadMode.mediaSafe,
-            imageCompressionEnabled: config.imageCompressionEnabled,
-            imageCompressionQuality: config.imageCompressionQuality,
-            onProgress: (progress, _) {
-              if (!mounted) return;
-              setState(() {
-                _attachmentProgress['chat-upload']?[index] = progress ?? 0.0;
-              });
-            },
-          )
-          .future;
-
-      if (cloudFile == null) return;
-
-      final clone = List<UniversalFile>.of(_attachments);
-      clone[index] = UniversalFile(data: cloudFile, type: attachment.type);
-      setState(() {
-        _attachments
-          ..clear()
-          ..addAll(clone);
-        _attachmentProgress.remove('chat-upload');
-      });
-    } catch (_) {
-      setState(() => _attachmentProgress.remove('chat-upload'));
-    }
+    await _startUpload(
+      attachment,
+      poolId: config.poolId,
+      imageCompressionEnabled: config.imageCompressionEnabled,
+      imageCompressionQuality: config.imageCompressionQuality,
+      encryptKey: encryptKey,
+    );
   }
 
   @override
@@ -352,7 +427,9 @@ class _ChatThreadPanelState extends ConsumerState<ChatThreadPanel> {
           onPickFile: _pickFiles,
           onLinkAttachment: _linkAttachment,
           onUploadAttachment: _uploadAttachment,
+          onCancelUploadAttachment: _cancelAttachmentUpload,
           onDeleteAttachment: (index) {
+            _cancelAttachmentUpload(index);
             final clone = List<UniversalFile>.of(_attachments);
             clone.removeAt(index);
             _updateAttachments(clone);
@@ -421,6 +498,7 @@ class _ThreadComposer extends StatelessWidget {
   final VoidCallback onPickFile;
   final VoidCallback onLinkAttachment;
   final Future<void> Function(int, {String? encryptKey}) onUploadAttachment;
+  final void Function(int) onCancelUploadAttachment;
   final void Function(int) onDeleteAttachment;
   final void Function(int, int) onMoveAttachment;
   final void Function(List<UniversalFile>) onAttachmentsChanged;
@@ -439,6 +517,7 @@ class _ThreadComposer extends StatelessWidget {
     required this.onPickFile,
     required this.onLinkAttachment,
     required this.onUploadAttachment,
+    required this.onCancelUploadAttachment,
     required this.onDeleteAttachment,
     required this.onMoveAttachment,
     required this.onAttachmentsChanged,
@@ -466,6 +545,7 @@ class _ThreadComposer extends StatelessWidget {
       messageEditingTo: null,
       attachments: attachments,
       onUploadAttachment: onUploadAttachment,
+      onCancelUploadAttachment: onCancelUploadAttachment,
       onDeleteAttachment: onDeleteAttachment,
       onMoveAttachment: onMoveAttachment,
       onAttachmentsChanged: onAttachmentsChanged,

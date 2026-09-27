@@ -102,6 +102,8 @@ class AttachmentPreview extends HookConsumerWidget {
   final Function? onInsert;
   final Function(UniversalFile)? onUpdate;
   final Function? onRequestUpload;
+  /// Cancels the upload that is running for this attachment.
+  final VoidCallback? onCancelUpload;
   final bool isCompact;
   final String? thumbnailId;
   final Function(String?)? onSetThumbnail;
@@ -114,6 +116,7 @@ class AttachmentPreview extends HookConsumerWidget {
     this.isUploading = false,
     this.isEncryptedUpload = false,
     this.onRequestUpload,
+    this.onCancelUpload,
     this.onMove,
     this.onDelete,
     this.onUpdate,
@@ -594,9 +597,13 @@ class AttachmentPreview extends HookConsumerWidget {
                 if (onRequestUpload != null)
                   InkWell(
                     borderRadius: BorderRadius.circular(8),
-                    onTap: item.isOnCloud
-                        ? null
-                        : () => onRequestUpload?.call(),
+                    // While an upload runs the chip turns into its cancel
+                    // control; otherwise it starts the upload.
+                    onTap: isUploading
+                        ? onCancelUpload
+                        : (item.isOnCloud
+                              ? null
+                              : () => onRequestUpload?.call()),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
@@ -605,7 +612,24 @@ class AttachmentPreview extends HookConsumerWidget {
                           horizontal: 8,
                           vertical: 4,
                         ),
-                        child: (item.isOnCloud)
+                        child: isUploading && onCancelUpload != null
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Symbols.close,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  if (!isCompact) const Gap(8),
+                                  if (!isCompact)
+                                    Text(
+                                      'cancelUpload'.tr(),
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                ],
+                              )
+                            : (item.isOnCloud)
                             ? Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

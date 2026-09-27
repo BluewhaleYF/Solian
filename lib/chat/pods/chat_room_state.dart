@@ -9,6 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:island/chat/messages_notifier.dart';
 import 'package:island/chat/pods/chat_room.dart';
 import 'package:island/chat/pods/chat_subscribe.dart';
+import 'package:island/chat/services/chat_attachment_upload.dart';
+import 'package:island/shared/widgets/alert.dart';
 import 'package:island/chat/widgets/chat_link_attachments.dart';
 import 'package:island/data/message.dart';
 import 'package:logging/logging.dart';
@@ -301,6 +303,90 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
 
   void updateAttachments(List<UniversalFile> attachments) {
     state = state.copyWith(attachments: attachments);
+    _syncAttachmentUploads();
+  }
+
+  /// Uploads newly added attachments (auto upload) and stops the uploads of
+  /// attachments that are no longer part of the composer.
+  void _syncAttachmentUploads() {
+    final uploads = ref.read(chatAttachmentUploadsProvider(roomId));
+    uploads.cancelMissing(state.attachments);
+    if (!uploads.canAutoUpload) return;
+
+    for (var index = 0; index < state.attachments.length; index++) {
+      final attachment = state.attachments[index];
+      if (attachment.isOnCloud) continue;
+      if (uploads.manager.entryFor(attachment) != null) continue;
+      unawaited(uploadAttachment(index));
+    }
+  }
+
+  /// Uploads the attachment at [index] and stores the resulting cloud file in
+  /// the composer.
+  ///
+  /// Joins the upload instead of starting a second one when auto upload (or a
+  /// send that took it over) is already uploading the same file.
+  Future<void> uploadAttachment(
+    int index, {
+    String? poolId,
+    bool? imageCompressionEnabled,
+    int? imageCompressionQuality,
+    String? encryptKey,
+  }) async {
+    if (index < 0 || index >= state.attachments.length) return;
+    final attachment = state.attachments[index];
+    if (attachment.isOnCloud) return;
+
+    final uploads = ref.read(chatAttachmentUploadsProvider(roomId));
+    final startedHere = uploads.manager.entryFor(attachment) == null;
+    final entry = uploads.start(
+      attachment,
+      poolId: poolId,
+      imageCompressionEnabled: imageCompressionEnabled,
+      imageCompressionQuality: imageCompressionQuality,
+      encryptKey: encryptKey,
+      onProgress: (progress) =>
+          updateAttachmentUploadProgressFor(attachment, progress),
+    );
+    if (startedHere) updateAttachmentUploadProgressFor(attachment, 0);
+
+    try {
+      final cloudFile = await entry.completer.future;
+      if (cloudFile == null) {
+        throw ArgumentError('Failed to upload the file...');
+      }
+      _applyUploadedAttachment(attachment, cloudFile);
+    } catch (err) {
+      // Cancelling an upload is a user action, and an upload taken over by the
+      // send process reports its own failures there.
+      if (startedHere && !entry.isCancelled && !entry.isAdopted) {
+        showErrorAlert(err);
+      }
+    } finally {
+      clearAttachmentUploadProgressFor(attachment);
+    }
+  }
+
+  /// Replaces the on-device [attachment] with the file it uploaded to.
+  void _applyUploadedAttachment(
+    UniversalFile attachment,
+    SnCloudFile cloudFile,
+  ) {
+    final index = state.attachments.indexOf(attachment);
+    if (index == -1) return;
+    final clone = List<UniversalFile>.of(state.attachments);
+    clone[index] = UniversalFile(data: cloudFile, type: attachment.type);
+    clearAttachmentUploadProgressFor(attachment, index: index);
+    state = state.copyWith(attachments: clone);
+  }
+
+  /// Cancels the upload running for the attachment at [index]; the file stays
+  /// attached and can be uploaded again later.
+  void cancelAttachmentUpload(int index) {
+    if (index < 0 || index >= state.attachments.length) return;
+    final attachment = state.attachments[index];
+    ref.read(chatAttachmentUploadsProvider(roomId)).cancel(attachment);
+    clearAttachmentUploadProgressFor(attachment, index: index);
   }
 
   void updateAttachmentProgress(String messageId, double? progress) {
@@ -325,6 +411,49 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     );
     uploadProgress[index] = progress;
     newProgress['chat-upload'] = uploadProgress;
+    state = state.copyWith(attachmentProgress: newProgress);
+  }
+
+  /// Reports [progress] for [attachment], wherever it currently sits in the
+  /// composer (attachments can be reordered while an upload runs).
+  void updateAttachmentUploadProgressFor(
+    UniversalFile attachment,
+    double? progress,
+  ) {
+    final index = state.attachments.indexOf(attachment);
+    if (index == -1) return;
+    updateAttachmentUploadProgress(index, progress);
+  }
+
+  /// Clears the upload progress rows of [attachment].
+  ///
+  /// [index] is the row to clear when the attachment itself is no longer in
+  /// the list (it was swapped for its cloud file, moved or deleted); rows that
+  /// no longer belong to an on-device attachment are dropped as a fallback.
+  void clearAttachmentUploadProgressFor(
+    UniversalFile attachment, {
+    int? index,
+  }) {
+    final newProgress = Map<String, Map<int, double?>>.from(
+      state.attachmentProgress,
+    );
+    final uploadProgress = Map<int, double?>.from(
+      newProgress['chat-upload'] ?? const {},
+    );
+    if (index != null) uploadProgress.remove(index);
+    final currentIndex = state.attachments.indexOf(attachment);
+    if (currentIndex != -1) uploadProgress.remove(currentIndex);
+    uploadProgress.removeWhere(
+      (key, _) =>
+          key < 0 ||
+          key >= state.attachments.length ||
+          state.attachments[key].isOnCloud,
+    );
+    if (uploadProgress.isEmpty) {
+      newProgress.remove('chat-upload');
+    } else {
+      newProgress['chat-upload'] = uploadProgress;
+    }
     state = state.copyWith(attachmentProgress: newProgress);
   }
 
@@ -353,6 +482,7 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
             .map((e) => UniversalFile.fromAttachment(e))
             .toList(),
       );
+      _syncAttachmentUploads();
     } else {
       state = state.copyWith(clearEditingTo: true);
     }
@@ -389,17 +519,21 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
       clearEmbeds: true,
       attachments: [],
     );
+    // Uploads already taken over by a send keep running; see
+    // [AttachmentUploadManager.cancelMissing].
+    ref.read(chatAttachmentUploadsProvider(roomId)).cancelMissing(const []);
   }
 
   void clearAttachmentsOnly() {
     messageController.clear();
     state = state.copyWith(attachments: []);
+    ref.read(chatAttachmentUploadsProvider(roomId)).cancelMissing(const []);
   }
 
   Future<void> handlePaste() async {
     final image = await Pasteboard.image;
     if (image != null) {
-      final newAttachments = [
+      updateAttachments([
         ...state.attachments,
         UniversalFile(
           displayName: 'image.jpeg',
@@ -410,8 +544,7 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
           ),
           type: UniversalFileType.image,
         ),
-      ];
-      state = state.copyWith(attachments: newAttachments);
+      ]);
     }
 
     final textData = await Clipboard.getData(Clipboard.kTextPlain);
@@ -471,6 +604,16 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     final attachments = List<UniversalFile>.of(state.attachments);
     if (text.isEmpty && attachments.isEmpty && state.embeds.isEmpty) {
       return;
+    }
+
+    // Hand any running upload of these attachments over to the send process
+    // before the composer state is cleared: the pending message bubble then
+    // shows their progress and the send joins them instead of uploading the
+    // same files again.
+    final uploads = ref.read(chatAttachmentUploadsProvider(roomId));
+    for (final attachment in attachments) {
+      if (attachment.isOnCloud) continue;
+      uploads.adoptProgress(attachment, (_) {});
     }
 
     // Read fresh notifier each time to avoid using disposed instance
@@ -623,13 +766,12 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     final results = await picker.pickMultiImage();
     if (results.isEmpty) return;
 
-    final newAttachments = [
+    updateAttachments([
       ...state.attachments,
       ...results.map(
         (xfile) => UniversalFile(data: xfile, type: UniversalFileType.image),
       ),
-    ];
-    state = state.copyWith(attachments: newAttachments);
+    ]);
   }
 
   Future<void> pickVideos() async {
@@ -639,13 +781,12 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     );
     if (result == null || result.count == 0) return;
 
-    final newAttachments = [
+    updateAttachments([
       ...state.attachments,
       ...result.files.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.video),
       ),
-    ];
-    state = state.copyWith(attachments: newAttachments);
+    ]);
   }
 
   Future<void> pickAudio() async {
@@ -655,26 +796,24 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     );
     if (result == null || result.count == 0) return;
 
-    final newAttachments = [
+    updateAttachments([
       ...state.attachments,
       ...result.files.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.audio),
       ),
-    ];
-    state = state.copyWith(attachments: newAttachments);
+    ]);
   }
 
   Future<void> pickFiles() async {
     final result = await FilePicker.pickFiles(allowMultiple: true);
     if (result == null || result.count == 0) return;
 
-    final newAttachments = [
+    updateAttachments([
       ...state.attachments,
       ...result.files.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.file),
       ),
-    ];
-    state = state.copyWith(attachments: newAttachments);
+    ]);
   }
 
   Future<void> linkAttachment(BuildContext context) async {
@@ -686,7 +825,7 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
     );
     if (cloudFile == null) return;
 
-    final newAttachments = [
+    updateAttachments([
       ...state.attachments,
       UniversalFile(
         data: cloudFile,
@@ -698,8 +837,7 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
         },
         isLink: true,
       ),
-    ];
-    state = state.copyWith(attachments: newAttachments);
+    ]);
   }
 
   // ==================== Read Receipts ====================

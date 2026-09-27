@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -311,8 +312,13 @@ class WeatherLocationException implements Exception {
 }
 
 Future<({double latitude, double longitude, String label})> _resolveLocation(
-  Dio apiClient,
-) async {
+  Dio apiClient, {
+  required bool ipOnly,
+}) async {
+  // "No geolocation for weather" keeps the card working without ever touching
+  // the device's location services: the public IP decides the coordinates.
+  if (ipOnly) return _resolveIpLocation(apiClient);
+
   try {
     return await _resolveDeviceLocation();
   } catch (error, stackTrace) {
@@ -504,8 +510,14 @@ DateTime? _seriesDateTime(Map<DateTime, num> series, DateTime key) {
   return null;
 }
 
-Future<WeatherSnapshot> fetchWeatherSnapshot(Dio apiClient) async {
-  final location = await _resolveLocation(apiClient);
+Future<WeatherSnapshot> fetchWeatherSnapshot(
+  Dio apiClient, {
+  bool useIpLocationOnly = false,
+}) async {
+  final location = await _resolveLocation(
+    apiClient,
+    ipOnly: useIpLocationOnly,
+  );
 
   final weather = WeatherApi(
     userAgent: 'Solian/Island (https://solsynth.dev)',
@@ -685,7 +697,13 @@ final weatherSnapshotProvider = FutureProvider.autoDispose<WeatherSnapshot>((
   ref,
 ) async {
   final apiClient = ref.watch(apiClientProvider);
-  return fetchWeatherSnapshot(apiClient);
+  final useIpLocationOnly = ref.watch(
+    appSettingsProvider.select((settings) => settings.weatherNoGeolocation),
+  );
+  return fetchWeatherSnapshot(
+    apiClient,
+    useIpLocationOnly: useIpLocationOnly,
+  );
 });
 
 // ---------------------------------------------------------------------------

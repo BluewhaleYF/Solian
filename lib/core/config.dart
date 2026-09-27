@@ -103,6 +103,8 @@ const kAppOutgoingCallKitEnabled = 'app_outgoing_callkit_enabled';
 const kAppDesktopNativeWindowFrame = 'app_desktop_native_window_frame';
 const kAppShakeDetectionEnabled = 'app_shake_detection_enabled';
 const kAppBottomNavMenuButtonVisible = 'app_bottom_nav_menu_button_visible';
+const kAppWeatherNoGeolocation = 'app_weather_no_geolocation';
+const kAppAutoUploadAttachments = 'app_auto_upload_attachments';
 
 const kAppUpdateChecksEnabled = 'app_update_checks_enabled';
 const kAppUpdateChannel = 'app_update_channel';
@@ -471,6 +473,11 @@ sealed class AppSettings with _$AppSettings {
     required int imageCompressionQuality,
     required bool friendStatusDesktopNotification,
     required bool outgoingCallKitEnabled,
+    // Weather resolves its location from the public IP instead of the
+    // device's location services.
+    required bool weatherNoGeolocation,
+    // Attachments start uploading as soon as they are picked.
+    required bool autoUploadAttachments,
   }) = _AppSettings;
 }
 
@@ -531,6 +538,9 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       friendStatusDesktopNotification:
           prefs.getBool(kAppFriendStatusDesktopNotification) ?? true,
       outgoingCallKitEnabled: prefs.getBool(kAppOutgoingCallKitEnabled) ?? true,
+      weatherNoGeolocation: prefs.getBool(kAppWeatherNoGeolocation) ?? true,
+      autoUploadAttachments:
+          prefs.getBool(kAppAutoUploadAttachments) ?? true,
     );
   }
 
@@ -914,6 +924,18 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
     final prefs = ref.read(sharedPreferencesProvider);
     prefs.setBool(kAppOutgoingCallKitEnabled, value);
     state = state.copyWith(outgoingCallKitEnabled: value);
+  }
+
+  void setWeatherNoGeolocation(bool value) {
+    final prefs = ref.read(sharedPreferencesProvider);
+    prefs.setBool(kAppWeatherNoGeolocation, value);
+    state = state.copyWith(weatherNoGeolocation: value);
+  }
+
+  void setAutoUploadAttachments(bool value) {
+    final prefs = ref.read(sharedPreferencesProvider);
+    prefs.setBool(kAppAutoUploadAttachments, value);
+    state = state.copyWith(autoUploadAttachments: value);
   }
 
   void setIpOverrideMode(IpOverrideMode mode) {

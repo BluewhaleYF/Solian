@@ -7,6 +7,7 @@ import 'package:island/chat/data/message_cache.dart';
 import 'package:island/chat/data/message_repository.dart';
 import 'package:island/chat/e2ee_message_service.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/services/attachment_upload_manager.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/data/message.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
@@ -627,6 +628,10 @@ class MessageSender {
     Function(String messageId, Map<int, double?>)? onProgress,
   }) async {
     final cloudFiles = <IDisplayableCloudFile>[];
+    // Attachments that auto upload already started keep uploading; the send
+    // joins them and takes their progress over instead of uploading the same
+    // file twice.
+    final uploads = _ref.read(attachmentUploadManagerProvider);
 
     for (var i = 0; i < attachments.length; i++) {
       final attachment = attachments[i];
@@ -637,19 +642,32 @@ class MessageSender {
         continue;
       }
 
+      void reportProgress(double? progress) {
+        _pendingCache.updateProgress(pendingMessageId, i, progress);
+        onProgress?.call(
+          pendingMessageId,
+          _pendingCache.getProgress(pendingMessageId) ?? {},
+        );
+      }
+
+      final running = uploads.entryFor(attachment);
+      if (running != null && !running.isCancelled) {
+        running.adoptProgress(reportProgress);
+        final cloudFile = await running.completer.future;
+        if (cloudFile == null) {
+          throw Exception('Failed to upload attachment ${i + 1}');
+        }
+        cloudFiles.add(cloudFile);
+        continue;
+      }
+
       final cloudFile = await _ref
           .read(driveFileUploaderProvider)
           .createCloudFile(
             fileData: attachment,
             encryptPassword: _fileEncryptKey,
             usage: 'chat_message',
-            onProgress: (progress, _) {
-              _pendingCache.updateProgress(pendingMessageId, i, progress);
-              onProgress?.call(
-                pendingMessageId,
-                _pendingCache.getProgress(pendingMessageId) ?? {},
-              );
-            },
+            onProgress: (progress, _) => reportProgress(progress),
           )
           .future;
 
