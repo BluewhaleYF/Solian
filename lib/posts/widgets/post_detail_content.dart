@@ -4,8 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/rendering.dart'
-    show RenderAbstractViewport;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
@@ -20,6 +19,7 @@ import 'package:island/posts/pods/post_chain.dart';
 import 'package:island/posts/widgets/article_toc.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_chained_section.dart';
+import 'package:island/posts/widgets/post_watch_indicator.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/posts/widgets/compose/post_quick_reply.dart';
 import 'package:island/route.gr.dart';
@@ -389,10 +389,10 @@ class PostDetailContent extends HookConsumerWidget {
     final headingRegistry = useRef(MarkdownHeadingRegistry());
     final tocAnchors = useState<List<MarkdownHeadingAnchor>>(const []);
     final activeSection = useState(0);
-    final markdown = useMemoized(
-      () => resolvePostMarkdown(post),
-      [post.content, post.contentType],
-    );
+    final markdown = useMemoized(() => resolvePostMarkdown(post), [
+      post.content,
+      post.contentType,
+    ]);
     final sections = useMemoized(() => scanPostSections(markdown), [markdown]);
     final sectionAnchors = useMemoized(
       () => matchSectionAnchors(sections, tocAnchors.value),
@@ -611,6 +611,15 @@ class PostDetailContent extends HookConsumerWidget {
               SliverToBoxAdapter(
                 child: wrapContent(actionBuilder(context, translatePost)),
               ),
+              if (user.value != null)
+                SliverToBoxAdapter(
+                  child: wrapContent(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: PostWatchIndicator(post: post),
+                    ),
+                  ),
+                ),
               interactionsSection,
               SliverGap(MediaQuery.of(context).padding.bottom + 80),
             ],

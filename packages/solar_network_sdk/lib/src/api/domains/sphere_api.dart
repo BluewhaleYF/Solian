@@ -9,6 +9,7 @@ import 'package:solar_network_sdk/src/models/posts/embed.dart';
 import 'package:solar_network_sdk/src/models/posts/heatmap.dart';
 import 'package:solar_network_sdk/src/models/posts/post_collection.dart';
 import 'package:solar_network_sdk/src/models/posts/tag_quota.dart';
+import 'package:solar_network_sdk/src/models/posts/post_watch.dart';
 import 'package:solar_network_sdk/src/models/posts/publisher_rating_record.dart';
 import 'package:solar_network_sdk/src/models/posts/publisher_leaderboard.dart';
 
@@ -44,9 +45,7 @@ class SphereApi extends BaseApi {
   ///
   /// [postId] - Any member of the chain, the head included.
   Future<List<SnPost>> getPostChain(String postId) async {
-    final response = await get<List<dynamic>>(
-      '$_basePath/posts/$postId/chain',
-    );
+    final response = await get<List<dynamic>>('$_basePath/posts/$postId/chain');
     return parseList(response, SnPost.fromJson);
   }
 
@@ -348,6 +347,40 @@ class SphereApi extends BaseApi {
   /// [postId] - The post ID.
   Future<void> unboostPost(String postId) async {
     await delete('$_basePath/posts/$postId/boost');
+  }
+
+  /// Gets the current user's post watch filters.
+  ///
+  /// Post watches are implicit: bookmarks, reactions and replies subscribe the
+  /// account to updates of the post they were made on. The returned filters are
+  /// the effective values, defaults included.
+  Future<List<SnPostWatchPreference>> getPostWatchPreferences() async {
+    final response = await get<List<dynamic>>('$_basePath/posts/watch');
+    return parseList(response, SnPostWatchPreference.fromJson);
+  }
+
+  /// Updates the current user's post watch filters.
+  ///
+  /// [preferences] - The sources to write. Every flag of a given source is
+  /// written together, so pass the full value of each edited source.
+  /// Returns the effective filters after the write.
+  Future<List<SnPostWatchPreference>> updatePostWatchPreferences(
+    List<SnPostWatchPreference> preferences,
+  ) async {
+    final response = await put<List<dynamic>>(
+      '$_basePath/posts/watch',
+      data: {
+        for (final preference in preferences)
+          preference.source.name: {
+            'reactions': preference.notifyReactions,
+            'replies': preference.notifyReplies,
+            'chains': preference.notifyChains,
+            'forwards': preference.notifyForwards,
+            'edits': preference.notifyEdits,
+          },
+      },
+    );
+    return parseList(response, SnPostWatchPreference.fromJson);
   }
 
   /// Gets the current user's bookmark for a post.
@@ -936,9 +969,7 @@ class SphereApi extends BaseApi {
   ///
   /// [publisherName] - Publisher name to check quota for.
   /// Prefer this over the legacy `/{slug}/quota` path; slug is not required.
-  Future<SnTagQuota> getProtectedTagQuota({
-    String? publisherName,
-  }) async {
+  Future<SnTagQuota> getProtectedTagQuota({String? publisherName}) async {
     final response = await get<Map<String, dynamic>>(
       '$_basePath/posts/tags/quota',
       queryParameters: {'pub': ?publisherName},

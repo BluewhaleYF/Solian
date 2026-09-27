@@ -38,6 +38,8 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/server_compatibility.dart';
+import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/drive/screens/file_pool.dart';
 import 'package:island/plugins/screens/plugin_manager_screen.dart';
 import 'package:island/route.gr.dart';
@@ -1276,6 +1278,19 @@ class SettingsScreen extends HookConsumerWidget {
                       .setFriendStatusDesktopNotification(value);
                 },
               ),
+            ),
+          if (serverFeatureEnabled(
+            ref.watch(serverCapabilitiesProvider).value,
+            'posts.watch',
+          ))
+            ListTile(
+              minLeadingWidth: 48,
+              title: Text('postWatchSettings').tr(),
+              subtitle: Text('postWatchSettingsDescription').tr().fontSize(12),
+              contentPadding: _kSettingsTilePadding,
+              leading: const Icon(Symbols.visibility),
+              trailing: const Icon(Symbols.chevron_right),
+              onTap: () => showPostWatchSheet(context),
             ),
         ],
       ),

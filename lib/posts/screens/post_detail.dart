@@ -2,8 +2,7 @@ import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart'
-    show RenderAbstractViewport;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:auto_route/auto_route.dart';
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
@@ -16,6 +15,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart'
     show DraggableOverlaySheet;
 import 'package:island/core/config.dart';
+import 'package:island/core/server_compatibility.dart';
+import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/translate.dart';
 import 'package:island/accounts/account_pod.dart';
@@ -1758,6 +1759,10 @@ class _PostActionsMenu extends HookConsumerWidget {
               resourceIdentifier: 'post:${post.id}',
             );
           };
+        case 'postWatch':
+          return () {
+            showPostWatchSheet(context);
+          };
         case 'bookmark':
           return () async {
             try {
@@ -1833,6 +1838,17 @@ class _PostActionsMenu extends HookConsumerWidget {
           icon: post.isBookmarked ? Symbols.bookmark_added : Symbols.bookmark,
         ),
       ),
+      if (serverFeatureEnabled(
+        ref.watch(serverCapabilitiesProvider).value,
+        'posts.watch',
+      ))
+        PopupMenuItem<String>(
+          value: 'postWatch',
+          child: buildMenuItem(
+            label: 'postWatchSettings'.tr(),
+            icon: Symbols.notifications_active,
+          ),
+        ),
       const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: 'share',
@@ -2317,10 +2333,10 @@ class _ArticleDetailLayout extends HookConsumerWidget {
 
     // The contents list comes straight from the article source, so the sidebar
     // can show it on the first frame.
-    final markdown = useMemoized(
-      () => resolvePostMarkdown(post),
-      [post.content, post.contentType],
-    );
+    final markdown = useMemoized(() => resolvePostMarkdown(post), [
+      post.content,
+      post.contentType,
+    ]);
     final sections = useMemoized(() => scanPostSections(markdown), [markdown]);
     // Scroll targets only exist once the body has rendered; match them to the
     // scanned sections (same source, same order).
@@ -2637,7 +2653,6 @@ class _ArticleDetailLayout extends HookConsumerWidget {
       );
     }
 
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -2692,7 +2707,6 @@ class _ArticleDetailLayout extends HookConsumerWidget {
     );
   }
 }
-
 
 class _DesktopMediaBackground extends ConsumerWidget {
   final IDisplayableCloudFile file;
@@ -3405,9 +3419,7 @@ class PostDetailScreen extends HookConsumerWidget {
 
     void refreshPost() {
       ref.invalidate(postProvider(id));
-      ref
-          .read(postRepliesProvider(postRepliesQuery(id)).notifier)
-          .refresh();
+      ref.read(postRepliesProvider(postRepliesQuery(id)).notifier).refresh();
     }
 
     return AppScaffold(
