@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'chat_view_state.dart';
@@ -9,6 +9,7 @@ part of 'chat_view_state.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -20,7 +21,7 @@ mixin _$MessageOperationResult {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageOperationResult);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageOperationResult);
 }
 
 
@@ -29,7 +30,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'MessageOperationResult()';
+    return 'MessageOperationResult()';
 }
 
 
@@ -191,7 +192,7 @@ class _Success implements MessageOperationResult {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Success);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Success);
 }
 
 
@@ -200,7 +201,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'MessageOperationResult.success()';
+    return 'MessageOperationResult.success()';
 }
 
 
@@ -228,16 +229,18 @@ _$FailureCopyWith<_Failure> get copyWith => __$FailureCopyWithImpl<_Failure>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Failure&&(identical(other.error, error) || other.error == error));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Failure&&(identical(other.error, error) || other.error == error));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,error);
+int get hashCode {
+    return Object.hash(runtimeType,error);
+}
 
 @override
 String toString() {
-  return 'MessageOperationResult.failure(error: $error)';
+    return 'MessageOperationResult.failure(error: $error)';
 }
 
 
@@ -289,16 +292,21 @@ $MessageFilterCopyWith<MessageFilter> get copyWith => _$MessageFilterCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageFilter&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.withLinks, withLinks) || other.withLinks == withLinks)&&(identical(other.withAttachments, withAttachments) || other.withAttachments == withAttachments));
+  final _this = this as MessageFilter;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageFilter&&(identical(other.searchQuery, _this.searchQuery) || other.searchQuery == _this.searchQuery)&&(identical(other.withLinks, _this.withLinks) || other.withLinks == _this.withLinks)&&(identical(other.withAttachments, _this.withAttachments) || other.withAttachments == _this.withAttachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,searchQuery,withLinks,withAttachments);
+int get hashCode {
+  final _this = this as MessageFilter;
+  return Object.hash(runtimeType,_this.searchQuery,_this.withLinks,_this.withAttachments);
+}
 
 @override
 String toString() {
-  return 'MessageFilter(searchQuery: $searchQuery, withLinks: $withLinks, withAttachments: $withAttachments)';
+  final _this = this as MessageFilter;
+  return 'MessageFilter(searchQuery: ${_this.searchQuery}, withLinks: ${_this.withLinks}, withAttachments: ${_this.withAttachments})';
 }
 
 
@@ -327,7 +335,7 @@ class _$MessageFilterCopyWithImpl<$Res>
 /// Create a copy of MessageFilter
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? searchQuery = freezed,Object? withLinks = freezed,Object? withAttachments = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(MessageFilter(
 searchQuery: freezed == searchQuery ? _self.searchQuery : searchQuery // ignore: cast_nullable_to_non_nullable
 as String?,withLinks: freezed == withLinks ? _self.withLinks : withLinks // ignore: cast_nullable_to_non_nullable
 as bool?,withAttachments: freezed == withAttachments ? _self.withAttachments : withAttachments // ignore: cast_nullable_to_non_nullable
@@ -489,16 +497,18 @@ _$MessageFilterCopyWith<_MessageFilter> get copyWith => __$MessageFilterCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageFilter&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.withLinks, withLinks) || other.withLinks == withLinks)&&(identical(other.withAttachments, withAttachments) || other.withAttachments == withAttachments));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageFilter&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.withLinks, withLinks) || other.withLinks == withLinks)&&(identical(other.withAttachments, withAttachments) || other.withAttachments == withAttachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,searchQuery,withLinks,withAttachments);
+int get hashCode {
+    return Object.hash(runtimeType,searchQuery,withLinks,withAttachments);
+}
 
 @override
 String toString() {
-  return 'MessageFilter(searchQuery: $searchQuery, withLinks: $withLinks, withAttachments: $withAttachments)';
+    return 'MessageFilter(searchQuery: $searchQuery, withLinks: $withLinks, withAttachments: $withAttachments)';
 }
 
 
@@ -552,16 +562,21 @@ $PaginationStateCopyWith<PaginationState> get copyWith => _$PaginationStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaginationState&&(identical(other.loadedCount, loadedCount) || other.loadedCount == loadedCount)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.totalCount, totalCount) || other.totalCount == totalCount)&&(identical(other.allRemoteFetched, allRemoteFetched) || other.allRemoteFetched == allRemoteFetched));
+  final _this = this as PaginationState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PaginationState&&(identical(other.loadedCount, _this.loadedCount) || other.loadedCount == _this.loadedCount)&&(identical(other.hasMore, _this.hasMore) || other.hasMore == _this.hasMore)&&(identical(other.totalCount, _this.totalCount) || other.totalCount == _this.totalCount)&&(identical(other.allRemoteFetched, _this.allRemoteFetched) || other.allRemoteFetched == _this.allRemoteFetched));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loadedCount,hasMore,totalCount,allRemoteFetched);
+int get hashCode {
+  final _this = this as PaginationState;
+  return Object.hash(runtimeType,_this.loadedCount,_this.hasMore,_this.totalCount,_this.allRemoteFetched);
+}
 
 @override
 String toString() {
-  return 'PaginationState(loadedCount: $loadedCount, hasMore: $hasMore, totalCount: $totalCount, allRemoteFetched: $allRemoteFetched)';
+  final _this = this as PaginationState;
+  return 'PaginationState(loadedCount: ${_this.loadedCount}, hasMore: ${_this.hasMore}, totalCount: ${_this.totalCount}, allRemoteFetched: ${_this.allRemoteFetched})';
 }
 
 
@@ -590,7 +605,7 @@ class _$PaginationStateCopyWithImpl<$Res>
 /// Create a copy of PaginationState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? loadedCount = null,Object? hasMore = null,Object? totalCount = null,Object? allRemoteFetched = null,}) {
-  return _then(_self.copyWith(
+  return _then(PaginationState(
 loadedCount: null == loadedCount ? _self.loadedCount : loadedCount // ignore: cast_nullable_to_non_nullable
 as int,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,totalCount: null == totalCount ? _self.totalCount : totalCount // ignore: cast_nullable_to_non_nullable
@@ -754,16 +769,18 @@ _$PaginationStateCopyWith<_PaginationState> get copyWith => __$PaginationStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaginationState&&(identical(other.loadedCount, loadedCount) || other.loadedCount == loadedCount)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.totalCount, totalCount) || other.totalCount == totalCount)&&(identical(other.allRemoteFetched, allRemoteFetched) || other.allRemoteFetched == allRemoteFetched));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PaginationState&&(identical(other.loadedCount, loadedCount) || other.loadedCount == loadedCount)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.totalCount, totalCount) || other.totalCount == totalCount)&&(identical(other.allRemoteFetched, allRemoteFetched) || other.allRemoteFetched == allRemoteFetched));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loadedCount,hasMore,totalCount,allRemoteFetched);
+int get hashCode {
+    return Object.hash(runtimeType,loadedCount,hasMore,totalCount,allRemoteFetched);
+}
 
 @override
 String toString() {
-  return 'PaginationState(loadedCount: $loadedCount, hasMore: $hasMore, totalCount: $totalCount, allRemoteFetched: $allRemoteFetched)';
+    return 'PaginationState(loadedCount: $loadedCount, hasMore: $hasMore, totalCount: $totalCount, allRemoteFetched: $allRemoteFetched)';
 }
 
 

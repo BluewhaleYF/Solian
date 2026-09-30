@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'bot.dart';
@@ -9,6 +9,7 @@ part of 'bot.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $BotCopyWith<Bot> get copyWith => _$BotCopyWithImpl<Bot>(this as Bot, _$identity
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Bot&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.account, account) || other.account == account)&&(identical(other.developer, developer) || other.developer == developer));
+  final _this = this as Bot;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Bot&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.isActive, _this.isActive) || other.isActive == _this.isActive)&&(identical(other.projectId, _this.projectId) || other.projectId == _this.projectId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.account, _this.account) || other.account == _this.account)&&(identical(other.developer, _this.developer) || other.developer == _this.developer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,isActive,projectId,createdAt,updatedAt,account,developer);
+int get hashCode {
+  final _this = this as Bot;
+  return Object.hash(runtimeType,_this.id,_this.slug,_this.isActive,_this.projectId,_this.createdAt,_this.updatedAt,_this.account,_this.developer);
+}
 
 @override
 String toString() {
-  return 'Bot(id: $id, slug: $slug, isActive: $isActive, projectId: $projectId, createdAt: $createdAt, updatedAt: $updatedAt, account: $account, developer: $developer)';
+  final _this = this as Bot;
+  return 'Bot(id: ${_this.id}, slug: ${_this.slug}, isActive: ${_this.isActive}, projectId: ${_this.projectId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, account: ${_this.account}, developer: ${_this.developer})';
 }
 
 
@@ -66,7 +72,7 @@ class _$BotCopyWithImpl<$Res>
 /// Create a copy of Bot
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? slug = null,Object? isActive = null,Object? projectId = null,Object? createdAt = null,Object? updatedAt = null,Object? account = null,Object? developer = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(Bot(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
 as String,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
@@ -256,16 +262,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Bot&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.account, account) || other.account == account)&&(identical(other.developer, developer) || other.developer == developer));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Bot&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.account, account) || other.account == account)&&(identical(other.developer, developer) || other.developer == developer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,isActive,projectId,createdAt,updatedAt,account,developer);
+int get hashCode {
+    return Object.hash(runtimeType,id,slug,isActive,projectId,createdAt,updatedAt,account,developer);
+}
 
 @override
 String toString() {
-  return 'Bot(id: $id, slug: $slug, isActive: $isActive, projectId: $projectId, createdAt: $createdAt, updatedAt: $updatedAt, account: $account, developer: $developer)';
+    return 'Bot(id: $id, slug: $slug, isActive: $isActive, projectId: $projectId, createdAt: $createdAt, updatedAt: $updatedAt, account: $account, developer: $developer)';
 }
 
 
@@ -348,16 +356,21 @@ $BotConfigCopyWith<BotConfig> get copyWith => _$BotConfigCopyWithImpl<BotConfig>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotConfig&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.isInteractive, isInteractive) || other.isInteractive == isInteractive)&&const DeepCollectionEquality().equals(other.allowedRealms, allowedRealms)&&const DeepCollectionEquality().equals(other.allowedChatTypes, allowedChatTypes)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  final _this = this as BotConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotConfig&&(identical(other.isPublic, _this.isPublic) || other.isPublic == _this.isPublic)&&(identical(other.isInteractive, _this.isInteractive) || other.isInteractive == _this.isInteractive)&&const DeepCollectionEquality().equals(other.allowedRealms, _this.allowedRealms)&&const DeepCollectionEquality().equals(other.allowedChatTypes, _this.allowedChatTypes)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isPublic,isInteractive,const DeepCollectionEquality().hash(allowedRealms),const DeepCollectionEquality().hash(allowedChatTypes),const DeepCollectionEquality().hash(metadata));
+int get hashCode {
+  final _this = this as BotConfig;
+  return Object.hash(runtimeType,_this.isPublic,_this.isInteractive,const DeepCollectionEquality().hash(_this.allowedRealms),const DeepCollectionEquality().hash(_this.allowedChatTypes),const DeepCollectionEquality().hash(_this.metadata));
+}
 
 @override
 String toString() {
-  return 'BotConfig(isPublic: $isPublic, isInteractive: $isInteractive, allowedRealms: $allowedRealms, allowedChatTypes: $allowedChatTypes, metadata: $metadata)';
+  final _this = this as BotConfig;
+  return 'BotConfig(isPublic: ${_this.isPublic}, isInteractive: ${_this.isInteractive}, allowedRealms: ${_this.allowedRealms}, allowedChatTypes: ${_this.allowedChatTypes}, metadata: ${_this.metadata})';
 }
 
 
@@ -386,7 +399,7 @@ class _$BotConfigCopyWithImpl<$Res>
 /// Create a copy of BotConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? isPublic = null,Object? isInteractive = null,Object? allowedRealms = null,Object? allowedChatTypes = null,Object? metadata = null,}) {
-  return _then(_self.copyWith(
+  return _then(BotConfig(
 isPublic: null == isPublic ? _self.isPublic : isPublic // ignore: cast_nullable_to_non_nullable
 as bool,isInteractive: null == isInteractive ? _self.isInteractive : isInteractive // ignore: cast_nullable_to_non_nullable
 as bool,allowedRealms: null == allowedRealms ? _self.allowedRealms : allowedRealms // ignore: cast_nullable_to_non_nullable
@@ -527,7 +540,7 @@ return $default(_that.isPublic,_that.isInteractive,_that.allowedRealms,_that.all
 @JsonSerializable()
 
 class _BotConfig implements BotConfig {
-  const _BotConfig({this.isPublic = false, this.isInteractive = false, final  List<String> allowedRealms = const [], final  List<String> allowedChatTypes = const [], final  Map<String, dynamic> metadata = const {}}): _allowedRealms = allowedRealms,_allowedChatTypes = allowedChatTypes,_metadata = metadata;
+  const _BotConfig({this.isPublic = false, this.isInteractive = false,  List<String> allowedRealms = const [],  List<String> allowedChatTypes = const [],  Map<String, dynamic> metadata = const {}}): _allowedRealms = allowedRealms,_allowedChatTypes = allowedChatTypes,_metadata = metadata;
   factory _BotConfig.fromJson(Map<String, dynamic> json) => _$BotConfigFromJson(json);
 
 @override@JsonKey() final  bool isPublic;
@@ -567,16 +580,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotConfig&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.isInteractive, isInteractive) || other.isInteractive == isInteractive)&&const DeepCollectionEquality().equals(other._allowedRealms, _allowedRealms)&&const DeepCollectionEquality().equals(other._allowedChatTypes, _allowedChatTypes)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotConfig&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.isInteractive, isInteractive) || other.isInteractive == isInteractive)&&const DeepCollectionEquality().equals(other.allowedRealms, _allowedRealms)&&const DeepCollectionEquality().equals(other.allowedChatTypes, _allowedChatTypes)&&const DeepCollectionEquality().equals(other.metadata, _metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isPublic,isInteractive,const DeepCollectionEquality().hash(_allowedRealms),const DeepCollectionEquality().hash(_allowedChatTypes),const DeepCollectionEquality().hash(_metadata));
+int get hashCode {
+    return Object.hash(runtimeType,isPublic,isInteractive,const DeepCollectionEquality().hash(_allowedRealms),const DeepCollectionEquality().hash(_allowedChatTypes),const DeepCollectionEquality().hash(_metadata));
+}
 
 @override
 String toString() {
-  return 'BotConfig(isPublic: $isPublic, isInteractive: $isInteractive, allowedRealms: $allowedRealms, allowedChatTypes: $allowedChatTypes, metadata: $metadata)';
+    return 'BotConfig(isPublic: $isPublic, isInteractive: $isInteractive, allowedRealms: $allowedRealms, allowedChatTypes: $allowedChatTypes, metadata: $metadata)';
 }
 
 
@@ -635,16 +650,21 @@ $BotLinksCopyWith<BotLinks> get copyWith => _$BotLinksCopyWithImpl<BotLinks>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotLinks&&(identical(other.website, website) || other.website == website)&&(identical(other.documentation, documentation) || other.documentation == documentation)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
+  final _this = this as BotLinks;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotLinks&&(identical(other.website, _this.website) || other.website == _this.website)&&(identical(other.documentation, _this.documentation) || other.documentation == _this.documentation)&&(identical(other.privacyPolicy, _this.privacyPolicy) || other.privacyPolicy == _this.privacyPolicy)&&(identical(other.termsOfService, _this.termsOfService) || other.termsOfService == _this.termsOfService));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,website,documentation,privacyPolicy,termsOfService);
+int get hashCode {
+  final _this = this as BotLinks;
+  return Object.hash(runtimeType,_this.website,_this.documentation,_this.privacyPolicy,_this.termsOfService);
+}
 
 @override
 String toString() {
-  return 'BotLinks(website: $website, documentation: $documentation, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
+  final _this = this as BotLinks;
+  return 'BotLinks(website: ${_this.website}, documentation: ${_this.documentation}, privacyPolicy: ${_this.privacyPolicy}, termsOfService: ${_this.termsOfService})';
 }
 
 
@@ -673,7 +693,7 @@ class _$BotLinksCopyWithImpl<$Res>
 /// Create a copy of BotLinks
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? website = freezed,Object? documentation = freezed,Object? privacyPolicy = freezed,Object? termsOfService = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(BotLinks(
 website: freezed == website ? _self.website : website // ignore: cast_nullable_to_non_nullable
 as String?,documentation: freezed == documentation ? _self.documentation : documentation // ignore: cast_nullable_to_non_nullable
 as String?,privacyPolicy: freezed == privacyPolicy ? _self.privacyPolicy : privacyPolicy // ignore: cast_nullable_to_non_nullable
@@ -834,16 +854,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotLinks&&(identical(other.website, website) || other.website == website)&&(identical(other.documentation, documentation) || other.documentation == documentation)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotLinks&&(identical(other.website, website) || other.website == website)&&(identical(other.documentation, documentation) || other.documentation == documentation)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,website,documentation,privacyPolicy,termsOfService);
+int get hashCode {
+    return Object.hash(runtimeType,website,documentation,privacyPolicy,termsOfService);
+}
 
 @override
 String toString() {
-  return 'BotLinks(website: $website, documentation: $documentation, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
+    return 'BotLinks(website: $website, documentation: $documentation, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
 }
 
 
@@ -901,16 +923,21 @@ $BotSecretCopyWith<BotSecret> get copyWith => _$BotSecretCopyWithImpl<BotSecret>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.botId, botId) || other.botId == botId));
+  final _this = this as BotSecret;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BotSecret&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.secret, _this.secret) || other.secret == _this.secret)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.expiredAt, _this.expiredAt) || other.expiredAt == _this.expiredAt)&&(identical(other.botId, _this.botId) || other.botId == _this.botId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,secret,description,expiredAt,botId);
+int get hashCode {
+  final _this = this as BotSecret;
+  return Object.hash(runtimeType,_this.id,_this.secret,_this.description,_this.expiredAt,_this.botId);
+}
 
 @override
 String toString() {
-  return 'BotSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, botId: $botId)';
+  final _this = this as BotSecret;
+  return 'BotSecret(id: ${_this.id}, secret: ${_this.secret}, description: ${_this.description}, expiredAt: ${_this.expiredAt}, botId: ${_this.botId})';
 }
 
 
@@ -939,7 +966,7 @@ class _$BotSecretCopyWithImpl<$Res>
 /// Create a copy of BotSecret
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? secret = null,Object? description = freezed,Object? expiredAt = freezed,Object? botId = null,}) {
-  return _then(_self.copyWith(
+  return _then(BotSecret(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,secret: null == secret ? _self.secret : secret // ignore: cast_nullable_to_non_nullable
 as String,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -1102,16 +1129,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.botId, botId) || other.botId == botId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BotSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.botId, botId) || other.botId == botId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,secret,description,expiredAt,botId);
+int get hashCode {
+    return Object.hash(runtimeType,id,secret,description,expiredAt,botId);
+}
 
 @override
 String toString() {
-  return 'BotSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, botId: $botId)';
+    return 'BotSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, botId: $botId)';
 }
 
 

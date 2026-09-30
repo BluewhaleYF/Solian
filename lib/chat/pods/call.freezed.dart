@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'call.dart';
@@ -9,6 +9,7 @@ part of 'call.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $CallStateCopyWith<CallState> get copyWith => _$CallStateCopyWithImpl<CallState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CallState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.isReconnecting, isReconnecting) || other.isReconnecting == isReconnecting)&&(identical(other.isMicrophoneEnabled, isMicrophoneEnabled) || other.isMicrophoneEnabled == isMicrophoneEnabled)&&(identical(other.isCameraEnabled, isCameraEnabled) || other.isCameraEnabled == isCameraEnabled)&&(identical(other.isScreenSharing, isScreenSharing) || other.isScreenSharing == isScreenSharing)&&(identical(other.isSpeakerphone, isSpeakerphone) || other.isSpeakerphone == isSpeakerphone)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt)&&(identical(other.viewMode, viewMode) || other.viewMode == viewMode)&&(identical(other.participantSyncVersion, participantSyncVersion) || other.participantSyncVersion == participantSyncVersion)&&(identical(other.reconnectAttempt, reconnectAttempt) || other.reconnectAttempt == reconnectAttempt)&&(identical(other.hasJoined, hasJoined) || other.hasJoined == hasJoined)&&(identical(other.error, error) || other.error == error));
+  final _this = this as CallState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CallState&&(identical(other.isConnected, _this.isConnected) || other.isConnected == _this.isConnected)&&(identical(other.isReconnecting, _this.isReconnecting) || other.isReconnecting == _this.isReconnecting)&&(identical(other.isMicrophoneEnabled, _this.isMicrophoneEnabled) || other.isMicrophoneEnabled == _this.isMicrophoneEnabled)&&(identical(other.isCameraEnabled, _this.isCameraEnabled) || other.isCameraEnabled == _this.isCameraEnabled)&&(identical(other.isScreenSharing, _this.isScreenSharing) || other.isScreenSharing == _this.isScreenSharing)&&(identical(other.isSpeakerphone, _this.isSpeakerphone) || other.isSpeakerphone == _this.isSpeakerphone)&&(identical(other.duration, _this.duration) || other.duration == _this.duration)&&(identical(other.joinedAt, _this.joinedAt) || other.joinedAt == _this.joinedAt)&&(identical(other.viewMode, _this.viewMode) || other.viewMode == _this.viewMode)&&(identical(other.participantSyncVersion, _this.participantSyncVersion) || other.participantSyncVersion == _this.participantSyncVersion)&&(identical(other.reconnectAttempt, _this.reconnectAttempt) || other.reconnectAttempt == _this.reconnectAttempt)&&(identical(other.hasJoined, _this.hasJoined) || other.hasJoined == _this.hasJoined)&&(identical(other.error, _this.error) || other.error == _this.error));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isConnected,isReconnecting,isMicrophoneEnabled,isCameraEnabled,isScreenSharing,isSpeakerphone,duration,joinedAt,viewMode,participantSyncVersion,reconnectAttempt,hasJoined,error);
+int get hashCode {
+  final _this = this as CallState;
+  return Object.hash(runtimeType,_this.isConnected,_this.isReconnecting,_this.isMicrophoneEnabled,_this.isCameraEnabled,_this.isScreenSharing,_this.isSpeakerphone,_this.duration,_this.joinedAt,_this.viewMode,_this.participantSyncVersion,_this.reconnectAttempt,_this.hasJoined,_this.error);
+}
 
 @override
 String toString() {
-  return 'CallState(isConnected: $isConnected, isReconnecting: $isReconnecting, isMicrophoneEnabled: $isMicrophoneEnabled, isCameraEnabled: $isCameraEnabled, isScreenSharing: $isScreenSharing, isSpeakerphone: $isSpeakerphone, duration: $duration, joinedAt: $joinedAt, viewMode: $viewMode, participantSyncVersion: $participantSyncVersion, reconnectAttempt: $reconnectAttempt, hasJoined: $hasJoined, error: $error)';
+  final _this = this as CallState;
+  return 'CallState(isConnected: ${_this.isConnected}, isReconnecting: ${_this.isReconnecting}, isMicrophoneEnabled: ${_this.isMicrophoneEnabled}, isCameraEnabled: ${_this.isCameraEnabled}, isScreenSharing: ${_this.isScreenSharing}, isSpeakerphone: ${_this.isSpeakerphone}, duration: ${_this.duration}, joinedAt: ${_this.joinedAt}, viewMode: ${_this.viewMode}, participantSyncVersion: ${_this.participantSyncVersion}, reconnectAttempt: ${_this.reconnectAttempt}, hasJoined: ${_this.hasJoined}, error: ${_this.error})';
 }
 
 
@@ -63,7 +69,7 @@ class _$CallStateCopyWithImpl<$Res>
 /// Create a copy of CallState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? isConnected = null,Object? isReconnecting = null,Object? isMicrophoneEnabled = null,Object? isCameraEnabled = null,Object? isScreenSharing = null,Object? isSpeakerphone = null,Object? duration = null,Object? joinedAt = freezed,Object? viewMode = null,Object? participantSyncVersion = null,Object? reconnectAttempt = null,Object? hasJoined = null,Object? error = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CallState(
 isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
 as bool,isReconnecting: null == isReconnecting ? _self.isReconnecting : isReconnecting // ignore: cast_nullable_to_non_nullable
 as bool,isMicrophoneEnabled: null == isMicrophoneEnabled ? _self.isMicrophoneEnabled : isMicrophoneEnabled // ignore: cast_nullable_to_non_nullable
@@ -239,16 +245,18 @@ _$CallStateCopyWith<_CallState> get copyWith => __$CallStateCopyWithImpl<_CallSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CallState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.isReconnecting, isReconnecting) || other.isReconnecting == isReconnecting)&&(identical(other.isMicrophoneEnabled, isMicrophoneEnabled) || other.isMicrophoneEnabled == isMicrophoneEnabled)&&(identical(other.isCameraEnabled, isCameraEnabled) || other.isCameraEnabled == isCameraEnabled)&&(identical(other.isScreenSharing, isScreenSharing) || other.isScreenSharing == isScreenSharing)&&(identical(other.isSpeakerphone, isSpeakerphone) || other.isSpeakerphone == isSpeakerphone)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt)&&(identical(other.viewMode, viewMode) || other.viewMode == viewMode)&&(identical(other.participantSyncVersion, participantSyncVersion) || other.participantSyncVersion == participantSyncVersion)&&(identical(other.reconnectAttempt, reconnectAttempt) || other.reconnectAttempt == reconnectAttempt)&&(identical(other.hasJoined, hasJoined) || other.hasJoined == hasJoined)&&(identical(other.error, error) || other.error == error));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CallState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.isReconnecting, isReconnecting) || other.isReconnecting == isReconnecting)&&(identical(other.isMicrophoneEnabled, isMicrophoneEnabled) || other.isMicrophoneEnabled == isMicrophoneEnabled)&&(identical(other.isCameraEnabled, isCameraEnabled) || other.isCameraEnabled == isCameraEnabled)&&(identical(other.isScreenSharing, isScreenSharing) || other.isScreenSharing == isScreenSharing)&&(identical(other.isSpeakerphone, isSpeakerphone) || other.isSpeakerphone == isSpeakerphone)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt)&&(identical(other.viewMode, viewMode) || other.viewMode == viewMode)&&(identical(other.participantSyncVersion, participantSyncVersion) || other.participantSyncVersion == participantSyncVersion)&&(identical(other.reconnectAttempt, reconnectAttempt) || other.reconnectAttempt == reconnectAttempt)&&(identical(other.hasJoined, hasJoined) || other.hasJoined == hasJoined)&&(identical(other.error, error) || other.error == error));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isConnected,isReconnecting,isMicrophoneEnabled,isCameraEnabled,isScreenSharing,isSpeakerphone,duration,joinedAt,viewMode,participantSyncVersion,reconnectAttempt,hasJoined,error);
+int get hashCode {
+    return Object.hash(runtimeType,isConnected,isReconnecting,isMicrophoneEnabled,isCameraEnabled,isScreenSharing,isSpeakerphone,duration,joinedAt,viewMode,participantSyncVersion,reconnectAttempt,hasJoined,error);
+}
 
 @override
 String toString() {
-  return 'CallState(isConnected: $isConnected, isReconnecting: $isReconnecting, isMicrophoneEnabled: $isMicrophoneEnabled, isCameraEnabled: $isCameraEnabled, isScreenSharing: $isScreenSharing, isSpeakerphone: $isSpeakerphone, duration: $duration, joinedAt: $joinedAt, viewMode: $viewMode, participantSyncVersion: $participantSyncVersion, reconnectAttempt: $reconnectAttempt, hasJoined: $hasJoined, error: $error)';
+    return 'CallState(isConnected: $isConnected, isReconnecting: $isReconnecting, isMicrophoneEnabled: $isMicrophoneEnabled, isCameraEnabled: $isCameraEnabled, isScreenSharing: $isScreenSharing, isSpeakerphone: $isSpeakerphone, duration: $duration, joinedAt: $joinedAt, viewMode: $viewMode, participantSyncVersion: $participantSyncVersion, reconnectAttempt: $reconnectAttempt, hasJoined: $hasJoined, error: $error)';
 }
 
 
@@ -301,7 +309,7 @@ as String?,
 /// @nodoc
 mixin _$CallParticipantLive {
 
- CallParticipant get participant; lk.Participant get remoteParticipant;
+ CallParticipant get participant; lk.Participant<lk.TrackPublication<lk.Track>> get remoteParticipant;
 /// Create a copy of CallParticipantLive
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -312,16 +320,21 @@ $CallParticipantLiveCopyWith<CallParticipantLive> get copyWith => _$CallParticip
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CallParticipantLive&&(identical(other.participant, participant) || other.participant == participant)&&(identical(other.remoteParticipant, remoteParticipant) || other.remoteParticipant == remoteParticipant));
+  final _this = this as CallParticipantLive;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CallParticipantLive&&(identical(other.participant, _this.participant) || other.participant == _this.participant)&&(identical(other.remoteParticipant, _this.remoteParticipant) || other.remoteParticipant == _this.remoteParticipant));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,participant,remoteParticipant);
+int get hashCode {
+  final _this = this as CallParticipantLive;
+  return Object.hash(runtimeType,_this.participant,_this.remoteParticipant);
+}
 
 @override
 String toString() {
-  return 'CallParticipantLive(participant: $participant, remoteParticipant: $remoteParticipant)';
+  final _this = this as CallParticipantLive;
+  return 'CallParticipantLive(participant: ${_this.participant}, remoteParticipant: ${_this.remoteParticipant})';
 }
 
 
@@ -332,7 +345,7 @@ abstract mixin class $CallParticipantLiveCopyWith<$Res>  {
   factory $CallParticipantLiveCopyWith(CallParticipantLive value, $Res Function(CallParticipantLive) _then) = _$CallParticipantLiveCopyWithImpl;
 @useResult
 $Res call({
- CallParticipant participant, lk.Participant remoteParticipant
+ CallParticipant participant, lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant
 });
 
 
@@ -350,10 +363,10 @@ class _$CallParticipantLiveCopyWithImpl<$Res>
 /// Create a copy of CallParticipantLive
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? participant = null,Object? remoteParticipant = null,}) {
-  return _then(_self.copyWith(
+  return _then(CallParticipantLive(
 participant: null == participant ? _self.participant : participant // ignore: cast_nullable_to_non_nullable
 as CallParticipant,remoteParticipant: null == remoteParticipant ? _self.remoteParticipant : remoteParticipant // ignore: cast_nullable_to_non_nullable
-as lk.Participant,
+as lk.Participant<lk.TrackPublication<lk.Track>>,
   ));
 }
 /// Create a copy of CallParticipantLive
@@ -444,7 +457,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CallParticipant participant,  lk.Participant remoteParticipant)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CallParticipant participant,  lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CallParticipantLive() when $default != null:
 return $default(_that.participant,_that.remoteParticipant);case _:
@@ -465,7 +478,7 @@ return $default(_that.participant,_that.remoteParticipant);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CallParticipant participant,  lk.Participant remoteParticipant)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CallParticipant participant,  lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant)  $default,) {final _that = this;
 switch (_that) {
 case _CallParticipantLive():
 return $default(_that.participant,_that.remoteParticipant);}
@@ -482,7 +495,7 @@ return $default(_that.participant,_that.remoteParticipant);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CallParticipant participant,  lk.Participant remoteParticipant)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CallParticipant participant,  lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant)?  $default,) {final _that = this;
 switch (_that) {
 case _CallParticipantLive() when $default != null:
 return $default(_that.participant,_that.remoteParticipant);case _:
@@ -501,7 +514,7 @@ class _CallParticipantLive extends CallParticipantLive {
   
 
 @override final  CallParticipant participant;
-@override final  lk.Participant remoteParticipant;
+@override final  lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant;
 
 /// Create a copy of CallParticipantLive
 /// with the given fields replaced by the non-null parameter values.
@@ -513,16 +526,18 @@ _$CallParticipantLiveCopyWith<_CallParticipantLive> get copyWith => __$CallParti
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CallParticipantLive&&(identical(other.participant, participant) || other.participant == participant)&&(identical(other.remoteParticipant, remoteParticipant) || other.remoteParticipant == remoteParticipant));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CallParticipantLive&&(identical(other.participant, participant) || other.participant == participant)&&(identical(other.remoteParticipant, remoteParticipant) || other.remoteParticipant == remoteParticipant));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,participant,remoteParticipant);
+int get hashCode {
+    return Object.hash(runtimeType,participant,remoteParticipant);
+}
 
 @override
 String toString() {
-  return 'CallParticipantLive(participant: $participant, remoteParticipant: $remoteParticipant)';
+    return 'CallParticipantLive(participant: $participant, remoteParticipant: $remoteParticipant)';
 }
 
 
@@ -533,7 +548,7 @@ abstract mixin class _$CallParticipantLiveCopyWith<$Res> implements $CallPartici
   factory _$CallParticipantLiveCopyWith(_CallParticipantLive value, $Res Function(_CallParticipantLive) _then) = __$CallParticipantLiveCopyWithImpl;
 @override @useResult
 $Res call({
- CallParticipant participant, lk.Participant remoteParticipant
+ CallParticipant participant, lk.Participant<lk.TrackPublication<lk.Track>> remoteParticipant
 });
 
 
@@ -554,7 +569,7 @@ class __$CallParticipantLiveCopyWithImpl<$Res>
   return _then(_CallParticipantLive(
 participant: null == participant ? _self.participant : participant // ignore: cast_nullable_to_non_nullable
 as CallParticipant,remoteParticipant: null == remoteParticipant ? _self.remoteParticipant : remoteParticipant // ignore: cast_nullable_to_non_nullable
-as lk.Participant,
+as lk.Participant<lk.TrackPublication<lk.Track>>,
   ));
 }
 

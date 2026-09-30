@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'custom_app.dart';
@@ -9,6 +9,7 @@ part of 'custom_app.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $CustomAppCopyWith<CustomApp> get copyWith => _$CustomAppCopyWithImpl<CustomApp>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomApp&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&(identical(other.oauthConfig, oauthConfig) || other.oauthConfig == oauthConfig)&&(identical(other.links, links) || other.links == links)&&const DeepCollectionEquality().equals(other.secrets, secrets)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.paymentWalletId, paymentWalletId) || other.paymentWalletId == paymentWalletId));
+  final _this = this as CustomApp;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomApp&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.picture, _this.picture) || other.picture == _this.picture)&&(identical(other.background, _this.background) || other.background == _this.background)&&(identical(other.verification, _this.verification) || other.verification == _this.verification)&&(identical(other.oauthConfig, _this.oauthConfig) || other.oauthConfig == _this.oauthConfig)&&(identical(other.links, _this.links) || other.links == _this.links)&&const DeepCollectionEquality().equals(other.secrets, _this.secrets)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.paymentWalletId, _this.paymentWalletId) || other.paymentWalletId == _this.paymentWalletId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,oauthConfig,links,const DeepCollectionEquality().hash(secrets),publisherId,paymentWalletId);
+int get hashCode {
+  final _this = this as CustomApp;
+  return Object.hash(runtimeType,_this.id,_this.slug,_this.name,_this.description,_this.status,_this.picture,_this.background,_this.verification,_this.oauthConfig,_this.links,const DeepCollectionEquality().hash(_this.secrets),_this.publisherId,_this.paymentWalletId);
+}
 
 @override
 String toString() {
-  return 'CustomApp(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, oauthConfig: $oauthConfig, links: $links, secrets: $secrets, publisherId: $publisherId, paymentWalletId: $paymentWalletId)';
+  final _this = this as CustomApp;
+  return 'CustomApp(id: ${_this.id}, slug: ${_this.slug}, name: ${_this.name}, description: ${_this.description}, status: ${_this.status}, picture: ${_this.picture}, background: ${_this.background}, verification: ${_this.verification}, oauthConfig: ${_this.oauthConfig}, links: ${_this.links}, secrets: ${_this.secrets}, publisherId: ${_this.publisherId}, paymentWalletId: ${_this.paymentWalletId})';
 }
 
 
@@ -66,7 +72,7 @@ class _$CustomAppCopyWithImpl<$Res>
 /// Create a copy of CustomApp
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? slug = null,Object? name = null,Object? description = freezed,Object? status = null,Object? picture = freezed,Object? background = freezed,Object? verification = freezed,Object? oauthConfig = freezed,Object? links = freezed,Object? secrets = null,Object? publisherId = null,Object? paymentWalletId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CustomApp(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -275,7 +281,7 @@ return $default(_that.id,_that.slug,_that.name,_that.description,_that.status,_t
 @JsonSerializable()
 
 class _CustomApp implements CustomApp {
-  const _CustomApp({this.id = '', this.slug = '', this.name = '', this.description, this.status = 0, this.picture, this.background, this.verification, this.oauthConfig, this.links, final  List<CustomAppSecret> secrets = const [], this.publisherId = '', this.paymentWalletId}): _secrets = secrets;
+  const _CustomApp({this.id = '', this.slug = '', this.name = '', this.description, this.status = 0, this.picture, this.background, this.verification, this.oauthConfig, this.links,  List<CustomAppSecret> secrets = const [], this.publisherId = '', this.paymentWalletId}): _secrets = secrets;
   factory _CustomApp.fromJson(Map<String, dynamic> json) => _$CustomAppFromJson(json);
 
 @override@JsonKey() final  String id;
@@ -311,16 +317,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomApp&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&(identical(other.oauthConfig, oauthConfig) || other.oauthConfig == oauthConfig)&&(identical(other.links, links) || other.links == links)&&const DeepCollectionEquality().equals(other._secrets, _secrets)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.paymentWalletId, paymentWalletId) || other.paymentWalletId == paymentWalletId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomApp&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&(identical(other.oauthConfig, oauthConfig) || other.oauthConfig == oauthConfig)&&(identical(other.links, links) || other.links == links)&&const DeepCollectionEquality().equals(other.secrets, _secrets)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.paymentWalletId, paymentWalletId) || other.paymentWalletId == paymentWalletId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,oauthConfig,links,const DeepCollectionEquality().hash(_secrets),publisherId,paymentWalletId);
+int get hashCode {
+    return Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,oauthConfig,links,const DeepCollectionEquality().hash(_secrets),publisherId,paymentWalletId);
+}
 
 @override
 String toString() {
-  return 'CustomApp(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, oauthConfig: $oauthConfig, links: $links, secrets: $secrets, publisherId: $publisherId, paymentWalletId: $paymentWalletId)';
+    return 'CustomApp(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, oauthConfig: $oauthConfig, links: $links, secrets: $secrets, publisherId: $publisherId, paymentWalletId: $paymentWalletId)';
 }
 
 
@@ -447,16 +455,21 @@ $CustomAppLinksCopyWith<CustomAppLinks> get copyWith => _$CustomAppLinksCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppLinks&&(identical(other.homePage, homePage) || other.homePage == homePage)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
+  final _this = this as CustomAppLinks;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppLinks&&(identical(other.homePage, _this.homePage) || other.homePage == _this.homePage)&&(identical(other.privacyPolicy, _this.privacyPolicy) || other.privacyPolicy == _this.privacyPolicy)&&(identical(other.termsOfService, _this.termsOfService) || other.termsOfService == _this.termsOfService));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,homePage,privacyPolicy,termsOfService);
+int get hashCode {
+  final _this = this as CustomAppLinks;
+  return Object.hash(runtimeType,_this.homePage,_this.privacyPolicy,_this.termsOfService);
+}
 
 @override
 String toString() {
-  return 'CustomAppLinks(homePage: $homePage, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
+  final _this = this as CustomAppLinks;
+  return 'CustomAppLinks(homePage: ${_this.homePage}, privacyPolicy: ${_this.privacyPolicy}, termsOfService: ${_this.termsOfService})';
 }
 
 
@@ -485,7 +498,7 @@ class _$CustomAppLinksCopyWithImpl<$Res>
 /// Create a copy of CustomAppLinks
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? homePage = freezed,Object? privacyPolicy = freezed,Object? termsOfService = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CustomAppLinks(
 homePage: freezed == homePage ? _self.homePage : homePage // ignore: cast_nullable_to_non_nullable
 as String?,privacyPolicy: freezed == privacyPolicy ? _self.privacyPolicy : privacyPolicy // ignore: cast_nullable_to_non_nullable
 as String?,termsOfService: freezed == termsOfService ? _self.termsOfService : termsOfService // ignore: cast_nullable_to_non_nullable
@@ -644,16 +657,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppLinks&&(identical(other.homePage, homePage) || other.homePage == homePage)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppLinks&&(identical(other.homePage, homePage) || other.homePage == homePage)&&(identical(other.privacyPolicy, privacyPolicy) || other.privacyPolicy == privacyPolicy)&&(identical(other.termsOfService, termsOfService) || other.termsOfService == termsOfService));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,homePage,privacyPolicy,termsOfService);
+int get hashCode {
+    return Object.hash(runtimeType,homePage,privacyPolicy,termsOfService);
+}
 
 @override
 String toString() {
-  return 'CustomAppLinks(homePage: $homePage, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
+    return 'CustomAppLinks(homePage: $homePage, privacyPolicy: $privacyPolicy, termsOfService: $termsOfService)';
 }
 
 
@@ -710,16 +725,21 @@ $CustomAppOauthConfigCopyWith<CustomAppOauthConfig> get copyWith => _$CustomAppO
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppOauthConfig&&(identical(other.clientUri, clientUri) || other.clientUri == clientUri)&&const DeepCollectionEquality().equals(other.redirectUris, redirectUris)&&const DeepCollectionEquality().equals(other.postLogoutRedirectUris, postLogoutRedirectUris)&&const DeepCollectionEquality().equals(other.allowedScopes, allowedScopes)&&const DeepCollectionEquality().equals(other.allowedGrantTypes, allowedGrantTypes)&&(identical(other.requirePkce, requirePkce) || other.requirePkce == requirePkce)&&(identical(other.allowOfflineAccess, allowOfflineAccess) || other.allowOfflineAccess == allowOfflineAccess)&&(identical(other.isPublicClient, isPublicClient) || other.isPublicClient == isPublicClient));
+  final _this = this as CustomAppOauthConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppOauthConfig&&(identical(other.clientUri, _this.clientUri) || other.clientUri == _this.clientUri)&&const DeepCollectionEquality().equals(other.redirectUris, _this.redirectUris)&&const DeepCollectionEquality().equals(other.postLogoutRedirectUris, _this.postLogoutRedirectUris)&&const DeepCollectionEquality().equals(other.allowedScopes, _this.allowedScopes)&&const DeepCollectionEquality().equals(other.allowedGrantTypes, _this.allowedGrantTypes)&&(identical(other.requirePkce, _this.requirePkce) || other.requirePkce == _this.requirePkce)&&(identical(other.allowOfflineAccess, _this.allowOfflineAccess) || other.allowOfflineAccess == _this.allowOfflineAccess)&&(identical(other.isPublicClient, _this.isPublicClient) || other.isPublicClient == _this.isPublicClient));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,clientUri,const DeepCollectionEquality().hash(redirectUris),const DeepCollectionEquality().hash(postLogoutRedirectUris),const DeepCollectionEquality().hash(allowedScopes),const DeepCollectionEquality().hash(allowedGrantTypes),requirePkce,allowOfflineAccess,isPublicClient);
+int get hashCode {
+  final _this = this as CustomAppOauthConfig;
+  return Object.hash(runtimeType,_this.clientUri,const DeepCollectionEquality().hash(_this.redirectUris),const DeepCollectionEquality().hash(_this.postLogoutRedirectUris),const DeepCollectionEquality().hash(_this.allowedScopes),const DeepCollectionEquality().hash(_this.allowedGrantTypes),_this.requirePkce,_this.allowOfflineAccess,_this.isPublicClient);
+}
 
 @override
 String toString() {
-  return 'CustomAppOauthConfig(clientUri: $clientUri, redirectUris: $redirectUris, postLogoutRedirectUris: $postLogoutRedirectUris, allowedScopes: $allowedScopes, allowedGrantTypes: $allowedGrantTypes, requirePkce: $requirePkce, allowOfflineAccess: $allowOfflineAccess, isPublicClient: $isPublicClient)';
+  final _this = this as CustomAppOauthConfig;
+  return 'CustomAppOauthConfig(clientUri: ${_this.clientUri}, redirectUris: ${_this.redirectUris}, postLogoutRedirectUris: ${_this.postLogoutRedirectUris}, allowedScopes: ${_this.allowedScopes}, allowedGrantTypes: ${_this.allowedGrantTypes}, requirePkce: ${_this.requirePkce}, allowOfflineAccess: ${_this.allowOfflineAccess}, isPublicClient: ${_this.isPublicClient})';
 }
 
 
@@ -748,7 +768,7 @@ class _$CustomAppOauthConfigCopyWithImpl<$Res>
 /// Create a copy of CustomAppOauthConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? clientUri = freezed,Object? redirectUris = null,Object? postLogoutRedirectUris = freezed,Object? allowedScopes = null,Object? allowedGrantTypes = null,Object? requirePkce = null,Object? allowOfflineAccess = null,Object? isPublicClient = null,}) {
-  return _then(_self.copyWith(
+  return _then(CustomAppOauthConfig(
 clientUri: freezed == clientUri ? _self.clientUri : clientUri // ignore: cast_nullable_to_non_nullable
 as String?,redirectUris: null == redirectUris ? _self.redirectUris : redirectUris // ignore: cast_nullable_to_non_nullable
 as List<String>,postLogoutRedirectUris: freezed == postLogoutRedirectUris ? _self.postLogoutRedirectUris : postLogoutRedirectUris // ignore: cast_nullable_to_non_nullable
@@ -892,7 +912,7 @@ return $default(_that.clientUri,_that.redirectUris,_that.postLogoutRedirectUris,
 @JsonSerializable()
 
 class _CustomAppOauthConfig implements CustomAppOauthConfig {
-  const _CustomAppOauthConfig({this.clientUri, final  List<String> redirectUris = const [], final  List<String>? postLogoutRedirectUris, final  List<String> allowedScopes = const ['openid', 'profile', 'email'], final  List<String> allowedGrantTypes = const ['authorization_code', 'refresh_token'], this.requirePkce = true, this.allowOfflineAccess = false, this.isPublicClient = false}): _redirectUris = redirectUris,_postLogoutRedirectUris = postLogoutRedirectUris,_allowedScopes = allowedScopes,_allowedGrantTypes = allowedGrantTypes;
+  const _CustomAppOauthConfig({this.clientUri,  List<String> redirectUris = const [],  List<String>? postLogoutRedirectUris,  List<String> allowedScopes = const ['openid', 'profile', 'email'],  List<String> allowedGrantTypes = const ['authorization_code', 'refresh_token'], this.requirePkce = true, this.allowOfflineAccess = false, this.isPublicClient = false}): _redirectUris = redirectUris,_postLogoutRedirectUris = postLogoutRedirectUris,_allowedScopes = allowedScopes,_allowedGrantTypes = allowedGrantTypes;
   factory _CustomAppOauthConfig.fromJson(Map<String, dynamic> json) => _$CustomAppOauthConfigFromJson(json);
 
 @override final  String? clientUri;
@@ -943,16 +963,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppOauthConfig&&(identical(other.clientUri, clientUri) || other.clientUri == clientUri)&&const DeepCollectionEquality().equals(other._redirectUris, _redirectUris)&&const DeepCollectionEquality().equals(other._postLogoutRedirectUris, _postLogoutRedirectUris)&&const DeepCollectionEquality().equals(other._allowedScopes, _allowedScopes)&&const DeepCollectionEquality().equals(other._allowedGrantTypes, _allowedGrantTypes)&&(identical(other.requirePkce, requirePkce) || other.requirePkce == requirePkce)&&(identical(other.allowOfflineAccess, allowOfflineAccess) || other.allowOfflineAccess == allowOfflineAccess)&&(identical(other.isPublicClient, isPublicClient) || other.isPublicClient == isPublicClient));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppOauthConfig&&(identical(other.clientUri, clientUri) || other.clientUri == clientUri)&&const DeepCollectionEquality().equals(other.redirectUris, _redirectUris)&&const DeepCollectionEquality().equals(other.postLogoutRedirectUris, _postLogoutRedirectUris)&&const DeepCollectionEquality().equals(other.allowedScopes, _allowedScopes)&&const DeepCollectionEquality().equals(other.allowedGrantTypes, _allowedGrantTypes)&&(identical(other.requirePkce, requirePkce) || other.requirePkce == requirePkce)&&(identical(other.allowOfflineAccess, allowOfflineAccess) || other.allowOfflineAccess == allowOfflineAccess)&&(identical(other.isPublicClient, isPublicClient) || other.isPublicClient == isPublicClient));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,clientUri,const DeepCollectionEquality().hash(_redirectUris),const DeepCollectionEquality().hash(_postLogoutRedirectUris),const DeepCollectionEquality().hash(_allowedScopes),const DeepCollectionEquality().hash(_allowedGrantTypes),requirePkce,allowOfflineAccess,isPublicClient);
+int get hashCode {
+    return Object.hash(runtimeType,clientUri,const DeepCollectionEquality().hash(_redirectUris),const DeepCollectionEquality().hash(_postLogoutRedirectUris),const DeepCollectionEquality().hash(_allowedScopes),const DeepCollectionEquality().hash(_allowedGrantTypes),requirePkce,allowOfflineAccess,isPublicClient);
+}
 
 @override
 String toString() {
-  return 'CustomAppOauthConfig(clientUri: $clientUri, redirectUris: $redirectUris, postLogoutRedirectUris: $postLogoutRedirectUris, allowedScopes: $allowedScopes, allowedGrantTypes: $allowedGrantTypes, requirePkce: $requirePkce, allowOfflineAccess: $allowOfflineAccess, isPublicClient: $isPublicClient)';
+    return 'CustomAppOauthConfig(clientUri: $clientUri, redirectUris: $redirectUris, postLogoutRedirectUris: $postLogoutRedirectUris, allowedScopes: $allowedScopes, allowedGrantTypes: $allowedGrantTypes, requirePkce: $requirePkce, allowOfflineAccess: $allowOfflineAccess, isPublicClient: $isPublicClient)';
 }
 
 
@@ -1014,16 +1036,21 @@ $CustomAppSecretCopyWith<CustomAppSecret> get copyWith => _$CustomAppSecretCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.isOidc, isOidc) || other.isOidc == isOidc)&&(identical(other.appId, appId) || other.appId == appId));
+  final _this = this as CustomAppSecret;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CustomAppSecret&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.secret, _this.secret) || other.secret == _this.secret)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.expiredAt, _this.expiredAt) || other.expiredAt == _this.expiredAt)&&(identical(other.isOidc, _this.isOidc) || other.isOidc == _this.isOidc)&&(identical(other.appId, _this.appId) || other.appId == _this.appId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,secret,description,expiredAt,isOidc,appId);
+int get hashCode {
+  final _this = this as CustomAppSecret;
+  return Object.hash(runtimeType,_this.id,_this.secret,_this.description,_this.expiredAt,_this.isOidc,_this.appId);
+}
 
 @override
 String toString() {
-  return 'CustomAppSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, isOidc: $isOidc, appId: $appId)';
+  final _this = this as CustomAppSecret;
+  return 'CustomAppSecret(id: ${_this.id}, secret: ${_this.secret}, description: ${_this.description}, expiredAt: ${_this.expiredAt}, isOidc: ${_this.isOidc}, appId: ${_this.appId})';
 }
 
 
@@ -1052,7 +1079,7 @@ class _$CustomAppSecretCopyWithImpl<$Res>
 /// Create a copy of CustomAppSecret
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? secret = freezed,Object? description = freezed,Object? expiredAt = freezed,Object? isOidc = null,Object? appId = null,}) {
-  return _then(_self.copyWith(
+  return _then(CustomAppSecret(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,secret: freezed == secret ? _self.secret : secret // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -1217,16 +1244,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.isOidc, isOidc) || other.isOidc == isOidc)&&(identical(other.appId, appId) || other.appId == appId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CustomAppSecret&&(identical(other.id, id) || other.id == id)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.description, description) || other.description == description)&&(identical(other.expiredAt, expiredAt) || other.expiredAt == expiredAt)&&(identical(other.isOidc, isOidc) || other.isOidc == isOidc)&&(identical(other.appId, appId) || other.appId == appId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,secret,description,expiredAt,isOidc,appId);
+int get hashCode {
+    return Object.hash(runtimeType,id,secret,description,expiredAt,isOidc,appId);
+}
 
 @override
 String toString() {
-  return 'CustomAppSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, isOidc: $isOidc, appId: $appId)';
+    return 'CustomAppSecret(id: $id, secret: $secret, description: $description, expiredAt: $expiredAt, isOidc: $isOidc, appId: $appId)';
 }
 
 

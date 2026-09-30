@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'account_settings.dart';
@@ -9,6 +9,7 @@ part of 'account_settings.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $SnPhysicalPassportCopyWith<SnPhysicalPassport> get copyWith => _$SnPhysicalPass
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPhysicalPassport&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isLocked, isLocked) || other.isLocked == isLocked)&&(identical(other.isEncrypted, isEncrypted) || other.isEncrypted == isEncrypted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uid, uid) || other.uid == uid));
+  final _this = this as SnPhysicalPassport;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPhysicalPassport&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.label, _this.label) || other.label == _this.label)&&(identical(other.isActive, _this.isActive) || other.isActive == _this.isActive)&&(identical(other.isLocked, _this.isLocked) || other.isLocked == _this.isLocked)&&(identical(other.isEncrypted, _this.isEncrypted) || other.isEncrypted == _this.isEncrypted)&&(identical(other.lastSeenAt, _this.lastSeenAt) || other.lastSeenAt == _this.lastSeenAt)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.uid, _this.uid) || other.uid == _this.uid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,label,isActive,isLocked,isEncrypted,lastSeenAt,createdAt,uid);
+int get hashCode {
+  final _this = this as SnPhysicalPassport;
+  return Object.hash(runtimeType,_this.id,_this.label,_this.isActive,_this.isLocked,_this.isEncrypted,_this.lastSeenAt,_this.createdAt,_this.uid);
+}
 
 @override
 String toString() {
-  return 'SnPhysicalPassport(id: $id, label: $label, isActive: $isActive, isLocked: $isLocked, isEncrypted: $isEncrypted, lastSeenAt: $lastSeenAt, createdAt: $createdAt, uid: $uid)';
+  final _this = this as SnPhysicalPassport;
+  return 'SnPhysicalPassport(id: ${_this.id}, label: ${_this.label}, isActive: ${_this.isActive}, isLocked: ${_this.isLocked}, isEncrypted: ${_this.isEncrypted}, lastSeenAt: ${_this.lastSeenAt}, createdAt: ${_this.createdAt}, uid: ${_this.uid})';
 }
 
 
@@ -66,7 +72,7 @@ class _$SnPhysicalPassportCopyWithImpl<$Res>
 /// Create a copy of SnPhysicalPassport
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? label = freezed,Object? isActive = null,Object? isLocked = null,Object? isEncrypted = null,Object? lastSeenAt = freezed,Object? createdAt = null,Object? uid = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnPhysicalPassport(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String?,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
@@ -235,16 +241,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPhysicalPassport&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isLocked, isLocked) || other.isLocked == isLocked)&&(identical(other.isEncrypted, isEncrypted) || other.isEncrypted == isEncrypted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uid, uid) || other.uid == uid));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPhysicalPassport&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isLocked, isLocked) || other.isLocked == isLocked)&&(identical(other.isEncrypted, isEncrypted) || other.isEncrypted == isEncrypted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uid, uid) || other.uid == uid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,label,isActive,isLocked,isEncrypted,lastSeenAt,createdAt,uid);
+int get hashCode {
+    return Object.hash(runtimeType,id,label,isActive,isLocked,isEncrypted,lastSeenAt,createdAt,uid);
+}
 
 @override
 String toString() {
-  return 'SnPhysicalPassport(id: $id, label: $label, isActive: $isActive, isLocked: $isLocked, isEncrypted: $isEncrypted, lastSeenAt: $lastSeenAt, createdAt: $createdAt, uid: $uid)';
+    return 'SnPhysicalPassport(id: $id, label: $label, isActive: $isActive, isLocked: $isLocked, isEncrypted: $isEncrypted, lastSeenAt: $lastSeenAt, createdAt: $createdAt, uid: $uid)';
 }
 
 
@@ -306,16 +314,21 @@ $SnScanResultCopyWith<SnScanResult> get copyWith => _$SnScanResultCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnScanResult&&(identical(other.id, id) || other.id == id)&&(identical(other.account, account) || other.account == account)&&(identical(other.isFriend, isFriend) || other.isFriend == isFriend)&&(identical(other.isClaimed, isClaimed) || other.isClaimed == isClaimed)&&const DeepCollectionEquality().equals(other.actions, actions));
+  final _this = this as SnScanResult;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnScanResult&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.account, _this.account) || other.account == _this.account)&&(identical(other.isFriend, _this.isFriend) || other.isFriend == _this.isFriend)&&(identical(other.isClaimed, _this.isClaimed) || other.isClaimed == _this.isClaimed)&&const DeepCollectionEquality().equals(other.actions, _this.actions));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,account,isFriend,isClaimed,const DeepCollectionEquality().hash(actions));
+int get hashCode {
+  final _this = this as SnScanResult;
+  return Object.hash(runtimeType,_this.id,_this.account,_this.isFriend,_this.isClaimed,const DeepCollectionEquality().hash(_this.actions));
+}
 
 @override
 String toString() {
-  return 'SnScanResult(id: $id, account: $account, isFriend: $isFriend, isClaimed: $isClaimed, actions: $actions)';
+  final _this = this as SnScanResult;
+  return 'SnScanResult(id: ${_this.id}, account: ${_this.account}, isFriend: ${_this.isFriend}, isClaimed: ${_this.isClaimed}, actions: ${_this.actions})';
 }
 
 
@@ -344,7 +357,7 @@ class _$SnScanResultCopyWithImpl<$Res>
 /// Create a copy of SnScanResult
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? account = freezed,Object? isFriend = null,Object? isClaimed = null,Object? actions = null,}) {
-  return _then(_self.copyWith(
+  return _then(SnScanResult(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,account: freezed == account ? _self.account : account // ignore: cast_nullable_to_non_nullable
 as SnAccount?,isFriend: null == isFriend ? _self.isFriend : isFriend // ignore: cast_nullable_to_non_nullable
@@ -497,7 +510,7 @@ return $default(_that.id,_that.account,_that.isFriend,_that.isClaimed,_that.acti
 @JsonSerializable()
 
 class _SnScanResult implements SnScanResult {
-  const _SnScanResult({required this.id, required this.account, this.isFriend = false, this.isClaimed = false, final  List<String> actions = const []}): _actions = actions;
+  const _SnScanResult({required this.id, required this.account, this.isFriend = false, this.isClaimed = false,  List<String> actions = const []}): _actions = actions;
   factory _SnScanResult.fromJson(Map<String, dynamic> json) => _$SnScanResultFromJson(json);
 
 @override final  String id;
@@ -525,16 +538,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnScanResult&&(identical(other.id, id) || other.id == id)&&(identical(other.account, account) || other.account == account)&&(identical(other.isFriend, isFriend) || other.isFriend == isFriend)&&(identical(other.isClaimed, isClaimed) || other.isClaimed == isClaimed)&&const DeepCollectionEquality().equals(other._actions, _actions));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnScanResult&&(identical(other.id, id) || other.id == id)&&(identical(other.account, account) || other.account == account)&&(identical(other.isFriend, isFriend) || other.isFriend == isFriend)&&(identical(other.isClaimed, isClaimed) || other.isClaimed == isClaimed)&&const DeepCollectionEquality().equals(other.actions, _actions));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,account,isFriend,isClaimed,const DeepCollectionEquality().hash(_actions));
+int get hashCode {
+    return Object.hash(runtimeType,id,account,isFriend,isClaimed,const DeepCollectionEquality().hash(_actions));
+}
 
 @override
 String toString() {
-  return 'SnScanResult(id: $id, account: $account, isFriend: $isFriend, isClaimed: $isClaimed, actions: $actions)';
+    return 'SnScanResult(id: $id, account: $account, isFriend: $isFriend, isClaimed: $isClaimed, actions: $actions)';
 }
 
 

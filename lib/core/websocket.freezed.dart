@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'websocket.dart';
@@ -9,6 +9,7 @@ part of 'websocket.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -19,14 +20,14 @@ mixin _$WebSocketState implements DiagnosticableTreeMixin {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebSocketState);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is WebSocketState);
 }
 
 
@@ -35,7 +36,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState()';
+    return 'WebSocketState()';
 }
 
 
@@ -226,14 +227,14 @@ class _Connected with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.connected'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Connected);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Connected);
 }
 
 
@@ -242,7 +243,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.connected()';
+    return 'WebSocketState.connected()';
 }
 
 
@@ -264,14 +265,14 @@ class _Connecting with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.connecting'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Connecting);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Connecting);
 }
 
 
@@ -280,7 +281,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.connecting()';
+    return 'WebSocketState.connecting()';
 }
 
 
@@ -302,14 +303,14 @@ class _Disconnected with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.disconnected'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Disconnected);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Disconnected);
 }
 
 
@@ -318,7 +319,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.disconnected()';
+    return 'WebSocketState.disconnected()';
 }
 
 
@@ -340,14 +341,14 @@ class _InternetChanged with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.internetChanged'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _InternetChanged);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _InternetChanged);
 }
 
 
@@ -356,7 +357,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.internetChanged()';
+    return 'WebSocketState.internetChanged()';
 }
 
 
@@ -378,14 +379,14 @@ class _ServerDown with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.serverDown'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ServerDown);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ServerDown);
 }
 
 
@@ -394,7 +395,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.serverDown()';
+    return 'WebSocketState.serverDown()';
 }
 
 
@@ -416,14 +417,14 @@ class _DuplicateDevice with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.duplicateDevice'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DuplicateDevice);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DuplicateDevice);
 }
 
 
@@ -432,7 +433,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.duplicateDevice()';
+    return 'WebSocketState.duplicateDevice()';
 }
 
 
@@ -454,14 +455,14 @@ class _Unauthorized with DiagnosticableTreeMixin implements WebSocketState {
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.unauthorized'))
     ;
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Unauthorized);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Unauthorized);
 }
 
 
@@ -470,7 +471,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.unauthorized()';
+    return 'WebSocketState.unauthorized()';
 }
 
 
@@ -497,23 +498,25 @@ _$ErrorCopyWith<_Error> get copyWith => __$ErrorCopyWithImpl<_Error>(this, _$ide
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketState.error'))
     ..add(DiagnosticsProperty('message', message));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Error&&(identical(other.message, message) || other.message == message));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Error&&(identical(other.message, message) || other.message == message));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,message);
+int get hashCode {
+    return Object.hash(runtimeType,message);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketState.error(message: $message)';
+    return 'WebSocketState.error(message: $message)';
 }
 
 
@@ -567,23 +570,29 @@ $WebSocketPacketCopyWith<WebSocketPacket> get copyWith => _$WebSocketPacketCopyW
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as WebSocketPacket;
   properties
     ..add(DiagnosticsProperty('type', 'WebSocketPacket'))
-    ..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('endpoint', endpoint))..add(DiagnosticsProperty('errorMessage', errorMessage));
+    ..add(DiagnosticsProperty('type', _this.type))..add(DiagnosticsProperty('data', _this.data))..add(DiagnosticsProperty('endpoint', _this.endpoint))..add(DiagnosticsProperty('errorMessage', _this.errorMessage));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebSocketPacket&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.data, data)&&(identical(other.endpoint, endpoint) || other.endpoint == endpoint)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  final _this = this as WebSocketPacket;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebSocketPacket&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.data, _this.data)&&(identical(other.endpoint, _this.endpoint) || other.endpoint == _this.endpoint)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(data),endpoint,errorMessage);
+int get hashCode {
+  final _this = this as WebSocketPacket;
+  return Object.hash(runtimeType,_this.type,const DeepCollectionEquality().hash(_this.data),_this.endpoint,_this.errorMessage);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketPacket(type: $type, data: $data, endpoint: $endpoint, errorMessage: $errorMessage)';
+  final _this = this as WebSocketPacket;
+  return 'WebSocketPacket(type: ${_this.type}, data: ${_this.data}, endpoint: ${_this.endpoint}, errorMessage: ${_this.errorMessage})';
 }
 
 
@@ -612,7 +621,7 @@ class _$WebSocketPacketCopyWithImpl<$Res>
 /// Create a copy of WebSocketPacket
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? data = freezed,Object? endpoint = freezed,Object? errorMessage = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WebSocketPacket(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,endpoint: freezed == endpoint ? _self.endpoint : endpoint // ignore: cast_nullable_to_non_nullable
@@ -752,7 +761,7 @@ return $default(_that.type,_that.data,_that.endpoint,_that.errorMessage);case _:
 @JsonSerializable()
 
 class _WebSocketPacket with DiagnosticableTreeMixin implements WebSocketPacket {
-  const _WebSocketPacket({required this.type, required final  Map<String, dynamic>? data, this.endpoint, this.errorMessage}): _data = data;
+  const _WebSocketPacket({required this.type, required  Map<String, dynamic>? data, this.endpoint, this.errorMessage}): _data = data;
   factory _WebSocketPacket.fromJson(Map<String, dynamic> json) => _$WebSocketPacketFromJson(json);
 
 @override final  String type;
@@ -780,23 +789,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'WebSocketPacket'))
     ..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('endpoint', endpoint))..add(DiagnosticsProperty('errorMessage', errorMessage));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebSocketPacket&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._data, _data)&&(identical(other.endpoint, endpoint) || other.endpoint == endpoint)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebSocketPacket&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.data, _data)&&(identical(other.endpoint, endpoint) || other.endpoint == endpoint)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_data),endpoint,errorMessage);
+int get hashCode {
+    return Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_data),endpoint,errorMessage);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'WebSocketPacket(type: $type, data: $data, endpoint: $endpoint, errorMessage: $errorMessage)';
+    return 'WebSocketPacket(type: $type, data: $data, endpoint: $endpoint, errorMessage: $errorMessage)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'bot_key.dart';
@@ -9,6 +9,7 @@ part of 'bot_key.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $SnAccountApiKeyCopyWith<SnAccountApiKey> get copyWith => _$SnAccountApiKeyCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAccountApiKey&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.key, key) || other.key == key));
+  final _this = this as SnAccountApiKey;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnAccountApiKey&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.label, _this.label) || other.label == _this.label)&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.sessionId, _this.sessionId) || other.sessionId == _this.sessionId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.key, _this.key) || other.key == _this.key));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,label,accountId,sessionId,createdAt,updatedAt,key);
+int get hashCode {
+  final _this = this as SnAccountApiKey;
+  return Object.hash(runtimeType,_this.id,_this.label,_this.accountId,_this.sessionId,_this.createdAt,_this.updatedAt,_this.key);
+}
 
 @override
 String toString() {
-  return 'SnAccountApiKey(id: $id, label: $label, accountId: $accountId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, key: $key)';
+  final _this = this as SnAccountApiKey;
+  return 'SnAccountApiKey(id: ${_this.id}, label: ${_this.label}, accountId: ${_this.accountId}, sessionId: ${_this.sessionId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, key: ${_this.key})';
 }
 
 
@@ -66,7 +72,7 @@ class _$SnAccountApiKeyCopyWithImpl<$Res>
 /// Create a copy of SnAccountApiKey
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? label = null,Object? accountId = null,Object? sessionId = null,Object? createdAt = null,Object? updatedAt = null,Object? key = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnAccountApiKey(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,label: null == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String,accountId: null == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
@@ -233,16 +239,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAccountApiKey&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.key, key) || other.key == key));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnAccountApiKey&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.key, key) || other.key == key));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,label,accountId,sessionId,createdAt,updatedAt,key);
+int get hashCode {
+    return Object.hash(runtimeType,id,label,accountId,sessionId,createdAt,updatedAt,key);
+}
 
 @override
 String toString() {
-  return 'SnAccountApiKey(id: $id, label: $label, accountId: $accountId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, key: $key)';
+    return 'SnAccountApiKey(id: $id, label: $label, accountId: $accountId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, key: $key)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'profile_decoration.dart';
@@ -9,6 +9,7 @@ part of 'profile_decoration.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ProfileDecorationCopyWith<ProfileDecoration> get copyWith => _$ProfileDecoratio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileDecoration&&(identical(other.text, text) || other.text == text)&&(identical(other.color, color) || other.color == color)&&(identical(other.textColor, textColor) || other.textColor == textColor));
+  final _this = this as ProfileDecoration;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProfileDecoration&&(identical(other.text, _this.text) || other.text == _this.text)&&(identical(other.color, _this.color) || other.color == _this.color)&&(identical(other.textColor, _this.textColor) || other.textColor == _this.textColor));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,text,color,textColor);
+int get hashCode {
+  final _this = this as ProfileDecoration;
+  return Object.hash(runtimeType,_this.text,_this.color,_this.textColor);
+}
 
 @override
 String toString() {
-  return 'ProfileDecoration(text: $text, color: $color, textColor: $textColor)';
+  final _this = this as ProfileDecoration;
+  return 'ProfileDecoration(text: ${_this.text}, color: ${_this.color}, textColor: ${_this.textColor})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ProfileDecorationCopyWithImpl<$Res>
 /// Create a copy of ProfileDecoration
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? text = null,Object? color = null,Object? textColor = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProfileDecoration(
 text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as Color,textColor: freezed == textColor ? _self.textColor : textColor // ignore: cast_nullable_to_non_nullable
@@ -219,16 +225,18 @@ _$ProfileDecorationCopyWith<_ProfileDecoration> get copyWith => __$ProfileDecora
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProfileDecoration&&(identical(other.text, text) || other.text == text)&&(identical(other.color, color) || other.color == color)&&(identical(other.textColor, textColor) || other.textColor == textColor));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProfileDecoration&&(identical(other.text, text) || other.text == text)&&(identical(other.color, color) || other.color == color)&&(identical(other.textColor, textColor) || other.textColor == textColor));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,text,color,textColor);
+int get hashCode {
+    return Object.hash(runtimeType,text,color,textColor);
+}
 
 @override
 String toString() {
-  return 'ProfileDecoration(text: $text, color: $color, textColor: $textColor)';
+    return 'ProfileDecoration(text: $text, color: $color, textColor: $textColor)';
 }
 
 

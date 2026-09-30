@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sticker.dart';
@@ -9,6 +9,7 @@ part of 'sticker.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $SnStickerCopyWith<SnSticker> get copyWith => _$SnStickerCopyWithImpl<SnSticker>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnSticker&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.image, image) || other.image == image)&&(identical(other.order, order) || other.order == order)&&(identical(other.size, size) || other.size == size)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as SnSticker;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnSticker&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.image, _this.image) || other.image == _this.image)&&(identical(other.order, _this.order) || other.order == _this.order)&&(identical(other.size, _this.size) || other.size == _this.size)&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.packId, _this.packId) || other.packId == _this.packId)&&(identical(other.pack, _this.pack) || other.pack == _this.pack)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,image,order,size,mode,packId,pack,createdAt,updatedAt,deletedAt);
+int get hashCode {
+  final _this = this as SnSticker;
+  return Object.hash(runtimeType,_this.id,_this.slug,_this.name,_this.image,_this.order,_this.size,_this.mode,_this.packId,_this.pack,_this.createdAt,_this.updatedAt,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnSticker(id: $id, slug: $slug, name: $name, image: $image, order: $order, size: $size, mode: $mode, packId: $packId, pack: $pack, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  final _this = this as SnSticker;
+  return 'SnSticker(id: ${_this.id}, slug: ${_this.slug}, name: ${_this.name}, image: ${_this.image}, order: ${_this.order}, size: ${_this.size}, mode: ${_this.mode}, packId: ${_this.packId}, pack: ${_this.pack}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$SnStickerCopyWithImpl<$Res>
 /// Create a copy of SnSticker
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? slug = null,Object? name = freezed,Object? image = null,Object? order = null,Object? size = null,Object? mode = null,Object? packId = null,Object? pack = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnSticker(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
 as String,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -264,16 +270,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnSticker&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.image, image) || other.image == image)&&(identical(other.order, order) || other.order == order)&&(identical(other.size, size) || other.size == size)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnSticker&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.image, image) || other.image == image)&&(identical(other.order, order) || other.order == order)&&(identical(other.size, size) || other.size == size)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,image,order,size,mode,packId,pack,createdAt,updatedAt,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,slug,name,image,order,size,mode,packId,pack,createdAt,updatedAt,deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnSticker(id: $id, slug: $slug, name: $name, image: $image, order: $order, size: $size, mode: $mode, packId: $packId, pack: $pack, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'SnSticker(id: $id, slug: $slug, name: $name, image: $image, order: $order, size: $size, mode: $mode, packId: $packId, pack: $pack, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 
@@ -360,16 +368,21 @@ $SnStickerPackCopyWith<SnStickerPack> get copyWith => _$SnStickerPackCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnStickerPack&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&const DeepCollectionEquality().equals(other.stickers, stickers));
+  final _this = this as SnStickerPack;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnStickerPack&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.prefix, _this.prefix) || other.prefix == _this.prefix)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.icon, _this.icon) || other.icon == _this.icon)&&(identical(other.publisher, _this.publisher) || other.publisher == _this.publisher)&&(identical(other.order, _this.order) || other.order == _this.order)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt)&&const DeepCollectionEquality().equals(other.stickers, _this.stickers));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,prefix,publisherId,icon,publisher,order,createdAt,updatedAt,deletedAt,const DeepCollectionEquality().hash(stickers));
+int get hashCode {
+  final _this = this as SnStickerPack;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.description,_this.prefix,_this.publisherId,_this.icon,_this.publisher,_this.order,_this.createdAt,_this.updatedAt,_this.deletedAt,const DeepCollectionEquality().hash(_this.stickers));
+}
 
 @override
 String toString() {
-  return 'SnStickerPack(id: $id, name: $name, description: $description, prefix: $prefix, publisherId: $publisherId, icon: $icon, publisher: $publisher, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, stickers: $stickers)';
+  final _this = this as SnStickerPack;
+  return 'SnStickerPack(id: ${_this.id}, name: ${_this.name}, description: ${_this.description}, prefix: ${_this.prefix}, publisherId: ${_this.publisherId}, icon: ${_this.icon}, publisher: ${_this.publisher}, order: ${_this.order}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt}, stickers: ${_this.stickers})';
 }
 
 
@@ -398,7 +411,7 @@ class _$SnStickerPackCopyWithImpl<$Res>
 /// Create a copy of SnStickerPack
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? description = null,Object? prefix = null,Object? publisherId = null,Object? icon = freezed,Object? publisher = freezed,Object? order = null,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,Object? stickers = null,}) {
-  return _then(_self.copyWith(
+  return _then(SnStickerPack(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -570,7 +583,7 @@ return $default(_that.id,_that.name,_that.description,_that.prefix,_that.publish
 @JsonSerializable()
 
 class _SnStickerPack implements SnStickerPack {
-  const _SnStickerPack({required this.id, required this.name, required this.description, required this.prefix, required this.publisherId, required this.icon, required this.publisher, this.order = 0, required this.createdAt, required this.updatedAt, required this.deletedAt, final  List<SnSticker> stickers = const []}): _stickers = stickers;
+  const _SnStickerPack({required this.id, required this.name, required this.description, required this.prefix, required this.publisherId, required this.icon, required this.publisher, this.order = 0, required this.createdAt, required this.updatedAt, required this.deletedAt,  List<SnSticker> stickers = const []}): _stickers = stickers;
   factory _SnStickerPack.fromJson(Map<String, dynamic> json) => _$SnStickerPackFromJson(json);
 
 @override final  String id;
@@ -605,16 +618,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnStickerPack&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&const DeepCollectionEquality().equals(other._stickers, _stickers));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnStickerPack&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.prefix, prefix) || other.prefix == prefix)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&const DeepCollectionEquality().equals(other.stickers, _stickers));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,prefix,publisherId,icon,publisher,order,createdAt,updatedAt,deletedAt,const DeepCollectionEquality().hash(_stickers));
+int get hashCode {
+    return Object.hash(runtimeType,id,name,description,prefix,publisherId,icon,publisher,order,createdAt,updatedAt,deletedAt,const DeepCollectionEquality().hash(_stickers));
+}
 
 @override
 String toString() {
-  return 'SnStickerPack(id: $id, name: $name, description: $description, prefix: $prefix, publisherId: $publisherId, icon: $icon, publisher: $publisher, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, stickers: $stickers)';
+    return 'SnStickerPack(id: $id, name: $name, description: $description, prefix: $prefix, publisherId: $publisherId, icon: $icon, publisher: $publisher, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, stickers: $stickers)';
 }
 
 
@@ -704,16 +719,21 @@ $SnStickerOwnershipCopyWith<SnStickerOwnership> get copyWith => _$SnStickerOwner
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnStickerOwnership&&(identical(other.id, id) || other.id == id)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as SnStickerOwnership;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnStickerOwnership&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.packId, _this.packId) || other.packId == _this.packId)&&(identical(other.pack, _this.pack) || other.pack == _this.pack)&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.account, _this.account) || other.account == _this.account)&&(identical(other.order, _this.order) || other.order == _this.order)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,packId,pack,accountId,account,order,createdAt,updatedAt,deletedAt);
+int get hashCode {
+  final _this = this as SnStickerOwnership;
+  return Object.hash(runtimeType,_this.id,_this.packId,_this.pack,_this.accountId,_this.account,_this.order,_this.createdAt,_this.updatedAt,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnStickerOwnership(id: $id, packId: $packId, pack: $pack, accountId: $accountId, account: $account, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  final _this = this as SnStickerOwnership;
+  return 'SnStickerOwnership(id: ${_this.id}, packId: ${_this.packId}, pack: ${_this.pack}, accountId: ${_this.accountId}, account: ${_this.account}, order: ${_this.order}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -742,7 +762,7 @@ class _$SnStickerOwnershipCopyWithImpl<$Res>
 /// Create a copy of SnStickerOwnership
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? packId = null,Object? pack = freezed,Object? accountId = null,Object? account = freezed,Object? order = null,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnStickerOwnership(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,packId: null == packId ? _self.packId : packId // ignore: cast_nullable_to_non_nullable
 as String,pack: freezed == pack ? _self.pack : pack // ignore: cast_nullable_to_non_nullable
@@ -937,16 +957,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnStickerOwnership&&(identical(other.id, id) || other.id == id)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnStickerOwnership&&(identical(other.id, id) || other.id == id)&&(identical(other.packId, packId) || other.packId == packId)&&(identical(other.pack, pack) || other.pack == pack)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.order, order) || other.order == order)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,packId,pack,accountId,account,order,createdAt,updatedAt,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,packId,pack,accountId,account,order,createdAt,updatedAt,deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnStickerOwnership(id: $id, packId: $packId, pack: $pack, accountId: $accountId, account: $account, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'SnStickerOwnership(id: $id, packId: $packId, pack: $pack, accountId: $accountId, account: $account, order: $order, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 

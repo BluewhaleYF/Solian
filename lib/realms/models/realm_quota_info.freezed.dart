@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'realm_quota_info.dart';
@@ -9,6 +9,7 @@ part of 'realm_quota_info.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $RealmQuotaInfoCopyWith<RealmQuotaInfo> get copyWith => _$RealmQuotaInfoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmQuotaInfo&&(identical(other.total, total) || other.total == total)&&(identical(other.used, used) || other.used == used)&&(identical(other.remaining, remaining) || other.remaining == remaining)&&(identical(other.level, level) || other.level == level)&&(identical(other.perkLevel, perkLevel) || other.perkLevel == perkLevel)&&const DeepCollectionEquality().equals(other.records, records));
+  final _this = this as RealmQuotaInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmQuotaInfo&&(identical(other.total, _this.total) || other.total == _this.total)&&(identical(other.used, _this.used) || other.used == _this.used)&&(identical(other.remaining, _this.remaining) || other.remaining == _this.remaining)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.perkLevel, _this.perkLevel) || other.perkLevel == _this.perkLevel)&&const DeepCollectionEquality().equals(other.records, _this.records));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,total,used,remaining,level,perkLevel,const DeepCollectionEquality().hash(records));
+int get hashCode {
+  final _this = this as RealmQuotaInfo;
+  return Object.hash(runtimeType,_this.total,_this.used,_this.remaining,_this.level,_this.perkLevel,const DeepCollectionEquality().hash(_this.records));
+}
 
 @override
 String toString() {
-  return 'RealmQuotaInfo(total: $total, used: $used, remaining: $remaining, level: $level, perkLevel: $perkLevel, records: $records)';
+  final _this = this as RealmQuotaInfo;
+  return 'RealmQuotaInfo(total: ${_this.total}, used: ${_this.used}, remaining: ${_this.remaining}, level: ${_this.level}, perkLevel: ${_this.perkLevel}, records: ${_this.records})';
 }
 
 
@@ -66,7 +72,7 @@ class _$RealmQuotaInfoCopyWithImpl<$Res>
 /// Create a copy of RealmQuotaInfo
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? total = null,Object? used = null,Object? remaining = null,Object? level = null,Object? perkLevel = null,Object? records = null,}) {
-  return _then(_self.copyWith(
+  return _then(RealmQuotaInfo(
 total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
 as int,used: null == used ? _self.used : used // ignore: cast_nullable_to_non_nullable
 as int,remaining: null == remaining ? _self.remaining : remaining // ignore: cast_nullable_to_non_nullable
@@ -208,7 +214,7 @@ return $default(_that.total,_that.used,_that.remaining,_that.level,_that.perkLev
 @JsonSerializable()
 
 class _RealmQuotaInfo implements RealmQuotaInfo {
-  const _RealmQuotaInfo({required this.total, required this.used, required this.remaining, required this.level, required this.perkLevel, required final  List<dynamic> records}): _records = records;
+  const _RealmQuotaInfo({required this.total, required this.used, required this.remaining, required this.level, required this.perkLevel, required  List<dynamic> records}): _records = records;
   factory _RealmQuotaInfo.fromJson(Map<String, dynamic> json) => _$RealmQuotaInfoFromJson(json);
 
 @override final  int total;
@@ -237,16 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmQuotaInfo&&(identical(other.total, total) || other.total == total)&&(identical(other.used, used) || other.used == used)&&(identical(other.remaining, remaining) || other.remaining == remaining)&&(identical(other.level, level) || other.level == level)&&(identical(other.perkLevel, perkLevel) || other.perkLevel == perkLevel)&&const DeepCollectionEquality().equals(other._records, _records));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmQuotaInfo&&(identical(other.total, total) || other.total == total)&&(identical(other.used, used) || other.used == used)&&(identical(other.remaining, remaining) || other.remaining == remaining)&&(identical(other.level, level) || other.level == level)&&(identical(other.perkLevel, perkLevel) || other.perkLevel == perkLevel)&&const DeepCollectionEquality().equals(other.records, _records));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,total,used,remaining,level,perkLevel,const DeepCollectionEquality().hash(_records));
+int get hashCode {
+    return Object.hash(runtimeType,total,used,remaining,level,perkLevel,const DeepCollectionEquality().hash(_records));
+}
 
 @override
 String toString() {
-  return 'RealmQuotaInfo(total: $total, used: $used, remaining: $remaining, level: $level, perkLevel: $perkLevel, records: $records)';
+    return 'RealmQuotaInfo(total: $total, used: $used, remaining: $remaining, level: $level, perkLevel: $perkLevel, records: $records)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'post_list.dart';
@@ -9,6 +9,7 @@ part of 'post_list.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $PostListQueryCopyWith<PostListQuery> get copyWith => _$PostListQueryCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostListQuery&&(identical(other.pubName, pubName) || other.pubName == pubName)&&const DeepCollectionEquality().equals(other.publishers, publishers)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.pinned, pinned) || other.pinned == pinned)&&(identical(other.shuffle, shuffle) || other.shuffle == shuffle)&&(identical(other.includeReplies, includeReplies) || other.includeReplies == includeReplies)&&(identical(other.mediaOnly, mediaOnly) || other.mediaOnly == mediaOnly)&&(identical(other.queryTerm, queryTerm) || other.queryTerm == queryTerm)&&(identical(other.searchEngine, searchEngine) || other.searchEngine == searchEngine)&&(identical(other.order, order) || other.order == order)&&(identical(other.periodStart, periodStart) || other.periodStart == periodStart)&&(identical(other.periodEnd, periodEnd) || other.periodEnd == periodEnd)&&(identical(other.orderDesc, orderDesc) || other.orderDesc == orderDesc));
+  final _this = this as PostListQuery;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostListQuery&&(identical(other.pubName, _this.pubName) || other.pubName == _this.pubName)&&const DeepCollectionEquality().equals(other.publishers, _this.publishers)&&(identical(other.realm, _this.realm) || other.realm == _this.realm)&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.categories, _this.categories)&&const DeepCollectionEquality().equals(other.tags, _this.tags)&&(identical(other.pinned, _this.pinned) || other.pinned == _this.pinned)&&(identical(other.shuffle, _this.shuffle) || other.shuffle == _this.shuffle)&&(identical(other.includeReplies, _this.includeReplies) || other.includeReplies == _this.includeReplies)&&(identical(other.mediaOnly, _this.mediaOnly) || other.mediaOnly == _this.mediaOnly)&&(identical(other.queryTerm, _this.queryTerm) || other.queryTerm == _this.queryTerm)&&(identical(other.searchEngine, _this.searchEngine) || other.searchEngine == _this.searchEngine)&&(identical(other.order, _this.order) || other.order == _this.order)&&(identical(other.periodStart, _this.periodStart) || other.periodStart == _this.periodStart)&&(identical(other.periodEnd, _this.periodEnd) || other.periodEnd == _this.periodEnd)&&(identical(other.orderDesc, _this.orderDesc) || other.orderDesc == _this.orderDesc));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,pubName,const DeepCollectionEquality().hash(publishers),realm,type,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(tags),pinned,shuffle,includeReplies,mediaOnly,queryTerm,searchEngine,order,periodStart,periodEnd,orderDesc);
+int get hashCode {
+  final _this = this as PostListQuery;
+  return Object.hash(runtimeType,_this.pubName,const DeepCollectionEquality().hash(_this.publishers),_this.realm,_this.type,const DeepCollectionEquality().hash(_this.categories),const DeepCollectionEquality().hash(_this.tags),_this.pinned,_this.shuffle,_this.includeReplies,_this.mediaOnly,_this.queryTerm,_this.searchEngine,_this.order,_this.periodStart,_this.periodEnd,_this.orderDesc);
+}
 
 @override
 String toString() {
-  return 'PostListQuery(pubName: $pubName, publishers: $publishers, realm: $realm, type: $type, categories: $categories, tags: $tags, pinned: $pinned, shuffle: $shuffle, includeReplies: $includeReplies, mediaOnly: $mediaOnly, queryTerm: $queryTerm, searchEngine: $searchEngine, order: $order, periodStart: $periodStart, periodEnd: $periodEnd, orderDesc: $orderDesc)';
+  final _this = this as PostListQuery;
+  return 'PostListQuery(pubName: ${_this.pubName}, publishers: ${_this.publishers}, realm: ${_this.realm}, type: ${_this.type}, categories: ${_this.categories}, tags: ${_this.tags}, pinned: ${_this.pinned}, shuffle: ${_this.shuffle}, includeReplies: ${_this.includeReplies}, mediaOnly: ${_this.mediaOnly}, queryTerm: ${_this.queryTerm}, searchEngine: ${_this.searchEngine}, order: ${_this.order}, periodStart: ${_this.periodStart}, periodEnd: ${_this.periodEnd}, orderDesc: ${_this.orderDesc})';
 }
 
 
@@ -63,7 +69,7 @@ class _$PostListQueryCopyWithImpl<$Res>
 /// Create a copy of PostListQuery
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? pubName = freezed,Object? publishers = freezed,Object? realm = freezed,Object? type = freezed,Object? categories = freezed,Object? tags = freezed,Object? pinned = freezed,Object? shuffle = null,Object? includeReplies = freezed,Object? mediaOnly = freezed,Object? queryTerm = freezed,Object? searchEngine = freezed,Object? order = freezed,Object? periodStart = freezed,Object? periodEnd = freezed,Object? orderDesc = null,}) {
-  return _then(_self.copyWith(
+  return _then(PostListQuery(
 pubName: freezed == pubName ? _self.pubName : pubName // ignore: cast_nullable_to_non_nullable
 as String?,publishers: freezed == publishers ? _self.publishers : publishers // ignore: cast_nullable_to_non_nullable
 as List<String>?,realm: freezed == realm ? _self.realm : realm // ignore: cast_nullable_to_non_nullable
@@ -215,7 +221,7 @@ return $default(_that.pubName,_that.publishers,_that.realm,_that.type,_that.cate
 
 
 class _PostListQuery implements PostListQuery {
-  const _PostListQuery({this.pubName, final  List<String>? publishers, this.realm, this.type, final  List<String>? categories, final  List<String>? tags, this.pinned, this.shuffle = false, this.includeReplies = false, this.mediaOnly, this.queryTerm, this.searchEngine, this.order, this.periodStart, this.periodEnd, this.orderDesc = true}): _publishers = publishers,_categories = categories,_tags = tags;
+  const _PostListQuery({this.pubName,  List<String>? publishers, this.realm, this.type,  List<String>? categories,  List<String>? tags, this.pinned, this.shuffle = false, this.includeReplies = false, this.mediaOnly, this.queryTerm, this.searchEngine, this.order, this.periodStart, this.periodEnd, this.orderDesc = true}): _publishers = publishers,_categories = categories,_tags = tags;
   
 
 @override final  String? pubName;
@@ -269,16 +275,18 @@ _$PostListQueryCopyWith<_PostListQuery> get copyWith => __$PostListQueryCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostListQuery&&(identical(other.pubName, pubName) || other.pubName == pubName)&&const DeepCollectionEquality().equals(other._publishers, _publishers)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.pinned, pinned) || other.pinned == pinned)&&(identical(other.shuffle, shuffle) || other.shuffle == shuffle)&&(identical(other.includeReplies, includeReplies) || other.includeReplies == includeReplies)&&(identical(other.mediaOnly, mediaOnly) || other.mediaOnly == mediaOnly)&&(identical(other.queryTerm, queryTerm) || other.queryTerm == queryTerm)&&(identical(other.searchEngine, searchEngine) || other.searchEngine == searchEngine)&&(identical(other.order, order) || other.order == order)&&(identical(other.periodStart, periodStart) || other.periodStart == periodStart)&&(identical(other.periodEnd, periodEnd) || other.periodEnd == periodEnd)&&(identical(other.orderDesc, orderDesc) || other.orderDesc == orderDesc));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostListQuery&&(identical(other.pubName, pubName) || other.pubName == pubName)&&const DeepCollectionEquality().equals(other.publishers, _publishers)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.categories, _categories)&&const DeepCollectionEquality().equals(other.tags, _tags)&&(identical(other.pinned, pinned) || other.pinned == pinned)&&(identical(other.shuffle, shuffle) || other.shuffle == shuffle)&&(identical(other.includeReplies, includeReplies) || other.includeReplies == includeReplies)&&(identical(other.mediaOnly, mediaOnly) || other.mediaOnly == mediaOnly)&&(identical(other.queryTerm, queryTerm) || other.queryTerm == queryTerm)&&(identical(other.searchEngine, searchEngine) || other.searchEngine == searchEngine)&&(identical(other.order, order) || other.order == order)&&(identical(other.periodStart, periodStart) || other.periodStart == periodStart)&&(identical(other.periodEnd, periodEnd) || other.periodEnd == periodEnd)&&(identical(other.orderDesc, orderDesc) || other.orderDesc == orderDesc));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,pubName,const DeepCollectionEquality().hash(_publishers),realm,type,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_tags),pinned,shuffle,includeReplies,mediaOnly,queryTerm,searchEngine,order,periodStart,periodEnd,orderDesc);
+int get hashCode {
+    return Object.hash(runtimeType,pubName,const DeepCollectionEquality().hash(_publishers),realm,type,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_tags),pinned,shuffle,includeReplies,mediaOnly,queryTerm,searchEngine,order,periodStart,periodEnd,orderDesc);
+}
 
 @override
 String toString() {
-  return 'PostListQuery(pubName: $pubName, publishers: $publishers, realm: $realm, type: $type, categories: $categories, tags: $tags, pinned: $pinned, shuffle: $shuffle, includeReplies: $includeReplies, mediaOnly: $mediaOnly, queryTerm: $queryTerm, searchEngine: $searchEngine, order: $order, periodStart: $periodStart, periodEnd: $periodEnd, orderDesc: $orderDesc)';
+    return 'PostListQuery(pubName: $pubName, publishers: $publishers, realm: $realm, type: $type, categories: $categories, tags: $tags, pinned: $pinned, shuffle: $shuffle, includeReplies: $includeReplies, mediaOnly: $mediaOnly, queryTerm: $queryTerm, searchEngine: $searchEngine, order: $order, periodStart: $periodStart, periodEnd: $periodEnd, orderDesc: $orderDesc)';
 }
 
 
@@ -345,16 +353,21 @@ $PostListQueryConfigCopyWith<PostListQueryConfig> get copyWith => _$PostListQuer
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostListQueryConfig&&(identical(other.id, id) || other.id == id)&&(identical(other.initialFilter, initialFilter) || other.initialFilter == initialFilter));
+  final _this = this as PostListQueryConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostListQueryConfig&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.initialFilter, _this.initialFilter) || other.initialFilter == _this.initialFilter));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,initialFilter);
+int get hashCode {
+  final _this = this as PostListQueryConfig;
+  return Object.hash(runtimeType,_this.id,_this.initialFilter);
+}
 
 @override
 String toString() {
-  return 'PostListQueryConfig(id: $id, initialFilter: $initialFilter)';
+  final _this = this as PostListQueryConfig;
+  return 'PostListQueryConfig(id: ${_this.id}, initialFilter: ${_this.initialFilter})';
 }
 
 
@@ -383,7 +396,7 @@ class _$PostListQueryConfigCopyWithImpl<$Res>
 /// Create a copy of PostListQueryConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? initialFilter = null,}) {
-  return _then(_self.copyWith(
+  return _then(PostListQueryConfig(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String?,initialFilter: null == initialFilter ? _self.initialFilter : initialFilter // ignore: cast_nullable_to_non_nullable
 as PostListQuery,
@@ -546,16 +559,18 @@ _$PostListQueryConfigCopyWith<_PostListQueryConfig> get copyWith => __$PostListQ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostListQueryConfig&&(identical(other.id, id) || other.id == id)&&(identical(other.initialFilter, initialFilter) || other.initialFilter == initialFilter));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostListQueryConfig&&(identical(other.id, id) || other.id == id)&&(identical(other.initialFilter, initialFilter) || other.initialFilter == initialFilter));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,initialFilter);
+int get hashCode {
+    return Object.hash(runtimeType,id,initialFilter);
+}
 
 @override
 String toString() {
-  return 'PostListQueryConfig(id: $id, initialFilter: $initialFilter)';
+    return 'PostListQueryConfig(id: $id, initialFilter: $initialFilter)';
 }
 
 

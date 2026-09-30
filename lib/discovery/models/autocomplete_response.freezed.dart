@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'autocomplete_response.dart';
@@ -9,6 +9,7 @@ part of 'autocomplete_response.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $AutocompleteSuggestionCopyWith<AutocompleteSuggestion> get copyWith => _$Autoco
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutocompleteSuggestion&&(identical(other.type, type) || other.type == type)&&(identical(other.keyword, keyword) || other.keyword == keyword)&&const DeepCollectionEquality().equals(other.data, data));
+  final _this = this as AutocompleteSuggestion;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutocompleteSuggestion&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.keyword, _this.keyword) || other.keyword == _this.keyword)&&const DeepCollectionEquality().equals(other.data, _this.data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,keyword,const DeepCollectionEquality().hash(data));
+int get hashCode {
+  final _this = this as AutocompleteSuggestion;
+  return Object.hash(runtimeType,_this.type,_this.keyword,const DeepCollectionEquality().hash(_this.data));
+}
 
 @override
 String toString() {
-  return 'AutocompleteSuggestion(type: $type, keyword: $keyword, data: $data)';
+  final _this = this as AutocompleteSuggestion;
+  return 'AutocompleteSuggestion(type: ${_this.type}, keyword: ${_this.keyword}, data: ${_this.data})';
 }
 
 
@@ -66,7 +72,7 @@ class _$AutocompleteSuggestionCopyWithImpl<$Res>
 /// Create a copy of AutocompleteSuggestion
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? keyword = null,Object? data = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AutocompleteSuggestion(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,keyword: null == keyword ? _self.keyword : keyword // ignore: cast_nullable_to_non_nullable
 as String,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
@@ -225,16 +231,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutocompleteSuggestion&&(identical(other.type, type) || other.type == type)&&(identical(other.keyword, keyword) || other.keyword == keyword)&&const DeepCollectionEquality().equals(other.data, data));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutocompleteSuggestion&&(identical(other.type, type) || other.type == type)&&(identical(other.keyword, keyword) || other.keyword == keyword)&&const DeepCollectionEquality().equals(other.data, data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,keyword,const DeepCollectionEquality().hash(data));
+int get hashCode {
+    return Object.hash(runtimeType,type,keyword,const DeepCollectionEquality().hash(data));
+}
 
 @override
 String toString() {
-  return 'AutocompleteSuggestion(type: $type, keyword: $keyword, data: $data)';
+    return 'AutocompleteSuggestion(type: $type, keyword: $keyword, data: $data)';
 }
 
 

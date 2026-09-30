@@ -14,6 +14,18 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
+/// file_picker 13 dropped `allowMultiple`: [FilePicker.pickFiles] is
+/// multi-select and [FilePicker.pickFile] is single-select. Keeps this widget's
+/// single-pick dialog single-select on every platform.
+Future<List<PlatformFile>> _pickPlatformFiles({
+  required bool allowMultiple,
+  FileType type = FileType.any,
+}) async {
+  if (allowMultiple) return FilePicker.pickFiles(type: type);
+  final file = await FilePicker.pickFile(type: type);
+  return file == null ? const <PlatformFile>[] : <PlatformFile>[file];
+}
+
 class CloudFilePicker extends HookConsumerWidget {
   final bool allowMultiple;
   final Set<UniversalFileType> allowedTypes;
@@ -96,24 +108,23 @@ class CloudFilePicker extends HookConsumerWidget {
 
     void pickFile() async {
       showLoadingModal(context);
-      final result = await FilePicker.pickFiles(allowMultiple: allowMultiple);
-      if (result == null) {
+      final result = await _pickPlatformFiles(allowMultiple: allowMultiple);
+      if (result.isEmpty) {
         if (context.mounted) hideLoadingModal(context);
         return;
       }
 
-      final newFiles = result.files.map((e) {
-        final xfile = e.bytes != null
-            ? XFile.fromData(e.bytes!, name: e.name)
-            : XFile(e.path!);
-        // cross_file drops `fromData`'s `name:` on io; keep it via
-        // `displayName` so `file_name` is never empty on upload.
-        return UniversalFile(
-          data: xfile,
-          type: UniversalFileType.file,
-          displayName: e.name,
-        );
-      }).toList();
+      final newFiles = result
+          .map(
+            (e) => UniversalFile(
+              data: e.xFile,
+              type: UniversalFileType.file,
+              // `PlatformFile.xFile` keeps the picked name; `displayName`
+              // guarantees `file_name` is never empty on upload.
+              displayName: e.name,
+            ),
+          )
+          .toList();
 
       if (!allowMultiple) {
         files.value = newFiles;
@@ -187,25 +198,24 @@ class CloudFilePicker extends HookConsumerWidget {
 
     void pickVideo() async {
       showLoadingModal(context);
-      final result = await FilePicker.pickFiles(
+      final result = await _pickPlatformFiles(
         allowMultiple: allowMultiple,
         type: FileType.video,
       );
-      if (result == null || result.files.isEmpty) {
+      if (result.isEmpty) {
         if (context.mounted) hideLoadingModal(context);
         return;
       }
 
-      final newFiles = result.files.map((e) {
-        final xfile = e.bytes != null
-            ? XFile.fromData(e.bytes!, name: e.name)
-            : XFile(e.path!);
-        return UniversalFile(
-          data: xfile,
-          type: UniversalFileType.video,
-          displayName: e.name,
-        );
-      }).toList();
+      final newFiles = result
+          .map(
+            (e) => UniversalFile(
+              data: e.xFile,
+              type: UniversalFileType.video,
+              displayName: e.name,
+            ),
+          )
+          .toList();
 
       if (!allowMultiple) {
         files.value = newFiles;

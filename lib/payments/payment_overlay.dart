@@ -296,7 +296,7 @@ class _PaymentContent extends ConsumerStatefulWidget {
 class _PaymentContentState extends ConsumerState<_PaymentContent> {
   static const String _pinStorageKey = 'app_pin_code';
   static final _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
   );
 
   final LocalAuthentication _localAuth = LocalAuthentication();

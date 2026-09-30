@@ -84,7 +84,7 @@ class ComposeRecorder extends HookConsumerWidget {
     }
 
     Future<void> addExistingAudio() async {
-      var result = await FilePicker.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'],
         onFileLoading: (status) {
@@ -96,8 +96,8 @@ class ComposeRecorder extends HookConsumerWidget {
           }
         },
       );
-      if (result == null || result.count == 0) return;
-      if (context.mounted) Navigator.of(context).pop(result.files.first.path);
+      if (result.isEmpty) return;
+      if (context.mounted) Navigator.of(context).pop(result.first.path);
     }
 
     return SheetScaffold(

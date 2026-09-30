@@ -12,21 +12,17 @@ class ProtocolHandlerWindows extends MethodChannelProtocolHandler {
 
   @override
   Future<void> register(String scheme) async {
-    String appPath = Platform.resolvedExecutable;
+    final appPath = Platform.resolvedExecutable;
 
-    String protocolRegKey = 'Software\\Classes\\$scheme';
-    RegistryValue protocolRegValue = const RegistryValue.string(
-      'URL Protocol',
-      '',
-    );
-    String protocolCmdRegKey = 'shell\\open\\command';
-    RegistryValue protocolCmdRegValue = RegistryValue.string(
-      '',
-      '$appPath "%1"',
-    );
+    final protocolRegKey = 'Software\\Classes\\$scheme';
+    const protocolCmdRegKey = 'shell\\open\\command';
 
-    final regKey = Registry.currentUser.createKey(protocolRegKey);
-    regKey.createValue(protocolRegValue);
-    regKey.createKey(protocolCmdRegKey).createValue(protocolCmdRegValue);
+    final regKey = RegistryKey.openCurrentUser(
+      RegistryAccess.readWrite,
+    ).create(protocolRegKey);
+    regKey.setValue('URL Protocol', const RegistryValue.string(''));
+    regKey
+        .create(protocolCmdRegKey)
+        .setValue('', RegistryValue.string('$appPath "%1"'));
   }
 }

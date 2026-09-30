@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'tour.dart';
@@ -9,6 +9,7 @@ part of 'tour.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $TourCopyWith<Tour> get copyWith => _$TourCopyWithImpl<Tour>(this as Tour, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tour&&(identical(other.id, id) || other.id == id)&&(identical(other.isStartup, isStartup) || other.isStartup == isStartup));
+  final _this = this as Tour;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tour&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.isStartup, _this.isStartup) || other.isStartup == _this.isStartup));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,isStartup);
+int get hashCode {
+  final _this = this as Tour;
+  return Object.hash(runtimeType,_this.id,_this.isStartup);
+}
 
 @override
 String toString() {
-  return 'Tour(id: $id, isStartup: $isStartup)';
+  final _this = this as Tour;
+  return 'Tour(id: ${_this.id}, isStartup: ${_this.isStartup})';
 }
 
 
@@ -63,7 +69,7 @@ class _$TourCopyWithImpl<$Res>
 /// Create a copy of Tour
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? isStartup = null,}) {
-  return _then(_self.copyWith(
+  return _then(Tour(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,isStartup: null == isStartup ? _self.isStartup : isStartup // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -217,16 +223,18 @@ _$TourCopyWith<_Tour> get copyWith => __$TourCopyWithImpl<_Tour>(this, _$identit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tour&&(identical(other.id, id) || other.id == id)&&(identical(other.isStartup, isStartup) || other.isStartup == isStartup));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tour&&(identical(other.id, id) || other.id == id)&&(identical(other.isStartup, isStartup) || other.isStartup == isStartup));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,isStartup);
+int get hashCode {
+    return Object.hash(runtimeType,id,isStartup);
+}
 
 @override
 String toString() {
-  return 'Tour(id: $id, isStartup: $isStartup)';
+    return 'Tour(id: $id, isStartup: $isStartup)';
 }
 
 

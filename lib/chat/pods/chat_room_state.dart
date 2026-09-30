@@ -882,42 +882,36 @@ class ChatRoomStateNotifier extends Notifier<ChatRoomState> {
   }
 
   Future<void> pickVideos() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.video,
-      allowMultiple: true,
-    );
-    if (result == null || result.count == 0) return;
+    final result = await FilePicker.pickFiles(type: FileType.video);
+    if (result.isEmpty) return;
 
     updateAttachments([
       ...state.attachments,
-      ...result.files.map(
+      ...result.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.video),
       ),
     ]);
   }
 
   Future<void> pickAudio() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.audio,
-      allowMultiple: true,
-    );
-    if (result == null || result.count == 0) return;
+    final result = await FilePicker.pickFiles(type: FileType.audio);
+    if (result.isEmpty) return;
 
     updateAttachments([
       ...state.attachments,
-      ...result.files.map(
+      ...result.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.audio),
       ),
     ]);
   }
 
   Future<void> pickFiles() async {
-    final result = await FilePicker.pickFiles(allowMultiple: true);
-    if (result == null || result.count == 0) return;
+    final result = await FilePicker.pickFiles();
+    if (result.isEmpty) return;
 
     updateAttachments([
       ...state.attachments,
-      ...result.files.map(
+      ...result.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.file),
       ),
     ]);

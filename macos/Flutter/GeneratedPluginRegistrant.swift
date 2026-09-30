@@ -10,7 +10,7 @@ import connectivity_plus
 import desktop_drop
 import desktop_multi_window
 import device_info_plus
-import file_picker
+import file_picker_darwin
 import file_saver
 import file_selector_macos
 import firebase_analytics

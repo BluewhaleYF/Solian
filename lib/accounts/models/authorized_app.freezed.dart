@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'authorized_app.dart';
@@ -9,6 +9,7 @@ part of 'authorized_app.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $AuthorizedAppCopyWith<AuthorizedApp> get copyWith => _$AuthorizedAppCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthorizedApp&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.appId, appId) || other.appId == appId)&&(identical(other.appSlug, appSlug) || other.appSlug == appSlug)&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appDescription, appDescription) || other.appDescription == appDescription)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&const DeepCollectionEquality().equals(other.scopes, scopes)&&(identical(other.lastAuthorizedAt, lastAuthorizedAt) || other.lastAuthorizedAt == lastAuthorizedAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt));
+  final _this = this as AuthorizedApp;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthorizedApp&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.appId, _this.appId) || other.appId == _this.appId)&&(identical(other.appSlug, _this.appSlug) || other.appSlug == _this.appSlug)&&(identical(other.appName, _this.appName) || other.appName == _this.appName)&&(identical(other.appDescription, _this.appDescription) || other.appDescription == _this.appDescription)&&(identical(other.picture, _this.picture) || other.picture == _this.picture)&&(identical(other.background, _this.background) || other.background == _this.background)&&const DeepCollectionEquality().equals(other.scopes, _this.scopes)&&(identical(other.lastAuthorizedAt, _this.lastAuthorizedAt) || other.lastAuthorizedAt == _this.lastAuthorizedAt)&&(identical(other.lastUsedAt, _this.lastUsedAt) || other.lastUsedAt == _this.lastUsedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,type,appId,appSlug,appName,appDescription,picture,background,const DeepCollectionEquality().hash(scopes),lastAuthorizedAt,lastUsedAt);
+int get hashCode {
+  final _this = this as AuthorizedApp;
+  return Object.hash(runtimeType,_this.id,_this.type,_this.appId,_this.appSlug,_this.appName,_this.appDescription,_this.picture,_this.background,const DeepCollectionEquality().hash(_this.scopes),_this.lastAuthorizedAt,_this.lastUsedAt);
+}
 
 @override
 String toString() {
-  return 'AuthorizedApp(id: $id, type: $type, appId: $appId, appSlug: $appSlug, appName: $appName, appDescription: $appDescription, picture: $picture, background: $background, scopes: $scopes, lastAuthorizedAt: $lastAuthorizedAt, lastUsedAt: $lastUsedAt)';
+  final _this = this as AuthorizedApp;
+  return 'AuthorizedApp(id: ${_this.id}, type: ${_this.type}, appId: ${_this.appId}, appSlug: ${_this.appSlug}, appName: ${_this.appName}, appDescription: ${_this.appDescription}, picture: ${_this.picture}, background: ${_this.background}, scopes: ${_this.scopes}, lastAuthorizedAt: ${_this.lastAuthorizedAt}, lastUsedAt: ${_this.lastUsedAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$AuthorizedAppCopyWithImpl<$Res>
 /// Create a copy of AuthorizedApp
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? type = null,Object? appId = null,Object? appSlug = freezed,Object? appName = freezed,Object? appDescription = freezed,Object? picture = freezed,Object? background = freezed,Object? scopes = null,Object? lastAuthorizedAt = freezed,Object? lastUsedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AuthorizedApp(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as int,appId: null == appId ? _self.appId : appId // ignore: cast_nullable_to_non_nullable
@@ -237,7 +243,7 @@ return $default(_that.id,_that.type,_that.appId,_that.appSlug,_that.appName,_tha
 @JsonSerializable()
 
 class _AuthorizedApp implements AuthorizedApp {
-  const _AuthorizedApp({required this.id, this.type = 0, @JsonKey(name: 'app_id') required this.appId, @JsonKey(name: 'app_slug') this.appSlug, @JsonKey(name: 'app_name') this.appName, @JsonKey(name: 'app_description') this.appDescription, required this.picture, required this.background, final  List<String> scopes = const [], @JsonKey(name: 'last_authorized_at') this.lastAuthorizedAt, @JsonKey(name: 'last_used_at') this.lastUsedAt}): _scopes = scopes;
+  const _AuthorizedApp({required this.id, this.type = 0, @JsonKey(name: 'app_id') required this.appId, @JsonKey(name: 'app_slug') this.appSlug, @JsonKey(name: 'app_name') this.appName, @JsonKey(name: 'app_description') this.appDescription, required this.picture, required this.background,  List<String> scopes = const [], @JsonKey(name: 'last_authorized_at') this.lastAuthorizedAt, @JsonKey(name: 'last_used_at') this.lastUsedAt}): _scopes = scopes;
   factory _AuthorizedApp.fromJson(Map<String, dynamic> json) => _$AuthorizedAppFromJson(json);
 
 @override final  String id;
@@ -271,16 +277,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthorizedApp&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.appId, appId) || other.appId == appId)&&(identical(other.appSlug, appSlug) || other.appSlug == appSlug)&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appDescription, appDescription) || other.appDescription == appDescription)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&const DeepCollectionEquality().equals(other._scopes, _scopes)&&(identical(other.lastAuthorizedAt, lastAuthorizedAt) || other.lastAuthorizedAt == lastAuthorizedAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthorizedApp&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.appId, appId) || other.appId == appId)&&(identical(other.appSlug, appSlug) || other.appSlug == appSlug)&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appDescription, appDescription) || other.appDescription == appDescription)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&const DeepCollectionEquality().equals(other.scopes, _scopes)&&(identical(other.lastAuthorizedAt, lastAuthorizedAt) || other.lastAuthorizedAt == lastAuthorizedAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,type,appId,appSlug,appName,appDescription,picture,background,const DeepCollectionEquality().hash(_scopes),lastAuthorizedAt,lastUsedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,type,appId,appSlug,appName,appDescription,picture,background,const DeepCollectionEquality().hash(_scopes),lastAuthorizedAt,lastUsedAt);
+}
 
 @override
 String toString() {
-  return 'AuthorizedApp(id: $id, type: $type, appId: $appId, appSlug: $appSlug, appName: $appName, appDescription: $appDescription, picture: $picture, background: $background, scopes: $scopes, lastAuthorizedAt: $lastAuthorizedAt, lastUsedAt: $lastUsedAt)';
+    return 'AuthorizedApp(id: $id, type: $type, appId: $appId, appSlug: $appSlug, appName: $appName, appDescription: $appDescription, picture: $picture, background: $background, scopes: $scopes, lastAuthorizedAt: $lastAuthorizedAt, lastUsedAt: $lastUsedAt)';
 }
 
 

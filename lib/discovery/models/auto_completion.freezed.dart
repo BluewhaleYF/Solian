@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'auto_completion.dart';
@@ -9,6 +9,7 @@ part of 'auto_completion.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 AutoCompletionResponse _$AutoCompletionResponseFromJson(
@@ -51,16 +52,21 @@ $AutoCompletionResponseCopyWith<AutoCompletionResponse> get copyWith => _$AutoCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionResponse&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.items, items));
+  final _this = this as AutoCompletionResponse;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionResponse&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.items, _this.items));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(items));
+int get hashCode {
+  final _this = this as AutoCompletionResponse;
+  return Object.hash(runtimeType,_this.type,const DeepCollectionEquality().hash(_this.items));
+}
 
 @override
 String toString() {
-  return 'AutoCompletionResponse(type: $type, items: $items)';
+  final _this = this as AutoCompletionResponse;
+  return 'AutoCompletionResponse(type: ${_this.type}, items: ${_this.items})';
 }
 
 
@@ -233,7 +239,7 @@ return sticker(_that.type,_that.items);case _:
 @JsonSerializable()
 
 class AutoCompletionAccountResponse implements AutoCompletionResponse {
-  const AutoCompletionAccountResponse({required this.type, required final  List<AutoCompletionItem> items, final  String? $type}): _items = items,$type = $type ?? 'account';
+  const AutoCompletionAccountResponse({required this.type, required  List<AutoCompletionItem> items,  String? $type}): _items = items,$type = $type ?? 'account';
   factory AutoCompletionAccountResponse.fromJson(Map<String, dynamic> json) => _$AutoCompletionAccountResponseFromJson(json);
 
 @override final  String type;
@@ -262,16 +268,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionAccountResponse&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._items, _items));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionAccountResponse&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.items, _items));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_items));
+int get hashCode {
+    return Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_items));
+}
 
 @override
 String toString() {
-  return 'AutoCompletionResponse.account(type: $type, items: $items)';
+    return 'AutoCompletionResponse.account(type: $type, items: $items)';
 }
 
 
@@ -314,7 +322,7 @@ as List<AutoCompletionItem>,
 @JsonSerializable()
 
 class AutoCompletionStickerResponse implements AutoCompletionResponse {
-  const AutoCompletionStickerResponse({required this.type, required final  List<AutoCompletionItem> items, final  String? $type}): _items = items,$type = $type ?? 'sticker';
+  const AutoCompletionStickerResponse({required this.type, required  List<AutoCompletionItem> items,  String? $type}): _items = items,$type = $type ?? 'sticker';
   factory AutoCompletionStickerResponse.fromJson(Map<String, dynamic> json) => _$AutoCompletionStickerResponseFromJson(json);
 
 @override final  String type;
@@ -343,16 +351,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionStickerResponse&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._items, _items));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionStickerResponse&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.items, _items));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_items));
+int get hashCode {
+    return Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_items));
+}
 
 @override
 String toString() {
-  return 'AutoCompletionResponse.sticker(type: $type, items: $items)';
+    return 'AutoCompletionResponse.sticker(type: $type, items: $items)';
 }
 
 
@@ -408,16 +418,21 @@ $AutoCompletionItemCopyWith<AutoCompletionItem> get copyWith => _$AutoCompletion
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionItem&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.secondaryText, secondaryText) || other.secondaryText == secondaryText)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.data, data));
+  final _this = this as AutoCompletionItem;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoCompletionItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.secondaryText, _this.secondaryText) || other.secondaryText == _this.secondaryText)&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.data, _this.data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,secondaryText,type,const DeepCollectionEquality().hash(data));
+int get hashCode {
+  final _this = this as AutoCompletionItem;
+  return Object.hash(runtimeType,_this.id,_this.displayName,_this.secondaryText,_this.type,const DeepCollectionEquality().hash(_this.data));
+}
 
 @override
 String toString() {
-  return 'AutoCompletionItem(id: $id, displayName: $displayName, secondaryText: $secondaryText, type: $type, data: $data)';
+  final _this = this as AutoCompletionItem;
+  return 'AutoCompletionItem(id: ${_this.id}, displayName: ${_this.displayName}, secondaryText: ${_this.secondaryText}, type: ${_this.type}, data: ${_this.data})';
 }
 
 
@@ -446,7 +461,7 @@ class _$AutoCompletionItemCopyWithImpl<$Res>
 /// Create a copy of AutoCompletionItem
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = null,Object? secondaryText = freezed,Object? type = null,Object? data = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AutoCompletionItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,secondaryText: freezed == secondaryText ? _self.secondaryText : secondaryText // ignore: cast_nullable_to_non_nullable
@@ -609,16 +624,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutoCompletionItem&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.secondaryText, secondaryText) || other.secondaryText == secondaryText)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.data, data));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutoCompletionItem&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.secondaryText, secondaryText) || other.secondaryText == secondaryText)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.data, data));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,secondaryText,type,const DeepCollectionEquality().hash(data));
+int get hashCode {
+    return Object.hash(runtimeType,id,displayName,secondaryText,type,const DeepCollectionEquality().hash(data));
+}
 
 @override
 String toString() {
-  return 'AutoCompletionItem(id: $id, displayName: $displayName, secondaryText: $secondaryText, type: $type, data: $data)';
+    return 'AutoCompletionItem(id: $id, displayName: $displayName, secondaryText: $secondaryText, type: $type, data: $data)';
 }
 
 

@@ -45,7 +45,7 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 part 'account_settings.g.dart';
-part 'physical_passport.freezed.dart';
+part 'account_settings.freezed.dart';
 
 bool get _supportsPhysicalPassportScan =>
     !kIsWeb && (Platform.isAndroid || Platform.isIOS);

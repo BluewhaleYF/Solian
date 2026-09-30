@@ -949,20 +949,16 @@ class ComposeLogic {
   }
 
   static Future<void> pickGeneralFile(WidgetRef ref, ComposeState state) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.any,
-      allowMultiple: true,
-    );
-    if (result == null || result.count == 0) return;
+    final result = await FilePicker.pickFiles(type: FileType.any);
+    if (result.isEmpty) return;
 
     final newFiles = <UniversalFile>[];
 
-    for (final f in result.files) {
+    for (final f in result) {
       if (f.path == null) continue;
 
       final mimeType =
-          lookupMimeType(f.path!, headerBytes: f.bytes) ??
-          'application/octet-stream';
+          lookupMimeType(f.path!) ?? 'application/octet-stream';
       final xfile = XFile(f.path!, name: f.name, mimeType: mimeType);
 
       final uf = UniversalFile(data: xfile, type: UniversalFileType.file);
@@ -1029,8 +1025,8 @@ class ComposeLogic {
       type: FileType.custom,
       allowedExtensions: const ['md', 'markdown'],
     );
-    if (result == null || result.files.isEmpty) return 0;
-    final filePath = result.files.single.path;
+    if (result.isEmpty) return 0;
+    final filePath = result.first.path;
     if (filePath == null) return 0;
 
     final markdownFile = File(filePath);
@@ -1154,12 +1150,11 @@ class ComposeLogic {
   static Future<void> pickVideoMedia(WidgetRef ref, ComposeState state) async {
     final result = await FilePicker.pickFiles(
       type: FileType.video,
-      allowMultiple: true,
     );
-    if (result == null || result.count == 0) return;
+    if (result.isEmpty) return;
     state.attachments.value = [
       ...state.attachments.value,
-      ...result.files.map(
+      ...result.map(
         (e) => UniversalFile(data: e.xFile, type: UniversalFileType.video),
       ),
     ];

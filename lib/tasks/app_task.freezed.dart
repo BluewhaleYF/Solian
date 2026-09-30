@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'app_task.dart';
@@ -9,6 +9,7 @@ part of 'app_task.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $AppTaskCopyWith<AppTask> get copyWith => _$AppTaskCopyWithImpl<AppTask>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.statusMessage, statusMessage) || other.statusMessage == statusMessage)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.result, result));
+  final _this = this as AppTask;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppTask&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.progress, _this.progress) || other.progress == _this.progress)&&(identical(other.statusMessage, _this.statusMessage) || other.statusMessage == _this.statusMessage)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata)&&const DeepCollectionEquality().equals(other.result, _this.result));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,status,createdAt,updatedAt,type,progress,statusMessage,errorMessage,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(result));
+int get hashCode {
+  final _this = this as AppTask;
+  return Object.hash(runtimeType,_this.id,_this.title,_this.status,_this.createdAt,_this.updatedAt,_this.type,_this.progress,_this.statusMessage,_this.errorMessage,const DeepCollectionEquality().hash(_this.metadata),const DeepCollectionEquality().hash(_this.result));
+}
 
 @override
 String toString() {
-  return 'AppTask(id: $id, title: $title, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, type: $type, progress: $progress, statusMessage: $statusMessage, errorMessage: $errorMessage, metadata: $metadata, result: $result)';
+  final _this = this as AppTask;
+  return 'AppTask(id: ${_this.id}, title: ${_this.title}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, type: ${_this.type}, progress: ${_this.progress}, statusMessage: ${_this.statusMessage}, errorMessage: ${_this.errorMessage}, metadata: ${_this.metadata}, result: ${_this.result})';
 }
 
 
@@ -66,7 +72,7 @@ class _$AppTaskCopyWithImpl<$Res>
 /// Create a copy of AppTask
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? type = null,Object? progress = null,Object? statusMessage = freezed,Object? errorMessage = freezed,Object? metadata = freezed,Object? result = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AppTask(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -213,7 +219,7 @@ return $default(_that.id,_that.title,_that.status,_that.createdAt,_that.updatedA
 @JsonSerializable()
 
 class _AppTask extends AppTask {
-  const _AppTask({required this.id, required this.title, required this.status, required this.createdAt, required this.updatedAt, required this.type, this.progress = 0.0, this.statusMessage, this.errorMessage, final  Map<String, dynamic>? metadata, final  Map<String, dynamic>? result}): _metadata = metadata,_result = result,super._();
+  const _AppTask({required this.id, required this.title, required this.status, required this.createdAt, required this.updatedAt, required this.type, this.progress = 0.0, this.statusMessage, this.errorMessage,  Map<String, dynamic>? metadata,  Map<String, dynamic>? result}): _metadata = metadata,_result = result,super._();
   factory _AppTask.fromJson(Map<String, dynamic> json) => _$AppTaskFromJson(json);
 
 @override final  String id;
@@ -257,16 +263,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.statusMessage, statusMessage) || other.statusMessage == statusMessage)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&const DeepCollectionEquality().equals(other._result, _result));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.statusMessage, statusMessage) || other.statusMessage == statusMessage)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&const DeepCollectionEquality().equals(other.metadata, _metadata)&&const DeepCollectionEquality().equals(other.result, _result));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,status,createdAt,updatedAt,type,progress,statusMessage,errorMessage,const DeepCollectionEquality().hash(_metadata),const DeepCollectionEquality().hash(_result));
+int get hashCode {
+    return Object.hash(runtimeType,id,title,status,createdAt,updatedAt,type,progress,statusMessage,errorMessage,const DeepCollectionEquality().hash(_metadata),const DeepCollectionEquality().hash(_result));
+}
 
 @override
 String toString() {
-  return 'AppTask(id: $id, title: $title, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, type: $type, progress: $progress, statusMessage: $statusMessage, errorMessage: $errorMessage, metadata: $metadata, result: $result)';
+    return 'AppTask(id: $id, title: $title, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, type: $type, progress: $progress, statusMessage: $statusMessage, errorMessage: $errorMessage, metadata: $metadata, result: $result)';
 }
 
 

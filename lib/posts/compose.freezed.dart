@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'compose.dart';
@@ -9,6 +9,7 @@ part of 'compose.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $PostComposeInitialStateCopyWith<PostComposeInitialState> get copyWith => _$Post
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostComposeInitialState&&(identical(other.cloudDraftId, cloudDraftId) || other.cloudDraftId == cloudDraftId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.attachments, attachments)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.replyingTo, replyingTo) || other.replyingTo == replyingTo)&&(identical(other.forwardingTo, forwardingTo) || other.forwardingTo == forwardingTo)&&(identical(other.chainingTo, chainingTo) || other.chainingTo == chainingTo)&&(identical(other.calendarEventId, calendarEventId) || other.calendarEventId == calendarEventId)&&(identical(other.notableDayId, notableDayId) || other.notableDayId == notableDayId));
+  final _this = this as PostComposeInitialState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostComposeInitialState&&(identical(other.cloudDraftId, _this.cloudDraftId) || other.cloudDraftId == _this.cloudDraftId)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&(identical(other.visibility, _this.visibility) || other.visibility == _this.visibility)&&(identical(other.replyingTo, _this.replyingTo) || other.replyingTo == _this.replyingTo)&&(identical(other.forwardingTo, _this.forwardingTo) || other.forwardingTo == _this.forwardingTo)&&(identical(other.chainingTo, _this.chainingTo) || other.chainingTo == _this.chainingTo)&&(identical(other.calendarEventId, _this.calendarEventId) || other.calendarEventId == _this.calendarEventId)&&(identical(other.notableDayId, _this.notableDayId) || other.notableDayId == _this.notableDayId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,cloudDraftId,title,description,content,const DeepCollectionEquality().hash(attachments),visibility,replyingTo,forwardingTo,chainingTo,calendarEventId,notableDayId);
+int get hashCode {
+  final _this = this as PostComposeInitialState;
+  return Object.hash(runtimeType,_this.cloudDraftId,_this.title,_this.description,_this.content,const DeepCollectionEquality().hash(_this.attachments),_this.visibility,_this.replyingTo,_this.forwardingTo,_this.chainingTo,_this.calendarEventId,_this.notableDayId);
+}
 
 @override
 String toString() {
-  return 'PostComposeInitialState(cloudDraftId: $cloudDraftId, title: $title, description: $description, content: $content, attachments: $attachments, visibility: $visibility, replyingTo: $replyingTo, forwardingTo: $forwardingTo, chainingTo: $chainingTo, calendarEventId: $calendarEventId, notableDayId: $notableDayId)';
+  final _this = this as PostComposeInitialState;
+  return 'PostComposeInitialState(cloudDraftId: ${_this.cloudDraftId}, title: ${_this.title}, description: ${_this.description}, content: ${_this.content}, attachments: ${_this.attachments}, visibility: ${_this.visibility}, replyingTo: ${_this.replyingTo}, forwardingTo: ${_this.forwardingTo}, chainingTo: ${_this.chainingTo}, calendarEventId: ${_this.calendarEventId}, notableDayId: ${_this.notableDayId})';
 }
 
 
@@ -66,7 +72,7 @@ class _$PostComposeInitialStateCopyWithImpl<$Res>
 /// Create a copy of PostComposeInitialState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? cloudDraftId = freezed,Object? title = freezed,Object? description = freezed,Object? content = freezed,Object? attachments = null,Object? visibility = freezed,Object? replyingTo = freezed,Object? forwardingTo = freezed,Object? chainingTo = freezed,Object? calendarEventId = freezed,Object? notableDayId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(PostComposeInitialState(
 cloudDraftId: freezed == cloudDraftId ? _self.cloudDraftId : cloudDraftId // ignore: cast_nullable_to_non_nullable
 as String?,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -249,7 +255,7 @@ return $default(_that.cloudDraftId,_that.title,_that.description,_that.content,_
 @JsonSerializable()
 
 class _PostComposeInitialState implements PostComposeInitialState {
-  const _PostComposeInitialState({this.cloudDraftId, this.title, this.description, this.content, final  List<UniversalFile> attachments = const [], this.visibility, this.replyingTo, this.forwardingTo, this.chainingTo, this.calendarEventId, this.notableDayId}): _attachments = attachments;
+  const _PostComposeInitialState({this.cloudDraftId, this.title, this.description, this.content,  List<UniversalFile> attachments = const [], this.visibility, this.replyingTo, this.forwardingTo, this.chainingTo, this.calendarEventId, this.notableDayId}): _attachments = attachments;
   factory _PostComposeInitialState.fromJson(Map<String, dynamic> json) => _$PostComposeInitialStateFromJson(json);
 
 @override final  String? cloudDraftId;
@@ -283,16 +289,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostComposeInitialState&&(identical(other.cloudDraftId, cloudDraftId) || other.cloudDraftId == cloudDraftId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.replyingTo, replyingTo) || other.replyingTo == replyingTo)&&(identical(other.forwardingTo, forwardingTo) || other.forwardingTo == forwardingTo)&&(identical(other.chainingTo, chainingTo) || other.chainingTo == chainingTo)&&(identical(other.calendarEventId, calendarEventId) || other.calendarEventId == calendarEventId)&&(identical(other.notableDayId, notableDayId) || other.notableDayId == notableDayId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostComposeInitialState&&(identical(other.cloudDraftId, cloudDraftId) || other.cloudDraftId == cloudDraftId)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.replyingTo, replyingTo) || other.replyingTo == replyingTo)&&(identical(other.forwardingTo, forwardingTo) || other.forwardingTo == forwardingTo)&&(identical(other.chainingTo, chainingTo) || other.chainingTo == chainingTo)&&(identical(other.calendarEventId, calendarEventId) || other.calendarEventId == calendarEventId)&&(identical(other.notableDayId, notableDayId) || other.notableDayId == notableDayId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,cloudDraftId,title,description,content,const DeepCollectionEquality().hash(_attachments),visibility,replyingTo,forwardingTo,chainingTo,calendarEventId,notableDayId);
+int get hashCode {
+    return Object.hash(runtimeType,cloudDraftId,title,description,content,const DeepCollectionEquality().hash(_attachments),visibility,replyingTo,forwardingTo,chainingTo,calendarEventId,notableDayId);
+}
 
 @override
 String toString() {
-  return 'PostComposeInitialState(cloudDraftId: $cloudDraftId, title: $title, description: $description, content: $content, attachments: $attachments, visibility: $visibility, replyingTo: $replyingTo, forwardingTo: $forwardingTo, chainingTo: $chainingTo, calendarEventId: $calendarEventId, notableDayId: $notableDayId)';
+    return 'PostComposeInitialState(cloudDraftId: $cloudDraftId, title: $title, description: $description, content: $content, attachments: $attachments, visibility: $visibility, replyingTo: $replyingTo, forwardingTo: $forwardingTo, chainingTo: $chainingTo, calendarEventId: $calendarEventId, notableDayId: $notableDayId)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sticker_marketplace.dart';
@@ -9,6 +9,7 @@ part of 'sticker_marketplace.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $MarketplaceStickerQueryCopyWith<MarketplaceStickerQuery> get copyWith => _$Mark
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarketplaceStickerQuery&&(identical(other.byUsage, byUsage) || other.byUsage == byUsage)&&(identical(other.query, query) || other.query == query));
+  final _this = this as MarketplaceStickerQuery;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarketplaceStickerQuery&&(identical(other.byUsage, _this.byUsage) || other.byUsage == _this.byUsage)&&(identical(other.query, _this.query) || other.query == _this.query));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,byUsage,query);
+int get hashCode {
+  final _this = this as MarketplaceStickerQuery;
+  return Object.hash(runtimeType,_this.byUsage,_this.query);
+}
 
 @override
 String toString() {
-  return 'MarketplaceStickerQuery(byUsage: $byUsage, query: $query)';
+  final _this = this as MarketplaceStickerQuery;
+  return 'MarketplaceStickerQuery(byUsage: ${_this.byUsage}, query: ${_this.query})';
 }
 
 
@@ -63,7 +69,7 @@ class _$MarketplaceStickerQueryCopyWithImpl<$Res>
 /// Create a copy of MarketplaceStickerQuery
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? byUsage = null,Object? query = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(MarketplaceStickerQuery(
 byUsage: null == byUsage ? _self.byUsage : byUsage // ignore: cast_nullable_to_non_nullable
 as bool,query: freezed == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -217,16 +223,18 @@ _$MarketplaceStickerQueryCopyWith<_MarketplaceStickerQuery> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarketplaceStickerQuery&&(identical(other.byUsage, byUsage) || other.byUsage == byUsage)&&(identical(other.query, query) || other.query == query));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarketplaceStickerQuery&&(identical(other.byUsage, byUsage) || other.byUsage == byUsage)&&(identical(other.query, query) || other.query == query));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,byUsage,query);
+int get hashCode {
+    return Object.hash(runtimeType,byUsage,query);
+}
 
 @override
 String toString() {
-  return 'MarketplaceStickerQuery(byUsage: $byUsage, query: $query)';
+    return 'MarketplaceStickerQuery(byUsage: $byUsage, query: $query)';
 }
 
 

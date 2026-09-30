@@ -935,19 +935,16 @@ class FileListScreen extends HookConsumerWidget {
     String? workspaceId,
   ) async {
     try {
-      final result = await FilePicker.pickFiles(
-        allowMultiple: true,
-        withData: false,
-      );
+      final result = await FilePicker.pickFiles();
 
-      if (result != null && result.files.isNotEmpty) {
+      if (result.isNotEmpty) {
         await _uploadDroppedFiles(
           ref,
           tabId,
           currentPath,
           poolId,
           workspaceId,
-          result.files
+          result
               .where((file) => file.path != null)
               .map((file) => XFile(file.path!, name: file.name))
               .toList(),

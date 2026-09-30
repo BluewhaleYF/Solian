@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'route_item.dart';
@@ -9,6 +9,7 @@ part of 'route_item.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $RouteItemCopyWith<RouteItem> get copyWith => _$RouteItemCopyWithImpl<RouteItem>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteItem&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.searchableAliases, searchableAliases)&&(identical(other.icon, icon) || other.icon == icon));
+  final _this = this as RouteItem;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteItem&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.path, _this.path) || other.path == _this.path)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.searchableAliases, _this.searchableAliases)&&(identical(other.icon, _this.icon) || other.icon == _this.icon));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,path,description,const DeepCollectionEquality().hash(searchableAliases),icon);
+int get hashCode {
+  final _this = this as RouteItem;
+  return Object.hash(runtimeType,_this.name,_this.path,_this.description,const DeepCollectionEquality().hash(_this.searchableAliases),_this.icon);
+}
 
 @override
 String toString() {
-  return 'RouteItem(name: $name, path: $path, description: $description, searchableAliases: $searchableAliases, icon: $icon)';
+  final _this = this as RouteItem;
+  return 'RouteItem(name: ${_this.name}, path: ${_this.path}, description: ${_this.description}, searchableAliases: ${_this.searchableAliases}, icon: ${_this.icon})';
 }
 
 
@@ -63,7 +69,7 @@ class _$RouteItemCopyWithImpl<$Res>
 /// Create a copy of RouteItem
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? path = null,Object? description = null,Object? searchableAliases = null,Object? icon = null,}) {
-  return _then(_self.copyWith(
+  return _then(RouteItem(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -204,7 +210,7 @@ return $default(_that.name,_that.path,_that.description,_that.searchableAliases,
 
 
 class _RouteItem implements RouteItem {
-  const _RouteItem({required this.name, required this.path, required this.description, final  List<String> searchableAliases = const [], required this.icon}): _searchableAliases = searchableAliases;
+  const _RouteItem({required this.name, required this.path, required this.description,  List<String> searchableAliases = const [], required this.icon}): _searchableAliases = searchableAliases;
   
 
 @override final  String name;
@@ -229,16 +235,18 @@ _$RouteItemCopyWith<_RouteItem> get copyWith => __$RouteItemCopyWithImpl<_RouteI
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteItem&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other._searchableAliases, _searchableAliases)&&(identical(other.icon, icon) || other.icon == icon));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteItem&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.searchableAliases, _searchableAliases)&&(identical(other.icon, icon) || other.icon == icon));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,path,description,const DeepCollectionEquality().hash(_searchableAliases),icon);
+int get hashCode {
+    return Object.hash(runtimeType,name,path,description,const DeepCollectionEquality().hash(_searchableAliases),icon);
+}
 
 @override
 String toString() {
-  return 'RouteItem(name: $name, path: $path, description: $description, searchableAliases: $searchableAliases, icon: $icon)';
+    return 'RouteItem(name: $name, path: $path, description: $description, searchableAliases: $searchableAliases, icon: $icon)';
 }
 
 
@@ -294,16 +302,21 @@ $SpecialActionCopyWith<SpecialAction> get copyWith => _$SpecialActionCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpecialAction&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.action, action) || other.action == action)&&const DeepCollectionEquality().equals(other.searchableAliases, searchableAliases));
+  final _this = this as SpecialAction;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpecialAction&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.icon, _this.icon) || other.icon == _this.icon)&&(identical(other.action, _this.action) || other.action == _this.action)&&const DeepCollectionEquality().equals(other.searchableAliases, _this.searchableAliases));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,icon,action,const DeepCollectionEquality().hash(searchableAliases));
+int get hashCode {
+  final _this = this as SpecialAction;
+  return Object.hash(runtimeType,_this.name,_this.description,_this.icon,_this.action,const DeepCollectionEquality().hash(_this.searchableAliases));
+}
 
 @override
 String toString() {
-  return 'SpecialAction(name: $name, description: $description, icon: $icon, action: $action, searchableAliases: $searchableAliases)';
+  final _this = this as SpecialAction;
+  return 'SpecialAction(name: ${_this.name}, description: ${_this.description}, icon: ${_this.icon}, action: ${_this.action}, searchableAliases: ${_this.searchableAliases})';
 }
 
 
@@ -332,7 +345,7 @@ class _$SpecialActionCopyWithImpl<$Res>
 /// Create a copy of SpecialAction
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? icon = null,Object? action = null,Object? searchableAliases = null,}) {
-  return _then(_self.copyWith(
+  return _then(SpecialAction(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,icon: null == icon ? _self.icon : icon // ignore: cast_nullable_to_non_nullable
@@ -473,7 +486,7 @@ return $default(_that.name,_that.description,_that.icon,_that.action,_that.searc
 
 
 class _SpecialAction implements SpecialAction {
-  const _SpecialAction({required this.name, required this.description, required this.icon, required this.action, final  List<String> searchableAliases = const []}): _searchableAliases = searchableAliases;
+  const _SpecialAction({required this.name, required this.description, required this.icon, required this.action,  List<String> searchableAliases = const []}): _searchableAliases = searchableAliases;
   
 
 @override final  String name;
@@ -498,16 +511,18 @@ _$SpecialActionCopyWith<_SpecialAction> get copyWith => __$SpecialActionCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpecialAction&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.action, action) || other.action == action)&&const DeepCollectionEquality().equals(other._searchableAliases, _searchableAliases));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpecialAction&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.action, action) || other.action == action)&&const DeepCollectionEquality().equals(other.searchableAliases, _searchableAliases));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,icon,action,const DeepCollectionEquality().hash(_searchableAliases));
+int get hashCode {
+    return Object.hash(runtimeType,name,description,icon,action,const DeepCollectionEquality().hash(_searchableAliases));
+}
 
 @override
 String toString() {
-  return 'SpecialAction(name: $name, description: $description, icon: $icon, action: $action, searchableAliases: $searchableAliases)';
+    return 'SpecialAction(name: $name, description: $description, icon: $icon, action: $action, searchableAliases: $searchableAliases)';
 }
 
 

@@ -24,7 +24,7 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 /// cross-device login approvals via biometric.
 const String _pinStorageKey = 'app_pin_code';
 final _secureStorage = FlutterSecureStorage(
-  aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  aOptions: AndroidOptions(),
 );
 
 IconData _platformIcon(int? platform) {

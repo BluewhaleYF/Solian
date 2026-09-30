@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'developer.dart';
@@ -9,6 +9,7 @@ part of 'developer.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $SnDeveloperCopyWith<SnDeveloper> get copyWith => _$SnDeveloperCopyWithImpl<SnDe
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnDeveloper&&(identical(other.id, id) || other.id == id)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
+  final _this = this as SnDeveloper;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnDeveloper&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.publisher, _this.publisher) || other.publisher == _this.publisher));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,publisherId,publisher);
+int get hashCode {
+  final _this = this as SnDeveloper;
+  return Object.hash(runtimeType,_this.id,_this.publisherId,_this.publisher);
+}
 
 @override
 String toString() {
-  return 'SnDeveloper(id: $id, publisherId: $publisherId, publisher: $publisher)';
+  final _this = this as SnDeveloper;
+  return 'SnDeveloper(id: ${_this.id}, publisherId: ${_this.publisherId}, publisher: ${_this.publisher})';
 }
 
 
@@ -66,7 +72,7 @@ class _$SnDeveloperCopyWithImpl<$Res>
 /// Create a copy of SnDeveloper
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? publisherId = null,Object? publisher = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnDeveloper(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,publisherId: null == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
 as String,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
@@ -237,16 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnDeveloper&&(identical(other.id, id) || other.id == id)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnDeveloper&&(identical(other.id, id) || other.id == id)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,publisherId,publisher);
+int get hashCode {
+    return Object.hash(runtimeType,id,publisherId,publisher);
+}
 
 @override
 String toString() {
-  return 'SnDeveloper(id: $id, publisherId: $publisherId, publisher: $publisher)';
+    return 'SnDeveloper(id: $id, publisherId: $publisherId, publisher: $publisher)';
 }
 
 
@@ -315,16 +323,21 @@ $DeveloperStatsCopyWith<DeveloperStats> get copyWith => _$DeveloperStatsCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DeveloperStats&&(identical(other.totalCustomApps, totalCustomApps) || other.totalCustomApps == totalCustomApps));
+  final _this = this as DeveloperStats;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DeveloperStats&&(identical(other.totalCustomApps, _this.totalCustomApps) || other.totalCustomApps == _this.totalCustomApps));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,totalCustomApps);
+int get hashCode {
+  final _this = this as DeveloperStats;
+  return Object.hash(runtimeType,_this.totalCustomApps);
+}
 
 @override
 String toString() {
-  return 'DeveloperStats(totalCustomApps: $totalCustomApps)';
+  final _this = this as DeveloperStats;
+  return 'DeveloperStats(totalCustomApps: ${_this.totalCustomApps})';
 }
 
 
@@ -353,7 +366,7 @@ class _$DeveloperStatsCopyWithImpl<$Res>
 /// Create a copy of DeveloperStats
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? totalCustomApps = null,}) {
-  return _then(_self.copyWith(
+  return _then(DeveloperStats(
 totalCustomApps: null == totalCustomApps ? _self.totalCustomApps : totalCustomApps // ignore: cast_nullable_to_non_nullable
 as int,
   ));
@@ -508,16 +521,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeveloperStats&&(identical(other.totalCustomApps, totalCustomApps) || other.totalCustomApps == totalCustomApps));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeveloperStats&&(identical(other.totalCustomApps, totalCustomApps) || other.totalCustomApps == totalCustomApps));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,totalCustomApps);
+int get hashCode {
+    return Object.hash(runtimeType,totalCustomApps);
+}
 
 @override
 String toString() {
-  return 'DeveloperStats(totalCustomApps: $totalCustomApps)';
+    return 'DeveloperStats(totalCustomApps: $totalCustomApps)';
 }
 
 

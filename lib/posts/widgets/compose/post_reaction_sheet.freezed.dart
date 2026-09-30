@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'post_reaction_sheet.dart';
@@ -9,6 +9,7 @@ part of 'post_reaction_sheet.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ReactionListQueryCopyWith<ReactionListQuery> get copyWith => _$ReactionListQuer
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReactionListQuery&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.postId, postId) || other.postId == postId));
+  final _this = this as ReactionListQuery;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReactionListQuery&&(identical(other.symbol, _this.symbol) || other.symbol == _this.symbol)&&(identical(other.postId, _this.postId) || other.postId == _this.postId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,symbol,postId);
+int get hashCode {
+  final _this = this as ReactionListQuery;
+  return Object.hash(runtimeType,_this.symbol,_this.postId);
+}
 
 @override
 String toString() {
-  return 'ReactionListQuery(symbol: $symbol, postId: $postId)';
+  final _this = this as ReactionListQuery;
+  return 'ReactionListQuery(symbol: ${_this.symbol}, postId: ${_this.postId})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ReactionListQueryCopyWithImpl<$Res>
 /// Create a copy of ReactionListQuery
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? symbol = null,Object? postId = null,}) {
-  return _then(_self.copyWith(
+  return _then(ReactionListQuery(
 symbol: null == symbol ? _self.symbol : symbol // ignore: cast_nullable_to_non_nullable
 as String,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,
@@ -217,16 +223,18 @@ _$ReactionListQueryCopyWith<_ReactionListQuery> get copyWith => __$ReactionListQ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReactionListQuery&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.postId, postId) || other.postId == postId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReactionListQuery&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.postId, postId) || other.postId == postId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,symbol,postId);
+int get hashCode {
+    return Object.hash(runtimeType,symbol,postId);
+}
 
 @override
 String toString() {
-  return 'ReactionListQuery(symbol: $symbol, postId: $postId)';
+    return 'ReactionListQuery(symbol: $symbol, postId: $postId)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'realm_overview.dart';
@@ -9,6 +9,7 @@ part of 'realm_overview.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $RealmBoostStatusCopyWith<RealmBoostStatus> get copyWith => _$RealmBoostStatusCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmBoostStatus&&(identical(other.boostPoints, boostPoints) || other.boostPoints == boostPoints)&&(identical(other.boostLevel, boostLevel) || other.boostLevel == boostLevel)&&(identical(other.labelCap, labelCap) || other.labelCap == labelCap)&&(identical(other.expiresAfterDays, expiresAfterDays) || other.expiresAfterDays == expiresAfterDays)&&const DeepCollectionEquality().equals(other.supportedCurrencies, supportedCurrencies)&&(identical(other.defaultCurrency, defaultCurrency) || other.defaultCurrency == defaultCurrency));
+  final _this = this as RealmBoostStatus;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmBoostStatus&&(identical(other.boostPoints, _this.boostPoints) || other.boostPoints == _this.boostPoints)&&(identical(other.boostLevel, _this.boostLevel) || other.boostLevel == _this.boostLevel)&&(identical(other.labelCap, _this.labelCap) || other.labelCap == _this.labelCap)&&(identical(other.expiresAfterDays, _this.expiresAfterDays) || other.expiresAfterDays == _this.expiresAfterDays)&&const DeepCollectionEquality().equals(other.supportedCurrencies, _this.supportedCurrencies)&&(identical(other.defaultCurrency, _this.defaultCurrency) || other.defaultCurrency == _this.defaultCurrency));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,boostPoints,boostLevel,labelCap,expiresAfterDays,const DeepCollectionEquality().hash(supportedCurrencies),defaultCurrency);
+int get hashCode {
+  final _this = this as RealmBoostStatus;
+  return Object.hash(runtimeType,_this.boostPoints,_this.boostLevel,_this.labelCap,_this.expiresAfterDays,const DeepCollectionEquality().hash(_this.supportedCurrencies),_this.defaultCurrency);
+}
 
 @override
 String toString() {
-  return 'RealmBoostStatus(boostPoints: $boostPoints, boostLevel: $boostLevel, labelCap: $labelCap, expiresAfterDays: $expiresAfterDays, supportedCurrencies: $supportedCurrencies, defaultCurrency: $defaultCurrency)';
+  final _this = this as RealmBoostStatus;
+  return 'RealmBoostStatus(boostPoints: ${_this.boostPoints}, boostLevel: ${_this.boostLevel}, labelCap: ${_this.labelCap}, expiresAfterDays: ${_this.expiresAfterDays}, supportedCurrencies: ${_this.supportedCurrencies}, defaultCurrency: ${_this.defaultCurrency})';
 }
 
 
@@ -66,7 +72,7 @@ class _$RealmBoostStatusCopyWithImpl<$Res>
 /// Create a copy of RealmBoostStatus
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? boostPoints = null,Object? boostLevel = null,Object? labelCap = null,Object? expiresAfterDays = null,Object? supportedCurrencies = null,Object? defaultCurrency = null,}) {
-  return _then(_self.copyWith(
+  return _then(RealmBoostStatus(
 boostPoints: null == boostPoints ? _self.boostPoints : boostPoints // ignore: cast_nullable_to_non_nullable
 as int,boostLevel: null == boostLevel ? _self.boostLevel : boostLevel // ignore: cast_nullable_to_non_nullable
 as int,labelCap: null == labelCap ? _self.labelCap : labelCap // ignore: cast_nullable_to_non_nullable
@@ -208,7 +214,7 @@ return $default(_that.boostPoints,_that.boostLevel,_that.labelCap,_that.expiresA
 @JsonSerializable()
 
 class _RealmBoostStatus implements RealmBoostStatus {
-  const _RealmBoostStatus({required this.boostPoints, required this.boostLevel, required this.labelCap, required this.expiresAfterDays, required final  List<String> supportedCurrencies, required this.defaultCurrency}): _supportedCurrencies = supportedCurrencies;
+  const _RealmBoostStatus({required this.boostPoints, required this.boostLevel, required this.labelCap, required this.expiresAfterDays, required  List<String> supportedCurrencies, required this.defaultCurrency}): _supportedCurrencies = supportedCurrencies;
   factory _RealmBoostStatus.fromJson(Map<String, dynamic> json) => _$RealmBoostStatusFromJson(json);
 
 @override final  int boostPoints;
@@ -237,16 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmBoostStatus&&(identical(other.boostPoints, boostPoints) || other.boostPoints == boostPoints)&&(identical(other.boostLevel, boostLevel) || other.boostLevel == boostLevel)&&(identical(other.labelCap, labelCap) || other.labelCap == labelCap)&&(identical(other.expiresAfterDays, expiresAfterDays) || other.expiresAfterDays == expiresAfterDays)&&const DeepCollectionEquality().equals(other._supportedCurrencies, _supportedCurrencies)&&(identical(other.defaultCurrency, defaultCurrency) || other.defaultCurrency == defaultCurrency));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmBoostStatus&&(identical(other.boostPoints, boostPoints) || other.boostPoints == boostPoints)&&(identical(other.boostLevel, boostLevel) || other.boostLevel == boostLevel)&&(identical(other.labelCap, labelCap) || other.labelCap == labelCap)&&(identical(other.expiresAfterDays, expiresAfterDays) || other.expiresAfterDays == expiresAfterDays)&&const DeepCollectionEquality().equals(other.supportedCurrencies, _supportedCurrencies)&&(identical(other.defaultCurrency, defaultCurrency) || other.defaultCurrency == defaultCurrency));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,boostPoints,boostLevel,labelCap,expiresAfterDays,const DeepCollectionEquality().hash(_supportedCurrencies),defaultCurrency);
+int get hashCode {
+    return Object.hash(runtimeType,boostPoints,boostLevel,labelCap,expiresAfterDays,const DeepCollectionEquality().hash(_supportedCurrencies),defaultCurrency);
+}
 
 @override
 String toString() {
-  return 'RealmBoostStatus(boostPoints: $boostPoints, boostLevel: $boostLevel, labelCap: $labelCap, expiresAfterDays: $expiresAfterDays, supportedCurrencies: $supportedCurrencies, defaultCurrency: $defaultCurrency)';
+    return 'RealmBoostStatus(boostPoints: $boostPoints, boostLevel: $boostLevel, labelCap: $labelCap, expiresAfterDays: $expiresAfterDays, supportedCurrencies: $supportedCurrencies, defaultCurrency: $defaultCurrency)';
 }
 
 
@@ -306,16 +314,21 @@ $RealmBoostLeaderboardEntryCopyWith<RealmBoostLeaderboardEntry> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmBoostLeaderboardEntry&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.amountGolds, amountGolds) || other.amountGolds == amountGolds)&&(identical(other.amountPoints, amountPoints) || other.amountPoints == amountPoints)&&(identical(other.shares, shares) || other.shares == shares)&&(identical(other.boosts, boosts) || other.boosts == boosts)&&(identical(other.lastBoostedAt, lastBoostedAt) || other.lastBoostedAt == lastBoostedAt));
+  final _this = this as RealmBoostLeaderboardEntry;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmBoostLeaderboardEntry&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.account, _this.account) || other.account == _this.account)&&(identical(other.amountGolds, _this.amountGolds) || other.amountGolds == _this.amountGolds)&&(identical(other.amountPoints, _this.amountPoints) || other.amountPoints == _this.amountPoints)&&(identical(other.shares, _this.shares) || other.shares == _this.shares)&&(identical(other.boosts, _this.boosts) || other.boosts == _this.boosts)&&(identical(other.lastBoostedAt, _this.lastBoostedAt) || other.lastBoostedAt == _this.lastBoostedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accountId,account,amountGolds,amountPoints,shares,boosts,lastBoostedAt);
+int get hashCode {
+  final _this = this as RealmBoostLeaderboardEntry;
+  return Object.hash(runtimeType,_this.accountId,_this.account,_this.amountGolds,_this.amountPoints,_this.shares,_this.boosts,_this.lastBoostedAt);
+}
 
 @override
 String toString() {
-  return 'RealmBoostLeaderboardEntry(accountId: $accountId, account: $account, amountGolds: $amountGolds, amountPoints: $amountPoints, shares: $shares, boosts: $boosts, lastBoostedAt: $lastBoostedAt)';
+  final _this = this as RealmBoostLeaderboardEntry;
+  return 'RealmBoostLeaderboardEntry(accountId: ${_this.accountId}, account: ${_this.account}, amountGolds: ${_this.amountGolds}, amountPoints: ${_this.amountPoints}, shares: ${_this.shares}, boosts: ${_this.boosts}, lastBoostedAt: ${_this.lastBoostedAt})';
 }
 
 
@@ -344,7 +357,7 @@ class _$RealmBoostLeaderboardEntryCopyWithImpl<$Res>
 /// Create a copy of RealmBoostLeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? accountId = null,Object? account = freezed,Object? amountGolds = null,Object? amountPoints = null,Object? shares = null,Object? boosts = null,Object? lastBoostedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(RealmBoostLeaderboardEntry(
 accountId: null == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
 as String,account: freezed == account ? _self.account : account // ignore: cast_nullable_to_non_nullable
 as SnAccount?,amountGolds: null == amountGolds ? _self.amountGolds : amountGolds // ignore: cast_nullable_to_non_nullable
@@ -523,16 +536,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmBoostLeaderboardEntry&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.amountGolds, amountGolds) || other.amountGolds == amountGolds)&&(identical(other.amountPoints, amountPoints) || other.amountPoints == amountPoints)&&(identical(other.shares, shares) || other.shares == shares)&&(identical(other.boosts, boosts) || other.boosts == boosts)&&(identical(other.lastBoostedAt, lastBoostedAt) || other.lastBoostedAt == lastBoostedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmBoostLeaderboardEntry&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.amountGolds, amountGolds) || other.amountGolds == amountGolds)&&(identical(other.amountPoints, amountPoints) || other.amountPoints == amountPoints)&&(identical(other.shares, shares) || other.shares == shares)&&(identical(other.boosts, boosts) || other.boosts == boosts)&&(identical(other.lastBoostedAt, lastBoostedAt) || other.lastBoostedAt == lastBoostedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accountId,account,amountGolds,amountPoints,shares,boosts,lastBoostedAt);
+int get hashCode {
+    return Object.hash(runtimeType,accountId,account,amountGolds,amountPoints,shares,boosts,lastBoostedAt);
+}
 
 @override
 String toString() {
-  return 'RealmBoostLeaderboardEntry(accountId: $accountId, account: $account, amountGolds: $amountGolds, amountPoints: $amountPoints, shares: $shares, boosts: $boosts, lastBoostedAt: $lastBoostedAt)';
+    return 'RealmBoostLeaderboardEntry(accountId: $accountId, account: $account, amountGolds: $amountGolds, amountPoints: $amountPoints, shares: $shares, boosts: $boosts, lastBoostedAt: $lastBoostedAt)';
 }
 
 
@@ -605,16 +620,21 @@ $RealmLabelCopyWith<RealmLabel> get copyWith => _$RealmLabelCopyWithImpl<RealmLa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmLabel&&(identical(other.id, id) || other.id == id)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.color, color) || other.color == color)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.createdByAccountId, createdByAccountId) || other.createdByAccountId == createdByAccountId));
+  final _this = this as RealmLabel;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RealmLabel&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.realmId, _this.realmId) || other.realmId == _this.realmId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.color, _this.color) || other.color == _this.color)&&(identical(other.icon, _this.icon) || other.icon == _this.icon)&&(identical(other.createdByAccountId, _this.createdByAccountId) || other.createdByAccountId == _this.createdByAccountId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,realmId,name,description,color,icon,createdByAccountId);
+int get hashCode {
+  final _this = this as RealmLabel;
+  return Object.hash(runtimeType,_this.id,_this.realmId,_this.name,_this.description,_this.color,_this.icon,_this.createdByAccountId);
+}
 
 @override
 String toString() {
-  return 'RealmLabel(id: $id, realmId: $realmId, name: $name, description: $description, color: $color, icon: $icon, createdByAccountId: $createdByAccountId)';
+  final _this = this as RealmLabel;
+  return 'RealmLabel(id: ${_this.id}, realmId: ${_this.realmId}, name: ${_this.name}, description: ${_this.description}, color: ${_this.color}, icon: ${_this.icon}, createdByAccountId: ${_this.createdByAccountId})';
 }
 
 
@@ -643,7 +663,7 @@ class _$RealmLabelCopyWithImpl<$Res>
 /// Create a copy of RealmLabel
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? realmId = null,Object? name = null,Object? description = freezed,Object? color = freezed,Object? icon = freezed,Object? createdByAccountId = null,}) {
-  return _then(_self.copyWith(
+  return _then(RealmLabel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,realmId: null == realmId ? _self.realmId : realmId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -810,16 +830,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmLabel&&(identical(other.id, id) || other.id == id)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.color, color) || other.color == color)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.createdByAccountId, createdByAccountId) || other.createdByAccountId == createdByAccountId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RealmLabel&&(identical(other.id, id) || other.id == id)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.color, color) || other.color == color)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.createdByAccountId, createdByAccountId) || other.createdByAccountId == createdByAccountId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,realmId,name,description,color,icon,createdByAccountId);
+int get hashCode {
+    return Object.hash(runtimeType,id,realmId,name,description,color,icon,createdByAccountId);
+}
 
 @override
 String toString() {
-  return 'RealmLabel(id: $id, realmId: $realmId, name: $name, description: $description, color: $color, icon: $icon, createdByAccountId: $createdByAccountId)';
+    return 'RealmLabel(id: $id, realmId: $realmId, name: $name, description: $description, color: $color, icon: $icon, createdByAccountId: $createdByAccountId)';
 }
 
 

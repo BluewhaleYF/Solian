@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'redirect_data.dart';
@@ -9,6 +9,7 @@ part of 'redirect_data.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $SnRedirectDataCopyWith<SnRedirectData> get copyWith => _$SnRedirectDataCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnRedirectData&&(identical(other.version, version) || other.version == version)&&(identical(other.sourceRoomId, sourceRoomId) || other.sourceRoomId == sourceRoomId)&&const DeepCollectionEquality().equals(other.sourceRoom, sourceRoom)&&const DeepCollectionEquality().equals(other.redirectedBy, redirectedBy)&&const DeepCollectionEquality().equals(other.redirectedToRoom, redirectedToRoom)&&const DeepCollectionEquality().equals(other.senderMap, senderMap));
+  final _this = this as SnRedirectData;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnRedirectData&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.sourceRoomId, _this.sourceRoomId) || other.sourceRoomId == _this.sourceRoomId)&&const DeepCollectionEquality().equals(other.sourceRoom, _this.sourceRoom)&&const DeepCollectionEquality().equals(other.redirectedBy, _this.redirectedBy)&&const DeepCollectionEquality().equals(other.redirectedToRoom, _this.redirectedToRoom)&&const DeepCollectionEquality().equals(other.senderMap, _this.senderMap));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,version,sourceRoomId,const DeepCollectionEquality().hash(sourceRoom),const DeepCollectionEquality().hash(redirectedBy),const DeepCollectionEquality().hash(redirectedToRoom),const DeepCollectionEquality().hash(senderMap));
+int get hashCode {
+  final _this = this as SnRedirectData;
+  return Object.hash(runtimeType,_this.version,_this.sourceRoomId,const DeepCollectionEquality().hash(_this.sourceRoom),const DeepCollectionEquality().hash(_this.redirectedBy),const DeepCollectionEquality().hash(_this.redirectedToRoom),const DeepCollectionEquality().hash(_this.senderMap));
+}
 
 @override
 String toString() {
-  return 'SnRedirectData(version: $version, sourceRoomId: $sourceRoomId, sourceRoom: $sourceRoom, redirectedBy: $redirectedBy, redirectedToRoom: $redirectedToRoom, senderMap: $senderMap)';
+  final _this = this as SnRedirectData;
+  return 'SnRedirectData(version: ${_this.version}, sourceRoomId: ${_this.sourceRoomId}, sourceRoom: ${_this.sourceRoom}, redirectedBy: ${_this.redirectedBy}, redirectedToRoom: ${_this.redirectedToRoom}, senderMap: ${_this.senderMap})';
 }
 
 
@@ -211,7 +217,7 @@ return historySegment(_that.version,_that.kind,_that.sourceRoomId,_that.sourceRo
 
 
 class _SnSingleMessageRedirect extends SnRedirectData {
-  const _SnSingleMessageRedirect({required this.version, required this.sourceType, required this.sourceRoomId, required this.sourceSenderId, required this.sourceCreatedAt, required this.sourceMessageId, this.sourceContent, this.sourceSenderName, final  Map<String, dynamic> sourceMeta = const {}, final  List<Map<String, dynamic>> sourceAttachments = const [], required final  Map<String, dynamic> sourceRoom, required final  Map<String, dynamic> redirectedBy, required final  Map<String, dynamic> redirectedToRoom, required final  Map<String, dynamic> sourceMessage, final  Map<String, dynamic> senderMap = const {}}): _sourceMeta = sourceMeta,_sourceAttachments = sourceAttachments,_sourceRoom = sourceRoom,_redirectedBy = redirectedBy,_redirectedToRoom = redirectedToRoom,_sourceMessage = sourceMessage,_senderMap = senderMap,super._();
+  const _SnSingleMessageRedirect({required this.version, required this.sourceType, required this.sourceRoomId, required this.sourceSenderId, required this.sourceCreatedAt, required this.sourceMessageId, this.sourceContent, this.sourceSenderName,  Map<String, dynamic> sourceMeta = const {},  List<Map<String, dynamic>> sourceAttachments = const [], required  Map<String, dynamic> sourceRoom, required  Map<String, dynamic> redirectedBy, required  Map<String, dynamic> redirectedToRoom, required  Map<String, dynamic> sourceMessage,  Map<String, dynamic> senderMap = const {}}): _sourceMeta = sourceMeta,_sourceAttachments = sourceAttachments,_sourceRoom = sourceRoom,_redirectedBy = redirectedBy,_redirectedToRoom = redirectedToRoom,_sourceMessage = sourceMessage,_senderMap = senderMap,super._();
   
 
 @override final  int version;
@@ -282,16 +288,18 @@ _$SnSingleMessageRedirectCopyWith<_SnSingleMessageRedirect> get copyWith => __$S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnSingleMessageRedirect&&(identical(other.version, version) || other.version == version)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.sourceRoomId, sourceRoomId) || other.sourceRoomId == sourceRoomId)&&(identical(other.sourceSenderId, sourceSenderId) || other.sourceSenderId == sourceSenderId)&&(identical(other.sourceCreatedAt, sourceCreatedAt) || other.sourceCreatedAt == sourceCreatedAt)&&(identical(other.sourceMessageId, sourceMessageId) || other.sourceMessageId == sourceMessageId)&&(identical(other.sourceContent, sourceContent) || other.sourceContent == sourceContent)&&(identical(other.sourceSenderName, sourceSenderName) || other.sourceSenderName == sourceSenderName)&&const DeepCollectionEquality().equals(other._sourceMeta, _sourceMeta)&&const DeepCollectionEquality().equals(other._sourceAttachments, _sourceAttachments)&&const DeepCollectionEquality().equals(other._sourceRoom, _sourceRoom)&&const DeepCollectionEquality().equals(other._redirectedBy, _redirectedBy)&&const DeepCollectionEquality().equals(other._redirectedToRoom, _redirectedToRoom)&&const DeepCollectionEquality().equals(other._sourceMessage, _sourceMessage)&&const DeepCollectionEquality().equals(other._senderMap, _senderMap));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnSingleMessageRedirect&&(identical(other.version, version) || other.version == version)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.sourceRoomId, sourceRoomId) || other.sourceRoomId == sourceRoomId)&&(identical(other.sourceSenderId, sourceSenderId) || other.sourceSenderId == sourceSenderId)&&(identical(other.sourceCreatedAt, sourceCreatedAt) || other.sourceCreatedAt == sourceCreatedAt)&&(identical(other.sourceMessageId, sourceMessageId) || other.sourceMessageId == sourceMessageId)&&(identical(other.sourceContent, sourceContent) || other.sourceContent == sourceContent)&&(identical(other.sourceSenderName, sourceSenderName) || other.sourceSenderName == sourceSenderName)&&const DeepCollectionEquality().equals(other.sourceMeta, _sourceMeta)&&const DeepCollectionEquality().equals(other.sourceAttachments, _sourceAttachments)&&const DeepCollectionEquality().equals(other.sourceRoom, _sourceRoom)&&const DeepCollectionEquality().equals(other.redirectedBy, _redirectedBy)&&const DeepCollectionEquality().equals(other.redirectedToRoom, _redirectedToRoom)&&const DeepCollectionEquality().equals(other.sourceMessage, _sourceMessage)&&const DeepCollectionEquality().equals(other.senderMap, _senderMap));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,version,sourceType,sourceRoomId,sourceSenderId,sourceCreatedAt,sourceMessageId,sourceContent,sourceSenderName,const DeepCollectionEquality().hash(_sourceMeta),const DeepCollectionEquality().hash(_sourceAttachments),const DeepCollectionEquality().hash(_sourceRoom),const DeepCollectionEquality().hash(_redirectedBy),const DeepCollectionEquality().hash(_redirectedToRoom),const DeepCollectionEquality().hash(_sourceMessage),const DeepCollectionEquality().hash(_senderMap));
+int get hashCode {
+    return Object.hash(runtimeType,version,sourceType,sourceRoomId,sourceSenderId,sourceCreatedAt,sourceMessageId,sourceContent,sourceSenderName,const DeepCollectionEquality().hash(_sourceMeta),const DeepCollectionEquality().hash(_sourceAttachments),const DeepCollectionEquality().hash(_sourceRoom),const DeepCollectionEquality().hash(_redirectedBy),const DeepCollectionEquality().hash(_redirectedToRoom),const DeepCollectionEquality().hash(_sourceMessage),const DeepCollectionEquality().hash(_senderMap));
+}
 
 @override
 String toString() {
-  return 'SnRedirectData.singleMessage(version: $version, sourceType: $sourceType, sourceRoomId: $sourceRoomId, sourceSenderId: $sourceSenderId, sourceCreatedAt: $sourceCreatedAt, sourceMessageId: $sourceMessageId, sourceContent: $sourceContent, sourceSenderName: $sourceSenderName, sourceMeta: $sourceMeta, sourceAttachments: $sourceAttachments, sourceRoom: $sourceRoom, redirectedBy: $redirectedBy, redirectedToRoom: $redirectedToRoom, sourceMessage: $sourceMessage, senderMap: $senderMap)';
+    return 'SnRedirectData.singleMessage(version: $version, sourceType: $sourceType, sourceRoomId: $sourceRoomId, sourceSenderId: $sourceSenderId, sourceCreatedAt: $sourceCreatedAt, sourceMessageId: $sourceMessageId, sourceContent: $sourceContent, sourceSenderName: $sourceSenderName, sourceMeta: $sourceMeta, sourceAttachments: $sourceAttachments, sourceRoom: $sourceRoom, redirectedBy: $redirectedBy, redirectedToRoom: $redirectedToRoom, sourceMessage: $sourceMessage, senderMap: $senderMap)';
 }
 
 
@@ -347,7 +355,7 @@ as Map<String, dynamic>,
 
 
 class _SnHistorySegmentRedirect extends SnRedirectData {
-  const _SnHistorySegmentRedirect({required this.version, required this.kind, required this.sourceRoomId, required final  Map<String, dynamic> sourceRoom, required final  Map<String, dynamic> redirectedBy, required final  Map<String, dynamic> redirectedToRoom, required final  Map<String, dynamic> range, final  List<Map<String, dynamic>> messages = const [], final  Map<String, dynamic> senderMap = const {}}): _sourceRoom = sourceRoom,_redirectedBy = redirectedBy,_redirectedToRoom = redirectedToRoom,_range = range,_messages = messages,_senderMap = senderMap,super._();
+  const _SnHistorySegmentRedirect({required this.version, required this.kind, required this.sourceRoomId, required  Map<String, dynamic> sourceRoom, required  Map<String, dynamic> redirectedBy, required  Map<String, dynamic> redirectedToRoom, required  Map<String, dynamic> range,  List<Map<String, dynamic>> messages = const [],  Map<String, dynamic> senderMap = const {}}): _sourceRoom = sourceRoom,_redirectedBy = redirectedBy,_redirectedToRoom = redirectedToRoom,_range = range,_messages = messages,_senderMap = senderMap,super._();
   
 
 @override final  int version;
@@ -406,16 +414,18 @@ _$SnHistorySegmentRedirectCopyWith<_SnHistorySegmentRedirect> get copyWith => __
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnHistorySegmentRedirect&&(identical(other.version, version) || other.version == version)&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.sourceRoomId, sourceRoomId) || other.sourceRoomId == sourceRoomId)&&const DeepCollectionEquality().equals(other._sourceRoom, _sourceRoom)&&const DeepCollectionEquality().equals(other._redirectedBy, _redirectedBy)&&const DeepCollectionEquality().equals(other._redirectedToRoom, _redirectedToRoom)&&const DeepCollectionEquality().equals(other._range, _range)&&const DeepCollectionEquality().equals(other._messages, _messages)&&const DeepCollectionEquality().equals(other._senderMap, _senderMap));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnHistorySegmentRedirect&&(identical(other.version, version) || other.version == version)&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.sourceRoomId, sourceRoomId) || other.sourceRoomId == sourceRoomId)&&const DeepCollectionEquality().equals(other.sourceRoom, _sourceRoom)&&const DeepCollectionEquality().equals(other.redirectedBy, _redirectedBy)&&const DeepCollectionEquality().equals(other.redirectedToRoom, _redirectedToRoom)&&const DeepCollectionEquality().equals(other.range, _range)&&const DeepCollectionEquality().equals(other.messages, _messages)&&const DeepCollectionEquality().equals(other.senderMap, _senderMap));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,version,kind,sourceRoomId,const DeepCollectionEquality().hash(_sourceRoom),const DeepCollectionEquality().hash(_redirectedBy),const DeepCollectionEquality().hash(_redirectedToRoom),const DeepCollectionEquality().hash(_range),const DeepCollectionEquality().hash(_messages),const DeepCollectionEquality().hash(_senderMap));
+int get hashCode {
+    return Object.hash(runtimeType,version,kind,sourceRoomId,const DeepCollectionEquality().hash(_sourceRoom),const DeepCollectionEquality().hash(_redirectedBy),const DeepCollectionEquality().hash(_redirectedToRoom),const DeepCollectionEquality().hash(_range),const DeepCollectionEquality().hash(_messages),const DeepCollectionEquality().hash(_senderMap));
+}
 
 @override
 String toString() {
-  return 'SnRedirectData.historySegment(version: $version, kind: $kind, sourceRoomId: $sourceRoomId, sourceRoom: $sourceRoom, redirectedBy: $redirectedBy, redirectedToRoom: $redirectedToRoom, range: $range, messages: $messages, senderMap: $senderMap)';
+    return 'SnRedirectData.historySegment(version: $version, kind: $kind, sourceRoomId: $sourceRoomId, sourceRoom: $sourceRoom, redirectedBy: $redirectedBy, redirectedToRoom: $redirectedToRoom, range: $range, messages: $messages, senderMap: $senderMap)';
 }
 
 

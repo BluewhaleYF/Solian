@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'web_auth_app_info.dart';
@@ -9,6 +9,7 @@ part of 'web_auth_app_info.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $WebAuthAppInfoCopyWith<WebAuthAppInfo> get copyWith => _$WebAuthAppInfoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebAuthAppInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&const DeepCollectionEquality().equals(other.links, links)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.project, project) || other.project == project)&&(identical(other.resourceIdentifier, resourceIdentifier) || other.resourceIdentifier == resourceIdentifier)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as WebAuthAppInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WebAuthAppInfo&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.picture, _this.picture) || other.picture == _this.picture)&&(identical(other.background, _this.background) || other.background == _this.background)&&(identical(other.verification, _this.verification) || other.verification == _this.verification)&&const DeepCollectionEquality().equals(other.links, _this.links)&&(identical(other.projectId, _this.projectId) || other.projectId == _this.projectId)&&(identical(other.project, _this.project) || other.project == _this.project)&&(identical(other.resourceIdentifier, _this.resourceIdentifier) || other.resourceIdentifier == _this.resourceIdentifier)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,const DeepCollectionEquality().hash(links),projectId,project,resourceIdentifier,createdAt,updatedAt,deletedAt);
+int get hashCode {
+  final _this = this as WebAuthAppInfo;
+  return Object.hash(runtimeType,_this.id,_this.slug,_this.name,_this.description,_this.status,_this.picture,_this.background,_this.verification,const DeepCollectionEquality().hash(_this.links),_this.projectId,_this.project,_this.resourceIdentifier,_this.createdAt,_this.updatedAt,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'WebAuthAppInfo(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, links: $links, projectId: $projectId, project: $project, resourceIdentifier: $resourceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  final _this = this as WebAuthAppInfo;
+  return 'WebAuthAppInfo(id: ${_this.id}, slug: ${_this.slug}, name: ${_this.name}, description: ${_this.description}, status: ${_this.status}, picture: ${_this.picture}, background: ${_this.background}, verification: ${_this.verification}, links: ${_this.links}, projectId: ${_this.projectId}, project: ${_this.project}, resourceIdentifier: ${_this.resourceIdentifier}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$WebAuthAppInfoCopyWithImpl<$Res>
 /// Create a copy of WebAuthAppInfo
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? slug = null,Object? name = null,Object? description = null,Object? status = null,Object? picture = freezed,Object? background = freezed,Object? verification = freezed,Object? links = null,Object? projectId = null,Object? project = null,Object? resourceIdentifier = null,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WebAuthAppInfo(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -262,7 +268,7 @@ return $default(_that.id,_that.slug,_that.name,_that.description,_that.status,_t
 @JsonSerializable()
 
 class _WebAuthAppInfo implements WebAuthAppInfo {
-  const _WebAuthAppInfo({required this.id, required this.slug, required this.name, required this.description, required this.status, required this.picture, required this.background, required this.verification, required final  Map<String, String?> links, required this.projectId, required this.project, required this.resourceIdentifier, required this.createdAt, required this.updatedAt, required this.deletedAt}): _links = links;
+  const _WebAuthAppInfo({required this.id, required this.slug, required this.name, required this.description, required this.status, required this.picture, required this.background, required this.verification, required  Map<String, String?> links, required this.projectId, required this.project, required this.resourceIdentifier, required this.createdAt, required this.updatedAt, required this.deletedAt}): _links = links;
   factory _WebAuthAppInfo.fromJson(Map<String, dynamic> json) => _$WebAuthAppInfoFromJson(json);
 
 @override final  String id;
@@ -300,16 +306,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebAuthAppInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&const DeepCollectionEquality().equals(other._links, _links)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.project, project) || other.project == project)&&(identical(other.resourceIdentifier, resourceIdentifier) || other.resourceIdentifier == resourceIdentifier)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WebAuthAppInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.status, status) || other.status == status)&&(identical(other.picture, picture) || other.picture == picture)&&(identical(other.background, background) || other.background == background)&&(identical(other.verification, verification) || other.verification == verification)&&const DeepCollectionEquality().equals(other.links, _links)&&(identical(other.projectId, projectId) || other.projectId == projectId)&&(identical(other.project, project) || other.project == project)&&(identical(other.resourceIdentifier, resourceIdentifier) || other.resourceIdentifier == resourceIdentifier)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,const DeepCollectionEquality().hash(_links),projectId,project,resourceIdentifier,createdAt,updatedAt,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,slug,name,description,status,picture,background,verification,const DeepCollectionEquality().hash(_links),projectId,project,resourceIdentifier,createdAt,updatedAt,deletedAt);
+}
 
 @override
 String toString() {
-  return 'WebAuthAppInfo(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, links: $links, projectId: $projectId, project: $project, resourceIdentifier: $resourceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'WebAuthAppInfo(id: $id, slug: $slug, name: $name, description: $description, status: $status, picture: $picture, background: $background, verification: $verification, links: $links, projectId: $projectId, project: $project, resourceIdentifier: $resourceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 

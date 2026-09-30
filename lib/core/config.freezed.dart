@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'config.dart';
@@ -9,6 +9,7 @@ part of 'config.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -27,23 +28,29 @@ $IpOverrideCopyWith<IpOverride> get copyWith => _$IpOverrideCopyWithImpl<IpOverr
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as IpOverride;
   properties
     ..add(DiagnosticsProperty('type', 'IpOverride'))
-    ..add(DiagnosticsProperty('ip', ip))..add(DiagnosticsProperty('port', port));
+    ..add(DiagnosticsProperty('ip', _this.ip))..add(DiagnosticsProperty('port', _this.port));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is IpOverride&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.port, port) || other.port == port));
+  final _this = this as IpOverride;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is IpOverride&&(identical(other.ip, _this.ip) || other.ip == _this.ip)&&(identical(other.port, _this.port) || other.port == _this.port));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,ip,port);
+int get hashCode {
+  final _this = this as IpOverride;
+  return Object.hash(runtimeType,_this.ip,_this.port);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'IpOverride(ip: $ip, port: $port)';
+  final _this = this as IpOverride;
+  return 'IpOverride(ip: ${_this.ip}, port: ${_this.port})';
 }
 
 
@@ -72,7 +79,7 @@ class _$IpOverrideCopyWithImpl<$Res>
 /// Create a copy of IpOverride
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? ip = null,Object? port = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(IpOverride(
 ip: null == ip ? _self.ip : ip // ignore: cast_nullable_to_non_nullable
 as String,port: freezed == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
 as int?,
@@ -228,23 +235,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'IpOverride'))
     ..add(DiagnosticsProperty('ip', ip))..add(DiagnosticsProperty('port', port));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IpOverride&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.port, port) || other.port == port));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _IpOverride&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.port, port) || other.port == port));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,ip,port);
+int get hashCode {
+    return Object.hash(runtimeType,ip,port);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'IpOverride(ip: $ip, port: $port)';
+    return 'IpOverride(ip: $ip, port: $port)';
 }
 
 
@@ -299,23 +308,29 @@ $IpOverrideSettingsCopyWith<IpOverrideSettings> get copyWith => _$IpOverrideSett
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as IpOverrideSettings;
   properties
     ..add(DiagnosticsProperty('type', 'IpOverrideSettings'))
-    ..add(DiagnosticsProperty('enabled', enabled))..add(DiagnosticsProperty('overrides', overrides));
+    ..add(DiagnosticsProperty('enabled', _this.enabled))..add(DiagnosticsProperty('overrides', _this.overrides));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is IpOverrideSettings&&(identical(other.enabled, enabled) || other.enabled == enabled)&&const DeepCollectionEquality().equals(other.overrides, overrides));
+  final _this = this as IpOverrideSettings;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is IpOverrideSettings&&(identical(other.enabled, _this.enabled) || other.enabled == _this.enabled)&&const DeepCollectionEquality().equals(other.overrides, _this.overrides));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enabled,const DeepCollectionEquality().hash(overrides));
+int get hashCode {
+  final _this = this as IpOverrideSettings;
+  return Object.hash(runtimeType,_this.enabled,const DeepCollectionEquality().hash(_this.overrides));
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'IpOverrideSettings(enabled: $enabled, overrides: $overrides)';
+  final _this = this as IpOverrideSettings;
+  return 'IpOverrideSettings(enabled: ${_this.enabled}, overrides: ${_this.overrides})';
 }
 
 
@@ -344,7 +359,7 @@ class _$IpOverrideSettingsCopyWithImpl<$Res>
 /// Create a copy of IpOverrideSettings
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? enabled = null,Object? overrides = null,}) {
-  return _then(_self.copyWith(
+  return _then(IpOverrideSettings(
 enabled: null == enabled ? _self.enabled : enabled // ignore: cast_nullable_to_non_nullable
 as bool,overrides: null == overrides ? _self.overrides : overrides // ignore: cast_nullable_to_non_nullable
 as List<IpOverride>,
@@ -482,7 +497,7 @@ return $default(_that.enabled,_that.overrides);case _:
 @JsonSerializable()
 
 class _IpOverrideSettings with DiagnosticableTreeMixin implements IpOverrideSettings {
-  const _IpOverrideSettings({required this.enabled, required final  List<IpOverride> overrides}): _overrides = overrides;
+  const _IpOverrideSettings({required this.enabled, required  List<IpOverride> overrides}): _overrides = overrides;
   factory _IpOverrideSettings.fromJson(Map<String, dynamic> json) => _$IpOverrideSettingsFromJson(json);
 
 @override final  bool enabled;
@@ -506,23 +521,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'IpOverrideSettings'))
     ..add(DiagnosticsProperty('enabled', enabled))..add(DiagnosticsProperty('overrides', overrides));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IpOverrideSettings&&(identical(other.enabled, enabled) || other.enabled == enabled)&&const DeepCollectionEquality().equals(other._overrides, _overrides));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _IpOverrideSettings&&(identical(other.enabled, enabled) || other.enabled == enabled)&&const DeepCollectionEquality().equals(other.overrides, _overrides));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enabled,const DeepCollectionEquality().hash(_overrides));
+int get hashCode {
+    return Object.hash(runtimeType,enabled,const DeepCollectionEquality().hash(_overrides));
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'IpOverrideSettings(enabled: $enabled, overrides: $overrides)';
+    return 'IpOverrideSettings(enabled: $enabled, overrides: $overrides)';
 }
 
 
@@ -577,23 +594,29 @@ $ThemeColorsCopyWith<ThemeColors> get copyWith => _$ThemeColorsCopyWithImpl<Them
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as ThemeColors;
   properties
     ..add(DiagnosticsProperty('type', 'ThemeColors'))
-    ..add(DiagnosticsProperty('primary', primary))..add(DiagnosticsProperty('onPrimary', onPrimary))..add(DiagnosticsProperty('primaryContainer', primaryContainer))..add(DiagnosticsProperty('secondary', secondary))..add(DiagnosticsProperty('onSecondary', onSecondary))..add(DiagnosticsProperty('secondaryContainer', secondaryContainer))..add(DiagnosticsProperty('tertiary', tertiary))..add(DiagnosticsProperty('onTertiary', onTertiary))..add(DiagnosticsProperty('tertiaryContainer', tertiaryContainer))..add(DiagnosticsProperty('surface', surface))..add(DiagnosticsProperty('surfaceContainerHighest', surfaceContainerHighest))..add(DiagnosticsProperty('background', background))..add(DiagnosticsProperty('outline', outline))..add(DiagnosticsProperty('shadow', shadow))..add(DiagnosticsProperty('error', error));
+    ..add(DiagnosticsProperty('primary', _this.primary))..add(DiagnosticsProperty('onPrimary', _this.onPrimary))..add(DiagnosticsProperty('primaryContainer', _this.primaryContainer))..add(DiagnosticsProperty('secondary', _this.secondary))..add(DiagnosticsProperty('onSecondary', _this.onSecondary))..add(DiagnosticsProperty('secondaryContainer', _this.secondaryContainer))..add(DiagnosticsProperty('tertiary', _this.tertiary))..add(DiagnosticsProperty('onTertiary', _this.onTertiary))..add(DiagnosticsProperty('tertiaryContainer', _this.tertiaryContainer))..add(DiagnosticsProperty('surface', _this.surface))..add(DiagnosticsProperty('surfaceContainerHighest', _this.surfaceContainerHighest))..add(DiagnosticsProperty('background', _this.background))..add(DiagnosticsProperty('outline', _this.outline))..add(DiagnosticsProperty('shadow', _this.shadow))..add(DiagnosticsProperty('error', _this.error));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeColors&&(identical(other.primary, primary) || other.primary == primary)&&(identical(other.onPrimary, onPrimary) || other.onPrimary == onPrimary)&&(identical(other.primaryContainer, primaryContainer) || other.primaryContainer == primaryContainer)&&(identical(other.secondary, secondary) || other.secondary == secondary)&&(identical(other.onSecondary, onSecondary) || other.onSecondary == onSecondary)&&(identical(other.secondaryContainer, secondaryContainer) || other.secondaryContainer == secondaryContainer)&&(identical(other.tertiary, tertiary) || other.tertiary == tertiary)&&(identical(other.onTertiary, onTertiary) || other.onTertiary == onTertiary)&&(identical(other.tertiaryContainer, tertiaryContainer) || other.tertiaryContainer == tertiaryContainer)&&(identical(other.surface, surface) || other.surface == surface)&&(identical(other.surfaceContainerHighest, surfaceContainerHighest) || other.surfaceContainerHighest == surfaceContainerHighest)&&(identical(other.background, background) || other.background == background)&&(identical(other.outline, outline) || other.outline == outline)&&(identical(other.shadow, shadow) || other.shadow == shadow)&&(identical(other.error, error) || other.error == error));
+  final _this = this as ThemeColors;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeColors&&(identical(other.primary, _this.primary) || other.primary == _this.primary)&&(identical(other.onPrimary, _this.onPrimary) || other.onPrimary == _this.onPrimary)&&(identical(other.primaryContainer, _this.primaryContainer) || other.primaryContainer == _this.primaryContainer)&&(identical(other.secondary, _this.secondary) || other.secondary == _this.secondary)&&(identical(other.onSecondary, _this.onSecondary) || other.onSecondary == _this.onSecondary)&&(identical(other.secondaryContainer, _this.secondaryContainer) || other.secondaryContainer == _this.secondaryContainer)&&(identical(other.tertiary, _this.tertiary) || other.tertiary == _this.tertiary)&&(identical(other.onTertiary, _this.onTertiary) || other.onTertiary == _this.onTertiary)&&(identical(other.tertiaryContainer, _this.tertiaryContainer) || other.tertiaryContainer == _this.tertiaryContainer)&&(identical(other.surface, _this.surface) || other.surface == _this.surface)&&(identical(other.surfaceContainerHighest, _this.surfaceContainerHighest) || other.surfaceContainerHighest == _this.surfaceContainerHighest)&&(identical(other.background, _this.background) || other.background == _this.background)&&(identical(other.outline, _this.outline) || other.outline == _this.outline)&&(identical(other.shadow, _this.shadow) || other.shadow == _this.shadow)&&(identical(other.error, _this.error) || other.error == _this.error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,primary,onPrimary,primaryContainer,secondary,onSecondary,secondaryContainer,tertiary,onTertiary,tertiaryContainer,surface,surfaceContainerHighest,background,outline,shadow,error);
+int get hashCode {
+  final _this = this as ThemeColors;
+  return Object.hash(runtimeType,_this.primary,_this.onPrimary,_this.primaryContainer,_this.secondary,_this.onSecondary,_this.secondaryContainer,_this.tertiary,_this.onTertiary,_this.tertiaryContainer,_this.surface,_this.surfaceContainerHighest,_this.background,_this.outline,_this.shadow,_this.error);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ThemeColors(primary: $primary, onPrimary: $onPrimary, primaryContainer: $primaryContainer, secondary: $secondary, onSecondary: $onSecondary, secondaryContainer: $secondaryContainer, tertiary: $tertiary, onTertiary: $onTertiary, tertiaryContainer: $tertiaryContainer, surface: $surface, surfaceContainerHighest: $surfaceContainerHighest, background: $background, outline: $outline, shadow: $shadow, error: $error)';
+  final _this = this as ThemeColors;
+  return 'ThemeColors(primary: ${_this.primary}, onPrimary: ${_this.onPrimary}, primaryContainer: ${_this.primaryContainer}, secondary: ${_this.secondary}, onSecondary: ${_this.onSecondary}, secondaryContainer: ${_this.secondaryContainer}, tertiary: ${_this.tertiary}, onTertiary: ${_this.onTertiary}, tertiaryContainer: ${_this.tertiaryContainer}, surface: ${_this.surface}, surfaceContainerHighest: ${_this.surfaceContainerHighest}, background: ${_this.background}, outline: ${_this.outline}, shadow: ${_this.shadow}, error: ${_this.error})';
 }
 
 
@@ -622,7 +645,7 @@ class _$ThemeColorsCopyWithImpl<$Res>
 /// Create a copy of ThemeColors
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? primary = freezed,Object? onPrimary = freezed,Object? primaryContainer = freezed,Object? secondary = freezed,Object? onSecondary = freezed,Object? secondaryContainer = freezed,Object? tertiary = freezed,Object? onTertiary = freezed,Object? tertiaryContainer = freezed,Object? surface = freezed,Object? surfaceContainerHighest = freezed,Object? background = freezed,Object? outline = freezed,Object? shadow = freezed,Object? error = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ThemeColors(
 primary: freezed == primary ? _self.primary : primary // ignore: cast_nullable_to_non_nullable
 as int?,onPrimary: freezed == onPrimary ? _self.onPrimary : onPrimary // ignore: cast_nullable_to_non_nullable
 as int?,primaryContainer: freezed == primaryContainer ? _self.primaryContainer : primaryContainer // ignore: cast_nullable_to_non_nullable
@@ -804,23 +827,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'ThemeColors'))
     ..add(DiagnosticsProperty('primary', primary))..add(DiagnosticsProperty('onPrimary', onPrimary))..add(DiagnosticsProperty('primaryContainer', primaryContainer))..add(DiagnosticsProperty('secondary', secondary))..add(DiagnosticsProperty('onSecondary', onSecondary))..add(DiagnosticsProperty('secondaryContainer', secondaryContainer))..add(DiagnosticsProperty('tertiary', tertiary))..add(DiagnosticsProperty('onTertiary', onTertiary))..add(DiagnosticsProperty('tertiaryContainer', tertiaryContainer))..add(DiagnosticsProperty('surface', surface))..add(DiagnosticsProperty('surfaceContainerHighest', surfaceContainerHighest))..add(DiagnosticsProperty('background', background))..add(DiagnosticsProperty('outline', outline))..add(DiagnosticsProperty('shadow', shadow))..add(DiagnosticsProperty('error', error));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeColors&&(identical(other.primary, primary) || other.primary == primary)&&(identical(other.onPrimary, onPrimary) || other.onPrimary == onPrimary)&&(identical(other.primaryContainer, primaryContainer) || other.primaryContainer == primaryContainer)&&(identical(other.secondary, secondary) || other.secondary == secondary)&&(identical(other.onSecondary, onSecondary) || other.onSecondary == onSecondary)&&(identical(other.secondaryContainer, secondaryContainer) || other.secondaryContainer == secondaryContainer)&&(identical(other.tertiary, tertiary) || other.tertiary == tertiary)&&(identical(other.onTertiary, onTertiary) || other.onTertiary == onTertiary)&&(identical(other.tertiaryContainer, tertiaryContainer) || other.tertiaryContainer == tertiaryContainer)&&(identical(other.surface, surface) || other.surface == surface)&&(identical(other.surfaceContainerHighest, surfaceContainerHighest) || other.surfaceContainerHighest == surfaceContainerHighest)&&(identical(other.background, background) || other.background == background)&&(identical(other.outline, outline) || other.outline == outline)&&(identical(other.shadow, shadow) || other.shadow == shadow)&&(identical(other.error, error) || other.error == error));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeColors&&(identical(other.primary, primary) || other.primary == primary)&&(identical(other.onPrimary, onPrimary) || other.onPrimary == onPrimary)&&(identical(other.primaryContainer, primaryContainer) || other.primaryContainer == primaryContainer)&&(identical(other.secondary, secondary) || other.secondary == secondary)&&(identical(other.onSecondary, onSecondary) || other.onSecondary == onSecondary)&&(identical(other.secondaryContainer, secondaryContainer) || other.secondaryContainer == secondaryContainer)&&(identical(other.tertiary, tertiary) || other.tertiary == tertiary)&&(identical(other.onTertiary, onTertiary) || other.onTertiary == onTertiary)&&(identical(other.tertiaryContainer, tertiaryContainer) || other.tertiaryContainer == tertiaryContainer)&&(identical(other.surface, surface) || other.surface == surface)&&(identical(other.surfaceContainerHighest, surfaceContainerHighest) || other.surfaceContainerHighest == surfaceContainerHighest)&&(identical(other.background, background) || other.background == background)&&(identical(other.outline, outline) || other.outline == outline)&&(identical(other.shadow, shadow) || other.shadow == shadow)&&(identical(other.error, error) || other.error == error));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,primary,onPrimary,primaryContainer,secondary,onSecondary,secondaryContainer,tertiary,onTertiary,tertiaryContainer,surface,surfaceContainerHighest,background,outline,shadow,error);
+int get hashCode {
+    return Object.hash(runtimeType,primary,onPrimary,primaryContainer,secondary,onSecondary,secondaryContainer,tertiary,onTertiary,tertiaryContainer,surface,surfaceContainerHighest,background,outline,shadow,error);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ThemeColors(primary: $primary, onPrimary: $onPrimary, primaryContainer: $primaryContainer, secondary: $secondary, onSecondary: $onSecondary, secondaryContainer: $secondaryContainer, tertiary: $tertiary, onTertiary: $onTertiary, tertiaryContainer: $tertiaryContainer, surface: $surface, surfaceContainerHighest: $surfaceContainerHighest, background: $background, outline: $outline, shadow: $shadow, error: $error)';
+    return 'ThemeColors(primary: $primary, onPrimary: $onPrimary, primaryContainer: $primaryContainer, secondary: $secondary, onSecondary: $onSecondary, secondaryContainer: $secondaryContainer, tertiary: $tertiary, onTertiary: $onTertiary, tertiaryContainer: $tertiaryContainer, surface: $surface, surfaceContainerHighest: $surfaceContainerHighest, background: $background, outline: $outline, shadow: $shadow, error: $error)';
 }
 
 
@@ -888,23 +913,29 @@ $DashboardConfigCopyWith<DashboardConfig> get copyWith => _$DashboardConfigCopyW
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as DashboardConfig;
   properties
     ..add(DiagnosticsProperty('type', 'DashboardConfig'))
-    ..add(DiagnosticsProperty('verticalLayouts', verticalLayouts))..add(DiagnosticsProperty('horizontalLayouts', horizontalLayouts))..add(DiagnosticsProperty('showSearchBar', showSearchBar))..add(DiagnosticsProperty('showClockAndCountdown', showClockAndCountdown))..add(DiagnosticsProperty('countdownIncludeNotableDays', countdownIncludeNotableDays));
+    ..add(DiagnosticsProperty('verticalLayouts', _this.verticalLayouts))..add(DiagnosticsProperty('horizontalLayouts', _this.horizontalLayouts))..add(DiagnosticsProperty('showSearchBar', _this.showSearchBar))..add(DiagnosticsProperty('showClockAndCountdown', _this.showClockAndCountdown))..add(DiagnosticsProperty('countdownIncludeNotableDays', _this.countdownIncludeNotableDays));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardConfig&&const DeepCollectionEquality().equals(other.verticalLayouts, verticalLayouts)&&const DeepCollectionEquality().equals(other.horizontalLayouts, horizontalLayouts)&&(identical(other.showSearchBar, showSearchBar) || other.showSearchBar == showSearchBar)&&(identical(other.showClockAndCountdown, showClockAndCountdown) || other.showClockAndCountdown == showClockAndCountdown)&&(identical(other.countdownIncludeNotableDays, countdownIncludeNotableDays) || other.countdownIncludeNotableDays == countdownIncludeNotableDays));
+  final _this = this as DashboardConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardConfig&&const DeepCollectionEquality().equals(other.verticalLayouts, _this.verticalLayouts)&&const DeepCollectionEquality().equals(other.horizontalLayouts, _this.horizontalLayouts)&&(identical(other.showSearchBar, _this.showSearchBar) || other.showSearchBar == _this.showSearchBar)&&(identical(other.showClockAndCountdown, _this.showClockAndCountdown) || other.showClockAndCountdown == _this.showClockAndCountdown)&&(identical(other.countdownIncludeNotableDays, _this.countdownIncludeNotableDays) || other.countdownIncludeNotableDays == _this.countdownIncludeNotableDays));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(verticalLayouts),const DeepCollectionEquality().hash(horizontalLayouts),showSearchBar,showClockAndCountdown,countdownIncludeNotableDays);
+int get hashCode {
+  final _this = this as DashboardConfig;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.verticalLayouts),const DeepCollectionEquality().hash(_this.horizontalLayouts),_this.showSearchBar,_this.showClockAndCountdown,_this.countdownIncludeNotableDays);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'DashboardConfig(verticalLayouts: $verticalLayouts, horizontalLayouts: $horizontalLayouts, showSearchBar: $showSearchBar, showClockAndCountdown: $showClockAndCountdown, countdownIncludeNotableDays: $countdownIncludeNotableDays)';
+  final _this = this as DashboardConfig;
+  return 'DashboardConfig(verticalLayouts: ${_this.verticalLayouts}, horizontalLayouts: ${_this.horizontalLayouts}, showSearchBar: ${_this.showSearchBar}, showClockAndCountdown: ${_this.showClockAndCountdown}, countdownIncludeNotableDays: ${_this.countdownIncludeNotableDays})';
 }
 
 
@@ -933,7 +964,7 @@ class _$DashboardConfigCopyWithImpl<$Res>
 /// Create a copy of DashboardConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? verticalLayouts = null,Object? horizontalLayouts = null,Object? showSearchBar = null,Object? showClockAndCountdown = null,Object? countdownIncludeNotableDays = null,}) {
-  return _then(_self.copyWith(
+  return _then(DashboardConfig(
 verticalLayouts: null == verticalLayouts ? _self.verticalLayouts : verticalLayouts // ignore: cast_nullable_to_non_nullable
 as List<String>,horizontalLayouts: null == horizontalLayouts ? _self.horizontalLayouts : horizontalLayouts // ignore: cast_nullable_to_non_nullable
 as List<String>,showSearchBar: null == showSearchBar ? _self.showSearchBar : showSearchBar // ignore: cast_nullable_to_non_nullable
@@ -1074,7 +1105,7 @@ return $default(_that.verticalLayouts,_that.horizontalLayouts,_that.showSearchBa
 @JsonSerializable()
 
 class _DashboardConfig with DiagnosticableTreeMixin implements DashboardConfig {
-   _DashboardConfig({required final  List<String> verticalLayouts, required final  List<String> horizontalLayouts, required this.showSearchBar, required this.showClockAndCountdown, this.countdownIncludeNotableDays = true}): _verticalLayouts = verticalLayouts,_horizontalLayouts = horizontalLayouts;
+   _DashboardConfig({required  List<String> verticalLayouts, required  List<String> horizontalLayouts, required this.showSearchBar, required this.showClockAndCountdown, this.countdownIncludeNotableDays = true}): _verticalLayouts = verticalLayouts,_horizontalLayouts = horizontalLayouts;
   factory _DashboardConfig.fromJson(Map<String, dynamic> json) => _$DashboardConfigFromJson(json);
 
  final  List<String> _verticalLayouts;
@@ -1107,23 +1138,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'DashboardConfig'))
     ..add(DiagnosticsProperty('verticalLayouts', verticalLayouts))..add(DiagnosticsProperty('horizontalLayouts', horizontalLayouts))..add(DiagnosticsProperty('showSearchBar', showSearchBar))..add(DiagnosticsProperty('showClockAndCountdown', showClockAndCountdown))..add(DiagnosticsProperty('countdownIncludeNotableDays', countdownIncludeNotableDays));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DashboardConfig&&const DeepCollectionEquality().equals(other._verticalLayouts, _verticalLayouts)&&const DeepCollectionEquality().equals(other._horizontalLayouts, _horizontalLayouts)&&(identical(other.showSearchBar, showSearchBar) || other.showSearchBar == showSearchBar)&&(identical(other.showClockAndCountdown, showClockAndCountdown) || other.showClockAndCountdown == showClockAndCountdown)&&(identical(other.countdownIncludeNotableDays, countdownIncludeNotableDays) || other.countdownIncludeNotableDays == countdownIncludeNotableDays));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DashboardConfig&&const DeepCollectionEquality().equals(other.verticalLayouts, _verticalLayouts)&&const DeepCollectionEquality().equals(other.horizontalLayouts, _horizontalLayouts)&&(identical(other.showSearchBar, showSearchBar) || other.showSearchBar == showSearchBar)&&(identical(other.showClockAndCountdown, showClockAndCountdown) || other.showClockAndCountdown == showClockAndCountdown)&&(identical(other.countdownIncludeNotableDays, countdownIncludeNotableDays) || other.countdownIncludeNotableDays == countdownIncludeNotableDays));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_verticalLayouts),const DeepCollectionEquality().hash(_horizontalLayouts),showSearchBar,showClockAndCountdown,countdownIncludeNotableDays);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_verticalLayouts),const DeepCollectionEquality().hash(_horizontalLayouts),showSearchBar,showClockAndCountdown,countdownIncludeNotableDays);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'DashboardConfig(verticalLayouts: $verticalLayouts, horizontalLayouts: $horizontalLayouts, showSearchBar: $showSearchBar, showClockAndCountdown: $showClockAndCountdown, countdownIncludeNotableDays: $countdownIncludeNotableDays)';
+    return 'DashboardConfig(verticalLayouts: $verticalLayouts, horizontalLayouts: $horizontalLayouts, showSearchBar: $showSearchBar, showClockAndCountdown: $showClockAndCountdown, countdownIncludeNotableDays: $countdownIncludeNotableDays)';
 }
 
 
@@ -1181,23 +1214,29 @@ $ExploreSettingsCopyWith<ExploreSettings> get copyWith => _$ExploreSettingsCopyW
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as ExploreSettings;
   properties
     ..add(DiagnosticsProperty('type', 'ExploreSettings'))
-    ..add(DiagnosticsProperty('mode', mode))..add(DiagnosticsProperty('aggressiveMode', aggressiveMode))..add(DiagnosticsProperty('selectedPublisherNames', selectedPublisherNames))..add(DiagnosticsProperty('selectedCategoryIds', selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', selectedTagIds));
+    ..add(DiagnosticsProperty('mode', _this.mode))..add(DiagnosticsProperty('aggressiveMode', _this.aggressiveMode))..add(DiagnosticsProperty('selectedPublisherNames', _this.selectedPublisherNames))..add(DiagnosticsProperty('selectedCategoryIds', _this.selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', _this.selectedTagIds));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExploreSettings&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.aggressiveMode, aggressiveMode) || other.aggressiveMode == aggressiveMode)&&const DeepCollectionEquality().equals(other.selectedPublisherNames, selectedPublisherNames)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, selectedTagIds));
+  final _this = this as ExploreSettings;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExploreSettings&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.aggressiveMode, _this.aggressiveMode) || other.aggressiveMode == _this.aggressiveMode)&&const DeepCollectionEquality().equals(other.selectedPublisherNames, _this.selectedPublisherNames)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _this.selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _this.selectedTagIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mode,aggressiveMode,const DeepCollectionEquality().hash(selectedPublisherNames),const DeepCollectionEquality().hash(selectedCategoryIds),const DeepCollectionEquality().hash(selectedTagIds));
+int get hashCode {
+  final _this = this as ExploreSettings;
+  return Object.hash(runtimeType,_this.mode,_this.aggressiveMode,const DeepCollectionEquality().hash(_this.selectedPublisherNames),const DeepCollectionEquality().hash(_this.selectedCategoryIds),const DeepCollectionEquality().hash(_this.selectedTagIds));
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ExploreSettings(mode: $mode, aggressiveMode: $aggressiveMode, selectedPublisherNames: $selectedPublisherNames, selectedCategoryIds: $selectedCategoryIds, selectedTagIds: $selectedTagIds)';
+  final _this = this as ExploreSettings;
+  return 'ExploreSettings(mode: ${_this.mode}, aggressiveMode: ${_this.aggressiveMode}, selectedPublisherNames: ${_this.selectedPublisherNames}, selectedCategoryIds: ${_this.selectedCategoryIds}, selectedTagIds: ${_this.selectedTagIds})';
 }
 
 
@@ -1226,7 +1265,7 @@ class _$ExploreSettingsCopyWithImpl<$Res>
 /// Create a copy of ExploreSettings
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? mode = null,Object? aggressiveMode = null,Object? selectedPublisherNames = null,Object? selectedCategoryIds = null,Object? selectedTagIds = null,}) {
-  return _then(_self.copyWith(
+  return _then(ExploreSettings(
 mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as String,aggressiveMode: null == aggressiveMode ? _self.aggressiveMode : aggressiveMode // ignore: cast_nullable_to_non_nullable
 as bool,selectedPublisherNames: null == selectedPublisherNames ? _self.selectedPublisherNames : selectedPublisherNames // ignore: cast_nullable_to_non_nullable
@@ -1367,7 +1406,7 @@ return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_th
 @JsonSerializable()
 
 class _ExploreSettings with DiagnosticableTreeMixin implements ExploreSettings {
-  const _ExploreSettings({this.mode = 'personalized', this.aggressiveMode = true, final  List<String> selectedPublisherNames = const <String>[], final  List<String> selectedCategoryIds = const <String>[], final  List<String> selectedTagIds = const <String>[]}): _selectedPublisherNames = selectedPublisherNames,_selectedCategoryIds = selectedCategoryIds,_selectedTagIds = selectedTagIds;
+  const _ExploreSettings({this.mode = 'personalized', this.aggressiveMode = true,  List<String> selectedPublisherNames = const <String>[],  List<String> selectedCategoryIds = const <String>[],  List<String> selectedTagIds = const <String>[]}): _selectedPublisherNames = selectedPublisherNames,_selectedCategoryIds = selectedCategoryIds,_selectedTagIds = selectedTagIds;
   factory _ExploreSettings.fromJson(Map<String, dynamic> json) => _$ExploreSettingsFromJson(json);
 
 @override@JsonKey() final  String mode;
@@ -1406,23 +1445,25 @@ Map<String, dynamic> toJson() {
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'ExploreSettings'))
     ..add(DiagnosticsProperty('mode', mode))..add(DiagnosticsProperty('aggressiveMode', aggressiveMode))..add(DiagnosticsProperty('selectedPublisherNames', selectedPublisherNames))..add(DiagnosticsProperty('selectedCategoryIds', selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', selectedTagIds));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExploreSettings&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.aggressiveMode, aggressiveMode) || other.aggressiveMode == aggressiveMode)&&const DeepCollectionEquality().equals(other._selectedPublisherNames, _selectedPublisherNames)&&const DeepCollectionEquality().equals(other._selectedCategoryIds, _selectedCategoryIds)&&const DeepCollectionEquality().equals(other._selectedTagIds, _selectedTagIds));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExploreSettings&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.aggressiveMode, aggressiveMode) || other.aggressiveMode == aggressiveMode)&&const DeepCollectionEquality().equals(other.selectedPublisherNames, _selectedPublisherNames)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _selectedTagIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mode,aggressiveMode,const DeepCollectionEquality().hash(_selectedPublisherNames),const DeepCollectionEquality().hash(_selectedCategoryIds),const DeepCollectionEquality().hash(_selectedTagIds));
+int get hashCode {
+    return Object.hash(runtimeType,mode,aggressiveMode,const DeepCollectionEquality().hash(_selectedPublisherNames),const DeepCollectionEquality().hash(_selectedCategoryIds),const DeepCollectionEquality().hash(_selectedTagIds));
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ExploreSettings(mode: $mode, aggressiveMode: $aggressiveMode, selectedPublisherNames: $selectedPublisherNames, selectedCategoryIds: $selectedCategoryIds, selectedTagIds: $selectedTagIds)';
+    return 'ExploreSettings(mode: $mode, aggressiveMode: $aggressiveMode, selectedPublisherNames: $selectedPublisherNames, selectedCategoryIds: $selectedCategoryIds, selectedTagIds: $selectedTagIds)';
 }
 
 
@@ -1477,23 +1518,29 @@ $AppSettingsCopyWith<AppSettings> get copyWith => _$AppSettingsCopyWithImpl<AppS
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  final _this = this as AppSettings;
   properties
     ..add(DiagnosticsProperty('type', 'AppSettings'))
-    ..add(DiagnosticsProperty('dataSavingMode', dataSavingMode))..add(DiagnosticsProperty('weakConnectionMode', weakConnectionMode))..add(DiagnosticsProperty('soundEffects', soundEffects))..add(DiagnosticsProperty('festivalFeatures', festivalFeatures))..add(DiagnosticsProperty('enterToSend', enterToSend))..add(DiagnosticsProperty('appBarTransparent', appBarTransparent))..add(DiagnosticsProperty('showBackgroundImage', showBackgroundImage))..add(DiagnosticsProperty('notifyWithHaptic', notifyWithHaptic))..add(DiagnosticsProperty('customFonts', customFonts))..add(DiagnosticsProperty('appColorScheme', appColorScheme))..add(DiagnosticsProperty('customColors', customColors))..add(DiagnosticsProperty('windowBounds', windowBounds))..add(DiagnosticsProperty('windowMaximized', windowMaximized))..add(DiagnosticsProperty('windowSize', windowSize))..add(DiagnosticsProperty('windowOpacity', windowOpacity))..add(DiagnosticsProperty('cardTransparency', cardTransparency))..add(DiagnosticsProperty('defaultPoolId', defaultPoolId))..add(DiagnosticsProperty('messageDisplayStyle', messageDisplayStyle))..add(DiagnosticsProperty('attachmentsListStyle', attachmentsListStyle))..add(DiagnosticsProperty('attachmentPreviewMode', attachmentPreviewMode))..add(DiagnosticsProperty('linkCollapseMode', linkCollapseMode))..add(DiagnosticsProperty('themeMode', themeMode))..add(DiagnosticsProperty('disableAnimation', disableAnimation))..add(DiagnosticsProperty('groupedChatList', groupedChatList))..add(DiagnosticsProperty('firstLaunchAt', firstLaunchAt))..add(DiagnosticsProperty('askedReview', askedReview))..add(DiagnosticsProperty('dashSearchEngine', dashSearchEngine))..add(DiagnosticsProperty('defaultScreen', defaultScreen))..add(DiagnosticsProperty('realmDisplayMode', realmDisplayMode))..add(DiagnosticsProperty('chatEventMessageMode', chatEventMessageMode))..add(DiagnosticsProperty('showChatSystemMessages', showChatSystemMessages))..add(DiagnosticsProperty('dashboardConfig', dashboardConfig))..add(DiagnosticsProperty('exploreSettings', exploreSettings))..add(DiagnosticsProperty('mediaProxyEnabled', mediaProxyEnabled))..add(DiagnosticsProperty('imageCompressionEnabled', imageCompressionEnabled))..add(DiagnosticsProperty('imageCompressionQuality', imageCompressionQuality))..add(DiagnosticsProperty('friendStatusDesktopNotification', friendStatusDesktopNotification))..add(DiagnosticsProperty('outgoingCallKitEnabled', outgoingCallKitEnabled))..add(DiagnosticsProperty('weatherNoGeolocation', weatherNoGeolocation))..add(DiagnosticsProperty('autoUploadAttachments', autoUploadAttachments));
+    ..add(DiagnosticsProperty('dataSavingMode', _this.dataSavingMode))..add(DiagnosticsProperty('weakConnectionMode', _this.weakConnectionMode))..add(DiagnosticsProperty('soundEffects', _this.soundEffects))..add(DiagnosticsProperty('festivalFeatures', _this.festivalFeatures))..add(DiagnosticsProperty('enterToSend', _this.enterToSend))..add(DiagnosticsProperty('appBarTransparent', _this.appBarTransparent))..add(DiagnosticsProperty('showBackgroundImage', _this.showBackgroundImage))..add(DiagnosticsProperty('notifyWithHaptic', _this.notifyWithHaptic))..add(DiagnosticsProperty('customFonts', _this.customFonts))..add(DiagnosticsProperty('appColorScheme', _this.appColorScheme))..add(DiagnosticsProperty('customColors', _this.customColors))..add(DiagnosticsProperty('windowBounds', _this.windowBounds))..add(DiagnosticsProperty('windowMaximized', _this.windowMaximized))..add(DiagnosticsProperty('windowSize', _this.windowSize))..add(DiagnosticsProperty('windowOpacity', _this.windowOpacity))..add(DiagnosticsProperty('cardTransparency', _this.cardTransparency))..add(DiagnosticsProperty('defaultPoolId', _this.defaultPoolId))..add(DiagnosticsProperty('messageDisplayStyle', _this.messageDisplayStyle))..add(DiagnosticsProperty('attachmentsListStyle', _this.attachmentsListStyle))..add(DiagnosticsProperty('attachmentPreviewMode', _this.attachmentPreviewMode))..add(DiagnosticsProperty('linkCollapseMode', _this.linkCollapseMode))..add(DiagnosticsProperty('themeMode', _this.themeMode))..add(DiagnosticsProperty('disableAnimation', _this.disableAnimation))..add(DiagnosticsProperty('groupedChatList', _this.groupedChatList))..add(DiagnosticsProperty('firstLaunchAt', _this.firstLaunchAt))..add(DiagnosticsProperty('askedReview', _this.askedReview))..add(DiagnosticsProperty('dashSearchEngine', _this.dashSearchEngine))..add(DiagnosticsProperty('defaultScreen', _this.defaultScreen))..add(DiagnosticsProperty('realmDisplayMode', _this.realmDisplayMode))..add(DiagnosticsProperty('chatEventMessageMode', _this.chatEventMessageMode))..add(DiagnosticsProperty('showChatSystemMessages', _this.showChatSystemMessages))..add(DiagnosticsProperty('dashboardConfig', _this.dashboardConfig))..add(DiagnosticsProperty('exploreSettings', _this.exploreSettings))..add(DiagnosticsProperty('mediaProxyEnabled', _this.mediaProxyEnabled))..add(DiagnosticsProperty('imageCompressionEnabled', _this.imageCompressionEnabled))..add(DiagnosticsProperty('imageCompressionQuality', _this.imageCompressionQuality))..add(DiagnosticsProperty('friendStatusDesktopNotification', _this.friendStatusDesktopNotification))..add(DiagnosticsProperty('outgoingCallKitEnabled', _this.outgoingCallKitEnabled))..add(DiagnosticsProperty('weatherNoGeolocation', _this.weatherNoGeolocation))..add(DiagnosticsProperty('autoUploadAttachments', _this.autoUploadAttachments));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.dataSavingMode, dataSavingMode) || other.dataSavingMode == dataSavingMode)&&(identical(other.weakConnectionMode, weakConnectionMode) || other.weakConnectionMode == weakConnectionMode)&&(identical(other.soundEffects, soundEffects) || other.soundEffects == soundEffects)&&(identical(other.festivalFeatures, festivalFeatures) || other.festivalFeatures == festivalFeatures)&&(identical(other.enterToSend, enterToSend) || other.enterToSend == enterToSend)&&(identical(other.appBarTransparent, appBarTransparent) || other.appBarTransparent == appBarTransparent)&&(identical(other.showBackgroundImage, showBackgroundImage) || other.showBackgroundImage == showBackgroundImage)&&(identical(other.notifyWithHaptic, notifyWithHaptic) || other.notifyWithHaptic == notifyWithHaptic)&&(identical(other.customFonts, customFonts) || other.customFonts == customFonts)&&(identical(other.appColorScheme, appColorScheme) || other.appColorScheme == appColorScheme)&&(identical(other.customColors, customColors) || other.customColors == customColors)&&(identical(other.windowBounds, windowBounds) || other.windowBounds == windowBounds)&&(identical(other.windowMaximized, windowMaximized) || other.windowMaximized == windowMaximized)&&(identical(other.windowSize, windowSize) || other.windowSize == windowSize)&&(identical(other.windowOpacity, windowOpacity) || other.windowOpacity == windowOpacity)&&(identical(other.cardTransparency, cardTransparency) || other.cardTransparency == cardTransparency)&&(identical(other.defaultPoolId, defaultPoolId) || other.defaultPoolId == defaultPoolId)&&(identical(other.messageDisplayStyle, messageDisplayStyle) || other.messageDisplayStyle == messageDisplayStyle)&&(identical(other.attachmentsListStyle, attachmentsListStyle) || other.attachmentsListStyle == attachmentsListStyle)&&(identical(other.attachmentPreviewMode, attachmentPreviewMode) || other.attachmentPreviewMode == attachmentPreviewMode)&&(identical(other.linkCollapseMode, linkCollapseMode) || other.linkCollapseMode == linkCollapseMode)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.disableAnimation, disableAnimation) || other.disableAnimation == disableAnimation)&&(identical(other.groupedChatList, groupedChatList) || other.groupedChatList == groupedChatList)&&(identical(other.firstLaunchAt, firstLaunchAt) || other.firstLaunchAt == firstLaunchAt)&&(identical(other.askedReview, askedReview) || other.askedReview == askedReview)&&(identical(other.dashSearchEngine, dashSearchEngine) || other.dashSearchEngine == dashSearchEngine)&&(identical(other.defaultScreen, defaultScreen) || other.defaultScreen == defaultScreen)&&(identical(other.realmDisplayMode, realmDisplayMode) || other.realmDisplayMode == realmDisplayMode)&&(identical(other.chatEventMessageMode, chatEventMessageMode) || other.chatEventMessageMode == chatEventMessageMode)&&(identical(other.showChatSystemMessages, showChatSystemMessages) || other.showChatSystemMessages == showChatSystemMessages)&&(identical(other.dashboardConfig, dashboardConfig) || other.dashboardConfig == dashboardConfig)&&(identical(other.exploreSettings, exploreSettings) || other.exploreSettings == exploreSettings)&&(identical(other.mediaProxyEnabled, mediaProxyEnabled) || other.mediaProxyEnabled == mediaProxyEnabled)&&(identical(other.imageCompressionEnabled, imageCompressionEnabled) || other.imageCompressionEnabled == imageCompressionEnabled)&&(identical(other.imageCompressionQuality, imageCompressionQuality) || other.imageCompressionQuality == imageCompressionQuality)&&(identical(other.friendStatusDesktopNotification, friendStatusDesktopNotification) || other.friendStatusDesktopNotification == friendStatusDesktopNotification)&&(identical(other.outgoingCallKitEnabled, outgoingCallKitEnabled) || other.outgoingCallKitEnabled == outgoingCallKitEnabled)&&(identical(other.weatherNoGeolocation, weatherNoGeolocation) || other.weatherNoGeolocation == weatherNoGeolocation)&&(identical(other.autoUploadAttachments, autoUploadAttachments) || other.autoUploadAttachments == autoUploadAttachments));
+  final _this = this as AppSettings;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.dataSavingMode, _this.dataSavingMode) || other.dataSavingMode == _this.dataSavingMode)&&(identical(other.weakConnectionMode, _this.weakConnectionMode) || other.weakConnectionMode == _this.weakConnectionMode)&&(identical(other.soundEffects, _this.soundEffects) || other.soundEffects == _this.soundEffects)&&(identical(other.festivalFeatures, _this.festivalFeatures) || other.festivalFeatures == _this.festivalFeatures)&&(identical(other.enterToSend, _this.enterToSend) || other.enterToSend == _this.enterToSend)&&(identical(other.appBarTransparent, _this.appBarTransparent) || other.appBarTransparent == _this.appBarTransparent)&&(identical(other.showBackgroundImage, _this.showBackgroundImage) || other.showBackgroundImage == _this.showBackgroundImage)&&(identical(other.notifyWithHaptic, _this.notifyWithHaptic) || other.notifyWithHaptic == _this.notifyWithHaptic)&&(identical(other.customFonts, _this.customFonts) || other.customFonts == _this.customFonts)&&(identical(other.appColorScheme, _this.appColorScheme) || other.appColorScheme == _this.appColorScheme)&&(identical(other.customColors, _this.customColors) || other.customColors == _this.customColors)&&(identical(other.windowBounds, _this.windowBounds) || other.windowBounds == _this.windowBounds)&&(identical(other.windowMaximized, _this.windowMaximized) || other.windowMaximized == _this.windowMaximized)&&(identical(other.windowSize, _this.windowSize) || other.windowSize == _this.windowSize)&&(identical(other.windowOpacity, _this.windowOpacity) || other.windowOpacity == _this.windowOpacity)&&(identical(other.cardTransparency, _this.cardTransparency) || other.cardTransparency == _this.cardTransparency)&&(identical(other.defaultPoolId, _this.defaultPoolId) || other.defaultPoolId == _this.defaultPoolId)&&(identical(other.messageDisplayStyle, _this.messageDisplayStyle) || other.messageDisplayStyle == _this.messageDisplayStyle)&&(identical(other.attachmentsListStyle, _this.attachmentsListStyle) || other.attachmentsListStyle == _this.attachmentsListStyle)&&(identical(other.attachmentPreviewMode, _this.attachmentPreviewMode) || other.attachmentPreviewMode == _this.attachmentPreviewMode)&&(identical(other.linkCollapseMode, _this.linkCollapseMode) || other.linkCollapseMode == _this.linkCollapseMode)&&(identical(other.themeMode, _this.themeMode) || other.themeMode == _this.themeMode)&&(identical(other.disableAnimation, _this.disableAnimation) || other.disableAnimation == _this.disableAnimation)&&(identical(other.groupedChatList, _this.groupedChatList) || other.groupedChatList == _this.groupedChatList)&&(identical(other.firstLaunchAt, _this.firstLaunchAt) || other.firstLaunchAt == _this.firstLaunchAt)&&(identical(other.askedReview, _this.askedReview) || other.askedReview == _this.askedReview)&&(identical(other.dashSearchEngine, _this.dashSearchEngine) || other.dashSearchEngine == _this.dashSearchEngine)&&(identical(other.defaultScreen, _this.defaultScreen) || other.defaultScreen == _this.defaultScreen)&&(identical(other.realmDisplayMode, _this.realmDisplayMode) || other.realmDisplayMode == _this.realmDisplayMode)&&(identical(other.chatEventMessageMode, _this.chatEventMessageMode) || other.chatEventMessageMode == _this.chatEventMessageMode)&&(identical(other.showChatSystemMessages, _this.showChatSystemMessages) || other.showChatSystemMessages == _this.showChatSystemMessages)&&(identical(other.dashboardConfig, _this.dashboardConfig) || other.dashboardConfig == _this.dashboardConfig)&&(identical(other.exploreSettings, _this.exploreSettings) || other.exploreSettings == _this.exploreSettings)&&(identical(other.mediaProxyEnabled, _this.mediaProxyEnabled) || other.mediaProxyEnabled == _this.mediaProxyEnabled)&&(identical(other.imageCompressionEnabled, _this.imageCompressionEnabled) || other.imageCompressionEnabled == _this.imageCompressionEnabled)&&(identical(other.imageCompressionQuality, _this.imageCompressionQuality) || other.imageCompressionQuality == _this.imageCompressionQuality)&&(identical(other.friendStatusDesktopNotification, _this.friendStatusDesktopNotification) || other.friendStatusDesktopNotification == _this.friendStatusDesktopNotification)&&(identical(other.outgoingCallKitEnabled, _this.outgoingCallKitEnabled) || other.outgoingCallKitEnabled == _this.outgoingCallKitEnabled)&&(identical(other.weatherNoGeolocation, _this.weatherNoGeolocation) || other.weatherNoGeolocation == _this.weatherNoGeolocation)&&(identical(other.autoUploadAttachments, _this.autoUploadAttachments) || other.autoUploadAttachments == _this.autoUploadAttachments));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,dataSavingMode,weakConnectionMode,soundEffects,festivalFeatures,enterToSend,appBarTransparent,showBackgroundImage,notifyWithHaptic,customFonts,appColorScheme,customColors,windowBounds,windowMaximized,windowSize,windowOpacity,cardTransparency,defaultPoolId,messageDisplayStyle,attachmentsListStyle,attachmentPreviewMode,linkCollapseMode,themeMode,disableAnimation,groupedChatList,firstLaunchAt,askedReview,dashSearchEngine,defaultScreen,realmDisplayMode,chatEventMessageMode,showChatSystemMessages,dashboardConfig,exploreSettings,mediaProxyEnabled,imageCompressionEnabled,imageCompressionQuality,friendStatusDesktopNotification,outgoingCallKitEnabled,weatherNoGeolocation,autoUploadAttachments]);
+int get hashCode {
+  final _this = this as AppSettings;
+  return Object.hashAll([runtimeType,_this.dataSavingMode,_this.weakConnectionMode,_this.soundEffects,_this.festivalFeatures,_this.enterToSend,_this.appBarTransparent,_this.showBackgroundImage,_this.notifyWithHaptic,_this.customFonts,_this.appColorScheme,_this.customColors,_this.windowBounds,_this.windowMaximized,_this.windowSize,_this.windowOpacity,_this.cardTransparency,_this.defaultPoolId,_this.messageDisplayStyle,_this.attachmentsListStyle,_this.attachmentPreviewMode,_this.linkCollapseMode,_this.themeMode,_this.disableAnimation,_this.groupedChatList,_this.firstLaunchAt,_this.askedReview,_this.dashSearchEngine,_this.defaultScreen,_this.realmDisplayMode,_this.chatEventMessageMode,_this.showChatSystemMessages,_this.dashboardConfig,_this.exploreSettings,_this.mediaProxyEnabled,_this.imageCompressionEnabled,_this.imageCompressionQuality,_this.friendStatusDesktopNotification,_this.outgoingCallKitEnabled,_this.weatherNoGeolocation,_this.autoUploadAttachments]);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AppSettings(dataSavingMode: $dataSavingMode, weakConnectionMode: $weakConnectionMode, soundEffects: $soundEffects, festivalFeatures: $festivalFeatures, enterToSend: $enterToSend, appBarTransparent: $appBarTransparent, showBackgroundImage: $showBackgroundImage, notifyWithHaptic: $notifyWithHaptic, customFonts: $customFonts, appColorScheme: $appColorScheme, customColors: $customColors, windowBounds: $windowBounds, windowMaximized: $windowMaximized, windowSize: $windowSize, windowOpacity: $windowOpacity, cardTransparency: $cardTransparency, defaultPoolId: $defaultPoolId, messageDisplayStyle: $messageDisplayStyle, attachmentsListStyle: $attachmentsListStyle, attachmentPreviewMode: $attachmentPreviewMode, linkCollapseMode: $linkCollapseMode, themeMode: $themeMode, disableAnimation: $disableAnimation, groupedChatList: $groupedChatList, firstLaunchAt: $firstLaunchAt, askedReview: $askedReview, dashSearchEngine: $dashSearchEngine, defaultScreen: $defaultScreen, realmDisplayMode: $realmDisplayMode, chatEventMessageMode: $chatEventMessageMode, showChatSystemMessages: $showChatSystemMessages, dashboardConfig: $dashboardConfig, exploreSettings: $exploreSettings, mediaProxyEnabled: $mediaProxyEnabled, imageCompressionEnabled: $imageCompressionEnabled, imageCompressionQuality: $imageCompressionQuality, friendStatusDesktopNotification: $friendStatusDesktopNotification, outgoingCallKitEnabled: $outgoingCallKitEnabled, weatherNoGeolocation: $weatherNoGeolocation, autoUploadAttachments: $autoUploadAttachments)';
+  final _this = this as AppSettings;
+  return 'AppSettings(dataSavingMode: ${_this.dataSavingMode}, weakConnectionMode: ${_this.weakConnectionMode}, soundEffects: ${_this.soundEffects}, festivalFeatures: ${_this.festivalFeatures}, enterToSend: ${_this.enterToSend}, appBarTransparent: ${_this.appBarTransparent}, showBackgroundImage: ${_this.showBackgroundImage}, notifyWithHaptic: ${_this.notifyWithHaptic}, customFonts: ${_this.customFonts}, appColorScheme: ${_this.appColorScheme}, customColors: ${_this.customColors}, windowBounds: ${_this.windowBounds}, windowMaximized: ${_this.windowMaximized}, windowSize: ${_this.windowSize}, windowOpacity: ${_this.windowOpacity}, cardTransparency: ${_this.cardTransparency}, defaultPoolId: ${_this.defaultPoolId}, messageDisplayStyle: ${_this.messageDisplayStyle}, attachmentsListStyle: ${_this.attachmentsListStyle}, attachmentPreviewMode: ${_this.attachmentPreviewMode}, linkCollapseMode: ${_this.linkCollapseMode}, themeMode: ${_this.themeMode}, disableAnimation: ${_this.disableAnimation}, groupedChatList: ${_this.groupedChatList}, firstLaunchAt: ${_this.firstLaunchAt}, askedReview: ${_this.askedReview}, dashSearchEngine: ${_this.dashSearchEngine}, defaultScreen: ${_this.defaultScreen}, realmDisplayMode: ${_this.realmDisplayMode}, chatEventMessageMode: ${_this.chatEventMessageMode}, showChatSystemMessages: ${_this.showChatSystemMessages}, dashboardConfig: ${_this.dashboardConfig}, exploreSettings: ${_this.exploreSettings}, mediaProxyEnabled: ${_this.mediaProxyEnabled}, imageCompressionEnabled: ${_this.imageCompressionEnabled}, imageCompressionQuality: ${_this.imageCompressionQuality}, friendStatusDesktopNotification: ${_this.friendStatusDesktopNotification}, outgoingCallKitEnabled: ${_this.outgoingCallKitEnabled}, weatherNoGeolocation: ${_this.weatherNoGeolocation}, autoUploadAttachments: ${_this.autoUploadAttachments})';
 }
 
 
@@ -1522,7 +1569,7 @@ class _$AppSettingsCopyWithImpl<$Res>
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? dataSavingMode = null,Object? weakConnectionMode = null,Object? soundEffects = null,Object? festivalFeatures = null,Object? enterToSend = null,Object? appBarTransparent = null,Object? showBackgroundImage = null,Object? notifyWithHaptic = null,Object? customFonts = freezed,Object? appColorScheme = freezed,Object? customColors = freezed,Object? windowBounds = freezed,Object? windowMaximized = null,Object? windowSize = freezed,Object? windowOpacity = null,Object? cardTransparency = null,Object? defaultPoolId = freezed,Object? messageDisplayStyle = null,Object? attachmentsListStyle = null,Object? attachmentPreviewMode = null,Object? linkCollapseMode = null,Object? themeMode = freezed,Object? disableAnimation = null,Object? groupedChatList = null,Object? firstLaunchAt = freezed,Object? askedReview = null,Object? dashSearchEngine = freezed,Object? defaultScreen = freezed,Object? realmDisplayMode = null,Object? chatEventMessageMode = null,Object? showChatSystemMessages = null,Object? dashboardConfig = freezed,Object? exploreSettings = null,Object? mediaProxyEnabled = null,Object? imageCompressionEnabled = null,Object? imageCompressionQuality = null,Object? friendStatusDesktopNotification = null,Object? outgoingCallKitEnabled = null,Object? weatherNoGeolocation = null,Object? autoUploadAttachments = null,}) {
-  return _then(_self.copyWith(
+  return _then(AppSettings(
 dataSavingMode: null == dataSavingMode ? _self.dataSavingMode : dataSavingMode // ignore: cast_nullable_to_non_nullable
 as bool,weakConnectionMode: null == weakConnectionMode ? _self.weakConnectionMode : weakConnectionMode // ignore: cast_nullable_to_non_nullable
 as bool,soundEffects: null == soundEffects ? _self.soundEffects : soundEffects // ignore: cast_nullable_to_non_nullable
@@ -1784,23 +1831,25 @@ _$AppSettingsCopyWith<_AppSettings> get copyWith => __$AppSettingsCopyWithImpl<_
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
+    properties
     ..add(DiagnosticsProperty('type', 'AppSettings'))
     ..add(DiagnosticsProperty('dataSavingMode', dataSavingMode))..add(DiagnosticsProperty('weakConnectionMode', weakConnectionMode))..add(DiagnosticsProperty('soundEffects', soundEffects))..add(DiagnosticsProperty('festivalFeatures', festivalFeatures))..add(DiagnosticsProperty('enterToSend', enterToSend))..add(DiagnosticsProperty('appBarTransparent', appBarTransparent))..add(DiagnosticsProperty('showBackgroundImage', showBackgroundImage))..add(DiagnosticsProperty('notifyWithHaptic', notifyWithHaptic))..add(DiagnosticsProperty('customFonts', customFonts))..add(DiagnosticsProperty('appColorScheme', appColorScheme))..add(DiagnosticsProperty('customColors', customColors))..add(DiagnosticsProperty('windowBounds', windowBounds))..add(DiagnosticsProperty('windowMaximized', windowMaximized))..add(DiagnosticsProperty('windowSize', windowSize))..add(DiagnosticsProperty('windowOpacity', windowOpacity))..add(DiagnosticsProperty('cardTransparency', cardTransparency))..add(DiagnosticsProperty('defaultPoolId', defaultPoolId))..add(DiagnosticsProperty('messageDisplayStyle', messageDisplayStyle))..add(DiagnosticsProperty('attachmentsListStyle', attachmentsListStyle))..add(DiagnosticsProperty('attachmentPreviewMode', attachmentPreviewMode))..add(DiagnosticsProperty('linkCollapseMode', linkCollapseMode))..add(DiagnosticsProperty('themeMode', themeMode))..add(DiagnosticsProperty('disableAnimation', disableAnimation))..add(DiagnosticsProperty('groupedChatList', groupedChatList))..add(DiagnosticsProperty('firstLaunchAt', firstLaunchAt))..add(DiagnosticsProperty('askedReview', askedReview))..add(DiagnosticsProperty('dashSearchEngine', dashSearchEngine))..add(DiagnosticsProperty('defaultScreen', defaultScreen))..add(DiagnosticsProperty('realmDisplayMode', realmDisplayMode))..add(DiagnosticsProperty('chatEventMessageMode', chatEventMessageMode))..add(DiagnosticsProperty('showChatSystemMessages', showChatSystemMessages))..add(DiagnosticsProperty('dashboardConfig', dashboardConfig))..add(DiagnosticsProperty('exploreSettings', exploreSettings))..add(DiagnosticsProperty('mediaProxyEnabled', mediaProxyEnabled))..add(DiagnosticsProperty('imageCompressionEnabled', imageCompressionEnabled))..add(DiagnosticsProperty('imageCompressionQuality', imageCompressionQuality))..add(DiagnosticsProperty('friendStatusDesktopNotification', friendStatusDesktopNotification))..add(DiagnosticsProperty('outgoingCallKitEnabled', outgoingCallKitEnabled))..add(DiagnosticsProperty('weatherNoGeolocation', weatherNoGeolocation))..add(DiagnosticsProperty('autoUploadAttachments', autoUploadAttachments));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.dataSavingMode, dataSavingMode) || other.dataSavingMode == dataSavingMode)&&(identical(other.weakConnectionMode, weakConnectionMode) || other.weakConnectionMode == weakConnectionMode)&&(identical(other.soundEffects, soundEffects) || other.soundEffects == soundEffects)&&(identical(other.festivalFeatures, festivalFeatures) || other.festivalFeatures == festivalFeatures)&&(identical(other.enterToSend, enterToSend) || other.enterToSend == enterToSend)&&(identical(other.appBarTransparent, appBarTransparent) || other.appBarTransparent == appBarTransparent)&&(identical(other.showBackgroundImage, showBackgroundImage) || other.showBackgroundImage == showBackgroundImage)&&(identical(other.notifyWithHaptic, notifyWithHaptic) || other.notifyWithHaptic == notifyWithHaptic)&&(identical(other.customFonts, customFonts) || other.customFonts == customFonts)&&(identical(other.appColorScheme, appColorScheme) || other.appColorScheme == appColorScheme)&&(identical(other.customColors, customColors) || other.customColors == customColors)&&(identical(other.windowBounds, windowBounds) || other.windowBounds == windowBounds)&&(identical(other.windowMaximized, windowMaximized) || other.windowMaximized == windowMaximized)&&(identical(other.windowSize, windowSize) || other.windowSize == windowSize)&&(identical(other.windowOpacity, windowOpacity) || other.windowOpacity == windowOpacity)&&(identical(other.cardTransparency, cardTransparency) || other.cardTransparency == cardTransparency)&&(identical(other.defaultPoolId, defaultPoolId) || other.defaultPoolId == defaultPoolId)&&(identical(other.messageDisplayStyle, messageDisplayStyle) || other.messageDisplayStyle == messageDisplayStyle)&&(identical(other.attachmentsListStyle, attachmentsListStyle) || other.attachmentsListStyle == attachmentsListStyle)&&(identical(other.attachmentPreviewMode, attachmentPreviewMode) || other.attachmentPreviewMode == attachmentPreviewMode)&&(identical(other.linkCollapseMode, linkCollapseMode) || other.linkCollapseMode == linkCollapseMode)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.disableAnimation, disableAnimation) || other.disableAnimation == disableAnimation)&&(identical(other.groupedChatList, groupedChatList) || other.groupedChatList == groupedChatList)&&(identical(other.firstLaunchAt, firstLaunchAt) || other.firstLaunchAt == firstLaunchAt)&&(identical(other.askedReview, askedReview) || other.askedReview == askedReview)&&(identical(other.dashSearchEngine, dashSearchEngine) || other.dashSearchEngine == dashSearchEngine)&&(identical(other.defaultScreen, defaultScreen) || other.defaultScreen == defaultScreen)&&(identical(other.realmDisplayMode, realmDisplayMode) || other.realmDisplayMode == realmDisplayMode)&&(identical(other.chatEventMessageMode, chatEventMessageMode) || other.chatEventMessageMode == chatEventMessageMode)&&(identical(other.showChatSystemMessages, showChatSystemMessages) || other.showChatSystemMessages == showChatSystemMessages)&&(identical(other.dashboardConfig, dashboardConfig) || other.dashboardConfig == dashboardConfig)&&(identical(other.exploreSettings, exploreSettings) || other.exploreSettings == exploreSettings)&&(identical(other.mediaProxyEnabled, mediaProxyEnabled) || other.mediaProxyEnabled == mediaProxyEnabled)&&(identical(other.imageCompressionEnabled, imageCompressionEnabled) || other.imageCompressionEnabled == imageCompressionEnabled)&&(identical(other.imageCompressionQuality, imageCompressionQuality) || other.imageCompressionQuality == imageCompressionQuality)&&(identical(other.friendStatusDesktopNotification, friendStatusDesktopNotification) || other.friendStatusDesktopNotification == friendStatusDesktopNotification)&&(identical(other.outgoingCallKitEnabled, outgoingCallKitEnabled) || other.outgoingCallKitEnabled == outgoingCallKitEnabled)&&(identical(other.weatherNoGeolocation, weatherNoGeolocation) || other.weatherNoGeolocation == weatherNoGeolocation)&&(identical(other.autoUploadAttachments, autoUploadAttachments) || other.autoUploadAttachments == autoUploadAttachments));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.dataSavingMode, dataSavingMode) || other.dataSavingMode == dataSavingMode)&&(identical(other.weakConnectionMode, weakConnectionMode) || other.weakConnectionMode == weakConnectionMode)&&(identical(other.soundEffects, soundEffects) || other.soundEffects == soundEffects)&&(identical(other.festivalFeatures, festivalFeatures) || other.festivalFeatures == festivalFeatures)&&(identical(other.enterToSend, enterToSend) || other.enterToSend == enterToSend)&&(identical(other.appBarTransparent, appBarTransparent) || other.appBarTransparent == appBarTransparent)&&(identical(other.showBackgroundImage, showBackgroundImage) || other.showBackgroundImage == showBackgroundImage)&&(identical(other.notifyWithHaptic, notifyWithHaptic) || other.notifyWithHaptic == notifyWithHaptic)&&(identical(other.customFonts, customFonts) || other.customFonts == customFonts)&&(identical(other.appColorScheme, appColorScheme) || other.appColorScheme == appColorScheme)&&(identical(other.customColors, customColors) || other.customColors == customColors)&&(identical(other.windowBounds, windowBounds) || other.windowBounds == windowBounds)&&(identical(other.windowMaximized, windowMaximized) || other.windowMaximized == windowMaximized)&&(identical(other.windowSize, windowSize) || other.windowSize == windowSize)&&(identical(other.windowOpacity, windowOpacity) || other.windowOpacity == windowOpacity)&&(identical(other.cardTransparency, cardTransparency) || other.cardTransparency == cardTransparency)&&(identical(other.defaultPoolId, defaultPoolId) || other.defaultPoolId == defaultPoolId)&&(identical(other.messageDisplayStyle, messageDisplayStyle) || other.messageDisplayStyle == messageDisplayStyle)&&(identical(other.attachmentsListStyle, attachmentsListStyle) || other.attachmentsListStyle == attachmentsListStyle)&&(identical(other.attachmentPreviewMode, attachmentPreviewMode) || other.attachmentPreviewMode == attachmentPreviewMode)&&(identical(other.linkCollapseMode, linkCollapseMode) || other.linkCollapseMode == linkCollapseMode)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.disableAnimation, disableAnimation) || other.disableAnimation == disableAnimation)&&(identical(other.groupedChatList, groupedChatList) || other.groupedChatList == groupedChatList)&&(identical(other.firstLaunchAt, firstLaunchAt) || other.firstLaunchAt == firstLaunchAt)&&(identical(other.askedReview, askedReview) || other.askedReview == askedReview)&&(identical(other.dashSearchEngine, dashSearchEngine) || other.dashSearchEngine == dashSearchEngine)&&(identical(other.defaultScreen, defaultScreen) || other.defaultScreen == defaultScreen)&&(identical(other.realmDisplayMode, realmDisplayMode) || other.realmDisplayMode == realmDisplayMode)&&(identical(other.chatEventMessageMode, chatEventMessageMode) || other.chatEventMessageMode == chatEventMessageMode)&&(identical(other.showChatSystemMessages, showChatSystemMessages) || other.showChatSystemMessages == showChatSystemMessages)&&(identical(other.dashboardConfig, dashboardConfig) || other.dashboardConfig == dashboardConfig)&&(identical(other.exploreSettings, exploreSettings) || other.exploreSettings == exploreSettings)&&(identical(other.mediaProxyEnabled, mediaProxyEnabled) || other.mediaProxyEnabled == mediaProxyEnabled)&&(identical(other.imageCompressionEnabled, imageCompressionEnabled) || other.imageCompressionEnabled == imageCompressionEnabled)&&(identical(other.imageCompressionQuality, imageCompressionQuality) || other.imageCompressionQuality == imageCompressionQuality)&&(identical(other.friendStatusDesktopNotification, friendStatusDesktopNotification) || other.friendStatusDesktopNotification == friendStatusDesktopNotification)&&(identical(other.outgoingCallKitEnabled, outgoingCallKitEnabled) || other.outgoingCallKitEnabled == outgoingCallKitEnabled)&&(identical(other.weatherNoGeolocation, weatherNoGeolocation) || other.weatherNoGeolocation == weatherNoGeolocation)&&(identical(other.autoUploadAttachments, autoUploadAttachments) || other.autoUploadAttachments == autoUploadAttachments));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,dataSavingMode,weakConnectionMode,soundEffects,festivalFeatures,enterToSend,appBarTransparent,showBackgroundImage,notifyWithHaptic,customFonts,appColorScheme,customColors,windowBounds,windowMaximized,windowSize,windowOpacity,cardTransparency,defaultPoolId,messageDisplayStyle,attachmentsListStyle,attachmentPreviewMode,linkCollapseMode,themeMode,disableAnimation,groupedChatList,firstLaunchAt,askedReview,dashSearchEngine,defaultScreen,realmDisplayMode,chatEventMessageMode,showChatSystemMessages,dashboardConfig,exploreSettings,mediaProxyEnabled,imageCompressionEnabled,imageCompressionQuality,friendStatusDesktopNotification,outgoingCallKitEnabled,weatherNoGeolocation,autoUploadAttachments]);
+int get hashCode {
+    return Object.hashAll([runtimeType,dataSavingMode,weakConnectionMode,soundEffects,festivalFeatures,enterToSend,appBarTransparent,showBackgroundImage,notifyWithHaptic,customFonts,appColorScheme,customColors,windowBounds,windowMaximized,windowSize,windowOpacity,cardTransparency,defaultPoolId,messageDisplayStyle,attachmentsListStyle,attachmentPreviewMode,linkCollapseMode,themeMode,disableAnimation,groupedChatList,firstLaunchAt,askedReview,dashSearchEngine,defaultScreen,realmDisplayMode,chatEventMessageMode,showChatSystemMessages,dashboardConfig,exploreSettings,mediaProxyEnabled,imageCompressionEnabled,imageCompressionQuality,friendStatusDesktopNotification,outgoingCallKitEnabled,weatherNoGeolocation,autoUploadAttachments]);
+}
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AppSettings(dataSavingMode: $dataSavingMode, weakConnectionMode: $weakConnectionMode, soundEffects: $soundEffects, festivalFeatures: $festivalFeatures, enterToSend: $enterToSend, appBarTransparent: $appBarTransparent, showBackgroundImage: $showBackgroundImage, notifyWithHaptic: $notifyWithHaptic, customFonts: $customFonts, appColorScheme: $appColorScheme, customColors: $customColors, windowBounds: $windowBounds, windowMaximized: $windowMaximized, windowSize: $windowSize, windowOpacity: $windowOpacity, cardTransparency: $cardTransparency, defaultPoolId: $defaultPoolId, messageDisplayStyle: $messageDisplayStyle, attachmentsListStyle: $attachmentsListStyle, attachmentPreviewMode: $attachmentPreviewMode, linkCollapseMode: $linkCollapseMode, themeMode: $themeMode, disableAnimation: $disableAnimation, groupedChatList: $groupedChatList, firstLaunchAt: $firstLaunchAt, askedReview: $askedReview, dashSearchEngine: $dashSearchEngine, defaultScreen: $defaultScreen, realmDisplayMode: $realmDisplayMode, chatEventMessageMode: $chatEventMessageMode, showChatSystemMessages: $showChatSystemMessages, dashboardConfig: $dashboardConfig, exploreSettings: $exploreSettings, mediaProxyEnabled: $mediaProxyEnabled, imageCompressionEnabled: $imageCompressionEnabled, imageCompressionQuality: $imageCompressionQuality, friendStatusDesktopNotification: $friendStatusDesktopNotification, outgoingCallKitEnabled: $outgoingCallKitEnabled, weatherNoGeolocation: $weatherNoGeolocation, autoUploadAttachments: $autoUploadAttachments)';
+    return 'AppSettings(dataSavingMode: $dataSavingMode, weakConnectionMode: $weakConnectionMode, soundEffects: $soundEffects, festivalFeatures: $festivalFeatures, enterToSend: $enterToSend, appBarTransparent: $appBarTransparent, showBackgroundImage: $showBackgroundImage, notifyWithHaptic: $notifyWithHaptic, customFonts: $customFonts, appColorScheme: $appColorScheme, customColors: $customColors, windowBounds: $windowBounds, windowMaximized: $windowMaximized, windowSize: $windowSize, windowOpacity: $windowOpacity, cardTransparency: $cardTransparency, defaultPoolId: $defaultPoolId, messageDisplayStyle: $messageDisplayStyle, attachmentsListStyle: $attachmentsListStyle, attachmentPreviewMode: $attachmentPreviewMode, linkCollapseMode: $linkCollapseMode, themeMode: $themeMode, disableAnimation: $disableAnimation, groupedChatList: $groupedChatList, firstLaunchAt: $firstLaunchAt, askedReview: $askedReview, dashSearchEngine: $dashSearchEngine, defaultScreen: $defaultScreen, realmDisplayMode: $realmDisplayMode, chatEventMessageMode: $chatEventMessageMode, showChatSystemMessages: $showChatSystemMessages, dashboardConfig: $dashboardConfig, exploreSettings: $exploreSettings, mediaProxyEnabled: $mediaProxyEnabled, imageCompressionEnabled: $imageCompressionEnabled, imageCompressionQuality: $imageCompressionQuality, friendStatusDesktopNotification: $friendStatusDesktopNotification, outgoingCallKitEnabled: $outgoingCallKitEnabled, weatherNoGeolocation: $weatherNoGeolocation, autoUploadAttachments: $autoUploadAttachments)';
 }
 
 
