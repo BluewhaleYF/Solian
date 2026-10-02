@@ -798,8 +798,8 @@ class AccountSettingsScreen extends HookConsumerWidget {
       ListTile(
         minLeadingWidth: 48,
         leading: const Icon(Symbols.group),
-        title: const Text('Chat Groups'),
-        subtitle: const Text('Manage your chat room groups').fontSize(12),
+        title: Text('settingsChatGroups').tr(),
+        subtitle: Text('settingsChatGroupsDesc').tr().fontSize(12),
         contentPadding: const EdgeInsets.only(left: 24, right: 17),
         trailing: const Icon(Symbols.chevron_right),
         onTap: () async {

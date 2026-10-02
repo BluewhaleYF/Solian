@@ -5655,5 +5655,7 @@
   "authConsentResolvedElsewhere": "This request was already resolved from another client.",
   "accountQrDeviceAuthNoLongerPending": "This device request is no longer pending.",
   "accountQrDeviceAuthStepOpen": "On the other device, open the sign-in screen and note the code it shows.",
-  "accountQrDeviceAuthStepEnter": "Enter that code here to review and approve the request."
+  "accountQrDeviceAuthStepEnter": "Enter that code here to review and approve the request.",
+  "settingsChatGroups": "Chat Groups",
+  "settingsChatGroupsDesc": "Manage your chat room groups"
 }
