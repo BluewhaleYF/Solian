@@ -14,12 +14,9 @@ import 'package:island/core/network.dart';
 import 'package:island/core/utils/share_utils.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
-import 'package:island/tasks/app_task.dart';
-import 'package:island/tasks/tasks_notifier.dart';
 import 'package:lunar/lunar.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
-import 'package:styled_widget/styled_widget.dart';
 
 TextStyle checkInSerif(
   BuildContext context, {
@@ -59,160 +56,319 @@ Color checkInResultBackdrop(int level) {
   }
 }
 
-class CheckInScreen extends ConsumerWidget {
+class CheckInScreen extends ConsumerStatefulWidget {
   const CheckInScreen({super.key});
+  @override
+  ConsumerState<CheckInScreen> createState() => _CheckInScreenState();
+}
+
+class _CheckInScreenState extends ConsumerState<CheckInScreen> {
+  SnCheckInResult? _instantResult;
+  bool _isCheckingIn = false;
+
+  Future<void> _checkIn() async {
+    if (_isCheckingIn) return;
+    setState(() => _isCheckingIn = true);
+    final client = ref.read(solarNetworkClientProvider);
+    try {
+      final result = await client.accounts.checkIn();
+      if (!mounted) return;
+      setState(() => _instantResult = result);
+      ref.invalidate(checkInResultTodayProvider);
+      await ref.read(userInfoProvider.notifier).fetchUser();
+      if (result.fortuneReport == null) unawaited(_refreshReport(client));
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 423 && mounted) {
+        final token = await Navigator.of(context, rootNavigator: true)
+            .push<String>(
+              MaterialPageRoute(
+                builder: (_) => const CaptchaScreen(),
+                fullscreenDialog: true,
+              ),
+            );
+        if (token != null) await _checkInWithToken(token);
+      } else if (mounted) {
+        showErrorAlert(error);
+      }
+    } catch (error) {
+      if (mounted) showErrorAlert(error);
+    } finally {
+      if (mounted) setState(() => _isCheckingIn = false);
+    }
+  }
+
+  Future<void> _checkInWithToken(String token) async {
+    final result = await ref
+        .read(solarNetworkClientProvider)
+        .accounts
+        .checkIn(captchaToken: token);
+    if (!mounted) return;
+    setState(() => _instantResult = result);
+    ref.invalidate(checkInResultTodayProvider);
+    if (result.fortuneReport == null) {
+      unawaited(_refreshReport(ref.read(solarNetworkClientProvider)));
+    }
+  }
+
+  Future<void> _refreshReport(dynamic client) async {
+    for (var attempt = 0; attempt < 45; attempt++) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      try {
+        final result = await client.accounts.getCheckInResultToday();
+        if (result?.fortuneReport == null || !mounted) continue;
+        setState(() => _instantResult = result);
+        ref.invalidate(checkInResultTodayProvider);
+        return;
+      } catch (_) {}
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final todayResult = ref.watch(checkInResultTodayProvider);
-
-    void checkIn() {
-      final navigator = Navigator.of(context, rootNavigator: true);
-      final container = ProviderScope.containerOf(context, listen: false);
-      final client = container.read(solarNetworkClientProvider);
-      final tasks = container.read(tasksProvider.notifier);
-      final loadingMessage = 'checkInTempleLoading'.tr();
-      final taskId = tasks.addTask(
-        title: 'checkInTemple'.tr(),
-        type: AppTaskType.accountCheckIn,
-        status: AppTaskStatus.inProgress,
-      );
-      final startedAt = DateTime.now();
-      final progressTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        final elapsed = DateTime.now().difference(startedAt);
-        final progress =
-            (elapsed.inMilliseconds / const Duration(minutes: 1).inMilliseconds)
-                .clamp(0.0, 1.0);
-        tasks.updateTask(
-          taskId,
-          progress: progress * 0.99,
-          statusMessage: loadingMessage,
-        );
-      });
-
-      navigator.pop();
-      unawaited(() async {
-        Future<void> refreshFortuneReport() async {
-          for (var attempt = 0; attempt < 45; attempt++) {
-            await Future<void>.delayed(const Duration(seconds: 2));
-            try {
-              final result = await client.accounts.getCheckInResultToday();
-              if (result?.fortuneReport == null) continue;
-              container.invalidate(checkInResultTodayProvider);
-              return;
-            } catch (_) {}
-          }
-        }
-
-        Future<void> run({String? captchaTk}) async {
-          try {
-            final result = await client.accounts.checkIn(
-              captchaToken: captchaTk,
-            );
-            container.invalidate(checkInResultTodayProvider);
-            await container.read(userInfoProvider.notifier).fetchUser();
-            tasks.updateTask(
-              taskId,
-              status: AppTaskStatus.completed,
-              progress: 1,
-              statusMessage: 'taskStatusCompleted'.tr(),
-            );
-
-            if (result.fortuneReport == null) {
-              unawaited(refreshFortuneReport());
-            }
-
-            if (navigator.mounted) {
-              unawaited(showCheckInSheet(navigator.context));
-            }
-          } catch (err) {
-            if (err is DioException && err.response?.statusCode == 423) {
-              if (!navigator.mounted) return;
-              final nextCaptchaTk = await navigator.push<String>(
-                MaterialPageRoute(
-                  builder: (_) => const CaptchaScreen(),
-                  fullscreenDialog: true,
-                ),
-              );
-              if (nextCaptchaTk != null) return run(captchaTk: nextCaptchaTk);
-              tasks.updateTask(
-                taskId,
-                status: AppTaskStatus.cancelled,
-                statusMessage: 'taskStatusCancelled'.tr(),
-              );
-              return;
-            }
-            tasks.updateTask(
-              taskId,
-              status: AppTaskStatus.failed,
-              errorMessage: err.toString(),
-              statusMessage: 'taskStatusFailed'.tr(),
-            );
-            showErrorAlert(err);
-          }
-        }
-
-        try {
-          await run();
-        } finally {
-          progressTimer.cancel();
-        }
-      }());
-    }
-
+  Widget build(BuildContext context) {
+    final result =
+        _instantResult ?? ref.watch(checkInResultTodayProvider).asData?.value;
     return SheetScaffold(
       titleText: 'checkInTemple'.tr(),
       actions: [
-        todayResult.when(
-          data: (result) => result == null
-              ? const SizedBox.shrink()
-              : IconButton(
-                  tooltip: 'share'.tr(),
-                  onPressed: () {
-                    shareCheckInAsScreenshot(context, ref, result);
-                  },
-                  icon: Icon(Symbols.share_reviews),
-                ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
+        if (result != null)
+          IconButton(
+            tooltip: 'share'.tr(),
+            onPressed: () => shareCheckInAsScreenshot(context, ref, result),
+            icon: const Icon(Symbols.share_reviews),
+          ),
         const Gap(8),
       ],
-      child: todayResult.when(
-        data: (result) => _CheckInContent(result: result, onCheckIn: checkIn),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 16,
-              children: [
-                Icon(
-                  Symbols.error,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.error,
+      child: _CheckInDatePage(
+        todayResult: result,
+        isCheckingIn: _isCheckingIn,
+        onCheckIn: _checkIn,
+      ),
+    );
+  }
+}
+
+class _CheckInDatePage extends ConsumerStatefulWidget {
+  final SnCheckInResult? todayResult;
+  final bool isCheckingIn;
+  final VoidCallback onCheckIn;
+  const _CheckInDatePage({
+    required this.todayResult,
+    required this.isCheckingIn,
+    required this.onCheckIn,
+  });
+  @override
+  ConsumerState<_CheckInDatePage> createState() => _CheckInDatePageState();
+}
+
+class _CheckInDatePageState extends ConsumerState<_CheckInDatePage> {
+  late DateTime _selected;
+  @override
+  void initState() {
+    super.initState();
+    _selected = _day(DateTime.now());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = _day(DateTime.now());
+    final calendar = ref.watch(
+      eventCalendarProvider(
+        EventCalendarQuery(
+          uname: 'me',
+          year: _selected.year,
+          month: _selected.month,
+        ),
+      ),
+    );
+    SnCheckInResult? selectedResult = _sameDay(_selected, today)
+        ? widget.todayResult
+        : null;
+    for (final entry
+        in calendar.asData?.value ?? const <SnEventCalendarEntry>[]) {
+      if (_sameDay(entry.date, _selected) && entry.checkInResult != null) {
+        selectedResult = entry.checkInResult;
+      }
+    }
+    final isToday = _sameDay(_selected, today);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _CheckInDateRail(
+                      selected: _selected,
+                      today: today,
+                      onSelected: (date) => setState(() => _selected = date),
+                    ),
+                    const Gap(28),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 420),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, .04),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: _CheckInContent(
+                        key: ValueKey(_selected),
+                        result: selectedResult,
+                        onCheckIn: isToday && !widget.isCheckingIn
+                            ? widget.onCheckIn
+                            : () {},
+                      ),
+                    ),
+                    if (!isToday && selectedResult == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          'No check-in recorded for this day.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
                 ),
-                Text('error').tr().fontSize(16).bold(),
-                Text(
-                  err.toString(),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
+class _CheckInDateRail extends StatelessWidget {
+  final DateTime selected;
+  final DateTime today;
+  final ValueChanged<DateTime> onSelected;
+
+  const _CheckInDateRail({
+    required this.selected,
+    required this.today,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: 116,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: 7,
+        separatorBuilder: (_, _) => const Gap(8),
+        itemBuilder: (context, index) {
+          final date = today.add(Duration(days: index - 3));
+          final distance = (date.difference(selected).inDays).abs();
+          final active = distance == 0;
+          final scale = switch (distance) {
+            0 => 1.0,
+            1 => .76,
+            2 => .58,
+            _ => .46,
+          };
+          final opacity = switch (distance) {
+            0 => 1.0,
+            1 => .72,
+            2 => .48,
+            _ => .28,
+          };
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 380),
+            curve: Curves.easeOutCubic,
+            width: 92 * scale + 18,
+            alignment: Alignment.center,
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 380),
+              curve: Curves.easeOutBack,
+              scale: scale,
+              child: Opacity(
+                opacity: opacity,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(22),
+                    onTap: () => onSelected(_day(date)),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 280),
+                      width: 92,
+                      height: 104,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: active
+                            ? theme.colorScheme.primaryContainer
+                            : theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: .4),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: active
+                              ? theme.colorScheme.primary.withValues(alpha: .32)
+                              : theme.colorScheme.outlineVariant.withValues(
+                                  alpha: .35,
+                                ),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _sameDay(date, today)
+                                ? 'TODAY'
+                                : DateFormat.E().format(date).toUpperCase(),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              letterSpacing: 1.1,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Gap(5),
+                          Text(
+                            '${date.day}',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              height: .95,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Gap(4),
+                          Text(
+                            DateFormat.MMM().format(date),
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
 class _CheckInContent extends ConsumerWidget {
   final SnCheckInResult? result;
   final VoidCallback onCheckIn;
 
-  const _CheckInContent({required this.result, required this.onCheckIn});
+  const _CheckInContent({super.key, required this.result, required this.onCheckIn});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -242,6 +398,7 @@ class _CheckInContent extends ConsumerWidget {
                             createdAt: checkInResult.createdAt,
                             poem: report?.poem,
                             summary: report?.summary,
+                            showArtwork: false,
                           ),
                           if (report != null) ...[
                             const Gap(16),
@@ -382,6 +539,7 @@ class FortuneCard extends StatelessWidget {
   final String? summary;
   final double? artHeight;
   final bool showSealHeader;
+  final bool showArtwork;
 
   const FortuneCard({
     super.key,
@@ -391,6 +549,7 @@ class FortuneCard extends StatelessWidget {
     this.summary,
     this.artHeight,
     this.showSealHeader = true,
+    this.showArtwork = true,
   });
 
   @override
@@ -419,7 +578,7 @@ class FortuneCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              if (artAsset != null) ...[
+              if (showArtwork && artAsset != null) ...[
                 DecoratedBox(
                   decoration: BoxDecoration(
                     color: artBackdrop,
