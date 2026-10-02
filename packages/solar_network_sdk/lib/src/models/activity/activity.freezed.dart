@@ -877,7 +877,7 @@ as DateTime?,
 /// @nodoc
 mixin _$SnCheckInResult {
 
- String get id; int get level; List<SnFortuneTip> get tips; SnCheckInFortuneReport? get fortuneReport; String get accountId; SnAccount? get account; DateTime get createdAt; DateTime get updatedAt; DateTime? get deletedAt;
+ String get id; int get level; List<SnFortuneTip> get tips; SnCheckInFortuneReport? get fortuneReport; String get accountId; SnAccount? get account; DateTime get createdAt; DateTime get updatedAt; DateTime? get deletedAt; DateTime? get backdatedFrom;
 /// Create a copy of SnCheckInResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -890,16 +890,16 @@ $SnCheckInResultCopyWith<SnCheckInResult> get copyWith => _$SnCheckInResultCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnCheckInResult&&(identical(other.id, id) || other.id == id)&&(identical(other.level, level) || other.level == level)&&const DeepCollectionEquality().equals(other.tips, tips)&&(identical(other.fortuneReport, fortuneReport) || other.fortuneReport == fortuneReport)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnCheckInResult&&(identical(other.id, id) || other.id == id)&&(identical(other.level, level) || other.level == level)&&const DeepCollectionEquality().equals(other.tips, tips)&&(identical(other.fortuneReport, fortuneReport) || other.fortuneReport == fortuneReport)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.backdatedFrom, backdatedFrom) || other.backdatedFrom == backdatedFrom));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,level,const DeepCollectionEquality().hash(tips),fortuneReport,accountId,account,createdAt,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,level,const DeepCollectionEquality().hash(tips),fortuneReport,accountId,account,createdAt,updatedAt,deletedAt,backdatedFrom);
 
 @override
 String toString() {
-  return 'SnCheckInResult(id: $id, level: $level, tips: $tips, fortuneReport: $fortuneReport, accountId: $accountId, account: $account, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'SnCheckInResult(id: $id, level: $level, tips: $tips, fortuneReport: $fortuneReport, accountId: $accountId, account: $account, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, backdatedFrom: $backdatedFrom)';
 }
 
 
@@ -910,7 +910,7 @@ abstract mixin class $SnCheckInResultCopyWith<$Res>  {
   factory $SnCheckInResultCopyWith(SnCheckInResult value, $Res Function(SnCheckInResult) _then) = _$SnCheckInResultCopyWithImpl;
 @useResult
 $Res call({
- String id, int level, List<SnFortuneTip> tips, SnCheckInFortuneReport? fortuneReport, String accountId, SnAccount? account, DateTime createdAt, DateTime updatedAt, DateTime? deletedAt
+ String id, int level, List<SnFortuneTip> tips, SnCheckInFortuneReport? fortuneReport, String accountId, SnAccount? account, DateTime createdAt, DateTime updatedAt, DateTime? deletedAt, DateTime? backdatedFrom
 });
 
 
@@ -927,7 +927,7 @@ class _$SnCheckInResultCopyWithImpl<$Res>
 
 /// Create a copy of SnCheckInResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? level = null,Object? tips = null,Object? fortuneReport = freezed,Object? accountId = null,Object? account = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? level = null,Object? tips = null,Object? fortuneReport = freezed,Object? accountId = null,Object? account = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,Object? backdatedFrom = freezed,}) {
   return _then(SnCheckInResult(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
@@ -938,6 +938,7 @@ as String,account: freezed == account ? _self.account : account // ignore: cast_
 as SnAccount?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,backdatedFrom: freezed == backdatedFrom ? _self.backdatedFrom : backdatedFrom // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -1044,10 +1045,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt,  DateTime? backdatedFrom)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnCheckInResult() when $default != null:
-return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.backdatedFrom);case _:
   return orElse();
 
 }
@@ -1065,10 +1066,10 @@ return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accoun
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt,  DateTime? backdatedFrom)  $default,) {final _that = this;
 switch (_that) {
 case _SnCheckInResult():
-return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt);}
+return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.backdatedFrom);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1082,10 +1083,10 @@ return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accoun
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int level,  List<SnFortuneTip> tips,  SnCheckInFortuneReport? fortuneReport,  String accountId,  SnAccount? account,  DateTime createdAt,  DateTime updatedAt,  DateTime? deletedAt,  DateTime? backdatedFrom)?  $default,) {final _that = this;
 switch (_that) {
 case _SnCheckInResult() when $default != null:
-return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accountId,_that.account,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.backdatedFrom);case _:
   return null;
 
 }
@@ -1097,7 +1098,7 @@ return $default(_that.id,_that.level,_that.tips,_that.fortuneReport,_that.accoun
 @JsonSerializable()
 
 class _SnCheckInResult implements SnCheckInResult {
-  const _SnCheckInResult({required this.id, required this.level, required  List<SnFortuneTip> tips, this.fortuneReport, required this.accountId, required this.account, required this.createdAt, required this.updatedAt, required this.deletedAt}): _tips = tips;
+  const _SnCheckInResult({required this.id, required this.level, required  List<SnFortuneTip> tips, this.fortuneReport, required this.accountId, required this.account, required this.createdAt, required this.updatedAt, required this.deletedAt, this.backdatedFrom}): _tips = tips;
   factory _SnCheckInResult.fromJson(Map<String, dynamic> json) => _$SnCheckInResultFromJson(json);
 
 @override final  String id;
@@ -1115,6 +1116,7 @@ class _SnCheckInResult implements SnCheckInResult {
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
 @override final  DateTime? deletedAt;
+@override final  DateTime? backdatedFrom;
 
 /// Create a copy of SnCheckInResult
 /// with the given fields replaced by the non-null parameter values.
@@ -1129,16 +1131,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnCheckInResult&&(identical(other.id, id) || other.id == id)&&(identical(other.level, level) || other.level == level)&&const DeepCollectionEquality().equals(other._tips, _tips)&&(identical(other.fortuneReport, fortuneReport) || other.fortuneReport == fortuneReport)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnCheckInResult&&(identical(other.id, id) || other.id == id)&&(identical(other.level, level) || other.level == level)&&const DeepCollectionEquality().equals(other._tips, _tips)&&(identical(other.fortuneReport, fortuneReport) || other.fortuneReport == fortuneReport)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.backdatedFrom, backdatedFrom) || other.backdatedFrom == backdatedFrom));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,level,const DeepCollectionEquality().hash(_tips),fortuneReport,accountId,account,createdAt,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,level,const DeepCollectionEquality().hash(_tips),fortuneReport,accountId,account,createdAt,updatedAt,deletedAt,backdatedFrom);
 
 @override
 String toString() {
-  return 'SnCheckInResult(id: $id, level: $level, tips: $tips, fortuneReport: $fortuneReport, accountId: $accountId, account: $account, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'SnCheckInResult(id: $id, level: $level, tips: $tips, fortuneReport: $fortuneReport, accountId: $accountId, account: $account, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, backdatedFrom: $backdatedFrom)';
 }
 
 
@@ -1149,7 +1151,7 @@ abstract mixin class _$SnCheckInResultCopyWith<$Res> implements $SnCheckInResult
   factory _$SnCheckInResultCopyWith(_SnCheckInResult value, $Res Function(_SnCheckInResult) _then) = __$SnCheckInResultCopyWithImpl;
 @override @useResult
 $Res call({
- String id, int level, List<SnFortuneTip> tips, SnCheckInFortuneReport? fortuneReport, String accountId, SnAccount? account, DateTime createdAt, DateTime updatedAt, DateTime? deletedAt
+ String id, int level, List<SnFortuneTip> tips, SnCheckInFortuneReport? fortuneReport, String accountId, SnAccount? account, DateTime createdAt, DateTime updatedAt, DateTime? deletedAt, DateTime? backdatedFrom
 });
 
 
@@ -1166,7 +1168,7 @@ class __$SnCheckInResultCopyWithImpl<$Res>
 
 /// Create a copy of SnCheckInResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? level = null,Object? tips = null,Object? fortuneReport = freezed,Object? accountId = null,Object? account = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? level = null,Object? tips = null,Object? fortuneReport = freezed,Object? accountId = null,Object? account = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,Object? backdatedFrom = freezed,}) {
   return _then(_SnCheckInResult(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
@@ -1177,6 +1179,7 @@ as String,account: freezed == account ? _self.account : account // ignore: cast_
 as SnAccount?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,backdatedFrom: freezed == backdatedFrom ? _self.backdatedFrom : backdatedFrom // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }

@@ -1732,11 +1732,68 @@ class _PublisherFediverseSheet extends HookConsumerWidget {
 
   const _PublisherFediverseSheet({required this.publisherUname});
 
+  static const actorTypes = [
+    'Person',
+    'Service',
+    'Group',
+    'Organization',
+    'Application',
+  ];
+
+  static String actorTypeLabel(String type) => switch (type) {
+    'Service' => 'publisherFediverseActorTypeService'.tr(),
+    'Group' => 'publisherFediverseActorTypeGroup'.tr(),
+    'Organization' => 'publisherFediverseActorTypeOrganization'.tr(),
+    'Application' => 'publisherFediverseActorTypeApplication'.tr(),
+    _ => 'publisherFediverseActorTypePerson'.tr(),
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final actorStatus = ref.watch(publisherActorStatusProvider(publisherUname));
     final apiClient = ref.read(apiClientProvider);
     final isLoading = useState(false);
+
+    final actor = actorStatus.value?.actor;
+    // Local mirrors of the actor settings so the controls stay responsive while
+    // the status provider refetches after a save.
+    final actorType = useState<String?>(null);
+    final isLocked = useState<bool?>(null);
+    final isDiscoverable = useState<bool?>(null);
+
+    useEffect(() {
+      actorType.value = actor?.actorType ?? 'Person';
+      isLocked.value = actor?.isLocked ?? false;
+      isDiscoverable.value = actor?.isDiscoverable ?? true;
+      return null;
+    }, [actor?.actorType, actor?.isLocked, actor?.isDiscoverable]);
+
+    Future<void> saveActorSettings({
+      String? nextActorType,
+      bool? nextIsLocked,
+      bool? nextIsDiscoverable,
+    }) async {
+      try {
+        await apiClient.patch<Map<String, dynamic>>(
+          '/sphere/publishers/$publisherUname/fediverse',
+          data: {
+            'actor_type': ?nextActorType,
+            'is_locked': ?nextIsLocked,
+            'is_discoverable': ?nextIsDiscoverable,
+          },
+        );
+        ref.invalidate(publisherActorStatusProvider(publisherUname));
+        if (context.mounted) {
+          showSnackBar('publisherFediverseSettingsSaved'.tr());
+        }
+      } catch (err) {
+        showErrorAlert(err);
+        // Roll the optimistic update back to the last known server state.
+        actorType.value = actor?.actorType ?? 'Person';
+        isLocked.value = actor?.isLocked ?? false;
+        isDiscoverable.value = actor?.isDiscoverable ?? true;
+      }
+    }
 
     Future<void> toggleActor() async {
       final currentStatus = actorStatus.value;
@@ -1841,6 +1898,74 @@ class _PublisherFediverseSheet extends HookConsumerWidget {
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 32),
                 ),
+                Card.outlined(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Symbols.tune),
+                        title: Text('publisherFediverseSettings'.tr()),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: DropdownButtonFormField<String>(
+                          // FormField.initialValue only seeds the field on first
+                          // build, so key it to the displayed value to keep the
+                          // control authoritative when we roll back a failed save
+                          // or the status provider refreshes.
+                          key: ValueKey(actorType.value),
+                          initialValue: actorType.value ?? 'Person',
+                          decoration: InputDecoration(
+                            labelText: 'publisherFediverseActorType'.tr(),
+                            helperText: 'publisherFediverseActorTypeHint'.tr(),
+                            prefixIcon: const Icon(Symbols.badge),
+                            border: const OutlineInputBorder(),
+                          ),
+                          items: [
+                            for (final type in actorTypes)
+                              DropdownMenuItem(
+                                value: type,
+                                child: Text(actorTypeLabel(type)),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null || value == actorType.value) {
+                              return;
+                            }
+                            actorType.value = value;
+                            saveActorSettings(nextActorType: value);
+                          },
+                        ),
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Symbols.lock),
+                        title: Text('publisherFediverseLocked'.tr()),
+                        subtitle: Text('publisherFediverseLockedHint'.tr()),
+                        value: isLocked.value ?? false,
+                        onChanged: (value) {
+                          isLocked.value = value;
+                          saveActorSettings(nextIsLocked: value);
+                        },
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Symbols.search),
+                        title: Text('publisherFediverseDiscoverable'.tr()),
+                        subtitle: Text(
+                          'publisherFediverseDiscoverableHint'.tr(),
+                        ),
+                        value: isDiscoverable.value ?? true,
+                        onChanged: (value) {
+                          isDiscoverable.value = value;
+                          saveActorSettings(nextIsDiscoverable: value);
+                        },
+                      ),
+                    ],
+                  ),
+                ).padding(horizontal: 16),
               ],
               ExpansionTile(
                 leading: const Icon(Symbols.info),
@@ -1884,6 +2009,13 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
     final followRequests = ref.watch(
       publisherFollowRequestsProvider(publisherUname),
     );
+    // Pending requests are produced by either gate: the publisher feature flag
+    // or the fediverse actor lock (ActivityPub manuallyApprovesFollowers). Show
+    // the section when either is on, otherwise locked actors would queue
+    // requests nobody can see or approve.
+    final actorStatus = ref.watch(publisherActorStatusProvider(publisherUname));
+    final requiresApproval =
+        followRequiresApproval || (actorStatus.value?.actor?.isLocked ?? false);
     final subscriberListProvider = publisherSubscriberListNotifierProvider(
       publisherUname,
     );
@@ -2072,7 +2204,7 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
           Expanded(
             child: CustomScrollView(
               slivers: [
-                if (followRequiresApproval) ...[
+                if (requiresApproval) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -2126,13 +2258,30 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
                               bottom: index == pending.length - 1 ? 0 : 1,
                             ),
                             child: ListTile(
-                              leading: ProfilePictureWidget(
-                                file: followReq.account?.profile.picture,
-                                fallbackName: followReq.account?.nick,
+                              leading: followReq.account != null
+                                  ? ProfilePictureWidget(
+                                      file: followReq.account?.profile.picture,
+                                      fallbackName: followReq.account?.nick,
+                                    )
+                                  : followReq.followerPublisher != null
+                                  ? ActorPictureWidget(
+                                      actor: followReq.followerPublisher!,
+                                      radius: 20,
+                                    )
+                                  : null,
+                              title: Text(
+                                followReq.account?.nick ??
+                                    followReq
+                                        .followerPublisher
+                                        ?.effectiveName ??
+                                    'Unknown',
                               ),
-                              title: Text(followReq.account?.nick ?? 'Unknown'),
                               subtitle: Text(
-                                "@${followReq.account?.name ?? ''}",
+                                followReq.account != null
+                                    ? "@${followReq.account?.name ?? ''}"
+                                    : followReq.followerPublisher != null
+                                    ? '@${followReq.followerPublisher!.handle}'
+                                    : 'publisherFediverseRemoteRequest'.tr(),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -2196,15 +2345,45 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
                   itemBuilder: (context, index, subscriber) {
                     final accountId = subscriber.subscription.accountId;
                     final notify = subscriber.subscription.notify;
+                    // Federated followers exist only as a remote publisher, so
+                    // fall back to it when there is no local account row.
+                    final followerPublisher =
+                        subscriber.subscription.followerPublisher;
+                    final isFederated =
+                        accountId == null && followerPublisher != null;
                     return ListTile(
-                      leading: ProfilePictureWidget(
-                        file: subscriber.account?.profile.picture,
-                        fallbackName: subscriber.account?.nick,
+                      leading: isFederated
+                          ? ActorPictureWidget(
+                              actor: followerPublisher,
+                              radius: 20,
+                            )
+                          : ProfilePictureWidget(
+                              file: subscriber.account?.profile.picture,
+                              fallbackName: subscriber.account?.nick,
+                            ),
+                      title: Text(
+                        subscriber.account?.nick ??
+                            followerPublisher?.effectiveName ??
+                            'Unknown',
                       ),
-                      title: Text(subscriber.account?.nick ?? 'Unknown'),
                       subtitle: Row(
                         children: [
-                          Text("@${subscriber.account?.name ?? ''}"),
+                          if (isFederated) ...[
+                            Icon(
+                              Symbols.public,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const Gap(4),
+                          ],
+                          Flexible(
+                            child: Text(
+                              isFederated
+                                  ? '@${followerPublisher.handle}'
+                                  : "@${subscriber.account?.name ?? ''}",
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           if (!notify) ...[
                             const Gap(4),
                             Icon(

@@ -103,6 +103,9 @@ _SnCheckInResult _$SnCheckInResultFromJson(Map<String, dynamic> json) =>
       deletedAt: json['deleted_at'] == null
           ? null
           : DateTime.parse(json['deleted_at'] as String),
+      backdatedFrom: json['backdated_from'] == null
+          ? null
+          : DateTime.parse(json['backdated_from'] as String),
     );
 
 Map<String, dynamic> _$SnCheckInResultToJson(_SnCheckInResult instance) =>
@@ -116,6 +119,7 @@ Map<String, dynamic> _$SnCheckInResultToJson(_SnCheckInResult instance) =>
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
       'deleted_at': instance.deletedAt?.toIso8601String(),
+      'backdated_from': instance.backdatedFrom?.toIso8601String(),
     };
 
 _SnCheckInFortuneReport _$SnCheckInFortuneReportFromJson(

@@ -313,10 +313,26 @@ class AccountsApi extends BaseApi {
   /// Performs daily check-in.
   ///
   /// [captchaToken] - Optional captcha token if required.
-  Future<SnCheckInResult> checkIn({String? captchaToken}) async {
+  ///
+  /// [backdated] - Draws for a past day instead of today. The server requires a
+  /// perk subscription, allows one draw per day and four backdated draws per
+  /// calendar month, and awards no Source Points. The date is sent as UTC
+  /// midnight of that day, which is the day the server files it under.
+  Future<SnCheckInResult> checkIn({
+    String? captchaToken,
+    DateTime? backdated,
+  }) async {
     final response = await post<Map<String, dynamic>>(
       '$_basePath/accounts/me/check-in',
-      queryParameters: {'version': 2},
+      queryParameters: {
+        'version': 2,
+        if (backdated != null)
+          'backdated': DateTime.utc(
+            backdated.year,
+            backdated.month,
+            backdated.day,
+          ).toIso8601String(),
+      },
       data: captchaToken != null ? jsonEncode(captchaToken) : null,
       options: Options(receiveTimeout: const Duration(seconds: 15)),
     );

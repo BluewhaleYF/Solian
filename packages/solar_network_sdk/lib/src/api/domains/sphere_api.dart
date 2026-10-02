@@ -1,6 +1,7 @@
 import 'package:solar_network_sdk/src/api/base_api.dart';
 import 'package:solar_network_sdk/src/models/accounts/discovery.dart';
 import 'package:solar_network_sdk/src/models/accounts/publishing_settings.dart';
+import 'package:solar_network_sdk/src/models/activity/activitypub.dart';
 import 'package:solar_network_sdk/src/models/posts/post.dart';
 import 'package:solar_network_sdk/src/models/posts/post_tag.dart';
 import 'package:solar_network_sdk/src/models/posts/publisher.dart';
@@ -1368,6 +1369,37 @@ class SphereApi extends BaseApi {
       '$_basePath/fediverse/actors/availability',
     );
     return SnFediverseAvailabilityResponse.fromJson(response.data!);
+  }
+
+  /// Updates the ActivityPub actor settings of a publisher owned by the user.
+  ///
+  /// [actorType] is one of `Person`, `Service`, `Group`, `Organization` or
+  /// `Application`. [isLocked] maps to ActivityPub `manuallyApprovesFollowers`
+  /// (new followers need approval). Omitted arguments are left untouched by the
+  /// server, so pass only what changed.
+  Future<SnActorStatusResponse> updatePublisherActor(
+    String username, {
+    String? actorType,
+    bool? isLocked,
+    bool? isDiscoverable,
+  }) async {
+    final response = await patch<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/fediverse',
+      data: {
+        if (actorType != null) 'actor_type': actorType,
+        if (isLocked != null) 'is_locked': isLocked,
+        if (isDiscoverable != null) 'is_discoverable': isDiscoverable,
+      },
+    );
+    return SnActorStatusResponse.fromJson(response.data!);
+  }
+
+  /// Gets the ActivityPub actor status of a publisher owned by the user.
+  Future<SnActorStatusResponse> getPublisherActor(String username) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/fediverse',
+    );
+    return SnActorStatusResponse.fromJson(response.data!);
   }
 
   /// Gets a remote actor by `username@instance` handle, discovering it when

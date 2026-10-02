@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/accounts/check_in.dart';
 import 'package:island/accounts/progression_ws.dart';
 import 'package:island/accounts/widgets/friend_status_toast.dart';
 import 'package:island/core/database.dart';
@@ -367,6 +368,13 @@ void _addDebugFailedTask(WidgetRef ref) {
       'totalBytes': 20 * 1024 * 1024,
       'downloadedBytes': (20 * 1024 * 1024 * 0.62).round(),
     },
+  );
+}
+
+void _showCheckInDebugSheet(BuildContext context, {required bool autoDraw}) {
+  showCheckInSheet(
+    context,
+    debugOptions: CheckInDebugOptions.simulated(autoDraw: autoDraw),
   );
 }
 
@@ -1037,6 +1045,22 @@ class _DraggableDebugPanelState extends ConsumerState<_DraggableDebugPanel>
               reward: const SnProgressRewardDefinition(experience: 50),
             );
           },
+        ),
+        _DebugItem(
+          icon: Symbols.temple_buddhist,
+          title: 'Test check-in draw (auto)',
+          onTap: () => _showCheckInDebugSheet(
+            ref.read(routerProvider).navigatorKey.currentContext!,
+            autoDraw: true,
+          ),
+        ),
+        _DebugItem(
+          icon: Symbols.local_fire_department,
+          title: 'Test check-in draw (manual)',
+          onTap: () => _showCheckInDebugSheet(
+            ref.read(routerProvider).navigatorKey.currentContext!,
+            autoDraw: false,
+          ),
         ),
         _DebugItem(
           icon: Symbols.lock,
@@ -1817,6 +1841,22 @@ class DebugSheet extends HookConsumerWidget {
                   reward: const SnProgressRewardDefinition(experience: 50),
                 );
               },
+            ),
+            ListTile(
+              minTileHeight: 48,
+              leading: const Icon(Symbols.temple_buddhist),
+              trailing: const Icon(Symbols.chevron_right),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              title: const Text('Test check-in draw (auto)'),
+              onTap: () => _showCheckInDebugSheet(context, autoDraw: true),
+            ),
+            ListTile(
+              minTileHeight: 48,
+              leading: const Icon(Symbols.local_fire_department),
+              trailing: const Icon(Symbols.chevron_right),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              title: const Text('Test check-in draw (manual)'),
+              onTap: () => _showCheckInDebugSheet(context, autoDraw: false),
             ),
             ListTile(
               minTileHeight: 48,

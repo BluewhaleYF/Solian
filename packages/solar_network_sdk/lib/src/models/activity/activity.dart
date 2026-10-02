@@ -68,6 +68,10 @@ sealed class SnCheckInResult with _$SnCheckInResult {
     required DateTime createdAt,
     required DateTime updatedAt,
     required DateTime? deletedAt,
+
+    /// When a past day was filled in after the fact; null for a draw made on
+    /// its own day. `createdAt` is the day the sign belongs to either way.
+    DateTime? backdatedFrom,
   }) = _SnCheckInResult;
 
   factory SnCheckInResult.fromJson(Map<String, dynamic> json) =>
