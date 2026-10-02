@@ -30,16 +30,21 @@ $SnActivityPubInstanceCopyWith<SnActivityPubInstance> get copyWith => _$SnActivi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActivityPubInstance&&(identical(other.id, id) || other.id == id)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.software, software) || other.software == software)&&(identical(other.version, version) || other.version == version)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.contactEmail, contactEmail) || other.contactEmail == contactEmail)&&(identical(other.contactAccountUsername, contactAccountUsername) || other.contactAccountUsername == contactAccountUsername)&&(identical(other.activeUsers, activeUsers) || other.activeUsers == activeUsers)&&(identical(other.isBlocked, isBlocked) || other.isBlocked == isBlocked)&&(identical(other.isSilenced, isSilenced) || other.isSilenced == isSilenced)&&(identical(other.blockReason, blockReason) || other.blockReason == blockReason)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&(identical(other.lastFetchedAt, lastFetchedAt) || other.lastFetchedAt == lastFetchedAt)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.metadataFetchedAt, metadataFetchedAt) || other.metadataFetchedAt == metadataFetchedAt));
+  final _this = this as SnActivityPubInstance;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActivityPubInstance&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.domain, _this.domain) || other.domain == _this.domain)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.software, _this.software) || other.software == _this.software)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.iconUrl, _this.iconUrl) || other.iconUrl == _this.iconUrl)&&(identical(other.thumbnailUrl, _this.thumbnailUrl) || other.thumbnailUrl == _this.thumbnailUrl)&&(identical(other.contactEmail, _this.contactEmail) || other.contactEmail == _this.contactEmail)&&(identical(other.contactAccountUsername, _this.contactAccountUsername) || other.contactAccountUsername == _this.contactAccountUsername)&&(identical(other.activeUsers, _this.activeUsers) || other.activeUsers == _this.activeUsers)&&(identical(other.isBlocked, _this.isBlocked) || other.isBlocked == _this.isBlocked)&&(identical(other.isSilenced, _this.isSilenced) || other.isSilenced == _this.isSilenced)&&(identical(other.blockReason, _this.blockReason) || other.blockReason == _this.blockReason)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata)&&(identical(other.lastFetchedAt, _this.lastFetchedAt) || other.lastFetchedAt == _this.lastFetchedAt)&&(identical(other.lastActivityAt, _this.lastActivityAt) || other.lastActivityAt == _this.lastActivityAt)&&(identical(other.metadataFetchedAt, _this.metadataFetchedAt) || other.metadataFetchedAt == _this.metadataFetchedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,domain,name,description,software,version,iconUrl,thumbnailUrl,contactEmail,contactAccountUsername,activeUsers,isBlocked,isSilenced,blockReason,const DeepCollectionEquality().hash(metadata),lastFetchedAt,lastActivityAt,metadataFetchedAt);
+int get hashCode {
+  final _this = this as SnActivityPubInstance;
+  return Object.hash(runtimeType,_this.id,_this.domain,_this.name,_this.description,_this.software,_this.version,_this.iconUrl,_this.thumbnailUrl,_this.contactEmail,_this.contactAccountUsername,_this.activeUsers,_this.isBlocked,_this.isSilenced,_this.blockReason,const DeepCollectionEquality().hash(_this.metadata),_this.lastFetchedAt,_this.lastActivityAt,_this.metadataFetchedAt);
+}
 
 @override
 String toString() {
-  return 'SnActivityPubInstance(id: $id, domain: $domain, name: $name, description: $description, software: $software, version: $version, iconUrl: $iconUrl, thumbnailUrl: $thumbnailUrl, contactEmail: $contactEmail, contactAccountUsername: $contactAccountUsername, activeUsers: $activeUsers, isBlocked: $isBlocked, isSilenced: $isSilenced, blockReason: $blockReason, metadata: $metadata, lastFetchedAt: $lastFetchedAt, lastActivityAt: $lastActivityAt, metadataFetchedAt: $metadataFetchedAt)';
+  final _this = this as SnActivityPubInstance;
+  return 'SnActivityPubInstance(id: ${_this.id}, domain: ${_this.domain}, name: ${_this.name}, description: ${_this.description}, software: ${_this.software}, version: ${_this.version}, iconUrl: ${_this.iconUrl}, thumbnailUrl: ${_this.thumbnailUrl}, contactEmail: ${_this.contactEmail}, contactAccountUsername: ${_this.contactAccountUsername}, activeUsers: ${_this.activeUsers}, isBlocked: ${_this.isBlocked}, isSilenced: ${_this.isSilenced}, blockReason: ${_this.blockReason}, metadata: ${_this.metadata}, lastFetchedAt: ${_this.lastFetchedAt}, lastActivityAt: ${_this.lastActivityAt}, metadataFetchedAt: ${_this.metadataFetchedAt})';
 }
 
 
@@ -266,16 +271,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActivityPubInstance&&(identical(other.id, id) || other.id == id)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.software, software) || other.software == software)&&(identical(other.version, version) || other.version == version)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.contactEmail, contactEmail) || other.contactEmail == contactEmail)&&(identical(other.contactAccountUsername, contactAccountUsername) || other.contactAccountUsername == contactAccountUsername)&&(identical(other.activeUsers, activeUsers) || other.activeUsers == activeUsers)&&(identical(other.isBlocked, isBlocked) || other.isBlocked == isBlocked)&&(identical(other.isSilenced, isSilenced) || other.isSilenced == isSilenced)&&(identical(other.blockReason, blockReason) || other.blockReason == blockReason)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.lastFetchedAt, lastFetchedAt) || other.lastFetchedAt == lastFetchedAt)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.metadataFetchedAt, metadataFetchedAt) || other.metadataFetchedAt == metadataFetchedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActivityPubInstance&&(identical(other.id, id) || other.id == id)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.software, software) || other.software == software)&&(identical(other.version, version) || other.version == version)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.contactEmail, contactEmail) || other.contactEmail == contactEmail)&&(identical(other.contactAccountUsername, contactAccountUsername) || other.contactAccountUsername == contactAccountUsername)&&(identical(other.activeUsers, activeUsers) || other.activeUsers == activeUsers)&&(identical(other.isBlocked, isBlocked) || other.isBlocked == isBlocked)&&(identical(other.isSilenced, isSilenced) || other.isSilenced == isSilenced)&&(identical(other.blockReason, blockReason) || other.blockReason == blockReason)&&const DeepCollectionEquality().equals(other.metadata, _metadata)&&(identical(other.lastFetchedAt, lastFetchedAt) || other.lastFetchedAt == lastFetchedAt)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.metadataFetchedAt, metadataFetchedAt) || other.metadataFetchedAt == metadataFetchedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,domain,name,description,software,version,iconUrl,thumbnailUrl,contactEmail,contactAccountUsername,activeUsers,isBlocked,isSilenced,blockReason,const DeepCollectionEquality().hash(_metadata),lastFetchedAt,lastActivityAt,metadataFetchedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,domain,name,description,software,version,iconUrl,thumbnailUrl,contactEmail,contactAccountUsername,activeUsers,isBlocked,isSilenced,blockReason,const DeepCollectionEquality().hash(_metadata),lastFetchedAt,lastActivityAt,metadataFetchedAt);
+}
 
 @override
 String toString() {
-  return 'SnActivityPubInstance(id: $id, domain: $domain, name: $name, description: $description, software: $software, version: $version, iconUrl: $iconUrl, thumbnailUrl: $thumbnailUrl, contactEmail: $contactEmail, contactAccountUsername: $contactAccountUsername, activeUsers: $activeUsers, isBlocked: $isBlocked, isSilenced: $isSilenced, blockReason: $blockReason, metadata: $metadata, lastFetchedAt: $lastFetchedAt, lastActivityAt: $lastActivityAt, metadataFetchedAt: $metadataFetchedAt)';
+    return 'SnActivityPubInstance(id: $id, domain: $domain, name: $name, description: $description, software: $software, version: $version, iconUrl: $iconUrl, thumbnailUrl: $thumbnailUrl, contactEmail: $contactEmail, contactAccountUsername: $contactAccountUsername, activeUsers: $activeUsers, isBlocked: $isBlocked, isSilenced: $isSilenced, blockReason: $blockReason, metadata: $metadata, lastFetchedAt: $lastFetchedAt, lastActivityAt: $lastActivityAt, metadataFetchedAt: $metadataFetchedAt)';
 }
 
 
@@ -332,953 +339,9 @@ as DateTime?,
 
 
 /// @nodoc
-mixin _$SnActivityPubUser {
-
- String get actorUri; String get username; String get displayName; String get bio; String get avatarUrl; DateTime get followedAt; bool get isLocal; String get instanceDomain;
-/// Create a copy of SnActivityPubUser
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$SnActivityPubUserCopyWith<SnActivityPubUser> get copyWith => _$SnActivityPubUserCopyWithImpl<SnActivityPubUser>(this as SnActivityPubUser, _$identity);
-
-  /// Serializes this SnActivityPubUser to a JSON map.
-  Map<String, dynamic> toJson();
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActivityPubUser&&(identical(other.actorUri, actorUri) || other.actorUri == actorUri)&&(identical(other.username, username) || other.username == username)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.followedAt, followedAt) || other.followedAt == followedAt)&&(identical(other.isLocal, isLocal) || other.isLocal == isLocal)&&(identical(other.instanceDomain, instanceDomain) || other.instanceDomain == instanceDomain));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,actorUri,username,displayName,bio,avatarUrl,followedAt,isLocal,instanceDomain);
-
-@override
-String toString() {
-  return 'SnActivityPubUser(actorUri: $actorUri, username: $username, displayName: $displayName, bio: $bio, avatarUrl: $avatarUrl, followedAt: $followedAt, isLocal: $isLocal, instanceDomain: $instanceDomain)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $SnActivityPubUserCopyWith<$Res>  {
-  factory $SnActivityPubUserCopyWith(SnActivityPubUser value, $Res Function(SnActivityPubUser) _then) = _$SnActivityPubUserCopyWithImpl;
-@useResult
-$Res call({
- String actorUri, String username, String displayName, String bio, String avatarUrl, DateTime followedAt, bool isLocal, String instanceDomain
-});
-
-
-
-
-}
-/// @nodoc
-class _$SnActivityPubUserCopyWithImpl<$Res>
-    implements $SnActivityPubUserCopyWith<$Res> {
-  _$SnActivityPubUserCopyWithImpl(this._self, this._then);
-
-  final SnActivityPubUser _self;
-  final $Res Function(SnActivityPubUser) _then;
-
-/// Create a copy of SnActivityPubUser
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? actorUri = null,Object? username = null,Object? displayName = null,Object? bio = null,Object? avatarUrl = null,Object? followedAt = null,Object? isLocal = null,Object? instanceDomain = null,}) {
-  return _then(SnActivityPubUser(
-actorUri: null == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
-as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String,bio: null == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
-as String,avatarUrl: null == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String,followedAt: null == followedAt ? _self.followedAt : followedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,isLocal: null == isLocal ? _self.isLocal : isLocal // ignore: cast_nullable_to_non_nullable
-as bool,instanceDomain: null == instanceDomain ? _self.instanceDomain : instanceDomain // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-}
-
-
-/// Adds pattern-matching-related methods to [SnActivityPubUser].
-extension SnActivityPubUserPatterns on SnActivityPubUser {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SnActivityPubUser value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _SnActivityPubUser() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SnActivityPubUser value)  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubUser():
-return $default(_that);}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SnActivityPubUser value)?  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubUser() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String actorUri,  String username,  String displayName,  String bio,  String avatarUrl,  DateTime followedAt,  bool isLocal,  String instanceDomain)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _SnActivityPubUser() when $default != null:
-return $default(_that.actorUri,_that.username,_that.displayName,_that.bio,_that.avatarUrl,_that.followedAt,_that.isLocal,_that.instanceDomain);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String actorUri,  String username,  String displayName,  String bio,  String avatarUrl,  DateTime followedAt,  bool isLocal,  String instanceDomain)  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubUser():
-return $default(_that.actorUri,_that.username,_that.displayName,_that.bio,_that.avatarUrl,_that.followedAt,_that.isLocal,_that.instanceDomain);}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String actorUri,  String username,  String displayName,  String bio,  String avatarUrl,  DateTime followedAt,  bool isLocal,  String instanceDomain)?  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubUser() when $default != null:
-return $default(_that.actorUri,_that.username,_that.displayName,_that.bio,_that.avatarUrl,_that.followedAt,_that.isLocal,_that.instanceDomain);case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class _SnActivityPubUser implements SnActivityPubUser {
-  const _SnActivityPubUser({required this.actorUri, required this.username, required this.displayName, required this.bio, required this.avatarUrl, required this.followedAt, required this.isLocal, required this.instanceDomain});
-  factory _SnActivityPubUser.fromJson(Map<String, dynamic> json) => _$SnActivityPubUserFromJson(json);
-
-@override final  String actorUri;
-@override final  String username;
-@override final  String displayName;
-@override final  String bio;
-@override final  String avatarUrl;
-@override final  DateTime followedAt;
-@override final  bool isLocal;
-@override final  String instanceDomain;
-
-/// Create a copy of SnActivityPubUser
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$SnActivityPubUserCopyWith<_SnActivityPubUser> get copyWith => __$SnActivityPubUserCopyWithImpl<_SnActivityPubUser>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$SnActivityPubUserToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActivityPubUser&&(identical(other.actorUri, actorUri) || other.actorUri == actorUri)&&(identical(other.username, username) || other.username == username)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.followedAt, followedAt) || other.followedAt == followedAt)&&(identical(other.isLocal, isLocal) || other.isLocal == isLocal)&&(identical(other.instanceDomain, instanceDomain) || other.instanceDomain == instanceDomain));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,actorUri,username,displayName,bio,avatarUrl,followedAt,isLocal,instanceDomain);
-
-@override
-String toString() {
-  return 'SnActivityPubUser(actorUri: $actorUri, username: $username, displayName: $displayName, bio: $bio, avatarUrl: $avatarUrl, followedAt: $followedAt, isLocal: $isLocal, instanceDomain: $instanceDomain)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$SnActivityPubUserCopyWith<$Res> implements $SnActivityPubUserCopyWith<$Res> {
-  factory _$SnActivityPubUserCopyWith(_SnActivityPubUser value, $Res Function(_SnActivityPubUser) _then) = __$SnActivityPubUserCopyWithImpl;
-@override @useResult
-$Res call({
- String actorUri, String username, String displayName, String bio, String avatarUrl, DateTime followedAt, bool isLocal, String instanceDomain
-});
-
-
-
-
-}
-/// @nodoc
-class __$SnActivityPubUserCopyWithImpl<$Res>
-    implements _$SnActivityPubUserCopyWith<$Res> {
-  __$SnActivityPubUserCopyWithImpl(this._self, this._then);
-
-  final _SnActivityPubUser _self;
-  final $Res Function(_SnActivityPubUser) _then;
-
-/// Create a copy of SnActivityPubUser
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? actorUri = null,Object? username = null,Object? displayName = null,Object? bio = null,Object? avatarUrl = null,Object? followedAt = null,Object? isLocal = null,Object? instanceDomain = null,}) {
-  return _then(_SnActivityPubUser(
-actorUri: null == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
-as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String,bio: null == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
-as String,avatarUrl: null == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String,followedAt: null == followedAt ? _self.followedAt : followedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,isLocal: null == isLocal ? _self.isLocal : isLocal // ignore: cast_nullable_to_non_nullable
-as bool,instanceDomain: null == instanceDomain ? _self.instanceDomain : instanceDomain // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-
-/// @nodoc
-mixin _$SnActivityPubActor {
-
-/// Remote outbox reconstructions may send empty Guid.
- String get id; String get uri; String get type;/// Computed server-side; tolerate missing values on partial payloads.
- String get fullHandle; String? get displayName; String get username; String? get bio; String? get inboxUri; String? get outboxUri; String? get followersUri; String? get followingUri; String? get featuredUri; String? get avatarUrl; String? get headerUrl; String? get publicKeyId; String? get publicKey; bool get isBot; bool get isLocked; bool get isDiscoverable; Map<String, dynamic>? get endpoints; Map<String, dynamic>? get publicKeyData; Map<String, dynamic>? get metadata; DateTime? get lastFetchedAt; DateTime? get lastActivityAt;/// Nested instance is incomplete on some remote outbox posts.
- SnActivityPubInstance get instance; String get instanceId; bool? get isFollowing; int? get followersCount; int? get followingCount; int? get totalPostCount; String? get webUrl; List<SnPost>? get recentPosts;
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<SnActivityPubActor> get copyWith => _$SnActivityPubActorCopyWithImpl<SnActivityPubActor>(this as SnActivityPubActor, _$identity);
-
-  /// Serializes this SnActivityPubActor to a JSON map.
-  Map<String, dynamic> toJson();
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActivityPubActor&&(identical(other.id, id) || other.id == id)&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.type, type) || other.type == type)&&(identical(other.fullHandle, fullHandle) || other.fullHandle == fullHandle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.inboxUri, inboxUri) || other.inboxUri == inboxUri)&&(identical(other.outboxUri, outboxUri) || other.outboxUri == outboxUri)&&(identical(other.followersUri, followersUri) || other.followersUri == followersUri)&&(identical(other.followingUri, followingUri) || other.followingUri == followingUri)&&(identical(other.featuredUri, featuredUri) || other.featuredUri == featuredUri)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.headerUrl, headerUrl) || other.headerUrl == headerUrl)&&(identical(other.publicKeyId, publicKeyId) || other.publicKeyId == publicKeyId)&&(identical(other.publicKey, publicKey) || other.publicKey == publicKey)&&(identical(other.isBot, isBot) || other.isBot == isBot)&&(identical(other.isLocked, isLocked) || other.isLocked == isLocked)&&(identical(other.isDiscoverable, isDiscoverable) || other.isDiscoverable == isDiscoverable)&&const DeepCollectionEquality().equals(other.endpoints, endpoints)&&const DeepCollectionEquality().equals(other.publicKeyData, publicKeyData)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&(identical(other.lastFetchedAt, lastFetchedAt) || other.lastFetchedAt == lastFetchedAt)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.instance, instance) || other.instance == instance)&&(identical(other.instanceId, instanceId) || other.instanceId == instanceId)&&(identical(other.isFollowing, isFollowing) || other.isFollowing == isFollowing)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.totalPostCount, totalPostCount) || other.totalPostCount == totalPostCount)&&(identical(other.webUrl, webUrl) || other.webUrl == webUrl)&&const DeepCollectionEquality().equals(other.recentPosts, recentPosts));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hashAll([runtimeType,id,uri,type,fullHandle,displayName,username,bio,inboxUri,outboxUri,followersUri,followingUri,featuredUri,avatarUrl,headerUrl,publicKeyId,publicKey,isBot,isLocked,isDiscoverable,const DeepCollectionEquality().hash(endpoints),const DeepCollectionEquality().hash(publicKeyData),const DeepCollectionEquality().hash(metadata),lastFetchedAt,lastActivityAt,instance,instanceId,isFollowing,followersCount,followingCount,totalPostCount,webUrl,const DeepCollectionEquality().hash(recentPosts)]);
-
-@override
-String toString() {
-  return 'SnActivityPubActor(id: $id, uri: $uri, type: $type, fullHandle: $fullHandle, displayName: $displayName, username: $username, bio: $bio, inboxUri: $inboxUri, outboxUri: $outboxUri, followersUri: $followersUri, followingUri: $followingUri, featuredUri: $featuredUri, avatarUrl: $avatarUrl, headerUrl: $headerUrl, publicKeyId: $publicKeyId, publicKey: $publicKey, isBot: $isBot, isLocked: $isLocked, isDiscoverable: $isDiscoverable, endpoints: $endpoints, publicKeyData: $publicKeyData, metadata: $metadata, lastFetchedAt: $lastFetchedAt, lastActivityAt: $lastActivityAt, instance: $instance, instanceId: $instanceId, isFollowing: $isFollowing, followersCount: $followersCount, followingCount: $followingCount, totalPostCount: $totalPostCount, webUrl: $webUrl, recentPosts: $recentPosts)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $SnActivityPubActorCopyWith<$Res>  {
-  factory $SnActivityPubActorCopyWith(SnActivityPubActor value, $Res Function(SnActivityPubActor) _then) = _$SnActivityPubActorCopyWithImpl;
-@useResult
-$Res call({
- String id, String uri, String type, String fullHandle, String? displayName, String username, String? bio, String? inboxUri, String? outboxUri, String? followersUri, String? followingUri, String? featuredUri, String? avatarUrl, String? headerUrl, String? publicKeyId, String? publicKey, bool isBot, bool isLocked, bool isDiscoverable, Map<String, dynamic>? endpoints, Map<String, dynamic>? publicKeyData, Map<String, dynamic>? metadata, DateTime? lastFetchedAt, DateTime? lastActivityAt, SnActivityPubInstance instance, String instanceId, bool? isFollowing, int? followersCount, int? followingCount, int? totalPostCount, String? webUrl, List<SnPost>? recentPosts
-});
-
-
-$SnActivityPubInstanceCopyWith<$Res> get instance;
-
-}
-/// @nodoc
-class _$SnActivityPubActorCopyWithImpl<$Res>
-    implements $SnActivityPubActorCopyWith<$Res> {
-  _$SnActivityPubActorCopyWithImpl(this._self, this._then);
-
-  final SnActivityPubActor _self;
-  final $Res Function(SnActivityPubActor) _then;
-
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? uri = null,Object? type = null,Object? fullHandle = null,Object? displayName = freezed,Object? username = null,Object? bio = freezed,Object? inboxUri = freezed,Object? outboxUri = freezed,Object? followersUri = freezed,Object? followingUri = freezed,Object? featuredUri = freezed,Object? avatarUrl = freezed,Object? headerUrl = freezed,Object? publicKeyId = freezed,Object? publicKey = freezed,Object? isBot = null,Object? isLocked = null,Object? isDiscoverable = null,Object? endpoints = freezed,Object? publicKeyData = freezed,Object? metadata = freezed,Object? lastFetchedAt = freezed,Object? lastActivityAt = freezed,Object? instance = null,Object? instanceId = null,Object? isFollowing = freezed,Object? followersCount = freezed,Object? followingCount = freezed,Object? totalPostCount = freezed,Object? webUrl = freezed,Object? recentPosts = freezed,}) {
-  return _then(SnActivityPubActor(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,uri: null == uri ? _self.uri : uri // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,fullHandle: null == fullHandle ? _self.fullHandle : fullHandle // ignore: cast_nullable_to_non_nullable
-as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String?,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
-as String,bio: freezed == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
-as String?,inboxUri: freezed == inboxUri ? _self.inboxUri : inboxUri // ignore: cast_nullable_to_non_nullable
-as String?,outboxUri: freezed == outboxUri ? _self.outboxUri : outboxUri // ignore: cast_nullable_to_non_nullable
-as String?,followersUri: freezed == followersUri ? _self.followersUri : followersUri // ignore: cast_nullable_to_non_nullable
-as String?,followingUri: freezed == followingUri ? _self.followingUri : followingUri // ignore: cast_nullable_to_non_nullable
-as String?,featuredUri: freezed == featuredUri ? _self.featuredUri : featuredUri // ignore: cast_nullable_to_non_nullable
-as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String?,headerUrl: freezed == headerUrl ? _self.headerUrl : headerUrl // ignore: cast_nullable_to_non_nullable
-as String?,publicKeyId: freezed == publicKeyId ? _self.publicKeyId : publicKeyId // ignore: cast_nullable_to_non_nullable
-as String?,publicKey: freezed == publicKey ? _self.publicKey : publicKey // ignore: cast_nullable_to_non_nullable
-as String?,isBot: null == isBot ? _self.isBot : isBot // ignore: cast_nullable_to_non_nullable
-as bool,isLocked: null == isLocked ? _self.isLocked : isLocked // ignore: cast_nullable_to_non_nullable
-as bool,isDiscoverable: null == isDiscoverable ? _self.isDiscoverable : isDiscoverable // ignore: cast_nullable_to_non_nullable
-as bool,endpoints: freezed == endpoints ? _self.endpoints : endpoints // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,publicKeyData: freezed == publicKeyData ? _self.publicKeyData : publicKeyData // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,lastFetchedAt: freezed == lastFetchedAt ? _self.lastFetchedAt : lastFetchedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,lastActivityAt: freezed == lastActivityAt ? _self.lastActivityAt : lastActivityAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,instance: null == instance ? _self.instance : instance // ignore: cast_nullable_to_non_nullable
-as SnActivityPubInstance,instanceId: null == instanceId ? _self.instanceId : instanceId // ignore: cast_nullable_to_non_nullable
-as String,isFollowing: freezed == isFollowing ? _self.isFollowing : isFollowing // ignore: cast_nullable_to_non_nullable
-as bool?,followersCount: freezed == followersCount ? _self.followersCount : followersCount // ignore: cast_nullable_to_non_nullable
-as int?,followingCount: freezed == followingCount ? _self.followingCount : followingCount // ignore: cast_nullable_to_non_nullable
-as int?,totalPostCount: freezed == totalPostCount ? _self.totalPostCount : totalPostCount // ignore: cast_nullable_to_non_nullable
-as int?,webUrl: freezed == webUrl ? _self.webUrl : webUrl // ignore: cast_nullable_to_non_nullable
-as String?,recentPosts: freezed == recentPosts ? _self.recentPosts : recentPosts // ignore: cast_nullable_to_non_nullable
-as List<SnPost>?,
-  ));
-}
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$SnActivityPubInstanceCopyWith<$Res> get instance {
-  
-  return $SnActivityPubInstanceCopyWith<$Res>(_self.instance, (value) {
-    return _then(_self.copyWith(instance: value));
-  });
-}
-}
-
-
-/// Adds pattern-matching-related methods to [SnActivityPubActor].
-extension SnActivityPubActorPatterns on SnActivityPubActor {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SnActivityPubActor value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _SnActivityPubActor() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SnActivityPubActor value)  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubActor():
-return $default(_that);}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SnActivityPubActor value)?  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubActor() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String uri,  String type,  String fullHandle,  String? displayName,  String username,  String? bio,  String? inboxUri,  String? outboxUri,  String? followersUri,  String? followingUri,  String? featuredUri,  String? avatarUrl,  String? headerUrl,  String? publicKeyId,  String? publicKey,  bool isBot,  bool isLocked,  bool isDiscoverable,  Map<String, dynamic>? endpoints,  Map<String, dynamic>? publicKeyData,  Map<String, dynamic>? metadata,  DateTime? lastFetchedAt,  DateTime? lastActivityAt,  SnActivityPubInstance instance,  String instanceId,  bool? isFollowing,  int? followersCount,  int? followingCount,  int? totalPostCount,  String? webUrl,  List<SnPost>? recentPosts)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _SnActivityPubActor() when $default != null:
-return $default(_that.id,_that.uri,_that.type,_that.fullHandle,_that.displayName,_that.username,_that.bio,_that.inboxUri,_that.outboxUri,_that.followersUri,_that.followingUri,_that.featuredUri,_that.avatarUrl,_that.headerUrl,_that.publicKeyId,_that.publicKey,_that.isBot,_that.isLocked,_that.isDiscoverable,_that.endpoints,_that.publicKeyData,_that.metadata,_that.lastFetchedAt,_that.lastActivityAt,_that.instance,_that.instanceId,_that.isFollowing,_that.followersCount,_that.followingCount,_that.totalPostCount,_that.webUrl,_that.recentPosts);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String uri,  String type,  String fullHandle,  String? displayName,  String username,  String? bio,  String? inboxUri,  String? outboxUri,  String? followersUri,  String? followingUri,  String? featuredUri,  String? avatarUrl,  String? headerUrl,  String? publicKeyId,  String? publicKey,  bool isBot,  bool isLocked,  bool isDiscoverable,  Map<String, dynamic>? endpoints,  Map<String, dynamic>? publicKeyData,  Map<String, dynamic>? metadata,  DateTime? lastFetchedAt,  DateTime? lastActivityAt,  SnActivityPubInstance instance,  String instanceId,  bool? isFollowing,  int? followersCount,  int? followingCount,  int? totalPostCount,  String? webUrl,  List<SnPost>? recentPosts)  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubActor():
-return $default(_that.id,_that.uri,_that.type,_that.fullHandle,_that.displayName,_that.username,_that.bio,_that.inboxUri,_that.outboxUri,_that.followersUri,_that.followingUri,_that.featuredUri,_that.avatarUrl,_that.headerUrl,_that.publicKeyId,_that.publicKey,_that.isBot,_that.isLocked,_that.isDiscoverable,_that.endpoints,_that.publicKeyData,_that.metadata,_that.lastFetchedAt,_that.lastActivityAt,_that.instance,_that.instanceId,_that.isFollowing,_that.followersCount,_that.followingCount,_that.totalPostCount,_that.webUrl,_that.recentPosts);}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String uri,  String type,  String fullHandle,  String? displayName,  String username,  String? bio,  String? inboxUri,  String? outboxUri,  String? followersUri,  String? followingUri,  String? featuredUri,  String? avatarUrl,  String? headerUrl,  String? publicKeyId,  String? publicKey,  bool isBot,  bool isLocked,  bool isDiscoverable,  Map<String, dynamic>? endpoints,  Map<String, dynamic>? publicKeyData,  Map<String, dynamic>? metadata,  DateTime? lastFetchedAt,  DateTime? lastActivityAt,  SnActivityPubInstance instance,  String instanceId,  bool? isFollowing,  int? followersCount,  int? followingCount,  int? totalPostCount,  String? webUrl,  List<SnPost>? recentPosts)?  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubActor() when $default != null:
-return $default(_that.id,_that.uri,_that.type,_that.fullHandle,_that.displayName,_that.username,_that.bio,_that.inboxUri,_that.outboxUri,_that.followersUri,_that.followingUri,_that.featuredUri,_that.avatarUrl,_that.headerUrl,_that.publicKeyId,_that.publicKey,_that.isBot,_that.isLocked,_that.isDiscoverable,_that.endpoints,_that.publicKeyData,_that.metadata,_that.lastFetchedAt,_that.lastActivityAt,_that.instance,_that.instanceId,_that.isFollowing,_that.followersCount,_that.followingCount,_that.totalPostCount,_that.webUrl,_that.recentPosts);case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class _SnActivityPubActor implements SnActivityPubActor {
-  const _SnActivityPubActor({this.id = '', this.uri = '', this.type = 'Person', this.fullHandle = '', this.displayName, this.username = '', this.bio, this.inboxUri, this.outboxUri, this.followersUri, this.followingUri, this.featuredUri, this.avatarUrl, this.headerUrl, this.publicKeyId, this.publicKey, this.isBot = false, this.isLocked = false, this.isDiscoverable = true,  Map<String, dynamic>? endpoints,  Map<String, dynamic>? publicKeyData,  Map<String, dynamic>? metadata, this.lastFetchedAt, this.lastActivityAt, this.instance = const SnActivityPubInstance(), this.instanceId = '', this.isFollowing, this.followersCount, this.followingCount, this.totalPostCount, this.webUrl,  List<SnPost>? recentPosts}): _endpoints = endpoints,_publicKeyData = publicKeyData,_metadata = metadata,_recentPosts = recentPosts;
-  factory _SnActivityPubActor.fromJson(Map<String, dynamic> json) => _$SnActivityPubActorFromJson(json);
-
-/// Remote outbox reconstructions may send empty Guid.
-@override@JsonKey() final  String id;
-@override@JsonKey() final  String uri;
-@override@JsonKey() final  String type;
-/// Computed server-side; tolerate missing values on partial payloads.
-@override@JsonKey() final  String fullHandle;
-@override final  String? displayName;
-@override@JsonKey() final  String username;
-@override final  String? bio;
-@override final  String? inboxUri;
-@override final  String? outboxUri;
-@override final  String? followersUri;
-@override final  String? followingUri;
-@override final  String? featuredUri;
-@override final  String? avatarUrl;
-@override final  String? headerUrl;
-@override final  String? publicKeyId;
-@override final  String? publicKey;
-@override@JsonKey() final  bool isBot;
-@override@JsonKey() final  bool isLocked;
-@override@JsonKey() final  bool isDiscoverable;
- final  Map<String, dynamic>? _endpoints;
-@override Map<String, dynamic>? get endpoints {
-  final value = _endpoints;
-  if (value == null) return null;
-  if (_endpoints is EqualUnmodifiableMapView) return _endpoints;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
-}
-
- final  Map<String, dynamic>? _publicKeyData;
-@override Map<String, dynamic>? get publicKeyData {
-  final value = _publicKeyData;
-  if (value == null) return null;
-  if (_publicKeyData is EqualUnmodifiableMapView) return _publicKeyData;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
-}
-
- final  Map<String, dynamic>? _metadata;
-@override Map<String, dynamic>? get metadata {
-  final value = _metadata;
-  if (value == null) return null;
-  if (_metadata is EqualUnmodifiableMapView) return _metadata;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
-}
-
-@override final  DateTime? lastFetchedAt;
-@override final  DateTime? lastActivityAt;
-/// Nested instance is incomplete on some remote outbox posts.
-@override@JsonKey() final  SnActivityPubInstance instance;
-@override@JsonKey() final  String instanceId;
-@override final  bool? isFollowing;
-@override final  int? followersCount;
-@override final  int? followingCount;
-@override final  int? totalPostCount;
-@override final  String? webUrl;
- final  List<SnPost>? _recentPosts;
-@override List<SnPost>? get recentPosts {
-  final value = _recentPosts;
-  if (value == null) return null;
-  if (_recentPosts is EqualUnmodifiableListView) return _recentPosts;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
-}
-
-
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$SnActivityPubActorCopyWith<_SnActivityPubActor> get copyWith => __$SnActivityPubActorCopyWithImpl<_SnActivityPubActor>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$SnActivityPubActorToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActivityPubActor&&(identical(other.id, id) || other.id == id)&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.type, type) || other.type == type)&&(identical(other.fullHandle, fullHandle) || other.fullHandle == fullHandle)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.inboxUri, inboxUri) || other.inboxUri == inboxUri)&&(identical(other.outboxUri, outboxUri) || other.outboxUri == outboxUri)&&(identical(other.followersUri, followersUri) || other.followersUri == followersUri)&&(identical(other.followingUri, followingUri) || other.followingUri == followingUri)&&(identical(other.featuredUri, featuredUri) || other.featuredUri == featuredUri)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.headerUrl, headerUrl) || other.headerUrl == headerUrl)&&(identical(other.publicKeyId, publicKeyId) || other.publicKeyId == publicKeyId)&&(identical(other.publicKey, publicKey) || other.publicKey == publicKey)&&(identical(other.isBot, isBot) || other.isBot == isBot)&&(identical(other.isLocked, isLocked) || other.isLocked == isLocked)&&(identical(other.isDiscoverable, isDiscoverable) || other.isDiscoverable == isDiscoverable)&&const DeepCollectionEquality().equals(other._endpoints, _endpoints)&&const DeepCollectionEquality().equals(other._publicKeyData, _publicKeyData)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.lastFetchedAt, lastFetchedAt) || other.lastFetchedAt == lastFetchedAt)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.instance, instance) || other.instance == instance)&&(identical(other.instanceId, instanceId) || other.instanceId == instanceId)&&(identical(other.isFollowing, isFollowing) || other.isFollowing == isFollowing)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.totalPostCount, totalPostCount) || other.totalPostCount == totalPostCount)&&(identical(other.webUrl, webUrl) || other.webUrl == webUrl)&&const DeepCollectionEquality().equals(other._recentPosts, _recentPosts));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hashAll([runtimeType,id,uri,type,fullHandle,displayName,username,bio,inboxUri,outboxUri,followersUri,followingUri,featuredUri,avatarUrl,headerUrl,publicKeyId,publicKey,isBot,isLocked,isDiscoverable,const DeepCollectionEquality().hash(_endpoints),const DeepCollectionEquality().hash(_publicKeyData),const DeepCollectionEquality().hash(_metadata),lastFetchedAt,lastActivityAt,instance,instanceId,isFollowing,followersCount,followingCount,totalPostCount,webUrl,const DeepCollectionEquality().hash(_recentPosts)]);
-
-@override
-String toString() {
-  return 'SnActivityPubActor(id: $id, uri: $uri, type: $type, fullHandle: $fullHandle, displayName: $displayName, username: $username, bio: $bio, inboxUri: $inboxUri, outboxUri: $outboxUri, followersUri: $followersUri, followingUri: $followingUri, featuredUri: $featuredUri, avatarUrl: $avatarUrl, headerUrl: $headerUrl, publicKeyId: $publicKeyId, publicKey: $publicKey, isBot: $isBot, isLocked: $isLocked, isDiscoverable: $isDiscoverable, endpoints: $endpoints, publicKeyData: $publicKeyData, metadata: $metadata, lastFetchedAt: $lastFetchedAt, lastActivityAt: $lastActivityAt, instance: $instance, instanceId: $instanceId, isFollowing: $isFollowing, followersCount: $followersCount, followingCount: $followingCount, totalPostCount: $totalPostCount, webUrl: $webUrl, recentPosts: $recentPosts)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$SnActivityPubActorCopyWith<$Res> implements $SnActivityPubActorCopyWith<$Res> {
-  factory _$SnActivityPubActorCopyWith(_SnActivityPubActor value, $Res Function(_SnActivityPubActor) _then) = __$SnActivityPubActorCopyWithImpl;
-@override @useResult
-$Res call({
- String id, String uri, String type, String fullHandle, String? displayName, String username, String? bio, String? inboxUri, String? outboxUri, String? followersUri, String? followingUri, String? featuredUri, String? avatarUrl, String? headerUrl, String? publicKeyId, String? publicKey, bool isBot, bool isLocked, bool isDiscoverable, Map<String, dynamic>? endpoints, Map<String, dynamic>? publicKeyData, Map<String, dynamic>? metadata, DateTime? lastFetchedAt, DateTime? lastActivityAt, SnActivityPubInstance instance, String instanceId, bool? isFollowing, int? followersCount, int? followingCount, int? totalPostCount, String? webUrl, List<SnPost>? recentPosts
-});
-
-
-@override $SnActivityPubInstanceCopyWith<$Res> get instance;
-
-}
-/// @nodoc
-class __$SnActivityPubActorCopyWithImpl<$Res>
-    implements _$SnActivityPubActorCopyWith<$Res> {
-  __$SnActivityPubActorCopyWithImpl(this._self, this._then);
-
-  final _SnActivityPubActor _self;
-  final $Res Function(_SnActivityPubActor) _then;
-
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? uri = null,Object? type = null,Object? fullHandle = null,Object? displayName = freezed,Object? username = null,Object? bio = freezed,Object? inboxUri = freezed,Object? outboxUri = freezed,Object? followersUri = freezed,Object? followingUri = freezed,Object? featuredUri = freezed,Object? avatarUrl = freezed,Object? headerUrl = freezed,Object? publicKeyId = freezed,Object? publicKey = freezed,Object? isBot = null,Object? isLocked = null,Object? isDiscoverable = null,Object? endpoints = freezed,Object? publicKeyData = freezed,Object? metadata = freezed,Object? lastFetchedAt = freezed,Object? lastActivityAt = freezed,Object? instance = null,Object? instanceId = null,Object? isFollowing = freezed,Object? followersCount = freezed,Object? followingCount = freezed,Object? totalPostCount = freezed,Object? webUrl = freezed,Object? recentPosts = freezed,}) {
-  return _then(_SnActivityPubActor(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,uri: null == uri ? _self.uri : uri // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,fullHandle: null == fullHandle ? _self.fullHandle : fullHandle // ignore: cast_nullable_to_non_nullable
-as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String?,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
-as String,bio: freezed == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
-as String?,inboxUri: freezed == inboxUri ? _self.inboxUri : inboxUri // ignore: cast_nullable_to_non_nullable
-as String?,outboxUri: freezed == outboxUri ? _self.outboxUri : outboxUri // ignore: cast_nullable_to_non_nullable
-as String?,followersUri: freezed == followersUri ? _self.followersUri : followersUri // ignore: cast_nullable_to_non_nullable
-as String?,followingUri: freezed == followingUri ? _self.followingUri : followingUri // ignore: cast_nullable_to_non_nullable
-as String?,featuredUri: freezed == featuredUri ? _self.featuredUri : featuredUri // ignore: cast_nullable_to_non_nullable
-as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String?,headerUrl: freezed == headerUrl ? _self.headerUrl : headerUrl // ignore: cast_nullable_to_non_nullable
-as String?,publicKeyId: freezed == publicKeyId ? _self.publicKeyId : publicKeyId // ignore: cast_nullable_to_non_nullable
-as String?,publicKey: freezed == publicKey ? _self.publicKey : publicKey // ignore: cast_nullable_to_non_nullable
-as String?,isBot: null == isBot ? _self.isBot : isBot // ignore: cast_nullable_to_non_nullable
-as bool,isLocked: null == isLocked ? _self.isLocked : isLocked // ignore: cast_nullable_to_non_nullable
-as bool,isDiscoverable: null == isDiscoverable ? _self.isDiscoverable : isDiscoverable // ignore: cast_nullable_to_non_nullable
-as bool,endpoints: freezed == endpoints ? _self._endpoints : endpoints // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,publicKeyData: freezed == publicKeyData ? _self._publicKeyData : publicKeyData // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,metadata: freezed == metadata ? _self._metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,lastFetchedAt: freezed == lastFetchedAt ? _self.lastFetchedAt : lastFetchedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,lastActivityAt: freezed == lastActivityAt ? _self.lastActivityAt : lastActivityAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,instance: null == instance ? _self.instance : instance // ignore: cast_nullable_to_non_nullable
-as SnActivityPubInstance,instanceId: null == instanceId ? _self.instanceId : instanceId // ignore: cast_nullable_to_non_nullable
-as String,isFollowing: freezed == isFollowing ? _self.isFollowing : isFollowing // ignore: cast_nullable_to_non_nullable
-as bool?,followersCount: freezed == followersCount ? _self.followersCount : followersCount // ignore: cast_nullable_to_non_nullable
-as int?,followingCount: freezed == followingCount ? _self.followingCount : followingCount // ignore: cast_nullable_to_non_nullable
-as int?,totalPostCount: freezed == totalPostCount ? _self.totalPostCount : totalPostCount // ignore: cast_nullable_to_non_nullable
-as int?,webUrl: freezed == webUrl ? _self.webUrl : webUrl // ignore: cast_nullable_to_non_nullable
-as String?,recentPosts: freezed == recentPosts ? _self._recentPosts : recentPosts // ignore: cast_nullable_to_non_nullable
-as List<SnPost>?,
-  ));
-}
-
-/// Create a copy of SnActivityPubActor
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$SnActivityPubInstanceCopyWith<$Res> get instance {
-  
-  return $SnActivityPubInstanceCopyWith<$Res>(_self.instance, (value) {
-    return _then(_self.copyWith(instance: value));
-  });
-}
-}
-
-
-/// @nodoc
-mixin _$SnActivityPubFollowResponse {
-
- bool get success; String get message;
-/// Create a copy of SnActivityPubFollowResponse
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$SnActivityPubFollowResponseCopyWith<SnActivityPubFollowResponse> get copyWith => _$SnActivityPubFollowResponseCopyWithImpl<SnActivityPubFollowResponse>(this as SnActivityPubFollowResponse, _$identity);
-
-  /// Serializes this SnActivityPubFollowResponse to a JSON map.
-  Map<String, dynamic> toJson();
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActivityPubFollowResponse&&(identical(other.success, success) || other.success == success)&&(identical(other.message, message) || other.message == message));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,success,message);
-
-@override
-String toString() {
-  return 'SnActivityPubFollowResponse(success: $success, message: $message)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $SnActivityPubFollowResponseCopyWith<$Res>  {
-  factory $SnActivityPubFollowResponseCopyWith(SnActivityPubFollowResponse value, $Res Function(SnActivityPubFollowResponse) _then) = _$SnActivityPubFollowResponseCopyWithImpl;
-@useResult
-$Res call({
- bool success, String message
-});
-
-
-
-
-}
-/// @nodoc
-class _$SnActivityPubFollowResponseCopyWithImpl<$Res>
-    implements $SnActivityPubFollowResponseCopyWith<$Res> {
-  _$SnActivityPubFollowResponseCopyWithImpl(this._self, this._then);
-
-  final SnActivityPubFollowResponse _self;
-  final $Res Function(SnActivityPubFollowResponse) _then;
-
-/// Create a copy of SnActivityPubFollowResponse
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? success = null,Object? message = null,}) {
-  return _then(SnActivityPubFollowResponse(
-success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
-as bool,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-}
-
-
-/// Adds pattern-matching-related methods to [SnActivityPubFollowResponse].
-extension SnActivityPubFollowResponsePatterns on SnActivityPubFollowResponse {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SnActivityPubFollowResponse value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SnActivityPubFollowResponse value)  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse():
-return $default(_that);}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SnActivityPubFollowResponse value)?  $default,){
-final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool success,  String message)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse() when $default != null:
-return $default(_that.success,_that.message);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool success,  String message)  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse():
-return $default(_that.success,_that.message);}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool success,  String message)?  $default,) {final _that = this;
-switch (_that) {
-case _SnActivityPubFollowResponse() when $default != null:
-return $default(_that.success,_that.message);case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class _SnActivityPubFollowResponse implements SnActivityPubFollowResponse {
-  const _SnActivityPubFollowResponse({required this.success, required this.message});
-  factory _SnActivityPubFollowResponse.fromJson(Map<String, dynamic> json) => _$SnActivityPubFollowResponseFromJson(json);
-
-@override final  bool success;
-@override final  String message;
-
-/// Create a copy of SnActivityPubFollowResponse
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$SnActivityPubFollowResponseCopyWith<_SnActivityPubFollowResponse> get copyWith => __$SnActivityPubFollowResponseCopyWithImpl<_SnActivityPubFollowResponse>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$SnActivityPubFollowResponseToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActivityPubFollowResponse&&(identical(other.success, success) || other.success == success)&&(identical(other.message, message) || other.message == message));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,success,message);
-
-@override
-String toString() {
-  return 'SnActivityPubFollowResponse(success: $success, message: $message)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$SnActivityPubFollowResponseCopyWith<$Res> implements $SnActivityPubFollowResponseCopyWith<$Res> {
-  factory _$SnActivityPubFollowResponseCopyWith(_SnActivityPubFollowResponse value, $Res Function(_SnActivityPubFollowResponse) _then) = __$SnActivityPubFollowResponseCopyWithImpl;
-@override @useResult
-$Res call({
- bool success, String message
-});
-
-
-
-
-}
-/// @nodoc
-class __$SnActivityPubFollowResponseCopyWithImpl<$Res>
-    implements _$SnActivityPubFollowResponseCopyWith<$Res> {
-  __$SnActivityPubFollowResponseCopyWithImpl(this._self, this._then);
-
-  final _SnActivityPubFollowResponse _self;
-  final $Res Function(_SnActivityPubFollowResponse) _then;
-
-/// Create a copy of SnActivityPubFollowResponse
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? success = null,Object? message = null,}) {
-  return _then(_SnActivityPubFollowResponse(
-success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
-as bool,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-
-/// @nodoc
 mixin _$SnActorStatusResponse {
 
- bool get enabled; int get followerCount; SnActivityPubActor? get actor; String? get actorUri;
+ bool get enabled; int get followerCount; SnPublisher? get actor; String? get actorUri;
 /// Create a copy of SnActorStatusResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1291,16 +354,21 @@ $SnActorStatusResponseCopyWith<SnActorStatusResponse> get copyWith => _$SnActorS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActorStatusResponse&&(identical(other.enabled, enabled) || other.enabled == enabled)&&(identical(other.followerCount, followerCount) || other.followerCount == followerCount)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.actorUri, actorUri) || other.actorUri == actorUri));
+  final _this = this as SnActorStatusResponse;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnActorStatusResponse&&(identical(other.enabled, _this.enabled) || other.enabled == _this.enabled)&&(identical(other.followerCount, _this.followerCount) || other.followerCount == _this.followerCount)&&(identical(other.actor, _this.actor) || other.actor == _this.actor)&&(identical(other.actorUri, _this.actorUri) || other.actorUri == _this.actorUri));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enabled,followerCount,actor,actorUri);
+int get hashCode {
+  final _this = this as SnActorStatusResponse;
+  return Object.hash(runtimeType,_this.enabled,_this.followerCount,_this.actor,_this.actorUri);
+}
 
 @override
 String toString() {
-  return 'SnActorStatusResponse(enabled: $enabled, followerCount: $followerCount, actor: $actor, actorUri: $actorUri)';
+  final _this = this as SnActorStatusResponse;
+  return 'SnActorStatusResponse(enabled: ${_this.enabled}, followerCount: ${_this.followerCount}, actor: ${_this.actor}, actorUri: ${_this.actorUri})';
 }
 
 
@@ -1311,11 +379,11 @@ abstract mixin class $SnActorStatusResponseCopyWith<$Res>  {
   factory $SnActorStatusResponseCopyWith(SnActorStatusResponse value, $Res Function(SnActorStatusResponse) _then) = _$SnActorStatusResponseCopyWithImpl;
 @useResult
 $Res call({
- bool enabled, int followerCount, SnActivityPubActor? actor, String? actorUri
+ bool enabled, int followerCount, SnPublisher? actor, String? actorUri
 });
 
 
-$SnActivityPubActorCopyWith<$Res>? get actor;
+$SnPublisherCopyWith<$Res>? get actor;
 
 }
 /// @nodoc
@@ -1333,7 +401,7 @@ class _$SnActorStatusResponseCopyWithImpl<$Res>
 enabled: null == enabled ? _self.enabled : enabled // ignore: cast_nullable_to_non_nullable
 as bool,followerCount: null == followerCount ? _self.followerCount : followerCount // ignore: cast_nullable_to_non_nullable
 as int,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,actorUri: freezed == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,actorUri: freezed == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1341,12 +409,12 @@ as String?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
+$SnPublisherCopyWith<$Res>? get actor {
     if (_self.actor == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
+  return $SnPublisherCopyWith<$Res>(_self.actor!, (value) {
     return _then(_self.copyWith(actor: value));
   });
 }
@@ -1428,7 +496,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enabled,  int followerCount,  SnActivityPubActor? actor,  String? actorUri)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enabled,  int followerCount,  SnPublisher? actor,  String? actorUri)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnActorStatusResponse() when $default != null:
 return $default(_that.enabled,_that.followerCount,_that.actor,_that.actorUri);case _:
@@ -1449,7 +517,7 @@ return $default(_that.enabled,_that.followerCount,_that.actor,_that.actorUri);ca
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enabled,  int followerCount,  SnActivityPubActor? actor,  String? actorUri)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enabled,  int followerCount,  SnPublisher? actor,  String? actorUri)  $default,) {final _that = this;
 switch (_that) {
 case _SnActorStatusResponse():
 return $default(_that.enabled,_that.followerCount,_that.actor,_that.actorUri);}
@@ -1466,7 +534,7 @@ return $default(_that.enabled,_that.followerCount,_that.actor,_that.actorUri);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enabled,  int followerCount,  SnActivityPubActor? actor,  String? actorUri)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enabled,  int followerCount,  SnPublisher? actor,  String? actorUri)?  $default,) {final _that = this;
 switch (_that) {
 case _SnActorStatusResponse() when $default != null:
 return $default(_that.enabled,_that.followerCount,_that.actor,_that.actorUri);case _:
@@ -1486,7 +554,7 @@ class _SnActorStatusResponse implements SnActorStatusResponse {
 
 @override final  bool enabled;
 @override@JsonKey() final  int followerCount;
-@override final  SnActivityPubActor? actor;
+@override final  SnPublisher? actor;
 @override final  String? actorUri;
 
 /// Create a copy of SnActorStatusResponse
@@ -1502,16 +570,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActorStatusResponse&&(identical(other.enabled, enabled) || other.enabled == enabled)&&(identical(other.followerCount, followerCount) || other.followerCount == followerCount)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.actorUri, actorUri) || other.actorUri == actorUri));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnActorStatusResponse&&(identical(other.enabled, enabled) || other.enabled == enabled)&&(identical(other.followerCount, followerCount) || other.followerCount == followerCount)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.actorUri, actorUri) || other.actorUri == actorUri));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enabled,followerCount,actor,actorUri);
+int get hashCode {
+    return Object.hash(runtimeType,enabled,followerCount,actor,actorUri);
+}
 
 @override
 String toString() {
-  return 'SnActorStatusResponse(enabled: $enabled, followerCount: $followerCount, actor: $actor, actorUri: $actorUri)';
+    return 'SnActorStatusResponse(enabled: $enabled, followerCount: $followerCount, actor: $actor, actorUri: $actorUri)';
 }
 
 
@@ -1522,11 +592,11 @@ abstract mixin class _$SnActorStatusResponseCopyWith<$Res> implements $SnActorSt
   factory _$SnActorStatusResponseCopyWith(_SnActorStatusResponse value, $Res Function(_SnActorStatusResponse) _then) = __$SnActorStatusResponseCopyWithImpl;
 @override @useResult
 $Res call({
- bool enabled, int followerCount, SnActivityPubActor? actor, String? actorUri
+ bool enabled, int followerCount, SnPublisher? actor, String? actorUri
 });
 
 
-@override $SnActivityPubActorCopyWith<$Res>? get actor;
+@override $SnPublisherCopyWith<$Res>? get actor;
 
 }
 /// @nodoc
@@ -1544,7 +614,7 @@ class __$SnActorStatusResponseCopyWithImpl<$Res>
 enabled: null == enabled ? _self.enabled : enabled // ignore: cast_nullable_to_non_nullable
 as bool,followerCount: null == followerCount ? _self.followerCount : followerCount // ignore: cast_nullable_to_non_nullable
 as int,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,actorUri: freezed == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,actorUri: freezed == actorUri ? _self.actorUri : actorUri // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1553,12 +623,12 @@ as String?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
+$SnPublisherCopyWith<$Res>? get actor {
     if (_self.actor == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
+  return $SnPublisherCopyWith<$Res>(_self.actor!, (value) {
     return _then(_self.copyWith(actor: value));
   });
 }

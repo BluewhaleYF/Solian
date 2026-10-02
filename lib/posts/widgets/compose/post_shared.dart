@@ -990,10 +990,6 @@ class CompactPostRow extends ConsumerWidget {
         radius: radius,
       );
     }
-    // Handle actor case
-    if (post.actor != null) {
-      return ActorPictureWidget(actor: post.actor!, radius: radius);
-    }
     // Fallback
     return ProfilePictureWidget(file: null, radius: radius);
   }
@@ -1640,27 +1636,13 @@ class PostAvatar extends StatelessWidget {
         fallbackName: post.publisher!.nick,
         radius: 16,
       );
-    } else if (post.actor != null) {
-      picture = ActorPictureWidget(actor: post.actor!, radius: 16);
     } else {
       picture = ProfilePictureWidget(file: null, radius: 16);
     }
-    final canOpen =
-        isInteractive && (post.publisher != null || post.actor != null);
+    final publisher = post.publisher;
     return GestureDetector(
-      onTap: canOpen
-          ? () {
-              if (post.publisher != null) {
-                showPublisherProfileAttentionModal(post.publisher!.name);
-              } else if (post.actor != null) {
-                context.router.push(
-                  FediverseActorProfileRoute(
-                    id: post.actor!.id,
-                    fullHandle: post.actor!.fullHandle,
-                  ),
-                );
-              }
-            }
+      onTap: isInteractive && publisher != null
+          ? () => openPublisherProfile(context, publisher)
           : null,
       child: picture,
     );
@@ -1699,13 +1681,10 @@ class PostHeader extends HookConsumerWidget {
     // Handle publisher case
     if (post.publisher != null) {
       final publisher = post.publisher!;
-      return publisher.realmNick?.trim().isNotEmpty == true
-          ? publisher.realmNick!.trim()
-          : publisher.nick;
-    }
-    // Handle actor case
-    if (post.actor != null) {
-      return post.actor!.displayName ?? post.actor!.username;
+      if (publisher.realmNick?.trim().isNotEmpty == true) {
+        return publisher.realmNick!.trim();
+      }
+      return publisher.effectiveName;
     }
     return 'unknown'.tr();
   }
@@ -1737,33 +1716,19 @@ class PostHeader extends HookConsumerWidget {
   Widget _buildHandleChip(BuildContext context, SnPost post) {
     final theme = Theme.of(context);
 
-    // Handle publisher case
-    if (post.publisher != null) {
-      return HandleChip(
-        handle: post.publisher!.name,
-        allowCopy: false,
-        maxLines: 1,
-        textStyle: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        borderRadius: 8,
-      );
-    }
+    final publisher = post.publisher;
+    if (publisher == null) return const SizedBox.shrink();
 
-    // Handle actor case (fediverse) - always show as remote with domain
-    if (post.actor != null) {
-      return HandleChip(
-        handle: post.actor!.username,
-        domain: post.actor!.instance.domain,
-        isRemote: true,
-        allowCopy: false,
-        maxLines: 1,
-        textStyle: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        borderRadius: 8,
-      );
-    }
-
-    return const SizedBox.shrink();
+    return HandleChip(
+      handle: publisher.username ?? publisher.name,
+      domain: publisher.isFediverse ? publisher.domain : null,
+      isRemote: publisher.isFediverse,
+      allowCopy: false,
+      maxLines: 1,
+      textStyle: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      borderRadius: 8,
+    );
   }
 
   @override
@@ -1809,7 +1774,7 @@ class PostHeader extends HookConsumerWidget {
                           const Gap(4),
                           Text(
                             'boostedBy'.tr(
-                              args: ['@${item.boostedBy!.username}'],
+                              args: ['@${item.boostedBy!.handle}'],
                             ),
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(

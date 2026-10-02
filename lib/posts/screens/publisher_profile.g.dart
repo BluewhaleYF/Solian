@@ -64,7 +64,7 @@ final class PublisherProvider
   }
 }
 
-String _$publisherHash() => r'eacb38403fab1c185b80172160f8bc1d4ad12f03';
+String _$publisherHash() => r'687cd9a3ad3ff085a4a70613ecc74fe2b2d36169';
 
 final class PublisherFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SnPublisher>, String> {

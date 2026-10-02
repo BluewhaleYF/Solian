@@ -2,6 +2,10 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 class AuthorizeClientInfo {
   final String clientName;
+
+  /// The client slug. Stargate resolves `client_id` to the slug, which also
+  /// keys the public app profile (`/develop/apps/{slug}`).
+  final String? clientId;
   final String? homeUri;
   final SnCloudFileReference? picture;
   final SnCloudFileReference? background;
@@ -10,6 +14,7 @@ class AuthorizeClientInfo {
 
   const AuthorizeClientInfo({
     required this.clientName,
+    this.clientId,
     this.homeUri,
     this.picture,
     this.background,
@@ -22,6 +27,11 @@ class AuthorizeClientInfo {
       clientName: (json['client_name'] as String?)?.trim().isNotEmpty == true
           ? (json['client_name'] as String).trim()
           : (json['name'] as String?)?.trim() ?? 'Unknown App',
+      clientId:
+          _readString(json['client_id']) ??
+          _readString(json['clientId']) ??
+          _readString(json['client_slug']) ??
+          _readString(json['slug']),
       homeUri: (json['home_uri'] as String?)?.trim(),
       picture: json['picture'] is Map<String, dynamic>
           ? SnCloudFileReference.fromJson(
@@ -38,6 +48,12 @@ class AuthorizeClientInfo {
           _readScopeString(json['scope']),
       description: (json['description'] as String?)?.trim(),
     );
+  }
+
+  static String? _readString(dynamic raw) {
+    if (raw is! String) return null;
+    final value = raw.trim();
+    return value.isEmpty ? null : value;
   }
 
   static List<String> _readScopeString(dynamic raw) {

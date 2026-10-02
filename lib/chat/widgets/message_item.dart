@@ -1475,6 +1475,11 @@ class MessageReactionChips extends HookConsumerWidget {
 
     return Align(
       alignment: sectionAlign,
+      // A plain [Align] expands to the incoming max width. Inside a bubble the
+      // chips are a child of the bubble's own column, so that expansion would
+      // stretch the bubble out to the full row width as soon as a reaction
+      // exists. Hugging the content keeps the bubble sized to its content.
+      widthFactor: 1,
       child: Padding(
         padding: sectionPadding,
         child: reactionsCount.isNotEmpty

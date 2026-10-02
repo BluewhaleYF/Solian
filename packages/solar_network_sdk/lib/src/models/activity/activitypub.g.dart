@@ -58,126 +58,6 @@ Map<String, dynamic> _$SnActivityPubInstanceToJson(
   'metadata_fetched_at': instance.metadataFetchedAt?.toIso8601String(),
 };
 
-_SnActivityPubUser _$SnActivityPubUserFromJson(Map<String, dynamic> json) =>
-    _SnActivityPubUser(
-      actorUri: json['actor_uri'] as String,
-      username: json['username'] as String,
-      displayName: json['display_name'] as String,
-      bio: json['bio'] as String,
-      avatarUrl: json['avatar_url'] as String,
-      followedAt: DateTime.parse(json['followed_at'] as String),
-      isLocal: json['is_local'] as bool,
-      instanceDomain: json['instance_domain'] as String,
-    );
-
-Map<String, dynamic> _$SnActivityPubUserToJson(_SnActivityPubUser instance) =>
-    <String, dynamic>{
-      'actor_uri': instance.actorUri,
-      'username': instance.username,
-      'display_name': instance.displayName,
-      'bio': instance.bio,
-      'avatar_url': instance.avatarUrl,
-      'followed_at': instance.followedAt.toIso8601String(),
-      'is_local': instance.isLocal,
-      'instance_domain': instance.instanceDomain,
-    };
-
-_SnActivityPubActor _$SnActivityPubActorFromJson(Map<String, dynamic> json) =>
-    _SnActivityPubActor(
-      id: json['id'] as String? ?? '',
-      uri: json['uri'] as String? ?? '',
-      type: json['type'] as String? ?? 'Person',
-      fullHandle: json['full_handle'] as String? ?? '',
-      displayName: json['display_name'] as String?,
-      username: json['username'] as String? ?? '',
-      bio: json['bio'] as String?,
-      inboxUri: json['inbox_uri'] as String?,
-      outboxUri: json['outbox_uri'] as String?,
-      followersUri: json['followers_uri'] as String?,
-      followingUri: json['following_uri'] as String?,
-      featuredUri: json['featured_uri'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      headerUrl: json['header_url'] as String?,
-      publicKeyId: json['public_key_id'] as String?,
-      publicKey: json['public_key'] as String?,
-      isBot: json['is_bot'] as bool? ?? false,
-      isLocked: json['is_locked'] as bool? ?? false,
-      isDiscoverable: json['is_discoverable'] as bool? ?? true,
-      endpoints: json['endpoints'] as Map<String, dynamic>?,
-      publicKeyData: json['public_key_data'] as Map<String, dynamic>?,
-      metadata: json['metadata'] as Map<String, dynamic>?,
-      lastFetchedAt: json['last_fetched_at'] == null
-          ? null
-          : DateTime.parse(json['last_fetched_at'] as String),
-      lastActivityAt: json['last_activity_at'] == null
-          ? null
-          : DateTime.parse(json['last_activity_at'] as String),
-      instance: json['instance'] == null
-          ? const SnActivityPubInstance()
-          : SnActivityPubInstance.fromJson(
-              json['instance'] as Map<String, dynamic>,
-            ),
-      instanceId: json['instance_id'] as String? ?? '',
-      isFollowing: json['is_following'] as bool?,
-      followersCount: (json['followers_count'] as num?)?.toInt(),
-      followingCount: (json['following_count'] as num?)?.toInt(),
-      totalPostCount: (json['total_post_count'] as num?)?.toInt(),
-      webUrl: json['web_url'] as String?,
-      recentPosts: (json['recent_posts'] as List<dynamic>?)
-          ?.map((e) => SnPost.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-
-Map<String, dynamic> _$SnActivityPubActorToJson(_SnActivityPubActor instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'uri': instance.uri,
-      'type': instance.type,
-      'full_handle': instance.fullHandle,
-      'display_name': instance.displayName,
-      'username': instance.username,
-      'bio': instance.bio,
-      'inbox_uri': instance.inboxUri,
-      'outbox_uri': instance.outboxUri,
-      'followers_uri': instance.followersUri,
-      'following_uri': instance.followingUri,
-      'featured_uri': instance.featuredUri,
-      'avatar_url': instance.avatarUrl,
-      'header_url': instance.headerUrl,
-      'public_key_id': instance.publicKeyId,
-      'public_key': instance.publicKey,
-      'is_bot': instance.isBot,
-      'is_locked': instance.isLocked,
-      'is_discoverable': instance.isDiscoverable,
-      'endpoints': instance.endpoints,
-      'public_key_data': instance.publicKeyData,
-      'metadata': instance.metadata,
-      'last_fetched_at': instance.lastFetchedAt?.toIso8601String(),
-      'last_activity_at': instance.lastActivityAt?.toIso8601String(),
-      'instance': instance.instance.toJson(),
-      'instance_id': instance.instanceId,
-      'is_following': instance.isFollowing,
-      'followers_count': instance.followersCount,
-      'following_count': instance.followingCount,
-      'total_post_count': instance.totalPostCount,
-      'web_url': instance.webUrl,
-      'recent_posts': instance.recentPosts?.map((e) => e.toJson()).toList(),
-    };
-
-_SnActivityPubFollowResponse _$SnActivityPubFollowResponseFromJson(
-  Map<String, dynamic> json,
-) => _SnActivityPubFollowResponse(
-  success: json['success'] as bool,
-  message: json['message'] as String,
-);
-
-Map<String, dynamic> _$SnActivityPubFollowResponseToJson(
-  _SnActivityPubFollowResponse instance,
-) => <String, dynamic>{
-  'success': instance.success,
-  'message': instance.message,
-};
-
 _SnActorStatusResponse _$SnActorStatusResponseFromJson(
   Map<String, dynamic> json,
 ) => _SnActorStatusResponse(
@@ -185,7 +65,7 @@ _SnActorStatusResponse _$SnActorStatusResponseFromJson(
   followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
   actor: json['actor'] == null
       ? null
-      : SnActivityPubActor.fromJson(json['actor'] as Map<String, dynamic>),
+      : SnPublisher.fromJson(json['actor'] as Map<String, dynamic>),
   actorUri: json['actor_uri'] as String?,
 );
 

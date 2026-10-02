@@ -512,9 +512,9 @@ class ReactionDetailsPopup extends HookConsumerWidget {
                   return ListTile(
                     leading: AccountPfcRegion(
                       uname: reaction.account?.name,
-                      child: reaction.actor != null
+                      child: reaction.publisher != null
                           ? ActorPictureWidget(
-                              actor: reaction.actor!,
+                              actor: reaction.publisher!,
                               radius: 20,
                             )
                           : ProfilePictureWidget(
@@ -523,7 +523,7 @@ class ReactionDetailsPopup extends HookConsumerWidget {
                             ),
                     ),
                     title: Text(
-                      reaction.actor?.displayName ??
+                      reaction.publisher?.effectiveName ??
                           reaction.account?.nick ??
                           'unknown'.tr(),
                     ),

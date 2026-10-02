@@ -419,7 +419,7 @@ class _AccountSearchTab extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accountResults = useState<List<SnAccount>>([]);
     final publisherResults = useState<List<SnPublisher>>([]);
-    final fediverseResults = useState<List<SnActivityPubActor>>([]);
+    final fediverseResults = useState<List<SnPublisher>>([]);
     final isSearching = useState(false);
     final searchScope = useState(SearchScope.local);
     final requestToken = useRef(0);
@@ -468,7 +468,7 @@ class _AccountSearchTab extends HookConsumerWidget {
 
           if (searchScope.value == SearchScope.remote && results.length > 2) {
             fediverseResults.value = (results[2].data as List)
-                .map((json) => SnActivityPubActor.fromJson(json))
+                .map((json) => SnPublisher.fromJson(json))
                 .toList();
           } else {
             fediverseResults.value = [];
@@ -651,7 +651,7 @@ class _AccountSearchTab extends HookConsumerWidget {
                           ),
                         );
                       } else if (result['type'] == 'fediverse') {
-                        final actor = result['data'] as SnActivityPubActor;
+                        final actor = result['data'] as SnPublisher;
                         return Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 560),
@@ -712,7 +712,7 @@ class _AccountSearchTab extends HookConsumerWidget {
                                     child: Column(
                                       children: [
                                         Text(
-                                          actor.displayName ?? actor.username,
+                                          actor.effectiveName,
                                           style: Theme.of(
                                             context,
                                           ).textTheme.titleMedium,
@@ -733,7 +733,7 @@ class _AccountSearchTab extends HookConsumerWidget {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      actor.instance.domain,
+                                      actor.domain ?? '',
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Theme.of(
@@ -744,10 +744,9 @@ class _AccountSearchTab extends HookConsumerWidget {
                                   ),
                                 ],
                               ),
-                              subtitle:
-                                  actor.bio != null && actor.bio!.isNotEmpty
+                              subtitle: actor.bio.isNotEmpty
                                   ? Text(
-                                      actor.bio!,
+                                      actor.bio,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(

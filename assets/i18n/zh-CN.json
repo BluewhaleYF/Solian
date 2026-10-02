@@ -5637,5 +5637,19 @@
   "chatJoinRealmRequiredHint": "先加入 {realm} 领域，才能成为该聊天成员。",
   "aboutScreenFailedToLoadDeviceInfo": "无法加载设备信息：{}",
   "boostedBy": "由 {} 助推",
-  "settingsOutgoingCallKit": "发起的通话使用 CallKit"
+  "settingsOutgoingCallKit": "发起的通话使用 CallKit",
+  "approve": "批准",
+  "decline": "拒绝",
+  "authConsentBy": "开发者",
+  "authConsentApprovingAs": "你将以以下身份批准此请求",
+  "authConsentDeviceAuthorized": "设备已授权",
+  "authConsentDeviceAuthorizedHint": "你可以关闭此页面了。",
+  "authConsentRequestDenied": "请求已被拒绝",
+  "authConsentRequestDeniedHint": "该设备请求已被拒绝。",
+  "authConsentCodeExpired": "验证码已过期",
+  "authConsentCodeExpiredHint": "该验证码已过期，请在设备上重新获取。",
+  "authConsentResolvedElsewhere": "该请求已在其他客户端处理。",
+  "accountQrDeviceAuthNoLongerPending": "该设备请求已不再处于待处理状态。",
+  "accountQrDeviceAuthStepOpen": "在另一台设备上打开登录界面，查看其显示的验证码。",
+  "accountQrDeviceAuthStepEnter": "在此输入该验证码，即可查看并批准该请求。"
 }

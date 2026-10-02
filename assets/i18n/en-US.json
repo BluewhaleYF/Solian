@@ -5641,5 +5641,19 @@
   "settingsBackgroundGenerateColorFailed": "Unable to read a color from the background image.",
   "reset": "Reset",
   "aboutScreenFailedToLoadDeviceInfo": "Failed to load device info: {}",
-  "boostedBy": "Boosted by {}"
+  "boostedBy": "Boosted by {}",
+  "approve": "Approve",
+  "decline": "Decline",
+  "authConsentBy": "by",
+  "authConsentApprovingAs": "You will approve this request as",
+  "authConsentDeviceAuthorized": "Device Authorized",
+  "authConsentDeviceAuthorizedHint": "You can close this page.",
+  "authConsentRequestDenied": "Request Denied",
+  "authConsentRequestDeniedHint": "The device request was denied.",
+  "authConsentCodeExpired": "Code Expired",
+  "authConsentCodeExpiredHint": "This code has expired. Request a new one from your device.",
+  "authConsentResolvedElsewhere": "This request was already resolved from another client.",
+  "accountQrDeviceAuthNoLongerPending": "This device request is no longer pending.",
+  "accountQrDeviceAuthStepOpen": "On the other device, open the sign-in screen and note the code it shows.",
+  "accountQrDeviceAuthStepEnter": "Enter that code here to review and approve the request."
 }

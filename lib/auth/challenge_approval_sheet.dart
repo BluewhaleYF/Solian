@@ -7,6 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/accounts/account_pod.dart';
+import 'package:island/auth/widgets/auth_consent.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/network/api_error.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -27,29 +29,8 @@ final _secureStorage = FlutterSecureStorage(
   aOptions: AndroidOptions(),
 );
 
-IconData _platformIcon(int? platform) {
-  return switch (platform) {
-    2 => Symbols.phone_iphone,
-    3 => Symbols.phone_android,
-    4 => Symbols.computer,
-    5 => Symbols.computer,
-    6 => Symbols.computer,
-    1 => Symbols.language,
-    _ => Symbols.devices,
-  };
-}
-
-String _platformName(int? platform) {
-  return switch (platform) {
-    2 => 'platformIos'.tr(),
-    3 => 'platformAndroid'.tr(),
-    4 => 'platformMacos'.tr(),
-    5 => 'platformWindows'.tr(),
-    6 => 'platformLinux'.tr(),
-    1 => 'platformWeb'.tr(),
-    _ => 'platformUnknown'.tr(),
-  };
-}
+/// PIN length enforced by the server.
+const int _pinLength = 6;
 
 class ChallengeApprovalSheet extends HookConsumerWidget {
   final SnAuthChallenge challenge;
@@ -93,7 +74,15 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
 
     // Guards the sheet against double-resolution when a poll tick races the
     // local approve/decline path.
-    final resolved = useRef(false);
+    final resolved = useState(false);
+
+    // Surfaced inline rather than only as a transient snackbar, so the user can
+    // see why an attempt failed while they retype the PIN.
+    final authError = useState<String?>(null);
+
+    // Drives the Approve button's enabled state in PIN mode.
+    final pinInput = useState('');
+    final pinIsComplete = pinInput.value.length == _pinLength;
 
     useEffect(() {
       Future(() async {
@@ -141,6 +130,8 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
     // leaving it open until expiry. Mirrors the Device A polling in
     // LoginContent; failures are transient and retried on the next tick.
     useEffect(() {
+      if (resolved.value) return null;
+
       Future<void> pollChallenge() async {
         if (resolved.value) return;
         final seconds = remaining.value;
@@ -194,7 +185,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
         (_) => pollChallenge(),
       );
       return timer.cancel;
-    }, [challenge.id]);
+    }, [challenge.id, resolved.value]);
 
     final expired = remaining.value != null && remaining.value! <= 0;
 
@@ -233,12 +224,13 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
     }
 
     Future<void> submitPin(String pin) async {
-      if (isBusy.value || pin.length != 6) return;
+      if (isBusy.value || pin.length != _pinLength) return;
       isBusy.value = true;
+      authError.value = null;
       try {
         await approveWithCode(pin);
       } catch (err) {
-        await _handleAuthError(err, clearStoredPin);
+        authError.value = _authErrorMessage(err, clearStoredPin);
       } finally {
         isBusy.value = false;
       }
@@ -248,10 +240,11 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
     Future<void> approveDirect() async {
       if (isBusy.value) return;
       isBusy.value = true;
+      authError.value = null;
       try {
         await approveWithCode(null);
       } catch (err) {
-        await _handleAuthError(err, clearStoredPin);
+        authError.value = _authErrorMessage(err, clearStoredPin);
       } finally {
         isBusy.value = false;
       }
@@ -260,6 +253,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
     Future<void> approveWithBiometric() async {
       if (isBusy.value) return;
       isBusy.value = true;
+      authError.value = null;
       try {
         final la = LocalAuthentication();
         final ok = await la.authenticate(
@@ -268,19 +262,19 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
         );
         if (!ok) {
           isPinMode.value = true;
-          showSnackBar('biometricAuthFailed'.tr());
+          authError.value = 'biometricAuthFailed'.tr();
           return;
         }
         final stored = await _secureStorage.read(key: _pinStorageKey);
         if (stored == null || stored.isEmpty) {
           isPinMode.value = true;
-          showSnackBar('noStoredPin'.tr());
+          authError.value = 'noStoredPin'.tr();
           return;
         }
         await approveWithCode(stored);
       } catch (err) {
         isPinMode.value = true;
-        showSnackBar(_biometricError(err));
+        authError.value = _biometricError(err);
       } finally {
         isBusy.value = false;
       }
@@ -289,11 +283,12 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
     Future<void> performDecline() async {
       if (isBusy.value) return;
       isBusy.value = true;
+      authError.value = null;
       try {
         final client = ref.read(solarNetworkClientProvider);
         await client.auth.declineChallenge(
           challengeId: challenge.id,
-          pinCode: requiresPin.value && pinController.text.isNotEmpty
+          pinCode: requiresPin.value && pinIsComplete
               ? pinController.text
               : null,
         );
@@ -307,7 +302,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
         Navigator.pop(context);
         onResolved?.call();
       } catch (err) {
-        await _handleAuthError(err, clearStoredPin);
+        authError.value = _authErrorMessage(err, clearStoredPin);
       } finally {
         isBusy.value = false;
       }
@@ -320,24 +315,25 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
         return;
       }
       if (isPinMode.value) {
-        final pin = pinController.text;
-        if (pin.length != 6) return;
-        await submitPin(pin);
+        // The button is disabled until the PIN is complete; this is a guard for
+        // the keyboard-submit path racing a rebuild.
+        if (!pinIsComplete) return;
+        await submitPin(pinController.text);
         return;
       }
       await approveWithBiometric();
     }
 
+    /// Whether the Approve button can act right now. In PIN mode it stays
+    /// disabled until all digits are entered, instead of silently no-oping.
+    final canApprove =
+        !isBusy.value &&
+        (!requiresPin.value || !isPinMode.value || pinIsComplete);
+
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-
-    // Small shared defaults for the calm ledger treatment.
-    final labelStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: scheme.onSurfaceVariant,
-    );
-    final valueStyle = theme.textTheme.bodyMedium?.copyWith(
-      fontWeight: FontWeight.w500,
-    );
+    final account = ref.watch(userInfoProvider).value;
+    final deviceName = challenge.deviceName ?? 'unknownDevice'.tr();
 
     final location = [
       challenge.city,
@@ -376,7 +372,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
-                                _platformIcon(challenge.platform),
+                                authPlatformIcon(challenge.platform),
                                 size: 24,
                                 color: scheme.onSurfaceVariant,
                               ),
@@ -387,8 +383,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    challenge.deviceName ??
-                                        'unknownDevice'.tr(),
+                                    deviceName,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.titleMedium
@@ -396,7 +391,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                                   ),
                                   const Gap(2),
                                   Text(
-                                    _platformName(challenge.platform),
+                                    authPlatformName(challenge.platform),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: scheme.onSurfaceVariant,
                                     ),
@@ -418,36 +413,28 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                         ),
                         child: Column(
                           children: [
-                            _FactRow(
+                            AuthFactRow(
                               label: 'challengeIpAddress'.tr(),
                               value: challenge.ipAddress,
-                              labelStyle: labelStyle,
-                              valueStyle: valueStyle,
                             ),
-                            _FactRow(
+                            AuthFactRow(
                               label: 'challengeLocation'.tr(),
                               value: location.isNotEmpty
                                   ? location
                                   : 'unknown'.tr(),
-                              labelStyle: labelStyle,
-                              valueStyle: valueStyle,
                             ),
-                            _FactRow(
+                            AuthFactRow(
                               label: 'challengeRequested'.tr(),
                               value: RelativeTime(
                                 context,
                               ).format(challenge.createdAt),
-                              labelStyle: labelStyle,
-                              valueStyle: valueStyle,
                             ),
                             if (remaining.value != null)
-                              _FactRow(
+                              AuthFactRow(
                                 label: 'challengeExpiresIn'.tr(),
                                 value: 'challengeSeconds'.tr(
                                   args: ['${remaining.value}'],
                                 ),
-                                labelStyle: labelStyle,
-                                valueStyle: valueStyle,
                                 valueColor: remaining.value! < 60 && !expired
                                     ? scheme.error
                                     : null,
@@ -486,6 +473,19 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                           ],
                         ),
                       ),
+
+                      // Who the approval is attributed to.
+                      if (account != null) ...[
+                        const SizedBox(height: 12),
+                        AuthAuthorityCard(
+                          label: 'authConsentApprovingAs'.tr(),
+                          accountName: account.nick.isNotEmpty
+                              ? account.nick
+                              : account.name,
+                          accountHandle: account.name,
+                          picture: account.profile.picture,
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // PIN / biometric gate, only when the account enforces it.
@@ -512,23 +512,50 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                                   textAlign: TextAlign.center,
                                 ),
                                 const Gap(20),
-                                Pinput(
-                                  length: 6,
-                                  obscureText: true,
-                                  keyboardType: TextInputType.number,
-                                  controller: pinController,
-                                  defaultPinTheme: _pinTheme(theme, scheme),
-                                  focusedPinTheme: _pinTheme(
-                                    theme,
-                                    scheme,
-                                    focused: true,
-                                  ),
-                                  submittedPinTheme: _pinTheme(
-                                    theme,
-                                    scheme,
-                                    submitted: true,
-                                  ),
-                                  onSubmitted: submitPin,
+                                // Six fixed-width fields overflow a narrow
+                                // phone, so derive the field size from the
+                                // space actually available.
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    const gap = 6.0;
+                                    final width =
+                                        ((constraints.maxWidth -
+                                                    gap * (_pinLength - 1)) /
+                                                _pinLength)
+                                            .clamp(34.0, 52.0);
+                                    return Pinput(
+                                      length: _pinLength,
+                                      obscureText: true,
+                                      keyboardType: TextInputType.number,
+                                      controller: pinController,
+                                      separatorBuilder: (_) =>
+                                          const SizedBox(width: gap),
+                                      defaultPinTheme: _pinTheme(
+                                        theme,
+                                        scheme,
+                                        width: width,
+                                      ),
+                                      focusedPinTheme: _pinTheme(
+                                        theme,
+                                        scheme,
+                                        width: width,
+                                        focused: true,
+                                      ),
+                                      submittedPinTheme: _pinTheme(
+                                        theme,
+                                        scheme,
+                                        width: width,
+                                        submitted: true,
+                                      ),
+                                      onChanged: (value) {
+                                        pinInput.value = value;
+                                        if (authError.value != null) {
+                                          authError.value = null;
+                                        }
+                                      },
+                                      onSubmitted: submitPin,
+                                    );
+                                  },
                                 ),
                                 if (hasStoredPin.value && hasBiometric.value)
                                   TextButton(
@@ -578,6 +605,10 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              if (authError.value != null) ...[
+                AuthInlineError(message: authError.value),
+                const SizedBox(height: 12),
+              ],
               if (expired)
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -623,7 +654,7 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: isBusy.value ? null : onApprovePressed,
+                        onPressed: canApprove ? onApprovePressed : null,
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -648,32 +679,32 @@ class ChallengeApprovalSheet extends HookConsumerWidget {
   }
 }
 
-Future<void> _handleAuthError(
-  Object err,
-  void Function() clearStoredPin,
-) async {
-  if (err is PlatformException) {
-    // Biometric path error — handled by caller.
-    return;
-  }
+/// Resolves an approve/decline failure into inline copy.
+///
+/// Returns null when the failure was already surfaced another way (a biometric
+/// [PlatformException], whose caller builds its own message, or an unexpected
+/// error handed to [showErrorAlert]).
+String? _authErrorMessage(Object err, void Function() clearStoredPin) {
+  if (err is PlatformException) return null;
+
   if (err is DioException) {
     final statusCode = err.response?.statusCode;
     // AUTH_SESSION_NOT_TRUSTED: only trusted sessions can approve/decline.
     if (statusCode == 403) {
       final apiError = ApiError.tryParse(err);
       if (apiError?.code == 'AUTH_SESSION_NOT_TRUSTED') {
-        showSnackBar('challengeNotTrustedMessage'.tr());
-        return;
+        return 'challengeNotTrustedMessage'.tr();
       }
     }
     // Invalid PIN / missing credentials surface as 401/403.
     if (statusCode == 403 || statusCode == 401) {
       clearStoredPin();
-      showSnackBar('invalidPin'.tr());
-      return;
+      return 'invalidPin'.tr();
     }
   }
+
   showErrorAlert(err);
+  return null;
 }
 
 String _biometricError(Object err) {
@@ -691,12 +722,13 @@ String _biometricError(Object err) {
 PinTheme _pinTheme(
   ThemeData theme,
   ColorScheme scheme, {
+  required double width,
   bool focused = false,
   bool submitted = false,
 }) {
   return PinTheme(
-    width: 48,
-    height: 56,
+    width: width,
+    height: (width * 1.15).clamp(44.0, 60.0),
     textStyle: theme.textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w600,
     ),
@@ -709,41 +741,4 @@ PinTheme _pinTheme(
           : Border.all(color: scheme.outline),
     ),
   );
-}
-
-class _FactRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final TextStyle? labelStyle;
-  final TextStyle? valueStyle;
-  final Color? valueColor;
-
-  const _FactRow({
-    required this.label,
-    required this.value,
-    required this.labelStyle,
-    required this.valueStyle,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Text(label, style: labelStyle),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              style: valueStyle?.copyWith(color: valueColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

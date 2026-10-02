@@ -1,90 +1,78 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:island/core/network.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 final activityPubServiceProvider = Provider<ActivityPubService>((ref) {
-  final client = ref.watch(apiClientProvider);
+  final client = ref.watch(solarNetworkClientProvider);
   return ActivityPubService(client);
 });
 
+/// ActivityPub operations of the signed-in account.
+///
+/// Remote actors are publishers now, so every actor-shaped result is an
+/// [SnPublisher] with [SnPublisher.isFediverse] set.
 class ActivityPubService {
-  final Dio _client;
+  final SolarNetworkClient _client;
 
   ActivityPubService(this._client);
 
-  Future<void> followRemoteUser(String targetActorUri) async {
-    final response = await _client.post(
-      '/sphere/activitypub/follow',
-      data: {'target_actor_uri': targetActorUri},
-    );
-    final followResponse = SnActivityPubFollowResponse.fromJson(response.data);
-    if (!followResponse.success) {
-      throw Exception(followResponse.message);
-    }
-  }
+  /// Follows a remote actor by its local publisher id.
+  Future<void> followActor(String actorId) => _client.sphere.followActor(actorId);
 
-  Future<void> unfollowRemoteUser(String targetActorUri) async {
-    final response = await _client.post(
-      '/sphere/activitypub/unfollow',
-      data: {'target_actor_uri': targetActorUri},
-    );
-    final followResponse = SnActivityPubFollowResponse.fromJson(response.data);
-    if (!followResponse.success) {
-      throw Exception(followResponse.message);
-    }
-  }
+  /// Undoes a follow of a remote actor.
+  Future<void> unfollowActor(String actorId) =>
+      _client.sphere.unfollowActor(actorId);
 
-  Future<List<SnActivityPubUser>> getFollowing({int limit = 50}) async {
-    final response = await _client.get(
+  /// Lists the remote actors the account follows.
+  Future<List<SnPublisher>> getFollowing({int limit = 50}) async {
+    final response = await _client.dio.get(
       '/sphere/activitypub/following',
-      queryParameters: {'limit': limit},
+      queryParameters: {'take': limit},
     );
-    final users = (response.data as List<dynamic>)
-        .map((json) => SnActivityPubUser.fromJson(json))
+    return (response.data as List<dynamic>)
+        .map((json) => SnPublisher.fromJson(json as Map<String, dynamic>))
         .toList();
-    return users;
   }
 
-  Future<List<SnActivityPubUser>> getFollowers({int limit = 50}) async {
-    final response = await _client.get(
+  /// Lists the remote actors following the account.
+  Future<List<SnPublisher>> getFollowers({int limit = 50}) async {
+    final response = await _client.dio.get(
       '/sphere/activitypub/followers',
-      queryParameters: {'limit': limit},
+      queryParameters: {'take': limit},
     );
-    final users = (response.data as List<dynamic>)
-        .map((json) => SnActivityPubUser.fromJson(json))
+    return (response.data as List<dynamic>)
+        .map((json) => SnPublisher.fromJson(json as Map<String, dynamic>))
         .toList();
-    return users;
   }
 
-  Future<List<SnActivityPubActor>> searchUsers(
+  /// Searches remote actors, discovering them from the network when needed.
+  Future<List<SnPublisher>> searchActors(
     String query, {
     int limit = 20,
   }) async {
-    final response = await _client.get(
+    final response = await _client.dio.get(
       '/sphere/activitypub/search',
       queryParameters: {'query': query, 'limit': limit},
     );
-    final users = (response.data as List<dynamic>)
-        .map((json) => SnActivityPubActor.fromJson(json))
+    return (response.data as List<dynamic>)
+        .map((json) => SnPublisher.fromJson(json as Map<String, dynamic>))
         .toList();
-    return users;
   }
 
   Future<SnActorStatusResponse> getPublisherActorStatus(
     String publisherName,
   ) async {
-    final response = await _client.get(
+    final response = await _client.dio.get(
       '/sphere/publishers/$publisherName/fediverse',
     );
     return SnActorStatusResponse.fromJson(response.data);
   }
 
   Future<void> enablePublisherActor(String publisherName) async {
-    await _client.post('/sphere/publishers/$publisherName/fediverse');
+    await _client.dio.post('/sphere/publishers/$publisherName/fediverse');
   }
 
   Future<void> disablePublisherActor(String publisherName) async {
-    await _client.delete('/sphere/publishers/$publisherName/fediverse');
+    await _client.dio.delete('/sphere/publishers/$publisherName/fediverse');
   }
 }

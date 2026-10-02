@@ -4,7 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:island/accounts/account_pod.dart';
+import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/auth/models/authorize_client_info.dart';
+import 'package:island/auth/public_app.dart';
+import 'package:island/auth/web_auth/web_auth_app_info.dart';
+import 'package:island/auth/widgets/auth_consent.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/responsive.dart';
@@ -78,8 +82,8 @@ class _AuthorizeScreenState extends ConsumerState<AuthorizeScreen> {
           '/auth/open/device/code/${Uri.encodeComponent(widget.userCode!)}',
         );
         final deviceData = Map<String, dynamic>.from(deviceResp.data as Map);
-        final clientId = deviceData['clientId'] as String?;
-        if (clientId == null) {
+        final clientId = deviceData['client_id'] as String?;
+        if (clientId == null || clientId.isEmpty) {
           setState(() {
             _error = 'Invalid device code';
             _loading = false;
@@ -193,6 +197,13 @@ class _AuthorizeScreenState extends ConsumerState<AuthorizeScreen> {
     final clientPicture = _fileUrl(_clientInfo?.picture?.id);
     final userPicture = _fileUrl(user?.profile.picture?.id);
 
+    // Provenance shown beside the app name: developer, verification mark and
+    // home page, exactly as the web consent page renders `AppOwnerInfo`.
+    final clientId = _clientInfo?.clientId;
+    final profile = clientId == null
+        ? null
+        : ref.watch(publicAppProvider(clientId)).value;
+
     return AppScaffold(
       isNoBackground: false,
       appBar: AppBar(
@@ -215,6 +226,7 @@ class _AuthorizeScreenState extends ConsumerState<AuthorizeScreen> {
               description: description,
               homeUri: homeUri,
               scopes: scopes,
+              profile: profile,
               deviceCode: _isDeviceCode ? widget.userCode! : null,
               error: _error,
               submitting: _submitting,
@@ -235,6 +247,7 @@ class _AuthorizeBody extends StatelessWidget {
   final String? description;
   final String? homeUri;
   final List<String> scopes;
+  final WebAuthAppInfo? profile;
   final String? deviceCode;
   final String? error;
   final bool submitting;
@@ -249,6 +262,7 @@ class _AuthorizeBody extends StatelessWidget {
     required this.description,
     required this.homeUri,
     required this.scopes,
+    required this.profile,
     required this.deviceCode,
     required this.error,
     required this.submitting,
@@ -271,6 +285,7 @@ class _AuthorizeBody extends StatelessWidget {
           clientPicture: clientPicture,
           description: description,
           homeUri: homeUri,
+          profile: profile,
           deviceCode: deviceCode,
           sectionGap: sectionGap,
         );
@@ -328,6 +343,7 @@ class _AuthorizeIntro extends StatelessWidget {
   final String? clientPicture;
   final String? description;
   final String? homeUri;
+  final WebAuthAppInfo? profile;
   final String? deviceCode;
   final double sectionGap;
 
@@ -338,6 +354,7 @@ class _AuthorizeIntro extends StatelessWidget {
     required this.clientPicture,
     required this.description,
     required this.homeUri,
+    required this.profile,
     required this.deviceCode,
     required this.sectionGap,
   });
@@ -346,13 +363,19 @@ class _AuthorizeIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final publisher = profile?.project.developer.publisher;
+    final resolvedHomeUri =
+        profile?.links['home_page'] ?? profile?.links['homePage'] ?? homeUri;
+    final resolvedDescription = (profile?.description.trim() ?? '').isNotEmpty
+        ? profile!.description
+        : description;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (deviceCode != null) ...[
-          _UserCodeCard(userCode: deviceCode!),
+          AuthUserCodeCard(userCode: deviceCode!),
           Gap(sectionGap),
         ],
         Text(
@@ -368,11 +391,23 @@ class _AuthorizeIntro extends StatelessWidget {
           clientPicture: clientPicture,
         ),
         const Gap(28),
-        Text(
-          clientName,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                profile?.name.trim().isNotEmpty == true
+                    ? profile!.name
+                    : clientName,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (profile?.verification != null) ...[
+              const Gap(4),
+              VerificationMark(mark: profile!.verification!),
+            ],
+          ],
         ),
         const Gap(4),
         Text(
@@ -381,19 +416,19 @@ class _AuthorizeIntro extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        if (homeUri != null) ...[
-          const Gap(8),
-          Text(
-            homeUri!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.primary,
-            ),
-          ),
-        ],
-        if (description != null && description!.trim().isNotEmpty) ...[
+        AppOwnerInfo(
+          publisherName: publisher?.nick.trim().isNotEmpty == true
+              ? publisher!.nick
+              : publisher?.name,
+          publisherPicture: publisher?.picture,
+          publisherVerification: publisher?.verification,
+          homeUri: resolvedHomeUri,
+        ),
+        if (resolvedDescription != null &&
+            resolvedDescription.trim().isNotEmpty) ...[
           const Gap(16),
           Text(
-            description!,
+            resolvedDescription,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.45,
@@ -545,33 +580,10 @@ class _AuthorizePermissions extends StatelessWidget {
           ),
         ),
         const Gap(16),
-        if (scopes.isEmpty)
-          Text(
-            'authorizeAppNoScopes'.tr(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          )
-        else
-          ...scopes.map((scope) => _scopeRow(context, scope)),
+        AuthScopeList(scopes: scopes),
         if (error != null) ...[
           const Gap(16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Symbols.error, size: 18, color: colorScheme.error),
-              const Gap(8),
-              Expanded(
-                child: Text(
-                  error!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.error,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          AuthInlineError(message: error),
         ],
         const Spacer(),
         const Gap(32),
@@ -590,100 +602,6 @@ class _AuthorizePermissions extends StatelessWidget {
         TextButton(
           onPressed: submitting ? null : onDeny,
           child: Text('authorizeAppDeny'.tr()),
-        ),
-      ],
-    );
-  }
-
-  Widget _scopeRow(BuildContext context, String scope) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isFullAccess = scope == '*';
-    final key = _humanizeScope(scope);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(
-              isFullAccess ? Symbols.warning : Symbols.check,
-              size: 16,
-              color: isFullAccess
-                  ? colorScheme.error
-                  : colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Gap(10),
-          Expanded(
-            child: key == scope
-                ? Text(
-                    scope,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : Text(
-                    key.tr(),
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _UserCodeCard extends StatelessWidget {
-  final String userCode;
-
-  const _UserCodeCard({required this.userCode});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Symbols.phonelink,
-              size: 16,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const Gap(6),
-            Text(
-              'accountQrDeviceAuthUserCode'.tr(),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        const Gap(10),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Text(
-            userCode,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: 4,
-              fontFamily: 'monospace',
-            ),
-          ),
         ),
       ],
     );
@@ -738,32 +656,5 @@ class _AuthorizeLoadFailedState extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-String _humanizeScope(String scope) {
-  switch (scope) {
-    case 'account.connections':
-      return 'authorizeScopeAccountConnections';
-    case 'posts.create':
-      return 'authorizeScopePostsCreate';
-    case 'posts.react':
-      return 'authorizeScopePostsReact';
-    case 'posts.create.blog':
-      return 'authorizeScopePostsCreateBlog';
-    case 'notifications.push':
-      return 'authorizeScopeNotificationsPush';
-    case 'openid':
-      return 'authorizeScopeOpenId';
-    case 'profile':
-      return 'authorizeScopeProfile';
-    case 'email':
-      return 'authorizeScopeEmail';
-    case 'offline_access':
-      return 'authorizeScopeOfflineAccess';
-    case '*':
-      return 'authorizeScopeAll';
-    default:
-      return scope;
   }
 }

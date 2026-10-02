@@ -39,9 +39,7 @@ class PublisherDiscoveryCard extends ConsumerWidget {
         borderRadius: BorderRadius.zero,
       ),
       child: InkWell(
-        onTap: () {
-          showPublisherProfileAttentionModal(publisher.name);
-        },
+        onTap: () => openPublisherProfile(context, publisher),
         child: AspectRatio(
           aspectRatio: 16 / 7,
           child: Stack(

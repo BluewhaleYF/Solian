@@ -148,21 +148,21 @@ Future<SnActorStatusResponse> publisherActorStatus(
 }
 
 @riverpod
-Future<SnPublisherFollowResponse> publisherFollow(
+Future<SnPublisherSubscriptionStatus> publisherFollow(
   Ref ref,
   String publisherName,
 ) async {
-  final apiClient = ref.watch(apiClientProvider);
-  final response = await apiClient.post(
-    '/sphere/publishers/$publisherName/follow',
-  );
-  return SnPublisherFollowResponse.fromJson(response.data);
+  final client = ref.watch(solarNetworkClientProvider);
+  return client.sphere.subscribeToPublisher(publisherName);
 }
 
 @riverpod
-Future<void> publisherUnfollow(Ref ref, String publisherName) async {
-  final apiClient = ref.watch(apiClientProvider);
-  await apiClient.delete('/sphere/publishers/$publisherName/follow');
+Future<SnPublisherSubscriptionStatus> publisherUnfollow(
+  Ref ref,
+  String publisherName,
+) async {
+  final client = ref.watch(solarNetworkClientProvider);
+  return client.sphere.unsubscribeFromPublisher(publisherName);
 }
 
 @riverpod
@@ -185,18 +185,12 @@ Future<SnPublisherSubscriptionStatus?> publisherFollowRequest(
 }
 
 @riverpod
-Future<List<SnPublisherFollowRequest>> publisherFollowRequests(
+Future<List<SnPublisherSubscription>> publisherFollowRequests(
   Ref ref,
   String publisherName,
 ) async {
-  final apiClient = ref.watch(apiClientProvider);
-  final response = await apiClient.get(
-    '/sphere/publishers/$publisherName/subscription/requests',
-  );
-  return response.data
-      .map((e) => SnPublisherFollowRequest.fromJson(e))
-      .cast<SnPublisherFollowRequest>()
-      .toList();
+  final client = ref.watch(solarNetworkClientProvider);
+  return client.sphere.getFollowRequests(publisherName);
 }
 
 @riverpod
@@ -1825,12 +1819,8 @@ class _PublisherFediverseSheet extends HookConsumerWidget {
                       actor: status.actor!,
                       radius: 24,
                     ),
-                    title: Text(
-                      status.actor!.displayName ?? status.actor!.username,
-                    ),
-                    subtitle: Text(
-                      '@${status.actor!.username}@${status.actor!.instance.domain}',
-                    ),
+                    title: Text(status.actor!.effectiveName),
+                    subtitle: Text('@${status.actor!.handle}'),
                     isThreeLine: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 28),
                   ),
@@ -2102,7 +2092,7 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
                   followRequests.when(
                     data: (requests) {
                       final pending = requests
-                          .where((r) => r.state == FollowRequestState.pending)
+                          .where((r) => r.isPendingRequest)
                           .toList();
                       if (pending.isEmpty) {
                         return SliverToBoxAdapter(
@@ -2234,7 +2224,9 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
                                     Symbols.delete,
                                     color: Colors.red,
                                   ),
-                                  onPressed: () => removeSubscriber(accountId),
+                                  onPressed: accountId == null
+                                      ? null
+                                      : () => removeSubscriber(accountId),
                                 ),
                               ],
                             )

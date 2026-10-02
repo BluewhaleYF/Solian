@@ -63,14 +63,10 @@ _SnPost _$SnPostFromJson(Map<String, dynamic> json) => _SnPost(
   realm: json['realm'] == null
       ? null
       : SnRealm.fromJson(json['realm'] as Map<String, dynamic>),
-  publisherId: json['publisher_id'] as String?,
+  publisherId: json['publisher_id'] as String? ?? '',
   publisher: json['publisher'] == null
       ? null
       : SnPublisher.fromJson(json['publisher'] as Map<String, dynamic>),
-  actorid: json['actorid'] as String?,
-  actor: json['actor'] == null
-      ? null
-      : SnActivityPubActor.fromJson(json['actor'] as Map<String, dynamic>),
   fediverseUri: json['fediverse_uri'] as String?,
   fediverseType: (json['fediverse_type'] as num?)?.toInt(),
   isCached: json['is_cached'] as bool? ?? true,
@@ -126,7 +122,7 @@ _SnPost _$SnPostFromJson(Map<String, dynamic> json) => _SnPost(
   isTruncated: json['is_truncated'] as bool? ?? false,
   boostedBy: json['boosted_by'] == null
       ? null
-      : SnActivityPubActor.fromJson(json['boosted_by'] as Map<String, dynamic>),
+      : SnPublisher.fromJson(json['boosted_by'] as Map<String, dynamic>),
   boostedAt: json['boosted_at'] == null
       ? null
       : DateTime.parse(json['boosted_at'] as String),
@@ -171,8 +167,6 @@ Map<String, dynamic> _$SnPostToJson(_SnPost instance) => <String, dynamic>{
   'realm': instance.realm?.toJson(),
   'publisher_id': instance.publisherId,
   'publisher': instance.publisher?.toJson(),
-  'actorid': instance.actorid,
-  'actor': instance.actor?.toJson(),
   'fediverse_uri': instance.fediverseUri,
   'fediverse_type': instance.fediverseType,
   'is_cached': instance.isCached,
@@ -294,10 +288,10 @@ _SnPostReaction _$SnPostReactionFromJson(Map<String, dynamic> json) =>
       postId: json['post_id'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      actorId: json['actor_id'] as String?,
-      actor: json['actor'] == null
+      publisherId: json['publisher_id'] as String?,
+      publisher: json['publisher'] == null
           ? null
-          : SnActivityPubActor.fromJson(json['actor'] as Map<String, dynamic>),
+          : SnPublisher.fromJson(json['publisher'] as Map<String, dynamic>),
       accountId: json['account_id'] as String?,
       account: json['account'] == null
           ? null
@@ -317,8 +311,8 @@ Map<String, dynamic> _$SnPostReactionToJson(_SnPostReaction instance) =>
       'post_id': instance.postId,
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
-      'actor_id': instance.actorId,
-      'actor': instance.actor?.toJson(),
+      'publisher_id': instance.publisherId,
+      'publisher': instance.publisher?.toJson(),
       'account_id': instance.accountId,
       'account': instance.account?.toJson(),
       'is_local': instance.isLocal,

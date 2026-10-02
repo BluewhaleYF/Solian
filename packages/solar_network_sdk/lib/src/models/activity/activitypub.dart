@@ -4,6 +4,7 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 part 'activitypub.freezed.dart';
 part 'activitypub.g.dart';
 
+/// Metadata of a fediverse instance a publisher lives on.
 @freezed
 sealed class SnActivityPubInstance with _$SnActivityPubInstance {
   const factory SnActivityPubInstance({
@@ -32,84 +33,13 @@ sealed class SnActivityPubInstance with _$SnActivityPubInstance {
       _$SnActivityPubInstanceFromJson(json);
 }
 
-@freezed
-sealed class SnActivityPubUser with _$SnActivityPubUser {
-  const factory SnActivityPubUser({
-    required String actorUri,
-    required String username,
-    required String displayName,
-    required String bio,
-    required String avatarUrl,
-    required DateTime followedAt,
-    required bool isLocal,
-    required String instanceDomain,
-  }) = _SnActivityPubUser;
-
-  factory SnActivityPubUser.fromJson(Map<String, dynamic> json) =>
-      _$SnActivityPubUserFromJson(json);
-}
-
-@freezed
-sealed class SnActivityPubActor with _$SnActivityPubActor {
-  const factory SnActivityPubActor({
-    /// Remote outbox reconstructions may send empty Guid.
-    @Default('') String id,
-    @Default('') String uri,
-    @Default('Person') String type,
-    /// Computed server-side; tolerate missing values on partial payloads.
-    @Default('') String fullHandle,
-    String? displayName,
-    @Default('') String username,
-    String? bio,
-    String? inboxUri,
-    String? outboxUri,
-    String? followersUri,
-    String? followingUri,
-    String? featuredUri,
-    String? avatarUrl,
-    String? headerUrl,
-    String? publicKeyId,
-    String? publicKey,
-    @Default(false) bool isBot,
-    @Default(false) bool isLocked,
-    @Default(true) bool isDiscoverable,
-    Map<String, dynamic>? endpoints,
-    Map<String, dynamic>? publicKeyData,
-    Map<String, dynamic>? metadata,
-    DateTime? lastFetchedAt,
-    DateTime? lastActivityAt,
-    /// Nested instance is incomplete on some remote outbox posts.
-    @Default(SnActivityPubInstance()) SnActivityPubInstance instance,
-    @Default('') String instanceId,
-    bool? isFollowing,
-    int? followersCount,
-    int? followingCount,
-    int? totalPostCount,
-    String? webUrl,
-    List<SnPost>? recentPosts,
-  }) = _SnActivityPubActor;
-
-  factory SnActivityPubActor.fromJson(Map<String, dynamic> json) =>
-      _$SnActivityPubActorFromJson(json);
-}
-
-@freezed
-sealed class SnActivityPubFollowResponse with _$SnActivityPubFollowResponse {
-  const factory SnActivityPubFollowResponse({
-    required bool success,
-    required String message,
-  }) = _SnActivityPubFollowResponse;
-
-  factory SnActivityPubFollowResponse.fromJson(Map<String, dynamic> json) =>
-      _$SnActivityPubFollowResponseFromJson(json);
-}
-
+/// Status of the ActivityPub actor attached to a local publisher.
 @freezed
 sealed class SnActorStatusResponse with _$SnActorStatusResponse {
   const factory SnActorStatusResponse({
     required bool enabled,
     @Default(0) int followerCount,
-    SnActivityPubActor? actor,
+    SnPublisher? actor,
     String? actorUri,
   }) = _SnActorStatusResponse;
 

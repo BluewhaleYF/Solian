@@ -82,8 +82,8 @@ Widget buildReactionIcon(String symbol, double size, {double iconSize = 24}) {
 class SnBoost {
   final String id;
   final String postId;
-  final String? actorId;
-  final SnActivityPubActor? actor;
+  final String? publisherId;
+  final SnPublisher? publisher;
   final String? accountId;
   final SnAccount? account;
   final DateTime boostedAt;
@@ -93,8 +93,8 @@ class SnBoost {
   const SnBoost({
     required this.id,
     required this.postId,
-    this.actorId,
-    this.actor,
+    this.publisherId,
+    this.publisher,
     this.accountId,
     this.account,
     required this.boostedAt,
@@ -106,9 +106,9 @@ class SnBoost {
     return SnBoost(
       id: json['id'] as String,
       postId: json['post_id'] as String,
-      actorId: json['actor_id'] as String?,
-      actor: json['actor'] != null
-          ? SnActivityPubActor.fromJson(json['actor'] as Map<String, dynamic>)
+      publisherId: json['publisher_id'] as String?,
+      publisher: json['publisher'] != null
+          ? SnPublisher.fromJson(json['publisher'] as Map<String, dynamic>)
           : null,
       accountId: json['account_id'] as String?,
       account: json['account'] != null
@@ -377,11 +377,14 @@ class BoostListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final actor = boost.actor;
+    final publisher = boost.publisher;
     final account = boost.account;
-    final displayName = actor?.displayName ?? account?.nick ?? 'unknown';
-    final username = actor?.username ?? (account?.name ?? '');
-    final avatarUrl = actor?.avatarUrl ?? account?.profile.picture?.storageUrl;
+    final displayName =
+        publisher?.effectiveName ?? account?.nick ?? 'unknown';
+    final username =
+        publisher?.username ?? publisher?.name ?? (account?.name ?? '');
+    final avatarUrl =
+        publisher?.avatarUrlOrPicture ?? account?.profile.picture?.storageUrl;
 
     return ListTile(
       leading: avatarUrl != null
@@ -434,15 +437,17 @@ class ReactionListItem extends HookConsumerWidget {
     return ListTile(
       leading: AccountPfcRegion(
         uname: reaction.account?.name,
-        child: reaction.actor != null
-            ? ActorPictureWidget(actor: reaction.actor!, radius: 20)
+        child: reaction.publisher != null
+            ? ActorPictureWidget(actor: reaction.publisher!, radius: 20)
             : ProfilePictureWidget(
                 file: reaction.account?.profile.picture,
                 fallbackName: reaction.account?.nick,
               ),
       ),
       title: Text(
-        reaction.actor?.displayName ?? reaction.account?.nick ?? 'unknown'.tr(),
+        reaction.publisher?.effectiveName ??
+            reaction.account?.nick ??
+            'unknown'.tr(),
       ),
       subtitle: Text(
         '${reaction.createdAt.formatRelative(context)} · ${reaction.createdAt.formatSystem()}',

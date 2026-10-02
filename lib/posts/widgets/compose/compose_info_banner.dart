@@ -161,48 +161,40 @@ class CompactReferencePost extends StatelessWidget {
         radius: 16,
       );
     }
-    // Handle actor case
-    if (post.actor != null) {
-      final avatarUrl = post.actor!.avatarUrl;
-      if (avatarUrl != null) {
-        return Container(
+    // Remote actors keep their avatar on the home instance as a plain URL.
+    final publisher = post.publisher;
+    final actorAvatar = publisher?.avatarUrlOrPicture;
+    if (publisher?.isFediverse == true &&
+        actorAvatar != null &&
+        actorAvatar.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          actorAvatar,
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            width: 32,
+            height: 32,
             color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.network(
-              avatarUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Symbols.account_circle,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                );
-              },
+            child: Icon(
+              Symbols.account_circle,
+              size: 16,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
-        );
-      }
+        ),
+      );
     }
     // Fallback
     return ProfilePictureWidget(file: null, radius: 16);
   }
 
   String _getDisplayName() {
-    // Handle publisher case
-    if (post.publisher != null) {
-      return post.publisher!.nick;
-    }
-    // Handle actor case
-    if (post.actor != null) {
-      return post.actor!.displayName ?? post.actor!.username;
-    }
-    return 'Unknown';
+    final publisher = post.publisher;
+    if (publisher == null) return 'Unknown';
+    return publisher.effectiveName;
   }
 
   @override

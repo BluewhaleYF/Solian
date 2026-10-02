@@ -20,8 +20,11 @@ import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/auth/models/authorize_client_info.dart';
+import 'package:island/auth/public_app.dart';
+import 'package:island/auth/widgets/auth_consent.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/network/api_error.dart';
 import 'package:island/core/services/deeplink_service.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -1276,25 +1279,13 @@ String _qrLoginStatusName(int status) {
   };
 }
 
-IconData _qrLoginPlatformIcon(int? platform) {
-  return switch (platform) {
-    2 => Symbols.phone_iphone,
-    3 => Symbols.phone_android,
-    4 || 5 || 6 => Symbols.computer,
-    1 => Symbols.language,
-    _ => Symbols.devices,
-  };
-}
-
-String _qrLoginPlatformName(int? platform) {
-  return switch (platform) {
-    2 => 'platformIos'.tr(),
-    3 => 'platformAndroid'.tr(),
-    4 => 'platformMacos'.tr(),
-    5 => 'platformWindows'.tr(),
-    6 => 'platformLinux'.tr(),
-    1 => 'platformWeb'.tr(),
-    _ => 'platformUnknown'.tr(),
+/// Terminal state for a QR login challenge, or null while it is still open.
+AuthConsentOutcome? _qrLoginOutcome(int status, bool expiredByClock) {
+  return switch (status) {
+    2 => AuthConsentOutcome.approved,
+    3 => AuthConsentOutcome.declined,
+    4 => AuthConsentOutcome.expired,
+    _ => expiredByClock ? AuthConsentOutcome.expired : null,
   };
 }
 
@@ -1302,7 +1293,7 @@ class _QrLoginChallengeSnapshot {
   final String qrChallengeId;
   final String authChallengeId;
   final int status;
-  final DateTime expiresAt;
+  final DateTime? expiresAt;
   final String? deviceName;
   final int? platform;
 
@@ -1310,12 +1301,13 @@ class _QrLoginChallengeSnapshot {
     required this.qrChallengeId,
     required this.authChallengeId,
     required this.status,
-    required this.expiresAt,
+    this.expiresAt,
     this.deviceName,
     this.platform,
   });
 
   factory _QrLoginChallengeSnapshot.fromJson(Map<String, dynamic> json) {
+    final rawExpiry = json['expires_at'];
     return _QrLoginChallengeSnapshot(
       qrChallengeId: json['qr_challenge_id'] as String,
       authChallengeId: json['auth_challenge_id'] as String,
@@ -1330,7 +1322,7 @@ class _QrLoginChallengeSnapshot {
         },
         _ => 0,
       },
-      expiresAt: DateTime.parse(json['expires_at'] as String),
+      expiresAt: rawExpiry is String ? DateTime.tryParse(rawExpiry) : null,
       deviceName: json['device_name'] as String?,
       platform: (json['platform'] as num?)?.toInt(),
     );
@@ -1389,6 +1381,12 @@ Future<void> handleQrLoginChallengeScan({
   }
 }
 
+/// Consent sheet for a QR login challenge scanned from another device.
+///
+/// The QR flow has no OAuth client, so the evidence shown is the requesting
+/// device (name, platform, IP, location) plus the scopes carried on the linked
+/// auth challenge. Polls while open so the sheet reflects a decision made
+/// elsewhere, and ends on an explicit terminal screen instead of stale buttons.
 class _QrLoginApprovalSheet extends HookConsumerWidget {
   final String qrChallengeId;
   final _QrLoginChallengeSnapshot snapshot;
@@ -1403,13 +1401,21 @@ class _QrLoginApprovalSheet extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final ink = _monoInk(theme);
+    final scheme = theme.colorScheme;
+    final account = ref.watch(userInfoProvider).value;
+
     final isBusy = useState(false);
     final remaining = useState<int?>(null);
+    final status = useState(snapshot.status);
+    final error = useState<String?>(null);
+    final decidedElsewhere = useState(false);
+    final settled = useRef(false);
 
     useEffect(() {
+      final expiry = snapshot.expiresAt;
+      if (expiry == null) return null;
       void syncRemaining() {
-        final diff = snapshot.expiresAt.difference(DateTime.now()).inSeconds;
+        final diff = expiry.difference(DateTime.now()).inSeconds;
         remaining.value = diff > 0 ? diff : 0;
       }
 
@@ -1420,43 +1426,111 @@ class _QrLoginApprovalSheet extends HookConsumerWidget {
       return timer.cancel;
     }, [snapshot.qrChallengeId]);
 
-    final expired = remaining.value != null && remaining.value! <= 0;
-    final currentChallenge = challenge;
+    final expiredByClock = remaining.value != null && remaining.value! <= 0;
+    final outcome = _qrLoginOutcome(status.value, expiredByClock);
+
+    useEffect(() {
+      if (outcome != null) return null;
+
+      Future<void> poll() async {
+        if (settled.value) return;
+        final current = status.value;
+        if (current == 2 || current == 3 || current == 4) return;
+        try {
+          final client = ref.read(solarNetworkClientProvider);
+          final resp = await client.dio.get(
+            '/stargate/auth/qr/$qrChallengeId',
+          );
+          if (settled.value) return;
+          final latest = _QrLoginChallengeSnapshot.fromJson(
+            Map<String, dynamic>.from(resp.data as Map),
+          );
+          if (latest.status != status.value) {
+            if (latest.status != 0 && latest.status != 1) {
+              decidedElsewhere.value = true;
+            }
+            status.value = latest.status;
+          }
+        } on DioException catch (err) {
+          // A vanished challenge is equivalent to expiry.
+          if (err.response?.statusCode == 404 && !settled.value) {
+            decidedElsewhere.value = true;
+            status.value = 4;
+          }
+        } catch (_) {
+          // Best effort; the next tick retries.
+        }
+      }
+
+      final timer = Timer.periodic(
+        const Duration(seconds: 2),
+        (_) => poll(),
+      );
+      return timer.cancel;
+    }, [qrChallengeId, outcome]);
+
     final deviceName =
-        currentChallenge?.deviceName ??
-        snapshot.deviceName ??
-        'unknownDevice'.tr();
-    final platform = _qrLoginPlatformName(
-      currentChallenge?.platform ?? snapshot.platform,
-    );
+        challenge?.deviceName ?? snapshot.deviceName ?? 'unknownDevice'.tr();
+    final platform = challenge?.platform ?? snapshot.platform;
+    final location = [challenge?.city, challenge?.country]
+        .whereType<String>()
+        .where((s) => s.isNotEmpty)
+        .join(', ');
+    final scopes =
+        challenge?.scopes.map((scope) => scope.toString()).toList() ??
+        const <String>[];
 
     Future<void> resolveQrLogin(bool approve) async {
+      if (isBusy.value || outcome != null) return;
       isBusy.value = true;
+      error.value = null;
       try {
         final client = ref.read(solarNetworkClientProvider);
         await client.dio.post(
           '/stargate/auth/qr/$qrChallengeId/${approve ? 'approve' : 'decline'}',
         );
+        settled.value = true;
+        decidedElsewhere.value = false;
+        status.value = approve ? 2 : 3;
         if (!context.mounted) return;
         showSnackBar(
           approve
               ? 'qrLoginApprovedByYou'.tr(args: [deviceName])
               : 'qrLoginDeclinedByYou'.tr(args: [deviceName]),
         );
-        Navigator.of(context).pop();
       } catch (err) {
-        showErrorAlert(err);
+        error.value = _deviceAuthErrorMessage(err);
       } finally {
         isBusy.value = false;
       }
     }
 
+    final title = 'qrLoginApprovalTitle'.tr();
+
+    if (outcome != null) {
+      return SheetScaffold(
+        titleText: title,
+        heightFactor: 0.7,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: AuthResolvedPanel(
+              outcome: outcome,
+              remoteNote: decidedElsewhere.value
+                  ? 'authConsentResolvedElsewhere'.tr()
+                  : null,
+            ),
+          ),
+        ),
+      );
+    }
+
     return SheetScaffold(
-      titleText: 'qrLoginApprovalTitle'.tr(),
-      heightFactor: 0.82,
+      titleText: title,
+      heightFactor: 0.88,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1465,155 +1539,121 @@ class _QrLoginApprovalSheet extends HookConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
+                      AuthRequestingAppCard(
+                        appName: deviceName,
+                        fallbackIcon: authPlatformIcon(platform),
+                        subtitle: Text(
+                          authPlatformName(platform),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
-                        child: Row(
+                      ),
+                      const Gap(18),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: scheme.outlineVariant),
+                        ),
+                        child: Column(
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: _monoSurface(theme, 0.1),
-                                borderRadius: BorderRadius.circular(12),
+                            AuthFactRow(
+                              label: 'loginQrCodeStatusLabel'.tr(),
+                              value: _qrLoginStatusName(status.value),
+                            ),
+                            AuthFactRow(
+                              label: 'challengeIpAddress'.tr(),
+                              value: challenge?.ipAddress,
+                            ),
+                            AuthFactRow(
+                              label: 'challengeLocation'.tr(),
+                              value: location.isNotEmpty
+                                  ? location
+                                  : 'unknown'.tr(),
+                            ),
+                            if (challenge != null)
+                              AuthFactRow(
+                                label: 'challengeRequested'.tr(),
+                                value: RelativeTime(
+                                  context,
+                                ).format(challenge!.createdAt),
                               ),
-                              child: Icon(
-                                _qrLoginPlatformIcon(
-                                  currentChallenge?.platform ??
-                                      snapshot.platform,
+                            if (remaining.value != null)
+                              AuthFactRow(
+                                label: 'challengeExpiresIn'.tr(),
+                                value: 'challengeSeconds'.tr(
+                                  args: ['${remaining.value}'],
                                 ),
-                                color: ink.withOpacity(0.84),
+                                valueColor: remaining.value! < 60
+                                    ? scheme.error
+                                    : null,
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    deviceName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  const Gap(2),
-                                  Text(
-                                    platform,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      _DetailRow(
-                        icon: Symbols.info,
-                        label: 'loginQrCodeStatusLabel'.tr(),
-                        value: _qrLoginStatusName(snapshot.status),
+                      const Gap(20),
+                      Row(
+                        children: [
+                          Icon(
+                            Symbols.shield,
+                            size: 16,
+                            color: scheme.primary,
+                          ),
+                          const Gap(8),
+                          Text(
+                            'authorizeAppRequestedPermissions'.tr(),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
-                      _DetailRow(
-                        icon: Symbols.language,
-                        label: 'challengeIpAddress'.tr(),
-                        value: currentChallenge?.ipAddress,
-                      ),
-                      if (currentChallenge != null)
-                        _DetailRow(
-                          icon: Symbols.schedule,
-                          label: 'challengeRequested'.tr(),
-                          value: RelativeTime(
-                            context,
-                          ).format(currentChallenge.createdAt),
+                      const Gap(12),
+                      AuthScopeList(scopes: scopes, dense: true),
+                      const Gap(12),
+                      if (account != null)
+                        AuthAuthorityCard(
+                          label: 'authConsentApprovingAs'.tr(),
+                          accountName: account.nick.isNotEmpty
+                              ? account.nick
+                              : account.name,
+                          accountHandle: account.name,
+                          picture: account.profile.picture,
                         ),
-                      if (remaining.value != null)
-                        _DetailRow(
-                          icon: Symbols.timer,
-                          label: 'challengeExpiresIn'.tr(),
-                          value: expired
-                              ? 'expired'.tr()
-                              : 'challengeSeconds'.tr(
-                                  args: ['${remaining.value}'],
-                                ),
-                          valueColor: expired
-                              ? Theme.of(context).colorScheme.error
-                              : null,
-                        ),
-                      const SizedBox(height: 20),
+                      const Gap(12),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: _monoSurface(theme, 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: ink.withOpacity(0.16)),
+                          color: scheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: scheme.outlineVariant),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
-                              Symbols.info,
-                              size: 20,
-                              color: ink.withOpacity(0.84),
+                              Symbols.verified_user,
+                              size: 18,
+                              color: scheme.onSurfaceVariant,
                             ),
-                            const SizedBox(width: 12),
+                            const Gap(10),
                             Expanded(
                               child: Text(
                                 'qrLoginApprovalDescription'.tr(),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Gap(8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Symbols.verified,
-                              size: 20,
-                              color: ink.withOpacity(0.84),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'challengeTrustedHint'.tr(),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      if (error.value != null) ...[
+                        const Gap(12),
+                        AuthInlineError(message: error.value),
+                      ],
                     ],
                   ),
                 ),
@@ -1622,28 +1662,28 @@ class _QrLoginApprovalSheet extends HookConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: isBusy.value || expired
-                          ? null
-                          : () => resolveQrLogin(false),
-                      icon: const Icon(Symbols.close),
-                      label: Text('decline').tr(),
+                    child: OutlinedButton(
+                      onPressed: isBusy.value ? null : () => resolveQrLogin(false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text('decline'.tr()),
                     ),
                   ),
                   const Gap(12),
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: isBusy.value || expired
-                          ? null
-                          : () => resolveQrLogin(true),
-                      icon: isBusy.value
+                    child: FilledButton(
+                      onPressed: isBusy.value ? null : () => resolveQrLogin(true),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: isBusy.value
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Symbols.check),
-                      label: Text('approve').tr(),
+                          : Text('approve'.tr()),
                     ),
                   ),
                 ],
@@ -1651,57 +1691,6 @@ class _QrLoginApprovalSheet extends HookConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String? value;
-  final Color? valueColor;
-
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.isEmpty) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value!,
-              textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: valueColor ?? theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1740,31 +1729,194 @@ Future<void> handleWalletTransferRequestDeepLink({
   }
 }
 
+/// A device-code authorization request — the payload backing the verification
+/// page at `/auth/device`.
+class _DeviceAuthRequest {
+  final String userCode;
+  final String status;
+  final DateTime? expiresAt;
+
+  /// Server-suggested polling interval for the status endpoint.
+  final int pollIntervalSeconds;
+  final AuthorizeClientInfo clientInfo;
+
+  const _DeviceAuthRequest({
+    required this.userCode,
+    required this.status,
+    required this.clientInfo,
+    this.expiresAt,
+    this.pollIntervalSeconds = 3,
+  });
+
+  bool get isPending => status == 'pending';
+
+  factory _DeviceAuthRequest.fromJson(
+    String userCode,
+    Map<String, dynamic> json,
+  ) {
+    final reported = (json['user_code'] as String?)?.trim();
+    return _DeviceAuthRequest(
+      userCode: reported != null && reported.isNotEmpty ? reported : userCode,
+      status: (json['status'] as String?)?.trim().toLowerCase() ?? 'pending',
+      expiresAt: _readExpiry(json),
+      pollIntervalSeconds: ((json['interval'] as num?)?.toInt() ?? 3).clamp(
+        2,
+        10,
+      ),
+      clientInfo: AuthorizeClientInfo.fromJson(json),
+    );
+  }
+
+  /// Prefer the server-relative `expires_in` over `expires_at` so a device with
+  /// a skewed clock cannot make a live request look expired.
+  static DateTime? _readExpiry(Map<String, dynamic> json) {
+    final expiresIn = json['expires_in'];
+    if (expiresIn is num && expiresIn > 0) {
+      return DateTime.now().add(Duration(seconds: expiresIn.toInt()));
+    }
+    final raw = json['expires_at'];
+    if (raw is String) return DateTime.tryParse(raw);
+    return null;
+  }
+}
+
+Future<_DeviceAuthRequest> _fetchDeviceAuthRequest(
+  WidgetRef ref,
+  String userCode,
+) async {
+  final client = ref.read(solarNetworkClientProvider);
+  final response = await client.dio.get(
+    '/stargate/auth/open/device/code/${Uri.encodeComponent(userCode)}',
+  );
+  return _DeviceAuthRequest.fromJson(
+    userCode,
+    Map<String, dynamic>.from(response.data as Map),
+  );
+}
+
+/// The terminal state of a device-code request, or null while it can still be
+/// decided. [expiredByClock] covers the gap between the local countdown hitting
+/// zero and the next status poll landing.
+AuthConsentOutcome? _deviceAuthOutcome(String status, bool expiredByClock) {
+  switch (status) {
+    case 'approved':
+      return AuthConsentOutcome.approved;
+    case 'declined':
+      return AuthConsentOutcome.declined;
+    case 'expired':
+      return AuthConsentOutcome.expired;
+  }
+  return expiredByClock ? AuthConsentOutcome.expired : null;
+}
+
+String _deviceAuthErrorMessage(Object err) {
+  if (err is DioException) {
+    final statusCode = err.response?.statusCode;
+    if (statusCode == 404) return 'accountQrDeviceAuthInvalidCode'.tr();
+    if (statusCode == 400) return 'accountQrDeviceAuthNoLongerPending'.tr();
+    final apiError = ApiError.tryParse(err);
+    final message = apiError?.displayMessage.trim();
+    if (message != null && message.isNotEmpty) return message;
+    return err.message ?? 'unknownError'.tr();
+  }
+  return err.toString();
+}
+
 Future<void> _openDeviceAuthFlow(BuildContext context, WidgetRef ref) async {
-  final codeController = TextEditingController();
   final userCode = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
-    builder: (context) => SheetScaffold(
+    builder: (context) => const _DeviceAuthUserCodeSheet(),
+  );
+  if (userCode == null || !context.mounted) return;
+  await _checkAndShowDeviceApproval(context, ref, userCode);
+}
+
+/// Keeps the user code in canonical `XXXX-XXXX` form: uppercases, drops the
+/// dash and anything outside the server's alphabet
+/// (`BCDFGHJKLMNPQRSTVWXYZ`), and re-inserts the separator. Applying the
+/// alphabet here means the Check button only ever enables for a code the server
+/// can actually have generated.
+class _UserCodeInputFormatter extends TextInputFormatter {
+  static const _alphabet = 'BCDFGHJKLMNPQRSTVWXYZ';
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final letters = newValue.text
+        .toUpperCase()
+        .split('')
+        .where(_alphabet.contains)
+        .take(8)
+        .join();
+    final text = letters.length > 4
+        ? '${letters.substring(0, 4)}-${letters.substring(4)}'
+        : letters;
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+      composing: TextRange.empty,
+    );
+  }
+}
+
+/// Device-code entry. Mirrors the web page's "check that the code matches"
+/// framing: the field is monospaced and spaced, and the action stays disabled
+/// until the code is complete.
+class _DeviceAuthUserCodeSheet extends HookWidget {
+  const _DeviceAuthUserCodeSheet();
+
+  static final _userCodePattern = RegExp(r'^[A-Z]{4}-[A-Z]{4}$');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final controller = useTextEditingController();
+    final code = useState('');
+
+    final isValid = _userCodePattern.hasMatch(code.value);
+
+    void submit() {
+      if (!isValid) return;
+      Navigator.of(context).pop(code.value);
+    }
+
+    return SheetScaffold(
       titleText: 'accountQrDeviceAuthEnterCode'.tr(),
-      heightFactor: 0.5,
+      heightFactor: 0.55,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'accountQrDeviceAuthEnterCodeHint'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
               ),
             ),
-            const Gap(16),
+            const Gap(20),
             TextField(
-              controller: codeController,
-              textCapitalization: TextCapitalization.characters,
+              controller: controller,
               autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
+              inputFormatters: [_UserCodeInputFormatter()],
+              onChanged: (value) => code.value = value,
+              onSubmitted: (_) => submit(),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontFamily: 'monospace',
+                letterSpacing: 4,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 labelText: 'accountQrDeviceAuthUserCode'.tr(),
                 hintText: 'XXXX-XXXX',
@@ -1775,20 +1927,17 @@ Future<void> _openDeviceAuthFlow(BuildContext context, WidgetRef ref) async {
             ),
             const Spacer(),
             FilledButton(
-              onPressed: () {
-                final code = codeController.text.trim();
-                if (code.isNotEmpty) Navigator.of(context).pop(code);
-              },
-              child: Text('accountQrDeviceAuthCheck').tr(),
+              onPressed: isValid ? submit : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: Text('accountQrDeviceAuthCheck'.tr()),
             ),
           ],
         ),
       ),
-    ),
-  );
-  codeController.dispose();
-  if (userCode == null || !context.mounted) return;
-  await _checkAndShowDeviceApproval(context, ref, userCode);
+    );
+  }
 }
 
 Future<void> _checkAndShowDeviceApproval(
@@ -1798,31 +1947,14 @@ Future<void> _checkAndShowDeviceApproval(
 ) async {
   try {
     showLoadingModal(context);
-    final client = ref.read(solarNetworkClientProvider);
-    final resp = await client.dio.get(
-      '/stargate/auth/open/device/code/${Uri.encodeComponent(userCode)}',
-    );
-    final data = Map<String, dynamic>.from(resp.data as Map);
-    final clientId =
-        data['clientId'] as String? ?? data['client_id'] as String?;
-    if (clientId == null || clientId.isEmpty) {
-      throw StateError('Invalid device code');
-    }
-    final clientInfo = AuthorizeClientInfo.fromJson(data);
+    final request = await _fetchDeviceAuthRequest(ref, userCode);
     if (context.mounted) hideLoadingModal(context);
     if (!context.mounted) return;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
-      builder: (context) => _DeviceAuthApprovalSheet(
-        userCode: userCode,
-        clientInfo: clientInfo,
-        status: data['status'] as String? ?? 'pending',
-        expiresAt: data['expires_at'] != null
-            ? DateTime.parse(data['expires_at'] as String)
-            : null,
-      ),
+      builder: (context) => _DeviceAuthApprovalSheet(request: request),
     );
   } on DioException catch (err) {
     if (context.mounted) hideLoadingModal(context);
@@ -1842,74 +1974,176 @@ class _DeviceAuthSection extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'accountQrDeviceAuthDescription'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: 1.4,
           ),
         ),
         const Gap(16),
+        _DeviceAuthStep(
+          index: 1,
+          text: 'accountQrDeviceAuthStepOpen'.tr(),
+        ),
+        const Gap(10),
+        _DeviceAuthStep(
+          index: 2,
+          text: 'accountQrDeviceAuthStepEnter'.tr(),
+        ),
+        const Gap(20),
         FilledButton.icon(
           onPressed: () => _openDeviceAuthFlow(context, ref),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           icon: const Icon(Symbols.vpn_key),
-          label: Text('accountQrDeviceAuthEnterCode').tr(),
+          label: Text('accountQrDeviceAuthEnterCode'.tr()),
         ),
       ],
     );
   }
 }
 
-class _DeviceAuthApprovalSheet extends HookConsumerWidget {
-  final String userCode;
-  final AuthorizeClientInfo clientInfo;
-  final String status;
-  final DateTime? expiresAt;
+class _DeviceAuthStep extends StatelessWidget {
+  final int index;
+  final String text;
 
-  const _DeviceAuthApprovalSheet({
-    required this.userCode,
-    required this.clientInfo,
-    required this.status,
-    this.expiresAt,
-  });
+  const _DeviceAuthStep({required this.index, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$index',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        const Gap(10),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The device-code consent sheet.
+///
+/// Mirrors `auth/device` on the web: the requesting application with its
+/// publisher and verification mark, the user code to compare against the
+/// requesting device, the requested permissions in plain language, who is
+/// approving, and a terminal screen once the request can no longer be decided.
+class _DeviceAuthApprovalSheet extends HookConsumerWidget {
+  final _DeviceAuthRequest request;
+
+  const _DeviceAuthApprovalSheet({required this.request});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final ink = _monoInk(theme);
-    final picture = clientInfo.picture;
+    final scheme = theme.colorScheme;
+    final account = ref.watch(userInfoProvider).value;
+
     final isBusy = useState(false);
+    final status = useState(request.status);
     final remaining = useState<int?>(null);
-    final resolved = useState<String?>(status);
+    final error = useState<String?>(null);
+
+    /// Set when we learn the outcome from a poll rather than from our own tap,
+    /// so the end state can say the decision was made elsewhere.
+    final decidedElsewhere = useState(false);
+    final settled = useRef(false);
+
+    final clientId = request.clientInfo.clientId;
+    final profile = clientId == null
+        ? null
+        : ref.watch(publicAppProvider(clientId)).value;
 
     useEffect(() {
-      if (expiresAt == null) return null;
+      final expiry = request.expiresAt;
+      if (expiry == null) return null;
       void sync() {
-        final diff = expiresAt!.difference(DateTime.now()).inSeconds;
+        final diff = expiry.difference(DateTime.now()).inSeconds;
         remaining.value = diff > 0 ? diff : 0;
       }
 
       sync();
       final timer = Timer.periodic(const Duration(seconds: 1), (_) => sync());
       return timer.cancel;
-    }, [userCode]);
+    }, [request.userCode]);
 
-    final expired = remaining.value != null && remaining.value! <= 0;
-    final alreadyResolved =
-        resolved.value == 'approved' ||
-        resolved.value == 'declined' ||
-        resolved.value == 'expired';
+    final expiredByClock = remaining.value != null && remaining.value! <= 0;
+    final outcome = _deviceAuthOutcome(status.value, expiredByClock);
+
+    // Poll while the request is still decidable so a decision made on the web
+    // verification page closes the loop here instead of leaving stale buttons.
+    // The status endpoint is unauthenticated and cheap; failures are transient
+    // and retried on the next tick.
+    useEffect(() {
+      if (outcome != null) return null;
+
+      Future<void> poll() async {
+        if (settled.value || status.value != 'pending') return;
+        try {
+          final latest = await _fetchDeviceAuthRequest(ref, request.userCode);
+          if (settled.value) return;
+          if (latest.expiresAt != null) {
+            final diff = latest.expiresAt!.difference(DateTime.now()).inSeconds;
+            remaining.value = diff > 0 ? diff : 0;
+          }
+          if (!latest.isPending) {
+            decidedElsewhere.value = true;
+            status.value = latest.status;
+          }
+        } catch (_) {
+          // Best effort; the next tick retries.
+        }
+      }
+
+      final timer = Timer.periodic(
+        Duration(seconds: request.pollIntervalSeconds),
+        (_) => poll(),
+      );
+      return timer.cancel;
+    }, [request.userCode, outcome]);
 
     Future<void> resolve(bool approve) async {
+      if (isBusy.value || outcome != null) return;
       isBusy.value = true;
+      error.value = null;
       try {
         final client = ref.read(solarNetworkClientProvider);
         await client.dio.post(
-          '/stargate/auth/open/device/code/${Uri.encodeComponent(userCode)}/${approve ? 'approve' : 'decline'}',
+          '/stargate/auth/open/device/code/${Uri.encodeComponent(request.userCode)}'
+          '/${approve ? 'approve' : 'decline'}',
         );
-        resolved.value = approve ? 'approved' : 'declined';
+        settled.value = true;
+        decidedElsewhere.value = false;
+        status.value = approve ? 'approved' : 'declined';
         if (!context.mounted) return;
         showSnackBar(
           approve
@@ -1917,18 +2151,41 @@ class _DeviceAuthApprovalSheet extends HookConsumerWidget {
               : 'accountQrDeviceAuthDeclined'.tr(),
         );
       } catch (err) {
-        showErrorAlert(err);
+        error.value = _deviceAuthErrorMessage(err);
       } finally {
         isBusy.value = false;
       }
     }
 
+    final title = 'accountQrDeviceAuthApprovalTitle'.tr();
+
+    if (outcome != null) {
+      return SheetScaffold(
+        titleText: title,
+        heightFactor: 0.7,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: AuthResolvedPanel(
+              outcome: outcome,
+              remoteNote: decidedElsewhere.value
+                  ? 'authConsentResolvedElsewhere'.tr()
+                  : null,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final appName = request.clientInfo.clientName;
+    final scopes = request.clientInfo.scopes;
+
     return SheetScaffold(
-      titleText: 'accountQrDeviceAuthApprovalTitle'.tr(),
-      heightFactor: 0.75,
+      titleText: title,
+      heightFactor: 0.88,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1937,171 +2194,95 @@ class _DeviceAuthApprovalSheet extends HookConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: _monoSurface(theme, 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: picture != null
-                                    ? Image(
-                                        image: CloudImageWidget.provider(
-                                          file: picture,
-                                          serverUrl: ref.watch(
-                                            serverUrlProvider,
-                                          ),
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Icon(
-                                        Symbols.extension,
-                                        color: ink.withOpacity(0.84),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    clientInfo.clientName,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  const Gap(2),
-                                  Text(
-                                    userCode,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      AuthRequestingAppCard.fromClient(
+                        clientName: appName,
+                        clientPicture: request.clientInfo.picture,
+                        clientDescription: request.clientInfo.description,
+                        clientHomeUri: request.clientInfo.homeUri,
+                        profile: profile,
                       ),
-                      const SizedBox(height: 16),
-                      if (clientInfo.homeUri != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            clientInfo.homeUri!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: ink.withOpacity(0.72),
+                      const Gap(20),
+                      AuthUserCodeCard(userCode: request.userCode),
+                      const Gap(20),
+                      Row(
+                        children: [
+                          Icon(
+                            Symbols.shield,
+                            size: 16,
+                            color: scheme.primary,
+                          ),
+                          const Gap(8),
+                          Text(
+                            'authorizeAppRequestedPermissions'.tr(),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
-                      if (clientInfo.description != null) ...[
-                        Text(
-                          clientInfo.description!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      if (clientInfo.scopes.isNotEmpty) ...[
-                        _DetailRow(
-                          icon: Symbols.shield,
-                          label: 'accountQrDeviceAuthScopes'.tr(),
-                          value: clientInfo.scopes.join(', '),
-                        ),
-                      ],
-                      _DetailRow(
-                        icon: Symbols.info,
-                        label: 'loginQrCodeStatusLabel'.tr(),
-                        value: resolved.value ?? status,
+                        ],
                       ),
+                      const Gap(12),
+                      AuthScopeList(scopes: scopes, dense: true),
+                      const Gap(12),
+                      if (account != null)
+                        AuthAuthorityCard(
+                          label: 'authConsentApprovingAs'.tr(),
+                          accountName: account.nick.isNotEmpty
+                              ? account.nick
+                              : account.name,
+                          accountHandle: account.name,
+                          picture: account.profile.picture,
+                        ),
+                      const Gap(12),
                       if (remaining.value != null)
-                        _DetailRow(
+                        AuthFactRow(
+                          dense: true,
                           icon: Symbols.timer,
                           label: 'challengeExpiresIn'.tr(),
-                          value: expired
-                              ? 'expired'.tr()
-                              : 'challengeSeconds'.tr(
-                                  args: ['${remaining.value}'],
-                                ),
-                          valueColor: expired ? theme.colorScheme.error : null,
+                          value: 'challengeSeconds'.tr(
+                            args: ['${remaining.value}'],
+                          ),
+                          valueColor: remaining.value! < 60
+                              ? scheme.error
+                              : null,
                         ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: _monoSurface(theme, 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: ink.withOpacity(0.16)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Symbols.info,
-                              size: 20,
-                              color: ink.withOpacity(0.84),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'accountQrDeviceAuthApprovalHint'.tr(),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      if (error.value != null) ...[
+                        const Gap(8),
+                        AuthInlineError(message: error.value),
+                      ],
                     ],
                   ),
                 ),
               ),
               const Gap(16),
-              if (!alreadyResolved && !expired)
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: isBusy.value ? null : () => resolve(false),
-                        icon: const Icon(Symbols.close),
-                        label: Text('decline').tr(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isBusy.value ? null : () => resolve(false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
+                      child: Text('decline'.tr()),
                     ),
-                    const Gap(12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: isBusy.value ? null : () => resolve(true),
-                        icon: isBusy.value
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Symbols.check),
-                        label: Text('approve').tr(),
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: isBusy.value ? null : () => resolve(true),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
+                      child: isBusy.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text('approve'.tr()),
                     ),
-                  ],
-                )
-              else
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('done').tr(),
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

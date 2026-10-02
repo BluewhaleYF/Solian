@@ -564,13 +564,13 @@ final publisherFollowProvider = PublisherFollowFamily._();
 final class PublisherFollowProvider
     extends
         $FunctionalProvider<
-          AsyncValue<SnPublisherFollowResponse>,
-          SnPublisherFollowResponse,
-          FutureOr<SnPublisherFollowResponse>
+          AsyncValue<SnPublisherSubscriptionStatus>,
+          SnPublisherSubscriptionStatus,
+          FutureOr<SnPublisherSubscriptionStatus>
         >
     with
-        $FutureModifier<SnPublisherFollowResponse>,
-        $FutureProvider<SnPublisherFollowResponse> {
+        $FutureModifier<SnPublisherSubscriptionStatus>,
+        $FutureProvider<SnPublisherSubscriptionStatus> {
   PublisherFollowProvider._({
     required PublisherFollowFamily super.from,
     required String super.argument,
@@ -594,12 +594,12 @@ final class PublisherFollowProvider
 
   @$internal
   @override
-  $FutureProviderElement<SnPublisherFollowResponse> $createElement(
+  $FutureProviderElement<SnPublisherSubscriptionStatus> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<SnPublisherFollowResponse> create(Ref ref) {
+  FutureOr<SnPublisherSubscriptionStatus> create(Ref ref) {
     final argument = this.argument as String;
     return publisherFollow(ref, argument);
   }
@@ -615,11 +615,14 @@ final class PublisherFollowProvider
   }
 }
 
-String _$publisherFollowHash() => r'a5779972315b0311209346e93a2e0234544d8e5b';
+String _$publisherFollowHash() => r'c5c3812465f8290b7278912b72eb2d8b0fac9d51';
 
 final class PublisherFollowFamily extends $Family
     with
-        $FunctionalFamilyOverride<FutureOr<SnPublisherFollowResponse>, String> {
+        $FunctionalFamilyOverride<
+          FutureOr<SnPublisherSubscriptionStatus>,
+          String
+        > {
   PublisherFollowFamily._()
     : super(
         retry: null,
@@ -640,8 +643,15 @@ final class PublisherFollowFamily extends $Family
 final publisherUnfollowProvider = PublisherUnfollowFamily._();
 
 final class PublisherUnfollowProvider
-    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
-    with $FutureModifier<void>, $FutureProvider<void> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<SnPublisherSubscriptionStatus>,
+          SnPublisherSubscriptionStatus,
+          FutureOr<SnPublisherSubscriptionStatus>
+        >
+    with
+        $FutureModifier<SnPublisherSubscriptionStatus>,
+        $FutureProvider<SnPublisherSubscriptionStatus> {
   PublisherUnfollowProvider._({
     required PublisherUnfollowFamily super.from,
     required String super.argument,
@@ -665,11 +675,12 @@ final class PublisherUnfollowProvider
 
   @$internal
   @override
-  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+  $FutureProviderElement<SnPublisherSubscriptionStatus> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<void> create(Ref ref) {
+  FutureOr<SnPublisherSubscriptionStatus> create(Ref ref) {
     final argument = this.argument as String;
     return publisherUnfollow(ref, argument);
   }
@@ -685,10 +696,14 @@ final class PublisherUnfollowProvider
   }
 }
 
-String _$publisherUnfollowHash() => r'bd602901677e6087646753f21ef532889411d247';
+String _$publisherUnfollowHash() => r'27fce2268cf3bebeec0abc9e41c44a00548358d5';
 
 final class PublisherUnfollowFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<void>, String> {
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<SnPublisherSubscriptionStatus>,
+          String
+        > {
   PublisherUnfollowFamily._()
     : super(
         retry: null,
@@ -794,13 +809,13 @@ final publisherFollowRequestsProvider = PublisherFollowRequestsFamily._();
 final class PublisherFollowRequestsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<SnPublisherFollowRequest>>,
-          List<SnPublisherFollowRequest>,
-          FutureOr<List<SnPublisherFollowRequest>>
+          AsyncValue<List<SnPublisherSubscription>>,
+          List<SnPublisherSubscription>,
+          FutureOr<List<SnPublisherSubscription>>
         >
     with
-        $FutureModifier<List<SnPublisherFollowRequest>>,
-        $FutureProvider<List<SnPublisherFollowRequest>> {
+        $FutureModifier<List<SnPublisherSubscription>>,
+        $FutureProvider<List<SnPublisherSubscription>> {
   PublisherFollowRequestsProvider._({
     required PublisherFollowRequestsFamily super.from,
     required String super.argument,
@@ -824,12 +839,12 @@ final class PublisherFollowRequestsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<SnPublisherFollowRequest>> $createElement(
+  $FutureProviderElement<List<SnPublisherSubscription>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<SnPublisherFollowRequest>> create(Ref ref) {
+  FutureOr<List<SnPublisherSubscription>> create(Ref ref) {
     final argument = this.argument as String;
     return publisherFollowRequests(ref, argument);
   }
@@ -847,12 +862,12 @@ final class PublisherFollowRequestsProvider
 }
 
 String _$publisherFollowRequestsHash() =>
-    r'edbfd6d17ab8a704da8550844ea3713b0699200f';
+    r'66b421fc204225562ffd1745f04bc3d40d6f98f6';
 
 final class PublisherFollowRequestsFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<List<SnPublisherFollowRequest>>,
+          FutureOr<List<SnPublisherSubscription>>,
           String
         > {
   PublisherFollowRequestsFamily._()

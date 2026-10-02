@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SnPost {
 
- String get id; String? get title; String? get description; String? get language; DateTime? get editedAt; DateTime? get draftedAt; DateTime? get publishedAt; int get visibility; String? get content; String? get slug; int get type; Map<String, dynamic>? get meta; SnPostEmbedView? get embedView; int get viewsUnique; int get viewsTotal; int get upvotes; int get downvotes; int get repliesCount; int get threadedRepliesCount; double? get debugRank; int get awardedScore; int? get pinMode; String? get threadedPostId; SnPost? get threadedPost; String? get repliedPostId; SnPost? get repliedPost; String? get forwardedPostId; SnPost? get forwardedPost;@JsonKey(name: 'chained_post_id') String? get chainedPostId;@JsonKey(name: 'chained_post') SnPost? get chainedPost;@JsonKey(name: 'chained_posts') List<SnPost> get chainedPosts;@JsonKey(name: 'chained_count') int get chainedCount; String? get realmId; SnRealm? get realm; String? get publisherId; SnPublisher? get publisher; String? get actorid; SnActivityPubActor? get actor; String? get fediverseUri; int? get fediverseType; bool get isCached; int get contentType; List<SnCloudFileReference> get attachments; Map<String, int> get reactionsCount; Map<String, bool> get reactionsMade; List<dynamic> get reactions; List<SnPostTag> get tags; List<SnPostCategory> get categories; List<dynamic> get collections;@JsonKey(name: 'publisher_collections') List<SnPostCollection> get publisherCollections; List<SnPostFeaturedRecord> get featuredRecords; DateTime? get createdAt; DateTime? get updatedAt; DateTime? get deletedAt; bool get repliedGone; bool get forwardedGone; bool get isTruncated; SnActivityPubActor? get boostedBy; DateTime? get boostedAt; bool get sponsored; bool get isBookmarked;
+ String get id; String? get title; String? get description; String? get language; DateTime? get editedAt; DateTime? get draftedAt; DateTime? get publishedAt; int get visibility; String? get content; String? get slug; int get type; Map<String, dynamic>? get meta; SnPostEmbedView? get embedView; int get viewsUnique; int get viewsTotal; int get upvotes; int get downvotes; int get repliesCount; int get threadedRepliesCount; double? get debugRank; int get awardedScore; int? get pinMode; String? get threadedPostId; SnPost? get threadedPost; String? get repliedPostId; SnPost? get repliedPost; String? get forwardedPostId; SnPost? get forwardedPost;@JsonKey(name: 'chained_post_id') String? get chainedPostId;@JsonKey(name: 'chained_post') SnPost? get chainedPost;@JsonKey(name: 'chained_posts') List<SnPost> get chainedPosts;@JsonKey(name: 'chained_count') int get chainedCount; String? get realmId; SnRealm? get realm; String get publisherId; SnPublisher? get publisher; String? get fediverseUri; int? get fediverseType; bool get isCached; int get contentType; List<SnCloudFileReference> get attachments; Map<String, int> get reactionsCount; Map<String, bool> get reactionsMade; List<dynamic> get reactions; List<SnPostTag> get tags; List<SnPostCategory> get categories; List<dynamic> get collections;@JsonKey(name: 'publisher_collections') List<SnPostCollection> get publisherCollections; List<SnPostFeaturedRecord> get featuredRecords; DateTime? get createdAt; DateTime? get updatedAt; DateTime? get deletedAt; bool get repliedGone; bool get forwardedGone; bool get isTruncated; SnPublisher? get boostedBy; DateTime? get boostedAt; bool get sponsored; bool get isBookmarked;
 /// Create a copy of SnPost
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,21 @@ $SnPostCopyWith<SnPost> get copyWith => _$SnPostCopyWithImpl<SnPost>(this as SnP
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPost&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.language, language) || other.language == language)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt)&&(identical(other.draftedAt, draftedAt) || other.draftedAt == draftedAt)&&(identical(other.publishedAt, publishedAt) || other.publishedAt == publishedAt)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.content, content) || other.content == content)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.meta, meta)&&(identical(other.embedView, embedView) || other.embedView == embedView)&&(identical(other.viewsUnique, viewsUnique) || other.viewsUnique == viewsUnique)&&(identical(other.viewsTotal, viewsTotal) || other.viewsTotal == viewsTotal)&&(identical(other.upvotes, upvotes) || other.upvotes == upvotes)&&(identical(other.downvotes, downvotes) || other.downvotes == downvotes)&&(identical(other.repliesCount, repliesCount) || other.repliesCount == repliesCount)&&(identical(other.threadedRepliesCount, threadedRepliesCount) || other.threadedRepliesCount == threadedRepliesCount)&&(identical(other.debugRank, debugRank) || other.debugRank == debugRank)&&(identical(other.awardedScore, awardedScore) || other.awardedScore == awardedScore)&&(identical(other.pinMode, pinMode) || other.pinMode == pinMode)&&(identical(other.threadedPostId, threadedPostId) || other.threadedPostId == threadedPostId)&&(identical(other.threadedPost, threadedPost) || other.threadedPost == threadedPost)&&(identical(other.repliedPostId, repliedPostId) || other.repliedPostId == repliedPostId)&&(identical(other.repliedPost, repliedPost) || other.repliedPost == repliedPost)&&(identical(other.forwardedPostId, forwardedPostId) || other.forwardedPostId == forwardedPostId)&&(identical(other.forwardedPost, forwardedPost) || other.forwardedPost == forwardedPost)&&(identical(other.chainedPostId, chainedPostId) || other.chainedPostId == chainedPostId)&&(identical(other.chainedPost, chainedPost) || other.chainedPost == chainedPost)&&const DeepCollectionEquality().equals(other.chainedPosts, chainedPosts)&&(identical(other.chainedCount, chainedCount) || other.chainedCount == chainedCount)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.actorid, actorid) || other.actorid == actorid)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.fediverseType, fediverseType) || other.fediverseType == fediverseType)&&(identical(other.isCached, isCached) || other.isCached == isCached)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&const DeepCollectionEquality().equals(other.attachments, attachments)&&const DeepCollectionEquality().equals(other.reactionsCount, reactionsCount)&&const DeepCollectionEquality().equals(other.reactionsMade, reactionsMade)&&const DeepCollectionEquality().equals(other.reactions, reactions)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.collections, collections)&&const DeepCollectionEquality().equals(other.publisherCollections, publisherCollections)&&const DeepCollectionEquality().equals(other.featuredRecords, featuredRecords)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.repliedGone, repliedGone) || other.repliedGone == repliedGone)&&(identical(other.forwardedGone, forwardedGone) || other.forwardedGone == forwardedGone)&&(identical(other.isTruncated, isTruncated) || other.isTruncated == isTruncated)&&(identical(other.boostedBy, boostedBy) || other.boostedBy == boostedBy)&&(identical(other.boostedAt, boostedAt) || other.boostedAt == boostedAt)&&(identical(other.sponsored, sponsored) || other.sponsored == sponsored)&&(identical(other.isBookmarked, isBookmarked) || other.isBookmarked == isBookmarked));
+  final _this = this as SnPost;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPost&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.language, _this.language) || other.language == _this.language)&&(identical(other.editedAt, _this.editedAt) || other.editedAt == _this.editedAt)&&(identical(other.draftedAt, _this.draftedAt) || other.draftedAt == _this.draftedAt)&&(identical(other.publishedAt, _this.publishedAt) || other.publishedAt == _this.publishedAt)&&(identical(other.visibility, _this.visibility) || other.visibility == _this.visibility)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.meta, _this.meta)&&(identical(other.embedView, _this.embedView) || other.embedView == _this.embedView)&&(identical(other.viewsUnique, _this.viewsUnique) || other.viewsUnique == _this.viewsUnique)&&(identical(other.viewsTotal, _this.viewsTotal) || other.viewsTotal == _this.viewsTotal)&&(identical(other.upvotes, _this.upvotes) || other.upvotes == _this.upvotes)&&(identical(other.downvotes, _this.downvotes) || other.downvotes == _this.downvotes)&&(identical(other.repliesCount, _this.repliesCount) || other.repliesCount == _this.repliesCount)&&(identical(other.threadedRepliesCount, _this.threadedRepliesCount) || other.threadedRepliesCount == _this.threadedRepliesCount)&&(identical(other.debugRank, _this.debugRank) || other.debugRank == _this.debugRank)&&(identical(other.awardedScore, _this.awardedScore) || other.awardedScore == _this.awardedScore)&&(identical(other.pinMode, _this.pinMode) || other.pinMode == _this.pinMode)&&(identical(other.threadedPostId, _this.threadedPostId) || other.threadedPostId == _this.threadedPostId)&&(identical(other.threadedPost, _this.threadedPost) || other.threadedPost == _this.threadedPost)&&(identical(other.repliedPostId, _this.repliedPostId) || other.repliedPostId == _this.repliedPostId)&&(identical(other.repliedPost, _this.repliedPost) || other.repliedPost == _this.repliedPost)&&(identical(other.forwardedPostId, _this.forwardedPostId) || other.forwardedPostId == _this.forwardedPostId)&&(identical(other.forwardedPost, _this.forwardedPost) || other.forwardedPost == _this.forwardedPost)&&(identical(other.chainedPostId, _this.chainedPostId) || other.chainedPostId == _this.chainedPostId)&&(identical(other.chainedPost, _this.chainedPost) || other.chainedPost == _this.chainedPost)&&const DeepCollectionEquality().equals(other.chainedPosts, _this.chainedPosts)&&(identical(other.chainedCount, _this.chainedCount) || other.chainedCount == _this.chainedCount)&&(identical(other.realmId, _this.realmId) || other.realmId == _this.realmId)&&(identical(other.realm, _this.realm) || other.realm == _this.realm)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.publisher, _this.publisher) || other.publisher == _this.publisher)&&(identical(other.fediverseUri, _this.fediverseUri) || other.fediverseUri == _this.fediverseUri)&&(identical(other.fediverseType, _this.fediverseType) || other.fediverseType == _this.fediverseType)&&(identical(other.isCached, _this.isCached) || other.isCached == _this.isCached)&&(identical(other.contentType, _this.contentType) || other.contentType == _this.contentType)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&const DeepCollectionEquality().equals(other.reactionsCount, _this.reactionsCount)&&const DeepCollectionEquality().equals(other.reactionsMade, _this.reactionsMade)&&const DeepCollectionEquality().equals(other.reactions, _this.reactions)&&const DeepCollectionEquality().equals(other.tags, _this.tags)&&const DeepCollectionEquality().equals(other.categories, _this.categories)&&const DeepCollectionEquality().equals(other.collections, _this.collections)&&const DeepCollectionEquality().equals(other.publisherCollections, _this.publisherCollections)&&const DeepCollectionEquality().equals(other.featuredRecords, _this.featuredRecords)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt)&&(identical(other.repliedGone, _this.repliedGone) || other.repliedGone == _this.repliedGone)&&(identical(other.forwardedGone, _this.forwardedGone) || other.forwardedGone == _this.forwardedGone)&&(identical(other.isTruncated, _this.isTruncated) || other.isTruncated == _this.isTruncated)&&(identical(other.boostedBy, _this.boostedBy) || other.boostedBy == _this.boostedBy)&&(identical(other.boostedAt, _this.boostedAt) || other.boostedAt == _this.boostedAt)&&(identical(other.sponsored, _this.sponsored) || other.sponsored == _this.sponsored)&&(identical(other.isBookmarked, _this.isBookmarked) || other.isBookmarked == _this.isBookmarked));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,description,language,editedAt,draftedAt,publishedAt,visibility,content,slug,type,const DeepCollectionEquality().hash(meta),embedView,viewsUnique,viewsTotal,upvotes,downvotes,repliesCount,threadedRepliesCount,debugRank,awardedScore,pinMode,threadedPostId,threadedPost,repliedPostId,repliedPost,forwardedPostId,forwardedPost,chainedPostId,chainedPost,const DeepCollectionEquality().hash(chainedPosts),chainedCount,realmId,realm,publisherId,publisher,actorid,actor,fediverseUri,fediverseType,isCached,contentType,const DeepCollectionEquality().hash(attachments),const DeepCollectionEquality().hash(reactionsCount),const DeepCollectionEquality().hash(reactionsMade),const DeepCollectionEquality().hash(reactions),const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(collections),const DeepCollectionEquality().hash(publisherCollections),const DeepCollectionEquality().hash(featuredRecords),createdAt,updatedAt,deletedAt,repliedGone,forwardedGone,isTruncated,boostedBy,boostedAt,sponsored,isBookmarked]);
+int get hashCode {
+  final _this = this as SnPost;
+  return Object.hashAll([runtimeType,_this.id,_this.title,_this.description,_this.language,_this.editedAt,_this.draftedAt,_this.publishedAt,_this.visibility,_this.content,_this.slug,_this.type,const DeepCollectionEquality().hash(_this.meta),_this.embedView,_this.viewsUnique,_this.viewsTotal,_this.upvotes,_this.downvotes,_this.repliesCount,_this.threadedRepliesCount,_this.debugRank,_this.awardedScore,_this.pinMode,_this.threadedPostId,_this.threadedPost,_this.repliedPostId,_this.repliedPost,_this.forwardedPostId,_this.forwardedPost,_this.chainedPostId,_this.chainedPost,const DeepCollectionEquality().hash(_this.chainedPosts),_this.chainedCount,_this.realmId,_this.realm,_this.publisherId,_this.publisher,_this.fediverseUri,_this.fediverseType,_this.isCached,_this.contentType,const DeepCollectionEquality().hash(_this.attachments),const DeepCollectionEquality().hash(_this.reactionsCount),const DeepCollectionEquality().hash(_this.reactionsMade),const DeepCollectionEquality().hash(_this.reactions),const DeepCollectionEquality().hash(_this.tags),const DeepCollectionEquality().hash(_this.categories),const DeepCollectionEquality().hash(_this.collections),const DeepCollectionEquality().hash(_this.publisherCollections),const DeepCollectionEquality().hash(_this.featuredRecords),_this.createdAt,_this.updatedAt,_this.deletedAt,_this.repliedGone,_this.forwardedGone,_this.isTruncated,_this.boostedBy,_this.boostedAt,_this.sponsored,_this.isBookmarked]);
+}
 
 @override
 String toString() {
-  return 'SnPost(id: $id, title: $title, description: $description, language: $language, editedAt: $editedAt, draftedAt: $draftedAt, publishedAt: $publishedAt, visibility: $visibility, content: $content, slug: $slug, type: $type, meta: $meta, embedView: $embedView, viewsUnique: $viewsUnique, viewsTotal: $viewsTotal, upvotes: $upvotes, downvotes: $downvotes, repliesCount: $repliesCount, threadedRepliesCount: $threadedRepliesCount, debugRank: $debugRank, awardedScore: $awardedScore, pinMode: $pinMode, threadedPostId: $threadedPostId, threadedPost: $threadedPost, repliedPostId: $repliedPostId, repliedPost: $repliedPost, forwardedPostId: $forwardedPostId, forwardedPost: $forwardedPost, chainedPostId: $chainedPostId, chainedPost: $chainedPost, chainedPosts: $chainedPosts, chainedCount: $chainedCount, realmId: $realmId, realm: $realm, publisherId: $publisherId, publisher: $publisher, actorid: $actorid, actor: $actor, fediverseUri: $fediverseUri, fediverseType: $fediverseType, isCached: $isCached, contentType: $contentType, attachments: $attachments, reactionsCount: $reactionsCount, reactionsMade: $reactionsMade, reactions: $reactions, tags: $tags, categories: $categories, collections: $collections, publisherCollections: $publisherCollections, featuredRecords: $featuredRecords, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, repliedGone: $repliedGone, forwardedGone: $forwardedGone, isTruncated: $isTruncated, boostedBy: $boostedBy, boostedAt: $boostedAt, sponsored: $sponsored, isBookmarked: $isBookmarked)';
+  final _this = this as SnPost;
+  return 'SnPost(id: ${_this.id}, title: ${_this.title}, description: ${_this.description}, language: ${_this.language}, editedAt: ${_this.editedAt}, draftedAt: ${_this.draftedAt}, publishedAt: ${_this.publishedAt}, visibility: ${_this.visibility}, content: ${_this.content}, slug: ${_this.slug}, type: ${_this.type}, meta: ${_this.meta}, embedView: ${_this.embedView}, viewsUnique: ${_this.viewsUnique}, viewsTotal: ${_this.viewsTotal}, upvotes: ${_this.upvotes}, downvotes: ${_this.downvotes}, repliesCount: ${_this.repliesCount}, threadedRepliesCount: ${_this.threadedRepliesCount}, debugRank: ${_this.debugRank}, awardedScore: ${_this.awardedScore}, pinMode: ${_this.pinMode}, threadedPostId: ${_this.threadedPostId}, threadedPost: ${_this.threadedPost}, repliedPostId: ${_this.repliedPostId}, repliedPost: ${_this.repliedPost}, forwardedPostId: ${_this.forwardedPostId}, forwardedPost: ${_this.forwardedPost}, chainedPostId: ${_this.chainedPostId}, chainedPost: ${_this.chainedPost}, chainedPosts: ${_this.chainedPosts}, chainedCount: ${_this.chainedCount}, realmId: ${_this.realmId}, realm: ${_this.realm}, publisherId: ${_this.publisherId}, publisher: ${_this.publisher}, fediverseUri: ${_this.fediverseUri}, fediverseType: ${_this.fediverseType}, isCached: ${_this.isCached}, contentType: ${_this.contentType}, attachments: ${_this.attachments}, reactionsCount: ${_this.reactionsCount}, reactionsMade: ${_this.reactionsMade}, reactions: ${_this.reactions}, tags: ${_this.tags}, categories: ${_this.categories}, collections: ${_this.collections}, publisherCollections: ${_this.publisherCollections}, featuredRecords: ${_this.featuredRecords}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt}, repliedGone: ${_this.repliedGone}, forwardedGone: ${_this.forwardedGone}, isTruncated: ${_this.isTruncated}, boostedBy: ${_this.boostedBy}, boostedAt: ${_this.boostedAt}, sponsored: ${_this.sponsored}, isBookmarked: ${_this.isBookmarked})';
 }
 
 
@@ -49,11 +54,11 @@ abstract mixin class $SnPostCopyWith<$Res>  {
   factory $SnPostCopyWith(SnPost value, $Res Function(SnPost) _then) = _$SnPostCopyWithImpl;
 @useResult
 $Res call({
- String id, String? title, String? description, String? language, DateTime? editedAt, DateTime? draftedAt, DateTime? publishedAt, int visibility, String? content, String? slug, int type, Map<String, dynamic>? meta, SnPostEmbedView? embedView, int viewsUnique, int viewsTotal, int upvotes, int downvotes, int repliesCount, int threadedRepliesCount, double? debugRank, int awardedScore, int? pinMode, String? threadedPostId, SnPost? threadedPost, String? repliedPostId, SnPost? repliedPost, String? forwardedPostId, SnPost? forwardedPost,@JsonKey(name: 'chained_post_id') String? chainedPostId,@JsonKey(name: 'chained_post') SnPost? chainedPost,@JsonKey(name: 'chained_posts') List<SnPost> chainedPosts,@JsonKey(name: 'chained_count') int chainedCount, String? realmId, SnRealm? realm, String? publisherId, SnPublisher? publisher, String? actorid, SnActivityPubActor? actor, String? fediverseUri, int? fediverseType, bool isCached, int contentType, List<SnCloudFileReference> attachments, Map<String, int> reactionsCount, Map<String, bool> reactionsMade, List<dynamic> reactions, List<SnPostTag> tags, List<SnPostCategory> categories, List<dynamic> collections,@JsonKey(name: 'publisher_collections') List<SnPostCollection> publisherCollections, List<SnPostFeaturedRecord> featuredRecords, DateTime? createdAt, DateTime? updatedAt, DateTime? deletedAt, bool repliedGone, bool forwardedGone, bool isTruncated, SnActivityPubActor? boostedBy, DateTime? boostedAt, bool sponsored, bool isBookmarked
+ String id, String? title, String? description, String? language, DateTime? editedAt, DateTime? draftedAt, DateTime? publishedAt, int visibility, String? content, String? slug, int type, Map<String, dynamic>? meta, SnPostEmbedView? embedView, int viewsUnique, int viewsTotal, int upvotes, int downvotes, int repliesCount, int threadedRepliesCount, double? debugRank, int awardedScore, int? pinMode, String? threadedPostId, SnPost? threadedPost, String? repliedPostId, SnPost? repliedPost, String? forwardedPostId, SnPost? forwardedPost,@JsonKey(name: 'chained_post_id') String? chainedPostId,@JsonKey(name: 'chained_post') SnPost? chainedPost,@JsonKey(name: 'chained_posts') List<SnPost> chainedPosts,@JsonKey(name: 'chained_count') int chainedCount, String? realmId, SnRealm? realm, String publisherId, SnPublisher? publisher, String? fediverseUri, int? fediverseType, bool isCached, int contentType, List<SnCloudFileReference> attachments, Map<String, int> reactionsCount, Map<String, bool> reactionsMade, List<dynamic> reactions, List<SnPostTag> tags, List<SnPostCategory> categories, List<dynamic> collections,@JsonKey(name: 'publisher_collections') List<SnPostCollection> publisherCollections, List<SnPostFeaturedRecord> featuredRecords, DateTime? createdAt, DateTime? updatedAt, DateTime? deletedAt, bool repliedGone, bool forwardedGone, bool isTruncated, SnPublisher? boostedBy, DateTime? boostedAt, bool sponsored, bool isBookmarked
 });
 
 
-$SnPostEmbedViewCopyWith<$Res>? get embedView;$SnPostCopyWith<$Res>? get threadedPost;$SnPostCopyWith<$Res>? get repliedPost;$SnPostCopyWith<$Res>? get forwardedPost;$SnPostCopyWith<$Res>? get chainedPost;$SnRealmCopyWith<$Res>? get realm;$SnPublisherCopyWith<$Res>? get publisher;$SnActivityPubActorCopyWith<$Res>? get actor;$SnActivityPubActorCopyWith<$Res>? get boostedBy;
+$SnPostEmbedViewCopyWith<$Res>? get embedView;$SnPostCopyWith<$Res>? get threadedPost;$SnPostCopyWith<$Res>? get repliedPost;$SnPostCopyWith<$Res>? get forwardedPost;$SnPostCopyWith<$Res>? get chainedPost;$SnRealmCopyWith<$Res>? get realm;$SnPublisherCopyWith<$Res>? get publisher;$SnPublisherCopyWith<$Res>? get boostedBy;
 
 }
 /// @nodoc
@@ -66,7 +71,7 @@ class _$SnPostCopyWithImpl<$Res>
 
 /// Create a copy of SnPost
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? description = freezed,Object? language = freezed,Object? editedAt = freezed,Object? draftedAt = freezed,Object? publishedAt = freezed,Object? visibility = null,Object? content = freezed,Object? slug = freezed,Object? type = null,Object? meta = freezed,Object? embedView = freezed,Object? viewsUnique = null,Object? viewsTotal = null,Object? upvotes = null,Object? downvotes = null,Object? repliesCount = null,Object? threadedRepliesCount = null,Object? debugRank = freezed,Object? awardedScore = null,Object? pinMode = freezed,Object? threadedPostId = freezed,Object? threadedPost = freezed,Object? repliedPostId = freezed,Object? repliedPost = freezed,Object? forwardedPostId = freezed,Object? forwardedPost = freezed,Object? chainedPostId = freezed,Object? chainedPost = freezed,Object? chainedPosts = null,Object? chainedCount = null,Object? realmId = freezed,Object? realm = freezed,Object? publisherId = freezed,Object? publisher = freezed,Object? actorid = freezed,Object? actor = freezed,Object? fediverseUri = freezed,Object? fediverseType = freezed,Object? isCached = null,Object? contentType = null,Object? attachments = null,Object? reactionsCount = null,Object? reactionsMade = null,Object? reactions = null,Object? tags = null,Object? categories = null,Object? collections = null,Object? publisherCollections = null,Object? featuredRecords = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? repliedGone = null,Object? forwardedGone = null,Object? isTruncated = null,Object? boostedBy = freezed,Object? boostedAt = freezed,Object? sponsored = null,Object? isBookmarked = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? description = freezed,Object? language = freezed,Object? editedAt = freezed,Object? draftedAt = freezed,Object? publishedAt = freezed,Object? visibility = null,Object? content = freezed,Object? slug = freezed,Object? type = null,Object? meta = freezed,Object? embedView = freezed,Object? viewsUnique = null,Object? viewsTotal = null,Object? upvotes = null,Object? downvotes = null,Object? repliesCount = null,Object? threadedRepliesCount = null,Object? debugRank = freezed,Object? awardedScore = null,Object? pinMode = freezed,Object? threadedPostId = freezed,Object? threadedPost = freezed,Object? repliedPostId = freezed,Object? repliedPost = freezed,Object? forwardedPostId = freezed,Object? forwardedPost = freezed,Object? chainedPostId = freezed,Object? chainedPost = freezed,Object? chainedPosts = null,Object? chainedCount = null,Object? realmId = freezed,Object? realm = freezed,Object? publisherId = null,Object? publisher = freezed,Object? fediverseUri = freezed,Object? fediverseType = freezed,Object? isCached = null,Object? contentType = null,Object? attachments = null,Object? reactionsCount = null,Object? reactionsMade = null,Object? reactions = null,Object? tags = null,Object? categories = null,Object? collections = null,Object? publisherCollections = null,Object? featuredRecords = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? repliedGone = null,Object? forwardedGone = null,Object? isTruncated = null,Object? boostedBy = freezed,Object? boostedAt = freezed,Object? sponsored = null,Object? isBookmarked = null,}) {
   return _then(SnPost(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -102,11 +107,9 @@ as SnPost?,chainedPosts: null == chainedPosts ? _self.chainedPosts : chainedPost
 as List<SnPost>,chainedCount: null == chainedCount ? _self.chainedCount : chainedCount // ignore: cast_nullable_to_non_nullable
 as int,realmId: freezed == realmId ? _self.realmId : realmId // ignore: cast_nullable_to_non_nullable
 as String?,realm: freezed == realm ? _self.realm : realm // ignore: cast_nullable_to_non_nullable
-as SnRealm?,publisherId: freezed == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
-as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
-as SnPublisher?,actorid: freezed == actorid ? _self.actorid : actorid // ignore: cast_nullable_to_non_nullable
-as String?,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
+as SnRealm?,publisherId: null == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
+as String,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
 as String?,fediverseType: freezed == fediverseType ? _self.fediverseType : fediverseType // ignore: cast_nullable_to_non_nullable
 as int?,isCached: null == isCached ? _self.isCached : isCached // ignore: cast_nullable_to_non_nullable
 as bool,contentType: null == contentType ? _self.contentType : contentType // ignore: cast_nullable_to_non_nullable
@@ -126,7 +129,7 @@ as DateTime?,repliedGone: null == repliedGone ? _self.repliedGone : repliedGone 
 as bool,forwardedGone: null == forwardedGone ? _self.forwardedGone : forwardedGone // ignore: cast_nullable_to_non_nullable
 as bool,isTruncated: null == isTruncated ? _self.isTruncated : isTruncated // ignore: cast_nullable_to_non_nullable
 as bool,boostedBy: freezed == boostedBy ? _self.boostedBy : boostedBy // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,boostedAt: freezed == boostedAt ? _self.boostedAt : boostedAt // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,boostedAt: freezed == boostedAt ? _self.boostedAt : boostedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,sponsored: null == sponsored ? _self.sponsored : sponsored // ignore: cast_nullable_to_non_nullable
 as bool,isBookmarked: null == isBookmarked ? _self.isBookmarked : isBookmarked // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -220,24 +223,12 @@ $SnPublisherCopyWith<$Res>? get publisher {
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
-    if (_self.actor == null) {
-    return null;
-  }
-
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
-    return _then(_self.copyWith(actor: value));
-  });
-}/// Create a copy of SnPost
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get boostedBy {
+$SnPublisherCopyWith<$Res>? get boostedBy {
     if (_self.boostedBy == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.boostedBy!, (value) {
+  return $SnPublisherCopyWith<$Res>(_self.boostedBy!, (value) {
     return _then(_self.copyWith(boostedBy: value));
   });
 }
@@ -319,10 +310,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String? publisherId,  SnPublisher? publisher,  String? actorid,  SnActivityPubActor? actor,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnActivityPubActor? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String publisherId,  SnPublisher? publisher,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnPublisher? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnPost() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.actorid,_that.actor,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);case _:
+return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);case _:
   return orElse();
 
 }
@@ -340,10 +331,10 @@ return $default(_that.id,_that.title,_that.description,_that.language,_that.edit
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String? publisherId,  SnPublisher? publisher,  String? actorid,  SnActivityPubActor? actor,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnActivityPubActor? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String publisherId,  SnPublisher? publisher,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnPublisher? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)  $default,) {final _that = this;
 switch (_that) {
 case _SnPost():
-return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.actorid,_that.actor,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);}
+return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -357,10 +348,10 @@ return $default(_that.id,_that.title,_that.description,_that.language,_that.edit
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String? publisherId,  SnPublisher? publisher,  String? actorid,  SnActivityPubActor? actor,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnActivityPubActor? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? title,  String? description,  String? language,  DateTime? editedAt,  DateTime? draftedAt,  DateTime? publishedAt,  int visibility,  String? content,  String? slug,  int type,  Map<String, dynamic>? meta,  SnPostEmbedView? embedView,  int viewsUnique,  int viewsTotal,  int upvotes,  int downvotes,  int repliesCount,  int threadedRepliesCount,  double? debugRank,  int awardedScore,  int? pinMode,  String? threadedPostId,  SnPost? threadedPost,  String? repliedPostId,  SnPost? repliedPost,  String? forwardedPostId,  SnPost? forwardedPost, @JsonKey(name: 'chained_post_id')  String? chainedPostId, @JsonKey(name: 'chained_post')  SnPost? chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts, @JsonKey(name: 'chained_count')  int chainedCount,  String? realmId,  SnRealm? realm,  String publisherId,  SnPublisher? publisher,  String? fediverseUri,  int? fediverseType,  bool isCached,  int contentType,  List<SnCloudFileReference> attachments,  Map<String, int> reactionsCount,  Map<String, bool> reactionsMade,  List<dynamic> reactions,  List<SnPostTag> tags,  List<SnPostCategory> categories,  List<dynamic> collections, @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections,  List<SnPostFeaturedRecord> featuredRecords,  DateTime? createdAt,  DateTime? updatedAt,  DateTime? deletedAt,  bool repliedGone,  bool forwardedGone,  bool isTruncated,  SnPublisher? boostedBy,  DateTime? boostedAt,  bool sponsored,  bool isBookmarked)?  $default,) {final _that = this;
 switch (_that) {
 case _SnPost() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.actorid,_that.actor,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);case _:
+return $default(_that.id,_that.title,_that.description,_that.language,_that.editedAt,_that.draftedAt,_that.publishedAt,_that.visibility,_that.content,_that.slug,_that.type,_that.meta,_that.embedView,_that.viewsUnique,_that.viewsTotal,_that.upvotes,_that.downvotes,_that.repliesCount,_that.threadedRepliesCount,_that.debugRank,_that.awardedScore,_that.pinMode,_that.threadedPostId,_that.threadedPost,_that.repliedPostId,_that.repliedPost,_that.forwardedPostId,_that.forwardedPost,_that.chainedPostId,_that.chainedPost,_that.chainedPosts,_that.chainedCount,_that.realmId,_that.realm,_that.publisherId,_that.publisher,_that.fediverseUri,_that.fediverseType,_that.isCached,_that.contentType,_that.attachments,_that.reactionsCount,_that.reactionsMade,_that.reactions,_that.tags,_that.categories,_that.collections,_that.publisherCollections,_that.featuredRecords,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.repliedGone,_that.forwardedGone,_that.isTruncated,_that.boostedBy,_that.boostedAt,_that.sponsored,_that.isBookmarked);case _:
   return null;
 
 }
@@ -372,7 +363,7 @@ return $default(_that.id,_that.title,_that.description,_that.language,_that.edit
 @JsonSerializable()
 
 class _SnPost implements SnPost {
-  const _SnPost({required this.id, this.title, this.description, this.language, this.editedAt, this.draftedAt = null, this.publishedAt = null, this.visibility = 0, this.content, this.slug, this.type = 0,  Map<String, dynamic>? meta, this.embedView, this.viewsUnique = 0, this.viewsTotal = 0, this.upvotes = 0, this.downvotes = 0, this.repliesCount = 0, this.threadedRepliesCount = 0, this.debugRank, this.awardedScore = 0, this.pinMode, this.threadedPostId, this.threadedPost, this.repliedPostId, this.repliedPost, this.forwardedPostId, this.forwardedPost, @JsonKey(name: 'chained_post_id') this.chainedPostId, @JsonKey(name: 'chained_post') this.chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts = const [], @JsonKey(name: 'chained_count') this.chainedCount = 0, this.realmId, this.realm, this.publisherId, this.publisher, this.actorid, this.actor, this.fediverseUri, this.fediverseType, this.isCached = true, this.contentType = 0,  List<SnCloudFileReference> attachments = const [],  Map<String, int> reactionsCount = const {},  Map<String, bool> reactionsMade = const {},  List<dynamic> reactions = const [],  List<SnPostTag> tags = const [],  List<SnPostCategory> categories = const [],  List<dynamic> collections = const [], @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections = const [],  List<SnPostFeaturedRecord> featuredRecords = const [], this.createdAt = null, this.updatedAt = null, this.deletedAt, this.repliedGone = false, this.forwardedGone = false, this.isTruncated = false, this.boostedBy = null, this.boostedAt = null, this.sponsored = false, this.isBookmarked = false}): _meta = meta,_chainedPosts = chainedPosts,_attachments = attachments,_reactionsCount = reactionsCount,_reactionsMade = reactionsMade,_reactions = reactions,_tags = tags,_categories = categories,_collections = collections,_publisherCollections = publisherCollections,_featuredRecords = featuredRecords;
+  const _SnPost({required this.id, this.title, this.description, this.language, this.editedAt, this.draftedAt = null, this.publishedAt = null, this.visibility = 0, this.content, this.slug, this.type = 0,  Map<String, dynamic>? meta, this.embedView, this.viewsUnique = 0, this.viewsTotal = 0, this.upvotes = 0, this.downvotes = 0, this.repliesCount = 0, this.threadedRepliesCount = 0, this.debugRank, this.awardedScore = 0, this.pinMode, this.threadedPostId, this.threadedPost, this.repliedPostId, this.repliedPost, this.forwardedPostId, this.forwardedPost, @JsonKey(name: 'chained_post_id') this.chainedPostId, @JsonKey(name: 'chained_post') this.chainedPost, @JsonKey(name: 'chained_posts')  List<SnPost> chainedPosts = const [], @JsonKey(name: 'chained_count') this.chainedCount = 0, this.realmId, this.realm, this.publisherId = '', this.publisher, this.fediverseUri, this.fediverseType, this.isCached = true, this.contentType = 0,  List<SnCloudFileReference> attachments = const [],  Map<String, int> reactionsCount = const {},  Map<String, bool> reactionsMade = const {},  List<dynamic> reactions = const [],  List<SnPostTag> tags = const [],  List<SnPostCategory> categories = const [],  List<dynamic> collections = const [], @JsonKey(name: 'publisher_collections')  List<SnPostCollection> publisherCollections = const [],  List<SnPostFeaturedRecord> featuredRecords = const [], this.createdAt = null, this.updatedAt = null, this.deletedAt, this.repliedGone = false, this.forwardedGone = false, this.isTruncated = false, this.boostedBy = null, this.boostedAt = null, this.sponsored = false, this.isBookmarked = false}): _meta = meta,_chainedPosts = chainedPosts,_attachments = attachments,_reactionsCount = reactionsCount,_reactionsMade = reactionsMade,_reactions = reactions,_tags = tags,_categories = categories,_collections = collections,_publisherCollections = publisherCollections,_featuredRecords = featuredRecords;
   factory _SnPost.fromJson(Map<String, dynamic> json) => _$SnPostFromJson(json);
 
 @override final  String id;
@@ -423,10 +414,8 @@ class _SnPost implements SnPost {
 @override@JsonKey(name: 'chained_count') final  int chainedCount;
 @override final  String? realmId;
 @override final  SnRealm? realm;
-@override final  String? publisherId;
+@override@JsonKey() final  String publisherId;
 @override final  SnPublisher? publisher;
-@override final  String? actorid;
-@override final  SnActivityPubActor? actor;
 @override final  String? fediverseUri;
 @override final  int? fediverseType;
 @override@JsonKey() final  bool isCached;
@@ -500,7 +489,7 @@ class _SnPost implements SnPost {
 @override@JsonKey() final  bool repliedGone;
 @override@JsonKey() final  bool forwardedGone;
 @override@JsonKey() final  bool isTruncated;
-@override@JsonKey() final  SnActivityPubActor? boostedBy;
+@override@JsonKey() final  SnPublisher? boostedBy;
 @override@JsonKey() final  DateTime? boostedAt;
 @override@JsonKey() final  bool sponsored;
 @override@JsonKey() final  bool isBookmarked;
@@ -518,16 +507,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPost&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.language, language) || other.language == language)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt)&&(identical(other.draftedAt, draftedAt) || other.draftedAt == draftedAt)&&(identical(other.publishedAt, publishedAt) || other.publishedAt == publishedAt)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.content, content) || other.content == content)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._meta, _meta)&&(identical(other.embedView, embedView) || other.embedView == embedView)&&(identical(other.viewsUnique, viewsUnique) || other.viewsUnique == viewsUnique)&&(identical(other.viewsTotal, viewsTotal) || other.viewsTotal == viewsTotal)&&(identical(other.upvotes, upvotes) || other.upvotes == upvotes)&&(identical(other.downvotes, downvotes) || other.downvotes == downvotes)&&(identical(other.repliesCount, repliesCount) || other.repliesCount == repliesCount)&&(identical(other.threadedRepliesCount, threadedRepliesCount) || other.threadedRepliesCount == threadedRepliesCount)&&(identical(other.debugRank, debugRank) || other.debugRank == debugRank)&&(identical(other.awardedScore, awardedScore) || other.awardedScore == awardedScore)&&(identical(other.pinMode, pinMode) || other.pinMode == pinMode)&&(identical(other.threadedPostId, threadedPostId) || other.threadedPostId == threadedPostId)&&(identical(other.threadedPost, threadedPost) || other.threadedPost == threadedPost)&&(identical(other.repliedPostId, repliedPostId) || other.repliedPostId == repliedPostId)&&(identical(other.repliedPost, repliedPost) || other.repliedPost == repliedPost)&&(identical(other.forwardedPostId, forwardedPostId) || other.forwardedPostId == forwardedPostId)&&(identical(other.forwardedPost, forwardedPost) || other.forwardedPost == forwardedPost)&&(identical(other.chainedPostId, chainedPostId) || other.chainedPostId == chainedPostId)&&(identical(other.chainedPost, chainedPost) || other.chainedPost == chainedPost)&&const DeepCollectionEquality().equals(other._chainedPosts, _chainedPosts)&&(identical(other.chainedCount, chainedCount) || other.chainedCount == chainedCount)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.actorid, actorid) || other.actorid == actorid)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.fediverseType, fediverseType) || other.fediverseType == fediverseType)&&(identical(other.isCached, isCached) || other.isCached == isCached)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&const DeepCollectionEquality().equals(other._reactionsCount, _reactionsCount)&&const DeepCollectionEquality().equals(other._reactionsMade, _reactionsMade)&&const DeepCollectionEquality().equals(other._reactions, _reactions)&&const DeepCollectionEquality().equals(other._tags, _tags)&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._collections, _collections)&&const DeepCollectionEquality().equals(other._publisherCollections, _publisherCollections)&&const DeepCollectionEquality().equals(other._featuredRecords, _featuredRecords)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.repliedGone, repliedGone) || other.repliedGone == repliedGone)&&(identical(other.forwardedGone, forwardedGone) || other.forwardedGone == forwardedGone)&&(identical(other.isTruncated, isTruncated) || other.isTruncated == isTruncated)&&(identical(other.boostedBy, boostedBy) || other.boostedBy == boostedBy)&&(identical(other.boostedAt, boostedAt) || other.boostedAt == boostedAt)&&(identical(other.sponsored, sponsored) || other.sponsored == sponsored)&&(identical(other.isBookmarked, isBookmarked) || other.isBookmarked == isBookmarked));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPost&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.language, language) || other.language == language)&&(identical(other.editedAt, editedAt) || other.editedAt == editedAt)&&(identical(other.draftedAt, draftedAt) || other.draftedAt == draftedAt)&&(identical(other.publishedAt, publishedAt) || other.publishedAt == publishedAt)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&(identical(other.content, content) || other.content == content)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.meta, _meta)&&(identical(other.embedView, embedView) || other.embedView == embedView)&&(identical(other.viewsUnique, viewsUnique) || other.viewsUnique == viewsUnique)&&(identical(other.viewsTotal, viewsTotal) || other.viewsTotal == viewsTotal)&&(identical(other.upvotes, upvotes) || other.upvotes == upvotes)&&(identical(other.downvotes, downvotes) || other.downvotes == downvotes)&&(identical(other.repliesCount, repliesCount) || other.repliesCount == repliesCount)&&(identical(other.threadedRepliesCount, threadedRepliesCount) || other.threadedRepliesCount == threadedRepliesCount)&&(identical(other.debugRank, debugRank) || other.debugRank == debugRank)&&(identical(other.awardedScore, awardedScore) || other.awardedScore == awardedScore)&&(identical(other.pinMode, pinMode) || other.pinMode == pinMode)&&(identical(other.threadedPostId, threadedPostId) || other.threadedPostId == threadedPostId)&&(identical(other.threadedPost, threadedPost) || other.threadedPost == threadedPost)&&(identical(other.repliedPostId, repliedPostId) || other.repliedPostId == repliedPostId)&&(identical(other.repliedPost, repliedPost) || other.repliedPost == repliedPost)&&(identical(other.forwardedPostId, forwardedPostId) || other.forwardedPostId == forwardedPostId)&&(identical(other.forwardedPost, forwardedPost) || other.forwardedPost == forwardedPost)&&(identical(other.chainedPostId, chainedPostId) || other.chainedPostId == chainedPostId)&&(identical(other.chainedPost, chainedPost) || other.chainedPost == chainedPost)&&const DeepCollectionEquality().equals(other.chainedPosts, _chainedPosts)&&(identical(other.chainedCount, chainedCount) || other.chainedCount == chainedCount)&&(identical(other.realmId, realmId) || other.realmId == realmId)&&(identical(other.realm, realm) || other.realm == realm)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.fediverseType, fediverseType) || other.fediverseType == fediverseType)&&(identical(other.isCached, isCached) || other.isCached == isCached)&&(identical(other.contentType, contentType) || other.contentType == contentType)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&const DeepCollectionEquality().equals(other.reactionsCount, _reactionsCount)&&const DeepCollectionEquality().equals(other.reactionsMade, _reactionsMade)&&const DeepCollectionEquality().equals(other.reactions, _reactions)&&const DeepCollectionEquality().equals(other.tags, _tags)&&const DeepCollectionEquality().equals(other.categories, _categories)&&const DeepCollectionEquality().equals(other.collections, _collections)&&const DeepCollectionEquality().equals(other.publisherCollections, _publisherCollections)&&const DeepCollectionEquality().equals(other.featuredRecords, _featuredRecords)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.repliedGone, repliedGone) || other.repliedGone == repliedGone)&&(identical(other.forwardedGone, forwardedGone) || other.forwardedGone == forwardedGone)&&(identical(other.isTruncated, isTruncated) || other.isTruncated == isTruncated)&&(identical(other.boostedBy, boostedBy) || other.boostedBy == boostedBy)&&(identical(other.boostedAt, boostedAt) || other.boostedAt == boostedAt)&&(identical(other.sponsored, sponsored) || other.sponsored == sponsored)&&(identical(other.isBookmarked, isBookmarked) || other.isBookmarked == isBookmarked));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,description,language,editedAt,draftedAt,publishedAt,visibility,content,slug,type,const DeepCollectionEquality().hash(_meta),embedView,viewsUnique,viewsTotal,upvotes,downvotes,repliesCount,threadedRepliesCount,debugRank,awardedScore,pinMode,threadedPostId,threadedPost,repliedPostId,repliedPost,forwardedPostId,forwardedPost,chainedPostId,chainedPost,const DeepCollectionEquality().hash(_chainedPosts),chainedCount,realmId,realm,publisherId,publisher,actorid,actor,fediverseUri,fediverseType,isCached,contentType,const DeepCollectionEquality().hash(_attachments),const DeepCollectionEquality().hash(_reactionsCount),const DeepCollectionEquality().hash(_reactionsMade),const DeepCollectionEquality().hash(_reactions),const DeepCollectionEquality().hash(_tags),const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_collections),const DeepCollectionEquality().hash(_publisherCollections),const DeepCollectionEquality().hash(_featuredRecords),createdAt,updatedAt,deletedAt,repliedGone,forwardedGone,isTruncated,boostedBy,boostedAt,sponsored,isBookmarked]);
+int get hashCode {
+    return Object.hashAll([runtimeType,id,title,description,language,editedAt,draftedAt,publishedAt,visibility,content,slug,type,const DeepCollectionEquality().hash(_meta),embedView,viewsUnique,viewsTotal,upvotes,downvotes,repliesCount,threadedRepliesCount,debugRank,awardedScore,pinMode,threadedPostId,threadedPost,repliedPostId,repliedPost,forwardedPostId,forwardedPost,chainedPostId,chainedPost,const DeepCollectionEquality().hash(_chainedPosts),chainedCount,realmId,realm,publisherId,publisher,fediverseUri,fediverseType,isCached,contentType,const DeepCollectionEquality().hash(_attachments),const DeepCollectionEquality().hash(_reactionsCount),const DeepCollectionEquality().hash(_reactionsMade),const DeepCollectionEquality().hash(_reactions),const DeepCollectionEquality().hash(_tags),const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_collections),const DeepCollectionEquality().hash(_publisherCollections),const DeepCollectionEquality().hash(_featuredRecords),createdAt,updatedAt,deletedAt,repliedGone,forwardedGone,isTruncated,boostedBy,boostedAt,sponsored,isBookmarked]);
+}
 
 @override
 String toString() {
-  return 'SnPost(id: $id, title: $title, description: $description, language: $language, editedAt: $editedAt, draftedAt: $draftedAt, publishedAt: $publishedAt, visibility: $visibility, content: $content, slug: $slug, type: $type, meta: $meta, embedView: $embedView, viewsUnique: $viewsUnique, viewsTotal: $viewsTotal, upvotes: $upvotes, downvotes: $downvotes, repliesCount: $repliesCount, threadedRepliesCount: $threadedRepliesCount, debugRank: $debugRank, awardedScore: $awardedScore, pinMode: $pinMode, threadedPostId: $threadedPostId, threadedPost: $threadedPost, repliedPostId: $repliedPostId, repliedPost: $repliedPost, forwardedPostId: $forwardedPostId, forwardedPost: $forwardedPost, chainedPostId: $chainedPostId, chainedPost: $chainedPost, chainedPosts: $chainedPosts, chainedCount: $chainedCount, realmId: $realmId, realm: $realm, publisherId: $publisherId, publisher: $publisher, actorid: $actorid, actor: $actor, fediverseUri: $fediverseUri, fediverseType: $fediverseType, isCached: $isCached, contentType: $contentType, attachments: $attachments, reactionsCount: $reactionsCount, reactionsMade: $reactionsMade, reactions: $reactions, tags: $tags, categories: $categories, collections: $collections, publisherCollections: $publisherCollections, featuredRecords: $featuredRecords, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, repliedGone: $repliedGone, forwardedGone: $forwardedGone, isTruncated: $isTruncated, boostedBy: $boostedBy, boostedAt: $boostedAt, sponsored: $sponsored, isBookmarked: $isBookmarked)';
+    return 'SnPost(id: $id, title: $title, description: $description, language: $language, editedAt: $editedAt, draftedAt: $draftedAt, publishedAt: $publishedAt, visibility: $visibility, content: $content, slug: $slug, type: $type, meta: $meta, embedView: $embedView, viewsUnique: $viewsUnique, viewsTotal: $viewsTotal, upvotes: $upvotes, downvotes: $downvotes, repliesCount: $repliesCount, threadedRepliesCount: $threadedRepliesCount, debugRank: $debugRank, awardedScore: $awardedScore, pinMode: $pinMode, threadedPostId: $threadedPostId, threadedPost: $threadedPost, repliedPostId: $repliedPostId, repliedPost: $repliedPost, forwardedPostId: $forwardedPostId, forwardedPost: $forwardedPost, chainedPostId: $chainedPostId, chainedPost: $chainedPost, chainedPosts: $chainedPosts, chainedCount: $chainedCount, realmId: $realmId, realm: $realm, publisherId: $publisherId, publisher: $publisher, fediverseUri: $fediverseUri, fediverseType: $fediverseType, isCached: $isCached, contentType: $contentType, attachments: $attachments, reactionsCount: $reactionsCount, reactionsMade: $reactionsMade, reactions: $reactions, tags: $tags, categories: $categories, collections: $collections, publisherCollections: $publisherCollections, featuredRecords: $featuredRecords, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, repliedGone: $repliedGone, forwardedGone: $forwardedGone, isTruncated: $isTruncated, boostedBy: $boostedBy, boostedAt: $boostedAt, sponsored: $sponsored, isBookmarked: $isBookmarked)';
 }
 
 
@@ -538,11 +529,11 @@ abstract mixin class _$SnPostCopyWith<$Res> implements $SnPostCopyWith<$Res> {
   factory _$SnPostCopyWith(_SnPost value, $Res Function(_SnPost) _then) = __$SnPostCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? title, String? description, String? language, DateTime? editedAt, DateTime? draftedAt, DateTime? publishedAt, int visibility, String? content, String? slug, int type, Map<String, dynamic>? meta, SnPostEmbedView? embedView, int viewsUnique, int viewsTotal, int upvotes, int downvotes, int repliesCount, int threadedRepliesCount, double? debugRank, int awardedScore, int? pinMode, String? threadedPostId, SnPost? threadedPost, String? repliedPostId, SnPost? repliedPost, String? forwardedPostId, SnPost? forwardedPost,@JsonKey(name: 'chained_post_id') String? chainedPostId,@JsonKey(name: 'chained_post') SnPost? chainedPost,@JsonKey(name: 'chained_posts') List<SnPost> chainedPosts,@JsonKey(name: 'chained_count') int chainedCount, String? realmId, SnRealm? realm, String? publisherId, SnPublisher? publisher, String? actorid, SnActivityPubActor? actor, String? fediverseUri, int? fediverseType, bool isCached, int contentType, List<SnCloudFileReference> attachments, Map<String, int> reactionsCount, Map<String, bool> reactionsMade, List<dynamic> reactions, List<SnPostTag> tags, List<SnPostCategory> categories, List<dynamic> collections,@JsonKey(name: 'publisher_collections') List<SnPostCollection> publisherCollections, List<SnPostFeaturedRecord> featuredRecords, DateTime? createdAt, DateTime? updatedAt, DateTime? deletedAt, bool repliedGone, bool forwardedGone, bool isTruncated, SnActivityPubActor? boostedBy, DateTime? boostedAt, bool sponsored, bool isBookmarked
+ String id, String? title, String? description, String? language, DateTime? editedAt, DateTime? draftedAt, DateTime? publishedAt, int visibility, String? content, String? slug, int type, Map<String, dynamic>? meta, SnPostEmbedView? embedView, int viewsUnique, int viewsTotal, int upvotes, int downvotes, int repliesCount, int threadedRepliesCount, double? debugRank, int awardedScore, int? pinMode, String? threadedPostId, SnPost? threadedPost, String? repliedPostId, SnPost? repliedPost, String? forwardedPostId, SnPost? forwardedPost,@JsonKey(name: 'chained_post_id') String? chainedPostId,@JsonKey(name: 'chained_post') SnPost? chainedPost,@JsonKey(name: 'chained_posts') List<SnPost> chainedPosts,@JsonKey(name: 'chained_count') int chainedCount, String? realmId, SnRealm? realm, String publisherId, SnPublisher? publisher, String? fediverseUri, int? fediverseType, bool isCached, int contentType, List<SnCloudFileReference> attachments, Map<String, int> reactionsCount, Map<String, bool> reactionsMade, List<dynamic> reactions, List<SnPostTag> tags, List<SnPostCategory> categories, List<dynamic> collections,@JsonKey(name: 'publisher_collections') List<SnPostCollection> publisherCollections, List<SnPostFeaturedRecord> featuredRecords, DateTime? createdAt, DateTime? updatedAt, DateTime? deletedAt, bool repliedGone, bool forwardedGone, bool isTruncated, SnPublisher? boostedBy, DateTime? boostedAt, bool sponsored, bool isBookmarked
 });
 
 
-@override $SnPostEmbedViewCopyWith<$Res>? get embedView;@override $SnPostCopyWith<$Res>? get threadedPost;@override $SnPostCopyWith<$Res>? get repliedPost;@override $SnPostCopyWith<$Res>? get forwardedPost;@override $SnPostCopyWith<$Res>? get chainedPost;@override $SnRealmCopyWith<$Res>? get realm;@override $SnPublisherCopyWith<$Res>? get publisher;@override $SnActivityPubActorCopyWith<$Res>? get actor;@override $SnActivityPubActorCopyWith<$Res>? get boostedBy;
+@override $SnPostEmbedViewCopyWith<$Res>? get embedView;@override $SnPostCopyWith<$Res>? get threadedPost;@override $SnPostCopyWith<$Res>? get repliedPost;@override $SnPostCopyWith<$Res>? get forwardedPost;@override $SnPostCopyWith<$Res>? get chainedPost;@override $SnRealmCopyWith<$Res>? get realm;@override $SnPublisherCopyWith<$Res>? get publisher;@override $SnPublisherCopyWith<$Res>? get boostedBy;
 
 }
 /// @nodoc
@@ -555,7 +546,7 @@ class __$SnPostCopyWithImpl<$Res>
 
 /// Create a copy of SnPost
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? description = freezed,Object? language = freezed,Object? editedAt = freezed,Object? draftedAt = freezed,Object? publishedAt = freezed,Object? visibility = null,Object? content = freezed,Object? slug = freezed,Object? type = null,Object? meta = freezed,Object? embedView = freezed,Object? viewsUnique = null,Object? viewsTotal = null,Object? upvotes = null,Object? downvotes = null,Object? repliesCount = null,Object? threadedRepliesCount = null,Object? debugRank = freezed,Object? awardedScore = null,Object? pinMode = freezed,Object? threadedPostId = freezed,Object? threadedPost = freezed,Object? repliedPostId = freezed,Object? repliedPost = freezed,Object? forwardedPostId = freezed,Object? forwardedPost = freezed,Object? chainedPostId = freezed,Object? chainedPost = freezed,Object? chainedPosts = null,Object? chainedCount = null,Object? realmId = freezed,Object? realm = freezed,Object? publisherId = freezed,Object? publisher = freezed,Object? actorid = freezed,Object? actor = freezed,Object? fediverseUri = freezed,Object? fediverseType = freezed,Object? isCached = null,Object? contentType = null,Object? attachments = null,Object? reactionsCount = null,Object? reactionsMade = null,Object? reactions = null,Object? tags = null,Object? categories = null,Object? collections = null,Object? publisherCollections = null,Object? featuredRecords = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? repliedGone = null,Object? forwardedGone = null,Object? isTruncated = null,Object? boostedBy = freezed,Object? boostedAt = freezed,Object? sponsored = null,Object? isBookmarked = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? description = freezed,Object? language = freezed,Object? editedAt = freezed,Object? draftedAt = freezed,Object? publishedAt = freezed,Object? visibility = null,Object? content = freezed,Object? slug = freezed,Object? type = null,Object? meta = freezed,Object? embedView = freezed,Object? viewsUnique = null,Object? viewsTotal = null,Object? upvotes = null,Object? downvotes = null,Object? repliesCount = null,Object? threadedRepliesCount = null,Object? debugRank = freezed,Object? awardedScore = null,Object? pinMode = freezed,Object? threadedPostId = freezed,Object? threadedPost = freezed,Object? repliedPostId = freezed,Object? repliedPost = freezed,Object? forwardedPostId = freezed,Object? forwardedPost = freezed,Object? chainedPostId = freezed,Object? chainedPost = freezed,Object? chainedPosts = null,Object? chainedCount = null,Object? realmId = freezed,Object? realm = freezed,Object? publisherId = null,Object? publisher = freezed,Object? fediverseUri = freezed,Object? fediverseType = freezed,Object? isCached = null,Object? contentType = null,Object? attachments = null,Object? reactionsCount = null,Object? reactionsMade = null,Object? reactions = null,Object? tags = null,Object? categories = null,Object? collections = null,Object? publisherCollections = null,Object? featuredRecords = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? repliedGone = null,Object? forwardedGone = null,Object? isTruncated = null,Object? boostedBy = freezed,Object? boostedAt = freezed,Object? sponsored = null,Object? isBookmarked = null,}) {
   return _then(_SnPost(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -591,11 +582,9 @@ as SnPost?,chainedPosts: null == chainedPosts ? _self._chainedPosts : chainedPos
 as List<SnPost>,chainedCount: null == chainedCount ? _self.chainedCount : chainedCount // ignore: cast_nullable_to_non_nullable
 as int,realmId: freezed == realmId ? _self.realmId : realmId // ignore: cast_nullable_to_non_nullable
 as String?,realm: freezed == realm ? _self.realm : realm // ignore: cast_nullable_to_non_nullable
-as SnRealm?,publisherId: freezed == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
-as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
-as SnPublisher?,actorid: freezed == actorid ? _self.actorid : actorid // ignore: cast_nullable_to_non_nullable
-as String?,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
+as SnRealm?,publisherId: null == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
+as String,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
 as String?,fediverseType: freezed == fediverseType ? _self.fediverseType : fediverseType // ignore: cast_nullable_to_non_nullable
 as int?,isCached: null == isCached ? _self.isCached : isCached // ignore: cast_nullable_to_non_nullable
 as bool,contentType: null == contentType ? _self.contentType : contentType // ignore: cast_nullable_to_non_nullable
@@ -615,7 +604,7 @@ as DateTime?,repliedGone: null == repliedGone ? _self.repliedGone : repliedGone 
 as bool,forwardedGone: null == forwardedGone ? _self.forwardedGone : forwardedGone // ignore: cast_nullable_to_non_nullable
 as bool,isTruncated: null == isTruncated ? _self.isTruncated : isTruncated // ignore: cast_nullable_to_non_nullable
 as bool,boostedBy: freezed == boostedBy ? _self.boostedBy : boostedBy // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,boostedAt: freezed == boostedAt ? _self.boostedAt : boostedAt // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,boostedAt: freezed == boostedAt ? _self.boostedAt : boostedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,sponsored: null == sponsored ? _self.sponsored : sponsored // ignore: cast_nullable_to_non_nullable
 as bool,isBookmarked: null == isBookmarked ? _self.isBookmarked : isBookmarked // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -710,24 +699,12 @@ $SnPublisherCopyWith<$Res>? get publisher {
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
-    if (_self.actor == null) {
-    return null;
-  }
-
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
-    return _then(_self.copyWith(actor: value));
-  });
-}/// Create a copy of SnPost
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get boostedBy {
+$SnPublisherCopyWith<$Res>? get boostedBy {
     if (_self.boostedBy == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.boostedBy!, (value) {
+  return $SnPublisherCopyWith<$Res>(_self.boostedBy!, (value) {
     return _then(_self.copyWith(boostedBy: value));
   });
 }
@@ -750,16 +727,21 @@ $SnPublisherStatsCopyWith<SnPublisherStats> get copyWith => _$SnPublisherStatsCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPublisherStats&&(identical(other.postsCreated, postsCreated) || other.postsCreated == postsCreated)&&(identical(other.stickerPacksCreated, stickerPacksCreated) || other.stickerPacksCreated == stickerPacksCreated)&&(identical(other.stickersCreated, stickersCreated) || other.stickersCreated == stickersCreated)&&(identical(other.upvoteReceived, upvoteReceived) || other.upvoteReceived == upvoteReceived)&&(identical(other.downvoteReceived, downvoteReceived) || other.downvoteReceived == downvoteReceived));
+  final _this = this as SnPublisherStats;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPublisherStats&&(identical(other.postsCreated, _this.postsCreated) || other.postsCreated == _this.postsCreated)&&(identical(other.stickerPacksCreated, _this.stickerPacksCreated) || other.stickerPacksCreated == _this.stickerPacksCreated)&&(identical(other.stickersCreated, _this.stickersCreated) || other.stickersCreated == _this.stickersCreated)&&(identical(other.upvoteReceived, _this.upvoteReceived) || other.upvoteReceived == _this.upvoteReceived)&&(identical(other.downvoteReceived, _this.downvoteReceived) || other.downvoteReceived == _this.downvoteReceived));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,postsCreated,stickerPacksCreated,stickersCreated,upvoteReceived,downvoteReceived);
+int get hashCode {
+  final _this = this as SnPublisherStats;
+  return Object.hash(runtimeType,_this.postsCreated,_this.stickerPacksCreated,_this.stickersCreated,_this.upvoteReceived,_this.downvoteReceived);
+}
 
 @override
 String toString() {
-  return 'SnPublisherStats(postsCreated: $postsCreated, stickerPacksCreated: $stickerPacksCreated, stickersCreated: $stickersCreated, upvoteReceived: $upvoteReceived, downvoteReceived: $downvoteReceived)';
+  final _this = this as SnPublisherStats;
+  return 'SnPublisherStats(postsCreated: ${_this.postsCreated}, stickerPacksCreated: ${_this.stickerPacksCreated}, stickersCreated: ${_this.stickersCreated}, upvoteReceived: ${_this.upvoteReceived}, downvoteReceived: ${_this.downvoteReceived})';
 }
 
 
@@ -951,16 +933,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPublisherStats&&(identical(other.postsCreated, postsCreated) || other.postsCreated == postsCreated)&&(identical(other.stickerPacksCreated, stickerPacksCreated) || other.stickerPacksCreated == stickerPacksCreated)&&(identical(other.stickersCreated, stickersCreated) || other.stickersCreated == stickersCreated)&&(identical(other.upvoteReceived, upvoteReceived) || other.upvoteReceived == upvoteReceived)&&(identical(other.downvoteReceived, downvoteReceived) || other.downvoteReceived == downvoteReceived));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPublisherStats&&(identical(other.postsCreated, postsCreated) || other.postsCreated == postsCreated)&&(identical(other.stickerPacksCreated, stickerPacksCreated) || other.stickerPacksCreated == stickerPacksCreated)&&(identical(other.stickersCreated, stickersCreated) || other.stickersCreated == stickersCreated)&&(identical(other.upvoteReceived, upvoteReceived) || other.upvoteReceived == upvoteReceived)&&(identical(other.downvoteReceived, downvoteReceived) || other.downvoteReceived == downvoteReceived));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,postsCreated,stickerPacksCreated,stickersCreated,upvoteReceived,downvoteReceived);
+int get hashCode {
+    return Object.hash(runtimeType,postsCreated,stickerPacksCreated,stickersCreated,upvoteReceived,downvoteReceived);
+}
 
 @override
 String toString() {
-  return 'SnPublisherStats(postsCreated: $postsCreated, stickerPacksCreated: $stickerPacksCreated, stickersCreated: $stickersCreated, upvoteReceived: $upvoteReceived, downvoteReceived: $downvoteReceived)';
+    return 'SnPublisherStats(postsCreated: $postsCreated, stickerPacksCreated: $stickerPacksCreated, stickersCreated: $stickersCreated, upvoteReceived: $upvoteReceived, downvoteReceived: $downvoteReceived)';
 }
 
 
@@ -1019,16 +1003,21 @@ $SnPublisherSubscriptionCompactCopyWith<SnPublisherSubscriptionCompact> get copy
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPublisherSubscriptionCompact&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
+  final _this = this as SnPublisherSubscriptionCompact;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPublisherSubscriptionCompact&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.publisher, _this.publisher) || other.publisher == _this.publisher));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accountId,publisherId,publisher);
+int get hashCode {
+  final _this = this as SnPublisherSubscriptionCompact;
+  return Object.hash(runtimeType,_this.accountId,_this.publisherId,_this.publisher);
+}
 
 @override
 String toString() {
-  return 'SnPublisherSubscriptionCompact(accountId: $accountId, publisherId: $publisherId, publisher: $publisher)';
+  final _this = this as SnPublisherSubscriptionCompact;
+  return 'SnPublisherSubscriptionCompact(accountId: ${_this.accountId}, publisherId: ${_this.publisherId}, publisher: ${_this.publisher})';
 }
 
 
@@ -1225,16 +1214,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPublisherSubscriptionCompact&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPublisherSubscriptionCompact&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accountId,publisherId,publisher);
+int get hashCode {
+    return Object.hash(runtimeType,accountId,publisherId,publisher);
+}
 
 @override
 String toString() {
-  return 'SnPublisherSubscriptionCompact(accountId: $accountId, publisherId: $publisherId, publisher: $publisher)';
+    return 'SnPublisherSubscriptionCompact(accountId: $accountId, publisherId: $publisherId, publisher: $publisher)';
 }
 
 
@@ -1297,16 +1288,21 @@ $ReactInfoCopyWith<ReactInfo> get copyWith => _$ReactInfoCopyWithImpl<ReactInfo>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReactInfo&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.attitude, attitude) || other.attitude == attitude));
+  final _this = this as ReactInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReactInfo&&(identical(other.icon, _this.icon) || other.icon == _this.icon)&&(identical(other.attitude, _this.attitude) || other.attitude == _this.attitude));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,icon,attitude);
+int get hashCode {
+  final _this = this as ReactInfo;
+  return Object.hash(runtimeType,_this.icon,_this.attitude);
+}
 
 @override
 String toString() {
-  return 'ReactInfo(icon: $icon, attitude: $attitude)';
+  final _this = this as ReactInfo;
+  return 'ReactInfo(icon: ${_this.icon}, attitude: ${_this.attitude})';
 }
 
 
@@ -1489,16 +1485,18 @@ _$ReactInfoCopyWith<_ReactInfo> get copyWith => __$ReactInfoCopyWithImpl<_ReactI
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReactInfo&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.attitude, attitude) || other.attitude == attitude));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReactInfo&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.attitude, attitude) || other.attitude == attitude));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,icon,attitude);
+int get hashCode {
+    return Object.hash(runtimeType,icon,attitude);
+}
 
 @override
 String toString() {
-  return 'ReactInfo(icon: $icon, attitude: $attitude)';
+    return 'ReactInfo(icon: $icon, attitude: $attitude)';
 }
 
 
@@ -1554,16 +1552,21 @@ $SnPostEmbedViewCopyWith<SnPostEmbedView> get copyWith => _$SnPostEmbedViewCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostEmbedView&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.aspectRatio, aspectRatio) || other.aspectRatio == aspectRatio)&&(identical(other.renderer, renderer) || other.renderer == renderer));
+  final _this = this as SnPostEmbedView;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostEmbedView&&(identical(other.uri, _this.uri) || other.uri == _this.uri)&&(identical(other.aspectRatio, _this.aspectRatio) || other.aspectRatio == _this.aspectRatio)&&(identical(other.renderer, _this.renderer) || other.renderer == _this.renderer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uri,aspectRatio,renderer);
+int get hashCode {
+  final _this = this as SnPostEmbedView;
+  return Object.hash(runtimeType,_this.uri,_this.aspectRatio,_this.renderer);
+}
 
 @override
 String toString() {
-  return 'SnPostEmbedView(uri: $uri, aspectRatio: $aspectRatio, renderer: $renderer)';
+  final _this = this as SnPostEmbedView;
+  return 'SnPostEmbedView(uri: ${_this.uri}, aspectRatio: ${_this.aspectRatio}, renderer: ${_this.renderer})';
 }
 
 
@@ -1751,16 +1754,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostEmbedView&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.aspectRatio, aspectRatio) || other.aspectRatio == aspectRatio)&&(identical(other.renderer, renderer) || other.renderer == renderer));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostEmbedView&&(identical(other.uri, uri) || other.uri == uri)&&(identical(other.aspectRatio, aspectRatio) || other.aspectRatio == aspectRatio)&&(identical(other.renderer, renderer) || other.renderer == renderer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uri,aspectRatio,renderer);
+int get hashCode {
+    return Object.hash(runtimeType,uri,aspectRatio,renderer);
+}
 
 @override
 String toString() {
-  return 'SnPostEmbedView(uri: $uri, aspectRatio: $aspectRatio, renderer: $renderer)';
+    return 'SnPostEmbedView(uri: $uri, aspectRatio: $aspectRatio, renderer: $renderer)';
 }
 
 
@@ -1817,16 +1822,21 @@ $SnPostAwardCopyWith<SnPostAward> get copyWith => _$SnPostAwardCopyWithImpl<SnPo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostAward&&(identical(other.id, id) || other.id == id)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.message, message) || other.message == message)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as SnPostAward;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostAward&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.amount, _this.amount) || other.amount == _this.amount)&&(identical(other.attitude, _this.attitude) || other.attitude == _this.attitude)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.postId, _this.postId) || other.postId == _this.postId)&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,amount,attitude,message,postId,accountId,createdAt,updatedAt,deletedAt);
+int get hashCode {
+  final _this = this as SnPostAward;
+  return Object.hash(runtimeType,_this.id,_this.amount,_this.attitude,_this.message,_this.postId,_this.accountId,_this.createdAt,_this.updatedAt,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostAward(id: $id, amount: $amount, attitude: $attitude, message: $message, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  final _this = this as SnPostAward;
+  return 'SnPostAward(id: ${_this.id}, amount: ${_this.amount}, attitude: ${_this.attitude}, message: ${_this.message}, postId: ${_this.postId}, accountId: ${_this.accountId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -2026,16 +2036,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostAward&&(identical(other.id, id) || other.id == id)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.message, message) || other.message == message)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostAward&&(identical(other.id, id) || other.id == id)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.message, message) || other.message == message)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,amount,attitude,message,postId,accountId,createdAt,updatedAt,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,amount,attitude,message,postId,accountId,createdAt,updatedAt,deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostAward(id: $id, amount: $amount, attitude: $attitude, message: $message, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'SnPostAward(id: $id, amount: $amount, attitude: $attitude, message: $message, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 
@@ -2085,7 +2097,7 @@ as DateTime?,
 /// @nodoc
 mixin _$SnPostReaction {
 
- String get id; String get symbol; int get attitude; String get postId; DateTime get createdAt; DateTime get updatedAt; String? get actorId; SnActivityPubActor? get actor; String? get accountId; SnAccount? get account; bool? get isLocal; String? get fediverseUri; DateTime? get deletedAt;
+ String get id; String get symbol; int get attitude; String get postId; DateTime get createdAt; DateTime get updatedAt; String? get publisherId; SnPublisher? get publisher; String? get accountId; SnAccount? get account; bool? get isLocal; String? get fediverseUri; DateTime? get deletedAt;
 /// Create a copy of SnPostReaction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2098,16 +2110,21 @@ $SnPostReactionCopyWith<SnPostReaction> get copyWith => _$SnPostReactionCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostReaction&&(identical(other.id, id) || other.id == id)&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.isLocal, isLocal) || other.isLocal == isLocal)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as SnPostReaction;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostReaction&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.symbol, _this.symbol) || other.symbol == _this.symbol)&&(identical(other.attitude, _this.attitude) || other.attitude == _this.attitude)&&(identical(other.postId, _this.postId) || other.postId == _this.postId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.publisherId, _this.publisherId) || other.publisherId == _this.publisherId)&&(identical(other.publisher, _this.publisher) || other.publisher == _this.publisher)&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.account, _this.account) || other.account == _this.account)&&(identical(other.isLocal, _this.isLocal) || other.isLocal == _this.isLocal)&&(identical(other.fediverseUri, _this.fediverseUri) || other.fediverseUri == _this.fediverseUri)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,symbol,attitude,postId,createdAt,updatedAt,actorId,actor,accountId,account,isLocal,fediverseUri,deletedAt);
+int get hashCode {
+  final _this = this as SnPostReaction;
+  return Object.hash(runtimeType,_this.id,_this.symbol,_this.attitude,_this.postId,_this.createdAt,_this.updatedAt,_this.publisherId,_this.publisher,_this.accountId,_this.account,_this.isLocal,_this.fediverseUri,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostReaction(id: $id, symbol: $symbol, attitude: $attitude, postId: $postId, createdAt: $createdAt, updatedAt: $updatedAt, actorId: $actorId, actor: $actor, accountId: $accountId, account: $account, isLocal: $isLocal, fediverseUri: $fediverseUri, deletedAt: $deletedAt)';
+  final _this = this as SnPostReaction;
+  return 'SnPostReaction(id: ${_this.id}, symbol: ${_this.symbol}, attitude: ${_this.attitude}, postId: ${_this.postId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, publisherId: ${_this.publisherId}, publisher: ${_this.publisher}, accountId: ${_this.accountId}, account: ${_this.account}, isLocal: ${_this.isLocal}, fediverseUri: ${_this.fediverseUri}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -2118,11 +2135,11 @@ abstract mixin class $SnPostReactionCopyWith<$Res>  {
   factory $SnPostReactionCopyWith(SnPostReaction value, $Res Function(SnPostReaction) _then) = _$SnPostReactionCopyWithImpl;
 @useResult
 $Res call({
- String id, String symbol, int attitude, String postId, DateTime createdAt, DateTime updatedAt, String? actorId, SnActivityPubActor? actor, String? accountId, SnAccount? account, bool? isLocal, String? fediverseUri, DateTime? deletedAt
+ String id, String symbol, int attitude, String postId, DateTime createdAt, DateTime updatedAt, String? publisherId, SnPublisher? publisher, String? accountId, SnAccount? account, bool? isLocal, String? fediverseUri, DateTime? deletedAt
 });
 
 
-$SnActivityPubActorCopyWith<$Res>? get actor;$SnAccountCopyWith<$Res>? get account;
+$SnPublisherCopyWith<$Res>? get publisher;$SnAccountCopyWith<$Res>? get account;
 
 }
 /// @nodoc
@@ -2135,7 +2152,7 @@ class _$SnPostReactionCopyWithImpl<$Res>
 
 /// Create a copy of SnPostReaction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? symbol = null,Object? attitude = null,Object? postId = null,Object? createdAt = null,Object? updatedAt = null,Object? actorId = freezed,Object? actor = freezed,Object? accountId = freezed,Object? account = freezed,Object? isLocal = freezed,Object? fediverseUri = freezed,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? symbol = null,Object? attitude = null,Object? postId = null,Object? createdAt = null,Object? updatedAt = null,Object? publisherId = freezed,Object? publisher = freezed,Object? accountId = freezed,Object? account = freezed,Object? isLocal = freezed,Object? fediverseUri = freezed,Object? deletedAt = freezed,}) {
   return _then(SnPostReaction(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,symbol: null == symbol ? _self.symbol : symbol // ignore: cast_nullable_to_non_nullable
@@ -2143,9 +2160,9 @@ as String,attitude: null == attitude ? _self.attitude : attitude // ignore: cast
 as int,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,actorId: freezed == actorId ? _self.actorId : actorId // ignore: cast_nullable_to_non_nullable
-as String?,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,accountId: freezed == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
+as DateTime,publisherId: freezed == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
+as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,accountId: freezed == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
 as String?,account: freezed == account ? _self.account : account // ignore: cast_nullable_to_non_nullable
 as SnAccount?,isLocal: freezed == isLocal ? _self.isLocal : isLocal // ignore: cast_nullable_to_non_nullable
 as bool?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
@@ -2157,13 +2174,13 @@ as DateTime?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
-    if (_self.actor == null) {
+$SnPublisherCopyWith<$Res>? get publisher {
+    if (_self.publisher == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
-    return _then(_self.copyWith(actor: value));
+  return $SnPublisherCopyWith<$Res>(_self.publisher!, (value) {
+    return _then(_self.copyWith(publisher: value));
   });
 }/// Create a copy of SnPostReaction
 /// with the given fields replaced by the non-null parameter values.
@@ -2256,10 +2273,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? actorId,  SnActivityPubActor? actor,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? publisherId,  SnPublisher? publisher,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SnPostReaction() when $default != null:
-return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.actorId,_that.actor,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);case _:
+return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.publisherId,_that.publisher,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -2277,10 +2294,10 @@ return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdA
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? actorId,  SnActivityPubActor? actor,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? publisherId,  SnPublisher? publisher,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _SnPostReaction():
-return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.actorId,_that.actor,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);}
+return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.publisherId,_that.publisher,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -2294,10 +2311,10 @@ return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdA
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? actorId,  SnActivityPubActor? actor,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String symbol,  int attitude,  String postId,  DateTime createdAt,  DateTime updatedAt,  String? publisherId,  SnPublisher? publisher,  String? accountId,  SnAccount? account,  bool? isLocal,  String? fediverseUri,  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _SnPostReaction() when $default != null:
-return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.actorId,_that.actor,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);case _:
+return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdAt,_that.updatedAt,_that.publisherId,_that.publisher,_that.accountId,_that.account,_that.isLocal,_that.fediverseUri,_that.deletedAt);case _:
   return null;
 
 }
@@ -2309,7 +2326,7 @@ return $default(_that.id,_that.symbol,_that.attitude,_that.postId,_that.createdA
 @JsonSerializable()
 
 class _SnPostReaction implements SnPostReaction {
-  const _SnPostReaction({required this.id, required this.symbol, required this.attitude, required this.postId, required this.createdAt, required this.updatedAt, this.actorId, this.actor, this.accountId, this.account, this.isLocal, this.fediverseUri, this.deletedAt});
+  const _SnPostReaction({required this.id, required this.symbol, required this.attitude, required this.postId, required this.createdAt, required this.updatedAt, this.publisherId, this.publisher, this.accountId, this.account, this.isLocal, this.fediverseUri, this.deletedAt});
   factory _SnPostReaction.fromJson(Map<String, dynamic> json) => _$SnPostReactionFromJson(json);
 
 @override final  String id;
@@ -2318,8 +2335,8 @@ class _SnPostReaction implements SnPostReaction {
 @override final  String postId;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
-@override final  String? actorId;
-@override final  SnActivityPubActor? actor;
+@override final  String? publisherId;
+@override final  SnPublisher? publisher;
 @override final  String? accountId;
 @override final  SnAccount? account;
 @override final  bool? isLocal;
@@ -2339,16 +2356,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostReaction&&(identical(other.id, id) || other.id == id)&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.isLocal, isLocal) || other.isLocal == isLocal)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostReaction&&(identical(other.id, id) || other.id == id)&&(identical(other.symbol, symbol) || other.symbol == symbol)&&(identical(other.attitude, attitude) || other.attitude == attitude)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.publisherId, publisherId) || other.publisherId == publisherId)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.account, account) || other.account == account)&&(identical(other.isLocal, isLocal) || other.isLocal == isLocal)&&(identical(other.fediverseUri, fediverseUri) || other.fediverseUri == fediverseUri)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,symbol,attitude,postId,createdAt,updatedAt,actorId,actor,accountId,account,isLocal,fediverseUri,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,symbol,attitude,postId,createdAt,updatedAt,publisherId,publisher,accountId,account,isLocal,fediverseUri,deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostReaction(id: $id, symbol: $symbol, attitude: $attitude, postId: $postId, createdAt: $createdAt, updatedAt: $updatedAt, actorId: $actorId, actor: $actor, accountId: $accountId, account: $account, isLocal: $isLocal, fediverseUri: $fediverseUri, deletedAt: $deletedAt)';
+    return 'SnPostReaction(id: $id, symbol: $symbol, attitude: $attitude, postId: $postId, createdAt: $createdAt, updatedAt: $updatedAt, publisherId: $publisherId, publisher: $publisher, accountId: $accountId, account: $account, isLocal: $isLocal, fediverseUri: $fediverseUri, deletedAt: $deletedAt)';
 }
 
 
@@ -2359,11 +2378,11 @@ abstract mixin class _$SnPostReactionCopyWith<$Res> implements $SnPostReactionCo
   factory _$SnPostReactionCopyWith(_SnPostReaction value, $Res Function(_SnPostReaction) _then) = __$SnPostReactionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String symbol, int attitude, String postId, DateTime createdAt, DateTime updatedAt, String? actorId, SnActivityPubActor? actor, String? accountId, SnAccount? account, bool? isLocal, String? fediverseUri, DateTime? deletedAt
+ String id, String symbol, int attitude, String postId, DateTime createdAt, DateTime updatedAt, String? publisherId, SnPublisher? publisher, String? accountId, SnAccount? account, bool? isLocal, String? fediverseUri, DateTime? deletedAt
 });
 
 
-@override $SnActivityPubActorCopyWith<$Res>? get actor;@override $SnAccountCopyWith<$Res>? get account;
+@override $SnPublisherCopyWith<$Res>? get publisher;@override $SnAccountCopyWith<$Res>? get account;
 
 }
 /// @nodoc
@@ -2376,7 +2395,7 @@ class __$SnPostReactionCopyWithImpl<$Res>
 
 /// Create a copy of SnPostReaction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? symbol = null,Object? attitude = null,Object? postId = null,Object? createdAt = null,Object? updatedAt = null,Object? actorId = freezed,Object? actor = freezed,Object? accountId = freezed,Object? account = freezed,Object? isLocal = freezed,Object? fediverseUri = freezed,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? symbol = null,Object? attitude = null,Object? postId = null,Object? createdAt = null,Object? updatedAt = null,Object? publisherId = freezed,Object? publisher = freezed,Object? accountId = freezed,Object? account = freezed,Object? isLocal = freezed,Object? fediverseUri = freezed,Object? deletedAt = freezed,}) {
   return _then(_SnPostReaction(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,symbol: null == symbol ? _self.symbol : symbol // ignore: cast_nullable_to_non_nullable
@@ -2384,9 +2403,9 @@ as String,attitude: null == attitude ? _self.attitude : attitude // ignore: cast
 as int,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,actorId: freezed == actorId ? _self.actorId : actorId // ignore: cast_nullable_to_non_nullable
-as String?,actor: freezed == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
-as SnActivityPubActor?,accountId: freezed == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
+as DateTime,publisherId: freezed == publisherId ? _self.publisherId : publisherId // ignore: cast_nullable_to_non_nullable
+as String?,publisher: freezed == publisher ? _self.publisher : publisher // ignore: cast_nullable_to_non_nullable
+as SnPublisher?,accountId: freezed == accountId ? _self.accountId : accountId // ignore: cast_nullable_to_non_nullable
 as String?,account: freezed == account ? _self.account : account // ignore: cast_nullable_to_non_nullable
 as SnAccount?,isLocal: freezed == isLocal ? _self.isLocal : isLocal // ignore: cast_nullable_to_non_nullable
 as bool?,fediverseUri: freezed == fediverseUri ? _self.fediverseUri : fediverseUri // ignore: cast_nullable_to_non_nullable
@@ -2399,13 +2418,13 @@ as DateTime?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SnActivityPubActorCopyWith<$Res>? get actor {
-    if (_self.actor == null) {
+$SnPublisherCopyWith<$Res>? get publisher {
+    if (_self.publisher == null) {
     return null;
   }
 
-  return $SnActivityPubActorCopyWith<$Res>(_self.actor!, (value) {
-    return _then(_self.copyWith(actor: value));
+  return $SnPublisherCopyWith<$Res>(_self.publisher!, (value) {
+    return _then(_self.copyWith(publisher: value));
   });
 }/// Create a copy of SnPostReaction
 /// with the given fields replaced by the non-null parameter values.
@@ -2439,16 +2458,21 @@ $SnPostBookmarkCopyWith<SnPostBookmark> get copyWith => _$SnPostBookmarkCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostBookmark&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as SnPostBookmark;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostBookmark&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.postId, _this.postId) || other.postId == _this.postId)&&(identical(other.accountId, _this.accountId) || other.accountId == _this.accountId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,postId,accountId,createdAt,updatedAt);
+int get hashCode {
+  final _this = this as SnPostBookmark;
+  return Object.hash(runtimeType,_this.id,_this.postId,_this.accountId,_this.createdAt,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostBookmark(id: $id, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt)';
+  final _this = this as SnPostBookmark;
+  return 'SnPostBookmark(id: ${_this.id}, postId: ${_this.postId}, accountId: ${_this.accountId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -2640,16 +2664,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostBookmark&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostBookmark&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.accountId, accountId) || other.accountId == accountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,postId,accountId,createdAt,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,postId,accountId,createdAt,updatedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostBookmark(id: $id, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'SnPostBookmark(id: $id, postId: $postId, accountId: $accountId, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -2708,16 +2734,21 @@ $UserReactionListingItemCopyWith<UserReactionListingItem> get copyWith => _$User
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserReactionListingItem&&(identical(other.reaction, reaction) || other.reaction == reaction)&&(identical(other.post, post) || other.post == post));
+  final _this = this as UserReactionListingItem;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserReactionListingItem&&(identical(other.reaction, _this.reaction) || other.reaction == _this.reaction)&&(identical(other.post, _this.post) || other.post == _this.post));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,reaction,post);
+int get hashCode {
+  final _this = this as UserReactionListingItem;
+  return Object.hash(runtimeType,_this.reaction,_this.post);
+}
 
 @override
 String toString() {
-  return 'UserReactionListingItem(reaction: $reaction, post: $post)';
+  final _this = this as UserReactionListingItem;
+  return 'UserReactionListingItem(reaction: ${_this.reaction}, post: ${_this.post})';
 }
 
 
@@ -2921,16 +2952,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserReactionListingItem&&(identical(other.reaction, reaction) || other.reaction == reaction)&&(identical(other.post, post) || other.post == post));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserReactionListingItem&&(identical(other.reaction, reaction) || other.reaction == reaction)&&(identical(other.post, post) || other.post == post));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,reaction,post);
+int get hashCode {
+    return Object.hash(runtimeType,reaction,post);
+}
 
 @override
 String toString() {
-  return 'UserReactionListingItem(reaction: $reaction, post: $post)';
+    return 'UserReactionListingItem(reaction: $reaction, post: $post)';
 }
 
 
@@ -3004,16 +3037,21 @@ $SnPostFeaturedRecordCopyWith<SnPostFeaturedRecord> get copyWith => _$SnPostFeat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostFeaturedRecord&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.featuredAt, featuredAt) || other.featuredAt == featuredAt)&&(identical(other.socialCredits, socialCredits) || other.socialCredits == socialCredits)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  final _this = this as SnPostFeaturedRecord;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnPostFeaturedRecord&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.postId, _this.postId) || other.postId == _this.postId)&&(identical(other.featuredAt, _this.featuredAt) || other.featuredAt == _this.featuredAt)&&(identical(other.socialCredits, _this.socialCredits) || other.socialCredits == _this.socialCredits)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.deletedAt, _this.deletedAt) || other.deletedAt == _this.deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,postId,featuredAt,socialCredits,createdAt,updatedAt,deletedAt);
+int get hashCode {
+  final _this = this as SnPostFeaturedRecord;
+  return Object.hash(runtimeType,_this.id,_this.postId,_this.featuredAt,_this.socialCredits,_this.createdAt,_this.updatedAt,_this.deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostFeaturedRecord(id: $id, postId: $postId, featuredAt: $featuredAt, socialCredits: $socialCredits, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  final _this = this as SnPostFeaturedRecord;
+  return 'SnPostFeaturedRecord(id: ${_this.id}, postId: ${_this.postId}, featuredAt: ${_this.featuredAt}, socialCredits: ${_this.socialCredits}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, deletedAt: ${_this.deletedAt})';
 }
 
 
@@ -3209,16 +3247,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostFeaturedRecord&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.featuredAt, featuredAt) || other.featuredAt == featuredAt)&&(identical(other.socialCredits, socialCredits) || other.socialCredits == socialCredits)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnPostFeaturedRecord&&(identical(other.id, id) || other.id == id)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.featuredAt, featuredAt) || other.featuredAt == featuredAt)&&(identical(other.socialCredits, socialCredits) || other.socialCredits == socialCredits)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,postId,featuredAt,socialCredits,createdAt,updatedAt,deletedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,postId,featuredAt,socialCredits,createdAt,updatedAt,deletedAt);
+}
 
 @override
 String toString() {
-  return 'SnPostFeaturedRecord(id: $id, postId: $postId, featuredAt: $featuredAt, socialCredits: $socialCredits, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+    return 'SnPostFeaturedRecord(id: $id, postId: $postId, featuredAt: $featuredAt, socialCredits: $socialCredits, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 

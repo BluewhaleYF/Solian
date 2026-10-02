@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:html2md/html2md.dart' as html2md;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:gap/gap.dart';
@@ -20,6 +22,7 @@ import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_list.dart';
+import 'package:island/posts/widgets/fediverse_publisher_info.dart';
 import 'package:island/posts/widgets/publisher_collection_info.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/route.gr.dart';
@@ -47,6 +50,23 @@ Future<void> showPublisherProfileAttentionModal(String name) async {
     builder: (context, dismiss) =>
         PublisherProfileAttentionModal(name: name, onDismiss: dismiss),
   );
+}
+
+/// Opens the profile of a publisher, local or remote.
+///
+/// Remote fediverse actors have no local handle, so they navigate to the
+/// actor deep link while local publishers keep the in-place modal.
+void openPublisherProfile(BuildContext context, SnPublisher publisher) {
+  if (publisher.isFediverse || publisher.name.isEmpty) {
+    context.router.push(
+      FediverseActorProfileRoute(
+        id: publisher.id,
+        fullHandle: publisher.fullHandle,
+      ),
+    );
+    return;
+  }
+  showPublisherProfileAttentionModal(publisher.name);
 }
 
 class PublisherProfileAttentionModal extends StatelessWidget {
@@ -196,6 +216,56 @@ class _PinnedPostsPageView extends HookConsumerWidget {
   }
 }
 
+/// Remote actors carry their header as a plain URL instead of a cloud file.
+Widget _publisherHeaderImage(BuildContext context, SnPublisher data) {
+  final headerUrl = data.headerUrl;
+  if (data.isFediverse && headerUrl != null && headerUrl.isNotEmpty) {
+    final placeholder = Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+    );
+    return CachedNetworkImage(
+      imageUrl: headerUrl,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => placeholder,
+      errorWidget: (context, url, error) => placeholder,
+    );
+  }
+  return CloudImageWidget(file: data.background, fit: BoxFit.cover);
+}
+
+/// Remote actors carry their avatar as a plain URL instead of a cloud file.
+Widget _publisherAvatarImage(
+  BuildContext context,
+  SnPublisher data, {
+  double radius = 32,
+  double? borderRadius,
+}) {
+  final avatarUrl = data.avatarUrl;
+  if (data.isFediverse && avatarUrl != null && avatarUrl.isNotEmpty) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      backgroundImage: CachedNetworkImageProvider(avatarUrl),
+    );
+  }
+  return ProfilePictureWidget(
+    file: data.picture,
+    fallbackName: data.nick,
+    radius: radius,
+    borderRadius: borderRadius,
+  );
+}
+
+/// Remote actor bios are HTML summaries, local publisher bios are markdown.
+String _publisherBio(SnPublisher data) {
+  final bio = data.bio;
+  if (bio.isEmpty) return '';
+  if (data.isFediverse && bio.contains('<')) {
+    return html2md.convert(bio);
+  }
+  return bio;
+}
+
 class _PublisherBasisWidget extends HookWidget {
   final SnPublisher data;
   final AsyncValue<SnPublisherSubscriptionStatus?> subStatus;
@@ -249,10 +319,7 @@ class _PublisherBasisWidget extends HookWidget {
                 ),
                 child: AspectRatio(
                   aspectRatio: 16 / 7,
-                  child: CloudImageWidget(
-                    file: data.background,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _publisherHeaderImage(context, data),
                 ),
               ),
               Positioned(
@@ -260,10 +327,10 @@ class _PublisherBasisWidget extends HookWidget {
                 left: 16,
                 child: Container(
                   decoration: BoxDecoration(
-                    shape: data.type == 0
+                    shape: data.type == 0 || data.isFediverse
                         ? BoxShape.circle
                         : BoxShape.rectangle,
-                    borderRadius: data.type == 0
+                    borderRadius: data.type == 0 || data.isFediverse
                         ? null
                         : BorderRadius.all(Radius.circular(12)),
                     border: Border.all(
@@ -271,11 +338,13 @@ class _PublisherBasisWidget extends HookWidget {
                       width: 3,
                     ),
                   ),
-                  child: ProfilePictureWidget(
-                    file: data.picture,
-                    fallbackName: data.nick,
+                  child: _publisherAvatarImage(
+                    context,
+                    data,
                     radius: 32,
-                    borderRadius: data.type == 0 ? null : 12,
+                    borderRadius: data.type == 0 || data.isFediverse
+                        ? null
+                        : 12,
                   ),
                 ),
               ),
@@ -314,7 +383,7 @@ class _PublisherBasisWidget extends HookWidget {
                               ],
                             )
                           : Text(
-                              data.nick,
+                              data.effectiveName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleLarge?.copyWith(
@@ -322,6 +391,25 @@ class _PublisherBasisWidget extends HookWidget {
                               ),
                             ),
                     ),
+                    if (data.isBot)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'BOT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                      ),
                     if (data.verification != null)
                       VerificationMark(mark: data.verification!),
                     // Rating grade indicator
@@ -409,7 +497,9 @@ class _PublisherBasisWidget extends HookWidget {
                     if (isWideScreen(context))
                       Flexible(
                         child: HandleChip(
-                          handle: data.name,
+                          handle: data.username ?? data.name,
+                          domain: data.isFediverse ? data.domain : null,
+                          isRemote: data.isFediverse,
                           allowCopy: true,
                           maxLines: 1,
                         ),
@@ -422,7 +512,9 @@ class _PublisherBasisWidget extends HookWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 4, bottom: 4),
                       child: HandleChip(
-                        handle: data.name,
+                        handle: data.username ?? data.name,
+                        domain: data.isFediverse ? data.domain : null,
+                        isRemote: data.isFediverse,
                         allowCopy: true,
                         maxLines: 1,
                       ),
@@ -548,12 +640,14 @@ class _PublisherBasisWidget extends HookWidget {
                               FilledButton.icon(
                                 onPressed: subscribing.value ? null : subscribe,
                                 icon: const Icon(Symbols.add_circle),
-                                label: Text('subscribe').tr(),
+                                label: Text(
+                                  data.isFediverse ? 'follow' : 'subscribe',
+                                ).tr(),
                                 style: ButtonStyle(
                                   visualDensity: VisualDensity(vertical: -2),
                                 ),
                               ),
-                              if (data.isGatekept)
+                              if (!data.isFediverse && data.isGatekept)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
@@ -601,14 +695,18 @@ class _PublisherBasisWidget extends HookWidget {
                                       : Symbols.add_circle,
                                 ),
                                 label: Text(
-                                  isFollowing ? 'unsubscribe' : 'subscribe',
+                                  data.isFediverse
+                                      ? (isFollowing ? 'unfollow' : 'follow')
+                                      : (isFollowing
+                                            ? 'unsubscribe'
+                                            : 'subscribe'),
                                 ).tr(),
                                 style: ButtonStyle(
                                   visualDensity: VisualDensity(vertical: -2),
                                 ),
                               ),
                             ),
-                            if (isFollowing)
+                            if (isFollowing && !data.isFediverse)
                               IconButton(
                                 onPressed: () => toggleNotify(currentNotify),
                                 icon: Icon(
@@ -637,7 +735,7 @@ class _PublisherBasisWidget extends HookWidget {
                     )
                     .padding(vertical: 12),
                 // Bio section
-                if (data.bio.isNotEmpty) ...[
+                if (_publisherBio(data).isNotEmpty) ...[
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -650,11 +748,11 @@ class _PublisherBasisWidget extends HookWidget {
                               child: isBioExpanded.value
                                   ? MarkdownTextContent(
                                       key: const ValueKey('expanded'),
-                                      content: data.bio,
+                                      content: _publisherBio(data),
                                       linesMargin: EdgeInsets.zero,
                                     )
                                   : Text(
-                                      _getFirstLine(data.bio),
+                                      _getFirstLine(_publisherBio(data)),
                                       key: const ValueKey('collapsed'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -755,7 +853,16 @@ enum _PublisherPublicationTab { posts, collections, stickers, surveys }
 @riverpod
 Future<SnPublisher> publisher(Ref ref, String uname) async {
   final client = ref.watch(solarNetworkClientProvider);
-  return await client.sphere.getPublisher(uname);
+  try {
+    return await client.sphere.getPublisher(uname);
+  } catch (err) {
+    // Remote fediverse actors have no local publisher handle, so they are only
+    // reachable through the actor endpoints.
+    if (err is DioException && err.response?.statusCode == 404) {
+      return await client.sphere.getActor(uname);
+    }
+    rethrow;
+  }
 }
 
 @riverpod
@@ -1346,10 +1453,38 @@ class PublisherProfileContent extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final publisher = ref.watch(publisherProvider(name));
+    final publisherData = publisher.value;
+    // Remote actors have no local publisher handle, so every request that is
+    // keyed by publisher name has to go through the actor id instead.
+    final isFediverse = publisherData?.isFediverse ?? false;
+    final actorId = publisherData?.id ?? name;
+
+    final fediverseRelationship = isFediverse
+        ? ref.watch(fediverseActorRelationshipProvider(actorId))
+        : const AsyncValue<FediverseActorRelationship?>.data(null);
+    final subStatus = isFediverse
+        ? fediverseRelationship.whenData(
+            (relationship) => SnPublisherSubscriptionStatus(
+              status: relationship == null
+                  ? 'none'
+                  : relationship.isFollowing
+                  ? 'following'
+                  : relationship.isPending
+                  ? 'pending'
+                  : 'none',
+              isActive: relationship?.isFollowing ?? false,
+              isPending: relationship?.isPending ?? false,
+              requiresApproval: true,
+            ),
+          )
+        : ref.watch(publisherSubscriptionStatusProvider(name));
     final badges = ref.watch(publisherBadgesProvider(name));
-    final subStatus = ref.watch(publisherSubscriptionStatusProvider(name));
-    final heatmap = ref.watch(publisherHeatmapProvider(name));
-    final ratingOverview = ref.watch(publisherRatingOverviewProvider(name));
+    final heatmap = isFediverse
+        ? const AsyncValue<SnHeatmap?>.data(null)
+        : ref.watch(publisherHeatmapProvider(name));
+    final ratingOverview = isFediverse
+        ? const AsyncValue<SnPublisherRatingOverview?>.data(null)
+        : ref.watch(publisherRatingOverviewProvider(name));
 
     final subscribing = useState(false);
 
@@ -1357,9 +1492,14 @@ class PublisherProfileContent extends HookConsumerWidget {
       final client = ref.watch(solarNetworkClientProvider);
       subscribing.value = true;
       try {
-        await client.sphere.subscribeToPublisher(name);
-        ref.invalidate(publisherSubscriptionStatusProvider(name));
-        ref.invalidate(publisherFollowRequestProvider(name));
+        if (isFediverse) {
+          await client.sphere.followActor(actorId);
+          ref.invalidate(fediverseActorRelationshipProvider(actorId));
+        } else {
+          await client.sphere.subscribeToPublisher(name);
+          ref.invalidate(publisherSubscriptionStatusProvider(name));
+          ref.invalidate(publisherFollowRequestProvider(name));
+        }
         HapticFeedback.heavyImpact();
       } catch (err) {
         showErrorAlert(err);
@@ -1379,8 +1519,13 @@ class PublisherProfileContent extends HookConsumerWidget {
       final client = ref.watch(solarNetworkClientProvider);
       subscribing.value = true;
       try {
-        await client.sphere.unsubscribeFromPublisher(name);
-        ref.invalidate(publisherSubscriptionStatusProvider(name));
+        if (isFediverse) {
+          await client.sphere.unfollowActor(actorId);
+          ref.invalidate(fediverseActorRelationshipProvider(actorId));
+        } else {
+          await client.sphere.unsubscribeFromPublisher(name);
+          ref.invalidate(publisherSubscriptionStatusProvider(name));
+        }
         HapticFeedback.heavyImpact();
       } catch (err) {
         showErrorAlert(err);
@@ -1390,11 +1535,12 @@ class PublisherProfileContent extends HookConsumerWidget {
     }
 
     Future<void> toggleNotify(bool currentNotify) async {
+      if (isFediverse) return;
       try {
         final client = ref.watch(solarNetworkClientProvider);
-        await client.dio.patch(
-          '/sphere/publishers/$name/subscribers/me/notify',
-          data: {'notify': !currentNotify},
+        await client.sphere.updateSubscriptionNotify(
+          name,
+          notify: !currentNotify,
         );
         ref.invalidate(publisherSubscriptionStatusProvider(name));
       } catch (err) {
@@ -1406,6 +1552,16 @@ class PublisherProfileContent extends HookConsumerWidget {
       length: _PublisherPublicationTab.values.length,
       child: publisher.when(
         data: (data) {
+          if (data.isFediverse) {
+            return _buildFediverseLayout(
+              context,
+              data,
+              subStatus,
+              subscribing,
+              subscribe,
+              unsubscribe,
+            );
+          }
           return LayoutBuilder(
             builder: (context, constraints) {
               final availableWidth = constraints.maxWidth.isFinite
@@ -1535,6 +1691,89 @@ class PublisherProfileContent extends HookConsumerWidget {
         error: (error, stackTrace) => Center(child: Text(error.toString())),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
+    );
+  }
+
+  /// Layout for remote fediverse actors: same basis card as a local publisher,
+  /// fediverse-only info cards, and the actor posts timeline instead of the
+  /// local publishing tabs.
+  Widget _buildFediverseLayout(
+    BuildContext context,
+    SnPublisher data,
+    AsyncValue<SnPublisherSubscriptionStatus?> subStatus,
+    ValueNotifier<bool> subscribing,
+    Future<void> Function() subscribe,
+    Future<void> Function() unsubscribe,
+  ) {
+    final actorId = data.id;
+    final basis = _PublisherBasisWidget(
+      data: data,
+      subStatus: subStatus,
+      ratingOverview: const AsyncValue<SnPublisherRatingOverview?>.data(null),
+      subscribing: subscribing,
+      subscribe: subscribe,
+      unsubscribe: unsubscribe,
+      toggleNotify: (bool current) {},
+    );
+    final cards = FediversePublisherInfoCards(data: data);
+    final availableWidth = MediaQuery.of(context).size.width;
+    final useWideLayout =
+        isWideScreen(context) && availableWidth >= _wideLayoutMinWidth;
+    final bottomInset = MediaQuery.of(context).padding.bottom + 16;
+
+    if (!useWideLayout) {
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Gap(12),
+                basis.padding(horizontal: 12),
+                const Gap(12),
+                cards.padding(horizontal: 12),
+                const Gap(8),
+              ],
+            ),
+          ),
+          FediverseActorPostsWidget(actorId: actorId),
+          SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+        ],
+      );
+    }
+
+    return Row(
+      spacing: 12,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Flexible(
+          flex: 4,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, top: 12),
+            child: Card(
+              margin: EdgeInsets.zero,
+              clipBehavior: Clip.antiAlias,
+              child: CustomScrollView(
+                slivers: [
+                  FediverseActorPostsWidget(actorId: actorId),
+                  SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Flexible(
+          flex: 3,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+            child: Column(
+              spacing: 12,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [basis, cards],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

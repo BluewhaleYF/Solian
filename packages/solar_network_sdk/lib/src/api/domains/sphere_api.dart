@@ -685,16 +685,184 @@ class SphereApi extends BaseApi {
 
   /// Subscribes to a publisher.
   ///
-  /// [username] - The publisher username.
-  Future<void> subscribeToPublisher(String username) async {
-    await post('$_basePath/publishers/$username/subscribe');
+  /// Gatekept publishers answer with a pending follow request instead of an
+  /// active subscription; inspect [SnPublisherSubscriptionStatus.status].
+  Future<SnPublisherSubscriptionStatus> subscribeToPublisher(
+    String username,
+  ) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscribe',
+      data: const <String, dynamic>{},
+    );
+    return SnPublisherSubscriptionStatus.fromJson(response.data!);
   }
 
-  /// Unsubscribes from a publisher.
-  ///
-  /// [username] - The publisher username.
-  Future<void> unsubscribeFromPublisher(String username) async {
-    await post('$_basePath/publishers/$username/unsubscribe');
+  /// Unsubscribes from a publisher, cancelling a pending follow request too.
+  Future<SnPublisherSubscriptionStatus> unsubscribeFromPublisher(
+    String username,
+  ) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/unsubscribe',
+    );
+    return SnPublisherSubscriptionStatus.fromJson(response.data!);
+  }
+
+  /// Gets the current account's relationship with a publisher, including
+  /// mutes and blocks that don't remove the subscription row.
+  Future<SnPublisherRelationship> getPublisherRelationship(
+    String username,
+  ) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/relationship',
+    );
+    return SnPublisherRelationship.fromJson(response.data!);
+  }
+
+  /// Blocks a publisher.
+  Future<SnPublisherRelationship> blockPublisher(String username) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/block',
+    );
+    return SnPublisherRelationship.fromJson(response.data!);
+  }
+
+  /// Removes a block from a publisher.
+  Future<SnPublisherRelationship> unblockPublisher(String username) async {
+    final response = await delete<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/block',
+    );
+    return SnPublisherRelationship.fromJson(response.data!);
+  }
+
+  /// Mutes a publisher without unsubscribing.
+  Future<SnPublisherRelationship> mutePublisher(String username) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/mute',
+    );
+    return SnPublisherRelationship.fromJson(response.data!);
+  }
+
+  /// Removes a mute from a publisher.
+  Future<SnPublisherRelationship> unmutePublisher(String username) async {
+    final response = await delete<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/mute',
+    );
+    return SnPublisherRelationship.fromJson(response.data!);
+  }
+
+  /// Lists the publishers the current account blocks.
+  Future<List<SnPublisherSubscription>> getBlockedPublishers() async {
+    final response = await get<List<dynamic>>('$_basePath/publishers/blocked');
+    return parseList(response, SnPublisherSubscription.fromJson);
+  }
+
+  /// Lists the publishers the current account mutes.
+  Future<List<SnPublisherSubscription>> getMutedPublishers() async {
+    final response = await get<List<dynamic>>('$_basePath/publishers/muted');
+    return parseList(response, SnPublisherSubscription.fromJson);
+  }
+
+  /// Lists the current account's active subscriptions.
+  Future<PaginatedResult<SnPublisherSubscriptionWithStatus>>
+  getPublisherSubscriptions({int offset = 0, int take = 20, String? order}) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/publishers/subscriptions',
+      queryParameters: {'offset': offset, 'take': take, 'order': ?order},
+    );
+    final totalCount = getTotalCount(response.headers);
+    final items = parseList(response, SnPublisherSubscriptionWithStatus.fromJson);
+    return PaginatedResult(items: items, totalCount: totalCount);
+  }
+
+  /// Gets the read state of a subscription.
+  Future<SnPublisherSubscriptionReadStatus> getSubscriptionReadStatus(
+    String username,
+  ) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscription/read-status',
+    );
+    return SnPublisherSubscriptionReadStatus.fromJson(response.data!);
+  }
+
+  /// Marks a subscription as read up to [lastReadAt], or now when omitted.
+  Future<SnPublisherSubscriptionReadStatus> updateSubscriptionReadStatus(
+    String username, {
+    DateTime? lastReadAt,
+  }) async {
+    final response = await put<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscription/read-status',
+      data: {
+        'last_read_at': lastReadAt?.toUtc().toIso8601String(),
+      }..removeWhere((_, value) => value == null),
+    );
+    return SnPublisherSubscriptionReadStatus.fromJson(response.data!);
+  }
+
+  /// Marks every subscription as read.
+  Future<int> markAllSubscriptionsRead() async {
+    final response = await put<Map<String, dynamic>>(
+      '$_basePath/publishers/subscriptions/read-status',
+    );
+    return (response.data?['updated_count'] as int?) ?? 0;
+  }
+
+  /// Enables or disables notifications for a subscription.
+  Future<SnPublisherSubscription> updateSubscriptionNotify(
+    String username, {
+    required bool notify,
+  }) async {
+    final response = await patch<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscription/me/notify',
+      data: {'notify': notify},
+    );
+    return SnPublisherSubscription.fromJson(response.data!);
+  }
+
+  /// Lists a publisher's subscribers. Requires manager rights.
+  Future<PaginatedResult<SnPublisherSubscriber>> getPublisherSubscribers(
+    String username, {
+    int offset = 0,
+    int take = 20,
+  }) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/publishers/$username/subscribers',
+      queryParameters: {'offset': offset, 'take': take},
+    );
+    final totalCount = getTotalCount(response.headers);
+    final items = parseList(response, SnPublisherSubscriber.fromJson);
+    return PaginatedResult(items: items, totalCount: totalCount);
+  }
+
+  /// Lists pending follow requests of a gatekept publisher.
+  Future<List<SnPublisherSubscription>> getFollowRequests(String username) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/publishers/$username/subscription/requests',
+    );
+    return parseList(response, SnPublisherSubscription.fromJson);
+  }
+
+  /// Approves a pending follow request.
+  Future<SnPublisherSubscription> approveFollowRequest(
+    String username,
+    String requestId,
+  ) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscription/requests/$requestId/approve',
+    );
+    return SnPublisherSubscription.fromJson(response.data!);
+  }
+
+  /// Rejects a pending follow request.
+  Future<SnPublisherSubscription> rejectFollowRequest(
+    String username,
+    String requestId, {
+    String? reason,
+  }) async {
+    final response = await post<Map<String, dynamic>>(
+      '$_basePath/publishers/$username/subscription/requests/$requestId/reject',
+      data: {'reason': reason},
+    );
+    return SnPublisherSubscription.fromJson(response.data!);
   }
 
   /// Gets a publisher's current rating score.
@@ -1200,5 +1368,110 @@ class SphereApi extends BaseApi {
       '$_basePath/fediverse/actors/availability',
     );
     return SnFediverseAvailabilityResponse.fromJson(response.data!);
+  }
+
+  /// Gets a remote actor by `username@instance` handle, discovering it when
+  /// it isn't cached locally yet.
+  Future<SnPublisher> getActorByHandle(String handle) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/fediverse/actors/$handle',
+    );
+    return SnPublisher.fromJson(response.data!);
+  }
+
+  /// Gets a remote actor (or local publisher actor) by id.
+  Future<SnPublisher> getActorById(String id) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/fediverse/actors/$id',
+    );
+    return SnPublisher.fromJson(response.data!);
+  }
+
+  /// Resolves an actor from either a handle or an id.
+  Future<SnPublisher> getActor(String idOrHandle) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/fediverse/actors/$idOrHandle',
+    );
+    return SnPublisher.fromJson(response.data!);
+  }
+
+  /// Searches remote actors, falling back to remote discovery when nothing is
+  /// cached locally.
+  Future<List<SnPublisher>> searchActors({
+    required String query,
+    int limit = 20,
+  }) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/fediverse/actors/search',
+      queryParameters: {'query': query, 'limit': limit},
+    );
+    return parseList(response, SnPublisher.fromJson);
+  }
+
+  /// Lists posts of an actor, including its boosts and cached remote posts.
+  Future<PaginatedResult<SnPost>> getActorPosts(
+    String id, {
+    int offset = 0,
+    int take = 20,
+  }) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/fediverse/actors/$id/posts',
+      queryParameters: {'offset': offset, 'take': take},
+    );
+    final totalCount = getTotalCount(response.headers);
+    final items = parseList(response, SnPost.fromJson);
+    return PaginatedResult(
+      items: items,
+      totalCount: totalCount == 0 ? items.length : totalCount,
+    );
+  }
+
+  /// Lists the publishers following an actor.
+  Future<PaginatedResult<SnPublisher>> getActorFollowers(
+    String id, {
+    int offset = 0,
+    int take = 40,
+  }) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/fediverse/actors/$id/followers',
+      queryParameters: {'offset': offset, 'take': take},
+    );
+    final totalCount = getTotalCount(response.headers);
+    final items = parseList(response, SnPublisher.fromJson);
+    return PaginatedResult(items: items, totalCount: totalCount);
+  }
+
+  /// Lists the publishers an actor follows.
+  Future<PaginatedResult<SnPublisher>> getActorFollowing(
+    String id, {
+    int offset = 0,
+    int take = 40,
+  }) async {
+    final response = await get<List<dynamic>>(
+      '$_basePath/fediverse/actors/$id/following',
+      queryParameters: {'offset': offset, 'take': take},
+    );
+    final totalCount = getTotalCount(response.headers);
+    final items = parseList(response, SnPublisher.fromJson);
+    return PaginatedResult(items: items, totalCount: totalCount);
+  }
+
+  /// Gets the current account's relationship with a remote actor.
+  Future<FediverseActorRelationship> getActorRelationship(String id) async {
+    final response = await get<Map<String, dynamic>>(
+      '$_basePath/fediverse/actors/$id/relationship',
+    );
+    return FediverseActorRelationship.fromJson(response.data!);
+  }
+
+  /// Sends a follow request to a remote actor. The remote instance accepts it
+  /// asynchronously, so the relationship is pending until it answers.
+  Future<void> followActor(String id) async {
+    await post('$_basePath/fediverse/actors/$id/follow');
+  }
+
+  /// Sends an undo-follow to a remote actor.
+  Future<void> unfollowActor(String id) async {
+    await post('$_basePath/fediverse/actors/$id/unfollow');
   }
 }

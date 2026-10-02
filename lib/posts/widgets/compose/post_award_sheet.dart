@@ -21,57 +21,48 @@ class PostAwardSheet extends HookConsumerWidget {
   const PostAwardSheet({super.key, required this.post});
 
   Widget _buildProfilePicture(BuildContext context, {double radius = 16}) {
-    // Handle publisher case
-    if (post.publisher != null) {
-      return ProfilePictureWidget(
-        file:
-            post.publisher!.picture ?? post.publisher!.account?.profile.picture,
-        fallbackName: post.publisher!.nick,
-        radius: radius,
-      );
-    }
-    // Handle actor case
-    if (post.actor != null) {
-      final avatarUrl = post.actor!.avatarUrl;
-      if (avatarUrl != null) {
-        return Container(
+    final publisher = post.publisher;
+    // Remote actors keep their avatar on the home instance as a plain URL.
+    final actorAvatar = publisher?.avatarUrlOrPicture;
+    if (publisher?.isFediverse == true &&
+        actorAvatar != null &&
+        actorAvatar.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.network(
+          actorAvatar,
           width: radius * 2,
           height: radius * 2,
-          decoration: BoxDecoration(
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            width: radius * 2,
+            height: radius * 2,
             color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius),
-            child: Image.network(
-              avatarUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Symbols.account_circle,
-                  size: radius,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                );
-              },
+            child: Icon(
+              Symbols.account_circle,
+              size: radius,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
-        );
-      }
+        ),
+      );
+    }
+    // Handle publisher case
+    if (publisher != null) {
+      return ProfilePictureWidget(
+        file: publisher.picture ?? publisher.account?.profile.picture,
+        fallbackName: publisher.nick,
+        radius: radius,
+      );
     }
     // Fallback
     return ProfilePictureWidget(file: null, radius: radius);
   }
 
   String _getPublisherName() {
-    // Handle publisher case
-    if (post.publisher != null) {
-      return post.publisher!.name;
-    }
-    // Handle actor case
-    if (post.actor != null) {
-      return post.actor!.username;
-    }
-    return 'Unknown';
+    final publisher = post.publisher;
+    if (publisher == null) return 'Unknown';
+    return publisher.effectiveName;
   }
 
   @override

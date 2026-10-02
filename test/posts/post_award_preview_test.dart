@@ -12,8 +12,13 @@ SnPost _post() {
     'id': 'post-1',
     'type': 0,
     'content': 'Preview content',
-    'actor': {
+    // Remote actors are publishers of type 2 (fediverse) now.
+    'publisher': {
+      'id': 'pub-1',
+      'type': 2,
+      'name': '',
       'username': 'tester',
+      'instance_domain': 'example.com',
       'avatar_url': 'https://example.com/avatar.png',
     },
     'created_at': '2026-01-01T00:00:00Z',
