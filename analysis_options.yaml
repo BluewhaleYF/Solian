@@ -32,7 +32,7 @@ analyzer:
     - lib/*.g.dart
     - lib/*.freezed.dart
     - build/**/*.dart
-    - packages/**
+    - socommon/**
     - build/**
     - android/**
     - ios/**

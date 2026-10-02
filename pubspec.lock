@@ -769,7 +769,7 @@ packages:
   flutter_app_update:
     dependency: transitive
     description:
-      path: "packages/flutter_app_update"
+      path: "socommon/packages/flutter_app_update"
       relative: true
     source: path
     version: "3.2.4"
@@ -1053,7 +1053,7 @@ packages:
   flutter_math_fork:
     dependency: "direct main"
     description:
-      path: "packages/flutter_math_fork"
+      path: "socommon/packages/flutter_math_fork"
       relative: true
     source: path
     version: "0.7.4"
@@ -1630,21 +1630,21 @@ packages:
   island_desktop_presence:
     dependency: "direct main"
     description:
-      path: "packages/island_desktop_presence"
+      path: "socommon/packages/island_desktop_presence"
       relative: true
     source: path
     version: "0.0.1"
   island_plugin_foundation:
     dependency: "direct main"
     description:
-      path: "packages/island_plugin_foundation"
+      path: "socommon/packages/island_plugin_foundation"
       relative: true
     source: path
     version: "1.0.0"
   island_ui_foundation:
     dependency: "direct main"
     description:
-      path: "packages/island_ui_foundation"
+      path: "socommon/packages/island_ui_foundation"
       relative: true
     source: path
     version: "1.0.0"
@@ -2523,7 +2523,7 @@ packages:
   protocol_handler_windows:
     dependency: "direct overridden"
     description:
-      path: "packages/protocol_handler_windows"
+      path: "socommon/packages/protocol_handler_windows"
       relative: true
     source: path
     version: "0.2.0"
@@ -3039,21 +3039,21 @@ packages:
   solar_network_foundation:
     dependency: "direct main"
     description:
-      path: "packages/solar_network_foundation"
+      path: "socommon/packages/solar_network_foundation"
       relative: true
     source: path
     version: "0.1.0"
   solar_network_sdk:
     dependency: "direct main"
     description:
-      path: "packages/solar_network_sdk"
+      path: "socommon/packages/solar_network_sdk"
       relative: true
     source: path
     version: "1.0.0"
   solsynth_express:
     dependency: "direct main"
     description:
-      path: "packages/solsynth_express"
+      path: "socommon/packages/solsynth_express"
       relative: true
     source: path
     version: "0.1.0"

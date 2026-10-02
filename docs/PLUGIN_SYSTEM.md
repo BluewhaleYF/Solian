@@ -8,7 +8,7 @@ The runtime is split so the same foundation can be reused by other apps, while S
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **Foundation** | `packages/island_plugin_foundation` | JS bridge, discovery/lifecycle, sandbox, generic APIs (`hooks`, `events`, `commands`, `ui`, `tasks`), `PluginManager`, `PluginController` |
+| **Foundation** | `socommon/packages/island_plugin_foundation` | JS bridge, discovery/lifecycle, sandbox, generic APIs (`hooks`, `events`, `commands`, `ui`, `tasks`), `PluginManager`, `PluginController` |
 | **Host (Island)** | `lib/plugins/` | Solar Network network API, dashboard registration, notify/alert UI, app event bus bridge, Flutter UI renderer, settings screens |
 
 ### Extension model
@@ -49,7 +49,7 @@ Each `PluginApi` may:
 ### Package layout
 
 ```
-packages/island_plugin_foundation/
+socommon/packages/island_plugin_foundation/
   lib/
     island_plugin_foundation.dart   # public export
     src/

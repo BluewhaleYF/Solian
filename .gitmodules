@@ -1,3 +1,6 @@
 [submodule "third_party/quickjs_c_bridge"]
 	path = linux/third_party/quickjs_c_bridge
 	url = https://github.com/Texas0295/quickjs-c-bridge.git
+[submodule "socommon"]
+	path = socommon
+	url = https://src.solsynth.dev/SoSYS/Socommon.git

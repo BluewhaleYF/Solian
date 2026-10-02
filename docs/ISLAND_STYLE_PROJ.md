@@ -4,14 +4,15 @@ This guide describes the structural and UI patterns used by Island when starting
 
 ## Start with the foundation package
 
-Use `island_ui_foundation` from this repository as a Git dependency when a project needs Island's desktop window frame, responsive helpers, overlays, sheets, and shared UI primitives.
+Use `island_ui_foundation` from the [Socommon](https://src.solsynth.dev/SoSYS/Socommon) repository as a Git dependency, pinned to a commit ref, when a project needs Island's desktop window frame, responsive helpers, overlays, sheets, and shared UI primitives.
 
 ```yaml
 dependencies:
   island_ui_foundation:
     git:
-      url: https://src.solsynth.dev/SoSYS/Solian.git
+      url: https://src.solsynth.dev/SoSYS/Socommon.git
       path: packages/island_ui_foundation
+      ref: <commit-sha>
 ```
 
 The foundation package depends on `flutter_hooks` and `hooks_riverpod`. Add those to the application as direct dependencies as well. A desktop application should also depend directly on the same `window_manager` Git revision used by the foundation package.

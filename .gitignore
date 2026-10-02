@@ -54,4 +54,4 @@ buildtools/.env
 
 # Development certificate
 devcert.pfx
-packages/solsynth_express/build/
+socommon/packages/solsynth_express/build/

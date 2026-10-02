@@ -88,7 +88,7 @@ it picks once, it does not keep re-picking on its own.
 
 The reusable pieces — catalog client, models, the connection factory, and the
 latency probe — live in
-[`solar_network_foundation`](packages/solar_network_foundation) so other
+[`solar_network_foundation`](socommon/packages/solar_network_foundation) so other
 Solar Network clients can route through the same relays.
 
 Not routed through a relay: native transports that never touch Dart's HTTP
@@ -143,6 +143,9 @@ sudo apt-get install -y \
 #### Running the App
 
 ```bash
+# Fetch the shared packages submodule (first checkout only)
+git submodule update --init socommon
+
 # Install dependencies
 flutter pub get
 
@@ -159,13 +162,13 @@ See the [Flutter documentation](https://docs.flutter.dev) for more build options
 
 ## Packages
 
-This repository is organized as a monorepo containing useful Dart packages under the `packages/` directory.
+Shared Solsynth packages live in the [`socommon`](https://src.solsynth.dev/SoSYS/Socommon) repository, checked out here as the `socommon` submodule (run `git submodule update --init socommon` after cloning).
 
 Want to build with Solar Network? Check out:
 
 - [Documentation](https://kb.solsynth.dev)
 - [API Reference](https://api.solsynth.dev)
-- [`packages/solar_network_sdk`](./packages/solar_network_sdk) - Official Dart SDK
+- [`solar_network_sdk`](./socommon/packages/solar_network_sdk) - Official Dart SDK
 
 ---
 

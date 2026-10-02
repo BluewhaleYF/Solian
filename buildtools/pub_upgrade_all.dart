@@ -1,11 +1,11 @@
 // Upgrades the dependency sets of this repository, including every nested
-// pubspec.yaml (packages/*, packages/*/example, ...).
+// pubspec.yaml (socommon/packages/*, socommon/packages/*/example, ...).
 //
 // Run from the repository root:
 //   dart run buildtools/pub_upgrade_all.dart --list
 //   dart run buildtools/pub_upgrade_all.dart --dry-run
 //   dart run buildtools/pub_upgrade_all.dart
-//   dart run buildtools/pub_upgrade_all.dart --skip packages/flutter_math_fork -j 4
+//   dart run buildtools/pub_upgrade_all.dart --skip socommon/packages/flutter_math_fork -j 4
 //
 // Behavior:
 //   * Discovers pubspec.yaml files below the repository root, skipping build
@@ -639,7 +639,7 @@ class _Glob {
   final RegExp _regex;
 
   /// A pattern matches the directory itself or any ancestor of it, so
-  /// `--only packages/foo` also selects `packages/foo/example`.
+  /// `--only socommon/packages/foo` also selects `socommon/packages/foo/example`.
   bool matches(String relativePath) {
     if (_regex.hasMatch(relativePath)) return true;
     var index = relativePath.indexOf('/');

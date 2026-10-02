@@ -34,18 +34,20 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
+  # Shared Solsynth packages live in the `socommon` submodule.
+  # Run `git submodule update --init socommon` before `flutter pub get`.
   solar_network_sdk:
-    path: packages/solar_network_sdk
+    path: socommon/packages/solar_network_sdk
   island_ui_foundation:
-    path: packages/island_ui_foundation
+    path: socommon/packages/island_ui_foundation
   island_plugin_foundation:
-    path: packages/island_plugin_foundation
+    path: socommon/packages/island_plugin_foundation
   island_desktop_presence:
-    path: packages/island_desktop_presence
+    path: socommon/packages/island_desktop_presence
   solar_network_foundation:
-    path: packages/solar_network_foundation
+    path: socommon/packages/solar_network_foundation
   solsynth_express:
-    path: packages/solsynth_express
+    path: socommon/packages/solsynth_express
 
   flutter_hooks: ^0.21.3+1
   hooks_riverpod: ^3.3.2
@@ -128,7 +130,7 @@ dependencies:
   # Vendored to declare KaTeX fonts as assets (not pubspec `fonts:`) so they
   # load lazily on web instead of being fetched at startup.
   flutter_math_fork:
-    path: packages/flutter_math_fork
+    path: socommon/packages/flutter_math_fork
   flutter_nfc_kit: ^3.6.2
   ndef: ^0.4.0
   share_plus: ^13.3.0
@@ -316,4 +318,4 @@ dependency_overrides:
   flat_buffers: 25.9.23
   # protocol_handler_windows needs local patches for compile issues
   protocol_handler_windows:
-    path: packages/protocol_handler_windows
+    path: socommon/packages/protocol_handler_windows

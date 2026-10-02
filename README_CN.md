@@ -114,6 +114,9 @@ sudo apt-get install -y \
 #### 运行应用
 
 ```bash
+# 拉取共享软件包子模块（仅首次检出需要）
+git submodule update --init socommon
+
 # 安装依赖
 flutter pub get
 
@@ -130,13 +133,13 @@ flutter build <platform>
 
 ## 软件包
 
-本仓库采用单体仓库（monorepo）结构，在 `packages/` 目录下包含多个实用的 Dart 软件包。
+共享的 Solsynth 软件包位于 [`socommon`](https://src.solsynth.dev/SoSYS/Socommon) 仓库，在本仓库中以 `socommon` 子模块的形式检出（克隆后执行 `git submodule update --init socommon`）。
 
 想要基于 Solar Network 进行开发？查看以下资源：
 
 - [开发文档](https://kb.solsynth.dev)
 - [API 文档](https://api.solsynth.dev)
-- [`packages/solar_network_sdk`](./packages/solar_network_sdk) - 官方 Dart SDK
+- [`solar_network_sdk`](./socommon/packages/solar_network_sdk) - 官方 Dart SDK
 
 ---
 
