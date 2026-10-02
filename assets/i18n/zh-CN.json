@@ -772,7 +772,7 @@
   "cancelled": "已取消",
   "cardioWorkouts": "有氧训练",
   "categories": "分类",
-  "categoriesAndTags": "已订阅",
+  "categoriesAndTags": "分类 & 标签",
   "categoriesHint": "输入分类，由逗号隔开",
   "cfIpSpeedTest": "Cloudflare IP 速度测试",
   "cfIpSpeedTestDesc": "测试 Cloudflare 边缘 IP，为您的位置找到最快的节点。将扫描 IP 段、测量延迟并测试下载速度。",

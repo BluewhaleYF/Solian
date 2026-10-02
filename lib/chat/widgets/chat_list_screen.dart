@@ -2126,8 +2126,8 @@ class ChatListWidget extends HookConsumerWidget {
                                 ),
                                 padding: EdgeInsets.zero,
                                 tooltip: isCollapsed.value
-                                    ? 'Expand'
-                                    : 'Collapse',
+                                    ? 'expand'.tr()
+                                    : 'collapse'.tr(),
                                 icon: Icon(
                                   isCollapsed.value
                                       ? Symbols.left_panel_open
