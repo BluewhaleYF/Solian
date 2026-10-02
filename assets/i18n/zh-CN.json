@@ -5661,5 +5661,10 @@
   "securityModeLockoff": "宽松",
   "securityModeLockoffDescription": "始终采用最低验证要求，登录更便捷",
   "settingsChatGroups": "聊天室组",
-  "settingsChatGroupsDesc": "管理您的聊天室分组"
+  "settingsChatGroupsDesc": "管理您的聊天室分组",
+  "clearChatLocalData": "清除本地聊天数据",
+  "clearChatLocalDataHint": "这将从此设备中移除该聊天室、其消息以及缓存的发送者。同步时该聊天室将重新下载。是否继续？",
+  "pinRoom": "置顶",
+  "unpinRoom": "取消置顶",
+  "moveToGroup": "移动到组"
 }
