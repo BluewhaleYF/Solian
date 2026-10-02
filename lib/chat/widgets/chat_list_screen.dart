@@ -140,7 +140,7 @@ Widget _buildChatRoomContextMenu({
       return Menu(
         children: [
           MenuAction(
-            title: room.isPinned ? 'Unpin Room' : 'Pin Room',
+            title: room.isPinned ? tr('unpinRoom') : tr('pinRoom'),
             image: MenuImage.icon(
               room.isPinned ? Symbols.keep_off : Symbols.keep,
             ),
@@ -152,7 +152,7 @@ Widget _buildChatRoomContextMenu({
           ),
           if (accountId != null)
             MenuAction(
-              title: 'Move To Group',
+              title: 'moveToGroup'.tr(),
               image: MenuImage.icon(Symbols.folder_open),
               callback: () async {
                 final changedGroup = await showAssignChatGroupSheet(
@@ -2012,7 +2012,7 @@ class ChatListWidget extends HookConsumerWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: IconButton(
-                                tooltip: 'Invites',
+                                tooltip: 'invites'.tr(),
                                 onPressed: openInvitesSheet,
                                 icon: Badge(
                                   label: Text(
@@ -2126,8 +2126,8 @@ class ChatListWidget extends HookConsumerWidget {
                                 ),
                                 padding: EdgeInsets.zero,
                                 tooltip: isCollapsed.value
-                                    ? 'Expand'
-                                    : 'Collapse',
+                                    ? 'expand'.tr()
+                                    : 'collapse'.tr(),
                                 icon: Icon(
                                   isCollapsed.value
                                       ? Symbols.left_panel_open
