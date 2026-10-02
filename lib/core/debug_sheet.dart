@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/check_in.dart';
 import 'package:island/accounts/progression_ws.dart';
 import 'package:island/accounts/widgets/friend_status_toast.dart';
+import 'package:island/core/check_in_debug.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/notification.dart';
 import 'package:island/core/network.dart';

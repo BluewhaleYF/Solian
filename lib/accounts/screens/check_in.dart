@@ -10,6 +10,7 @@ import 'package:island/accounts/check_in.dart';
 import 'package:island/accounts/event_calendar.dart';
 import 'package:island/accounts/widgets/account/fortune_graph.dart';
 import 'package:island/auth/captcha.dart';
+import 'package:island/core/check_in_debug.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/utils/share_utils.dart';
 import 'package:island/shared/widgets/alert.dart';

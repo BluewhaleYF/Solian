@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/screens/check_in.dart';
+import 'package:island/core/check_in_debug.dart';
 import 'package:island/core/network.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
@@ -14,6 +15,7 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 part 'check_in.g.dart';
 
+/// Opens the shrine sheet. [CheckInDebugOptions] replays the flow offline.
 Future<void> showCheckInSheet(
   BuildContext context, {
   CheckInDebugOptions? debugOptions,
@@ -26,116 +28,6 @@ Future<void> showCheckInSheet(
   );
 }
 
-/// Offline replay of the temple flow for the debug tools.
-///
-/// A sheet opened with these options never touches the network: it skips
-/// [checkInResultTodayProvider] and the event calendar, feeds the date rail from
-/// [pastResults], and resolves the draw locally after [drawDelay]. That is what
-/// drives the same transition a real draw does — rail sliding off the last
-/// check-in onto today, banner collapsing, day content swapping.
-class CheckInDebugOptions {
-  /// Level of the simulated draw: artwork, backdrop and reward chip.
-  final int level;
-
-  /// How long the simulated draw pretends to be in flight before landing.
-  final Duration drawDelay;
-
-  /// Whether the sheet draws by itself once open; otherwise the draw button
-  /// has to be pressed.
-  final bool autoDraw;
-
-  /// Check-ins the rail shows before the draw lands, so the transition has a
-  /// past day to slide away from.
-  final List<SnCheckInResult> pastResults;
-
-  const CheckInDebugOptions({
-    this.level = 4,
-    this.drawDelay = const Duration(milliseconds: 1600),
-    this.autoDraw = true,
-    this.pastResults = const [],
-  });
-
-  /// Default replay setup: two past draws keep the rail parked away from today,
-  /// and the simulated draw lands [level] on today.
-  factory CheckInDebugOptions.simulated({int level = 4, bool autoDraw = true}) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return CheckInDebugOptions(
-      level: level,
-      autoDraw: autoDraw,
-      pastResults: [
-        buildDebugCheckInResult(
-          id: 'debug-check-in-past-2',
-          level: 1,
-          createdAt: today.subtract(const Duration(days: 2)),
-        ),
-        buildDebugCheckInResult(
-          id: 'debug-check-in-past-1',
-          level: 3,
-          createdAt: today.subtract(const Duration(days: 1)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Builds a check-in result that renders like a real draw, fortune report
-/// included, so the animation lands on the full temple page instead of the
-/// "report pending" fallback.
-SnCheckInResult buildDebugCheckInResult({
-  required String id,
-  required int level,
-  required DateTime createdAt,
-}) {
-  return SnCheckInResult(
-    id: id,
-    level: level,
-    accountId: 'debug',
-    account: null,
-    createdAt: createdAt,
-    updatedAt: createdAt,
-    deletedAt: null,
-    tips: const [
-      SnFortuneTip(
-        isPositive: true,
-        title: 'Sit with the quiet',
-        content: 'The morning bell still rings for whoever stops to listen.',
-      ),
-      SnFortuneTip(
-        isPositive: true,
-        title: 'Finish one thing',
-        content: 'A single finished task outweighs three started ones today.',
-      ),
-      SnFortuneTip(
-        isPositive: false,
-        title: 'Skip the shortcut',
-        content: 'The quick path costs more than it saves before nightfall.',
-      ),
-    ],
-    fortuneReport: const SnCheckInFortuneReport(
-      version: 1,
-      poem:
-          'Rain on the old eaves —\nthe kettle answers slowly,\nnoon arrives anyway.',
-      summary: 'A steady day: small efforts compound, loud ones scatter.',
-      summaryDetail:
-          'Simulated report rendered by the debug tools; no request was sent.',
-      wish: 'Ask plainly and the answer arrives unpolished.',
-      love: 'Warmth shows up as patience rather than grand gestures.',
-      study: 'Two quiet hours beat six distracted ones.',
-      career: 'Hold the long thread; the short cuts unravel by evening.',
-      health: 'Stretch before the desk wins the argument.',
-      lostItem: 'Look under the second thing you moved.',
-      luckyColor: 'Ink blue',
-      luckyDirection: 'Southwest',
-      luckyTime: 'Late afternoon',
-      luckyItem: 'A well-used notebook',
-      luckyAction: 'Write the decision down before acting on it.',
-      avoidAction: 'Reopening a settled argument.',
-      ritual: 'Pour the first cup, then start.',
-    ),
-  );
-}
-
 @riverpod
 Future<SnCheckInResult?> checkInResultToday(Ref ref) async {
   final client = ref.watch(solarNetworkClientProvider);
@@ -145,37 +37,13 @@ Future<SnCheckInResult?> checkInResultToday(Ref ref) async {
 @riverpod
 Future<SnNotableDay?> nextNotableDay(Ref ref) async {
   final client = ref.watch(solarNetworkClientProvider);
-  final day = await client.accounts.getNextNotableDay();
-  if (day == null) return null;
-
-  if (day.localizableKey != null) {
-    final key = 'notableDay${day.localizableKey}';
-    if (key.trExists()) {
-      return day.copyWith(
-        localName: key.tr(),
-        date: day.date.toLocal().copyWith(hour: 0, second: 0),
-      );
-    }
-  }
-  return day.copyWith(date: day.date.toLocal().copyWith(hour: 0, second: 0));
+  return _specializeNotableDay(await client.accounts.getNextNotableDay());
 }
 
 @riverpod
 Future<SnNotableDay?> recentNotableDay(Ref ref) async {
   final client = ref.watch(solarNetworkClientProvider);
-  final day = await client.accounts.getRecentNotableDay();
-  if (day == null) return null;
-
-  if (day.localizableKey != null) {
-    final key = 'notableDay${day.localizableKey}';
-    if (key.trExists()) {
-      return day.copyWith(
-        localName: key.tr(),
-        date: day.date.toLocal().copyWith(hour: 0, second: 0),
-      );
-    }
-  }
-  return day.copyWith(date: day.date.toLocal().copyWith(hour: 0, second: 0));
+  return _specializeNotableDay(await client.accounts.getRecentNotableDay());
 }
 
 @riverpod
@@ -184,111 +52,142 @@ Future<SnFortuneSaying> randomFortuneSaying(Ref ref) async {
   return await client.accounts.getRandomFortuneSaying();
 }
 
+/// Drops the time of day the server sends and swaps in the localized name when
+/// the notable day carries a key the app ships a translation for.
+SnNotableDay? _specializeNotableDay(SnNotableDay? day) {
+  if (day == null) return null;
+  final date = day.date.toLocal().copyWith(hour: 0, second: 0);
+  final key = day.localizableKey;
+  if (key == null) return day.copyWith(date: date);
+  final localizedKey = 'notableDay$key';
+  return localizedKey.trExists()
+      ? day.copyWith(localName: localizedKey.tr(), date: date)
+      : day.copyWith(date: date);
+}
+
+/// Dashboard card for today's draw: what today looks like, and the way in.
 class CheckInWidget extends ConsumerWidget {
   final EdgeInsets? margin;
-  final VoidCallback? onChecked;
-  const CheckInWidget({super.key, this.margin, this.onChecked});
+
+  const CheckInWidget({super.key, this.margin});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayResult = ref.watch(checkInResultTodayProvider);
+    final theme = Theme.of(context);
+    final view = _CheckInView.of(ref.watch(checkInResultTodayProvider));
 
     return Card(
-      margin:
-          margin ?? EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-      child: Row(
-        spacing: 8,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: todayResult.when(
-                    data: (result) {
-                      return Text(
-                        result == null
-                            ? 'checkInNone'
-                            : 'checkInResultLevel${result.level}',
-                        textAlign: TextAlign.start,
-                      ).tr().fontSize(15).bold();
-                    },
-                    loading: () => Text('checkInNone').tr().fontSize(15).bold(),
-                    error: (err, stack) =>
-                        Text('error').tr().fontSize(15).bold(),
-                  ),
-                ).padding(right: 4),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: todayResult.when(
-                    data: (result) {
-                      if (result == null) {
-                        return Text('checkInNoneHint').tr().fontSize(11);
-                      }
-                      final report = result.fortuneReport;
-                      return Text(
-                        report?.summary ??
-                            report?.poem ??
-                            'checkInViewTemple'.tr(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ).fontSize(11);
-                    },
-                    loading: () => Text('checkInNoneHint').tr().fontSize(11),
-                    error: (err, stack) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('error').tr().fontSize(15).bold(),
-                        Text(err.toString()).fontSize(11),
-                      ],
+      margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 6, 12),
+        child: Row(
+          children: [
+            Expanded(
+              // Keyed by state, so the three lines cross-fade as one block
+              // instead of each line swapping on its own.
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                child: Column(
+                  key: ValueKey(view.state),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'checkIn'.tr(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
                     ),
-                  ),
-                ).alignment(Alignment.centerLeft),
-              ],
+                    const Gap(4),
+                    Text(
+                      view.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Gap(2),
+                    Text(
+                      view.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          Row(
-            spacing: 8,
-            children: [
-              IconButton.outlined(
-                iconSize: 16,
-                visualDensity: const VisualDensity(
-                  horizontal: -3,
-                  vertical: -2,
-                ),
-                onPressed: () {
-                  showCheckInSheet(context);
-                },
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: todayResult.when(
-                    data: (result) => Icon(
-                      result == null
-                          ? Symbols.local_fire_department
-                          : Symbols.temple_buddhist,
-                      key: ValueKey(result != null),
-                    ),
-                    loading: () => const Icon(Symbols.refresh),
-                    error: (_, _) => const Icon(Symbols.error),
-                  ),
-                ),
+            const Gap(4),
+            IconButton.filledTonal(
+              onPressed: () => showCheckInSheet(context),
+              tooltip: 'checkIn'.tr(),
+              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                child: Icon(view.icon, key: ValueKey(view.icon)),
               ),
-              IconButton.outlined(
-                iconSize: 16,
-                visualDensity: const VisualDensity(
-                  horizontal: -3,
-                  vertical: -2,
-                ),
-                onPressed: () {
-                  context.router.push(EventHubRoute(name: 'me'));
-                },
-                icon: const Icon(Symbols.event),
-              ),
-            ],
-          ),
-        ],
-      ).padding(horizontal: 16, vertical: 12),
+            ),
+            IconButton(
+              onPressed: () => context.router.push(EventHubRoute(name: 'me')),
+              tooltip: 'eventCalendar'.tr(),
+              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+              icon: const Icon(Symbols.event),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One rendering of the card: the eyebrow never changes, the mark, title and
+/// body follow today's draw.
+class _CheckInView {
+  /// Which branch this is, so the switcher keys off the state, not the copy.
+  final String state;
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _CheckInView({
+    required this.state,
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  factory _CheckInView.of(AsyncValue<SnCheckInResult?> today) {
+    // A refresh keeps the previous draw on screen rather than flashing the
+    // "not checked in" copy at someone who already drew today.
+    final result = today.value;
+    if (result != null) {
+      final report = result.fortuneReport;
+      return _CheckInView(
+        state: 'result',
+        icon: Symbols.temple_buddhist,
+        title: 'checkInResultLevel${result.level}'.tr(),
+        body: report?.summary ?? report?.poem ?? 'checkInReportPending'.tr(),
+      );
+    }
+    if (today.hasError) {
+      return _CheckInView(
+        state: 'error',
+        icon: Symbols.error,
+        title: 'somethingWentWrong'.tr(),
+        body: today.error.toString(),
+      );
+    }
+    return _CheckInView(
+      state: 'none',
+      icon: Symbols.local_fire_department,
+      title: 'checkInNone'.tr(),
+      body: 'checkInNoneHint'.tr(),
     );
   }
 }
@@ -300,13 +199,14 @@ class CheckInActivityWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final result = SnCheckInResult.fromJson(item.data);
+    final account = result.account!;
     return Row(
       spacing: 12,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ProfilePictureWidget(
-          file: result.account!.profile.picture,
-          fallbackName: result.account!.nick,
+          file: account.profile.picture,
+          fallbackName: account.nick,
           radius: 12,
         ),
         Expanded(
@@ -324,7 +224,7 @@ class CheckInActivityWidget extends StatelessWidget {
               Text('checkInActivityTitle')
                   .tr(
                     args: [
-                      result.account!.nick,
+                      account.nick,
                       DateFormat.yMd().format(result.createdAt),
                       'checkInResultLevel${result.level}'.tr(),
                     ],

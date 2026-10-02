@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:island/accounts/check_in.dart';
 import 'package:island/accounts/event_calendar.dart';
 import 'package:island/accounts/screens/check_in.dart';
+import 'package:island/core/check_in_debug.dart';
 import 'package:island/core/config.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
