@@ -1002,7 +1002,13 @@ class CreatorHubContentWidget extends HookConsumerWidget {
       ),
       body: publisherStats.when(
         data: (stats) => SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          // The tab shell floats the NavigationBar over the page
+          // (`extendBody`), so reserve its height plus the bottom safe area or
+          // the last card ends up underneath the bar.
+          padding: EdgeInsets.only(
+            top: 24,
+            bottom: 24 + MediaQuery.paddingOf(context).bottom,
+          ),
           child: currentPublisher.value == null
               ? ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: 640),

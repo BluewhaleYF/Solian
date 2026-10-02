@@ -3793,7 +3793,9 @@ class WalletScreen extends HookConsumerWidget {
           child: isEmptyState
               ? _buildEmptyTransactions(context, onCreateTransfer)
               : PaginationList(
-                  padding: EdgeInsets.zero,
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.paddingOf(context).bottom,
+                  ),
                   provider: provider,
                   notifier: provider.notifier,
                   itemBuilder: (context, index, transaction) {
@@ -4141,7 +4143,10 @@ class WalletScreen extends HookConsumerWidget {
     }
 
     return PaginationList(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(
+        top: 8,
+        bottom: 8 + MediaQuery.paddingOf(context).bottom,
+      ),
       provider: provider,
       notifier: provider.notifier,
       itemBuilder: (context, index, order) {
@@ -4269,7 +4274,12 @@ class WalletScreen extends HookConsumerWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.paddingOf(context).bottom,
+          ),
           itemCount: fundList.items.length,
           itemBuilder: (context, index) {
             final fund = fundList.items[index];

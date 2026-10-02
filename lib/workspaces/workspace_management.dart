@@ -17,6 +17,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:styled_widget/styled_widget.dart';
 
 part 'workspace_detail.dart';
 
@@ -887,7 +888,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
         tooltip: 'workspaceCreateOrganization'.tr(),
         onPressed: () => _openEditor(context, ref),
         child: const Icon(Symbols.add),
-      ),
+      ).padding(bottom: MediaQuery.paddingOf(context).bottom),
       body: workspaces.when(
         loading: () => const Center(child: LoadingIndicator()),
         error: (error, _) => Center(
@@ -902,7 +903,12 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
         data: (items) => RefreshIndicator(
           onRefresh: refreshWorkspaces,
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 96),
+            padding: EdgeInsets.fromLTRB(
+              8,
+              8,
+              8,
+              8 + MediaQuery.paddingOf(context).bottom,
+            ),
             itemCount: items.isEmpty ? 1 : items.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {

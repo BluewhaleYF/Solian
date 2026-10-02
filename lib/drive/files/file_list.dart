@@ -2123,7 +2123,11 @@ class _DriveStorageStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (usage == null) return const SizedBox.shrink();
+    // Without quota data there is no bar to draw, but the file list still runs
+    // to the bottom of the screen, so keep the floating tab bar's clearance.
+    if (usage == null) {
+      return SizedBox(height: MediaQuery.paddingOf(context).bottom);
+    }
 
     final nonNullUsage = usage!;
     final totalQuotaMb = nonNullUsage['total_quota'] as int? ?? 0;

@@ -208,7 +208,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   @override
   Widget build(BuildContext context) {
     final tabsRouter = AutoTabsRouter.of(context);
-    final rootBottomViewPadding = MediaQuery.of(context).viewPadding.bottom;
 
     final token = ref.watch(tokenProvider);
     final userInfo = ref.watch(userInfoProvider);
@@ -548,26 +547,17 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       );
     }
 
-    final mobileTabBody = Builder(
-      builder: (context) {
-        final bodyMediaQuery = MediaQuery.of(context);
-        return MediaQuery(
-          // Keep Scaffold's injected bottom inset for the tab bar and restore
-          // the original device safe area for nested app scaffolds.
-          data: bodyMediaQuery.copyWith(
-            padding: bodyMediaQuery.padding.copyWith(
-              bottom: bodyMediaQuery.padding.bottom + rootBottomViewPadding,
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: widget.child,
-          ),
-        );
-      },
+    // `extendBody: true` makes Scaffold inject the tab bar's full height
+    // (NavigationBar height + bottom safe area) as `MediaQuery.padding.bottom`
+    // here, which is exactly the clearance a tab page needs. Do not add the
+    // device safe area on top of it: that double counts the home indicator and
+    // leaves pages hovering above the tab bar.
+    final mobileTabBody = ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(16),
+        topRight: Radius.circular(16),
+      ),
+      child: widget.child,
     );
 
     final scaffold = Scaffold(

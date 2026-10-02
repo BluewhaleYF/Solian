@@ -810,6 +810,9 @@ class ExploreScreen extends HookConsumerWidget {
             )
           else
             _buildActivityList(context, ref),
+          // The tab shell floats the NavigationBar over the page, so reserve
+          // its height or the last row stays underneath the bar.
+          SliverGap(MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );

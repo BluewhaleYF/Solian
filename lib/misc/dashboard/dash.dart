@@ -407,7 +407,7 @@ class _DashboardGridNarrow extends HookConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-        ).padding(bottom: 80),
+        ).padding(bottom: MediaQuery.paddingOf(context).bottom + 16),
       ),
     );
 
