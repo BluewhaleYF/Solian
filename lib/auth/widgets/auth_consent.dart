@@ -6,6 +6,7 @@ import 'package:island/auth/web_auth/web_auth_app_info.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:pinput/pinput.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -565,6 +566,156 @@ class AuthUserCodeCard extends StatelessWidget {
               child: content,
             )
           : content,
+    );
+  }
+}
+
+/// Character count of a device-flow user code (`XXXX-XXXX`).
+const int kAuthUserCodeLength = 8;
+
+/// Characters per group in a device-flow user code.
+const int kAuthUserCodeGroupSize = 4;
+
+/// Wire form of a device-flow user code: what the server validates and what
+/// [AuthUserCodeCard] shows. Accepts the characters with or without the
+/// separator.
+String formatAuthUserCode(String code) {
+  final letters = code.replaceAll('-', '');
+  if (letters.length <= kAuthUserCodeGroupSize) return letters;
+  return '${letters.substring(0, kAuthUserCodeGroupSize)}'
+      '-${letters.substring(kAuthUserCodeGroupSize)}';
+}
+
+/// Segmented entry for the device-flow user code: one box per character, split
+/// into two groups by a `-`.
+///
+/// The separator is chrome rather than input, so a code copied from the
+/// requesting device — `BCDF-GHJK` or `BCDFGHJK` — fills the boxes either way,
+/// autofill lands on the right characters, and the user never types the dash.
+/// Only the server's alphabet (`BCDFGHJKLMNPQRSTVWXYZ`) survives, uppercased.
+class AuthUserCodeInput extends StatelessWidget {
+  /// Receives the characters entered so far (0 to [kAuthUserCodeLength]),
+  /// without the separator. Wrap with [formatAuthUserCode] for the wire form.
+  final ValueChanged<String>? onChanged;
+
+  /// Called with the characters when the keyboard action is submitted.
+  final ValueChanged<String>? onSubmitted;
+
+  final bool autofocus;
+
+  const AuthUserCodeInput({
+    super.key,
+    this.onChanged,
+    this.onSubmitted,
+    this.autofocus = false,
+  });
+
+  /// Groove between two boxes; the middle one carries the separator instead.
+  static const double _boxGap = 4;
+
+  /// Width reserved for the `-` between the two groups.
+  static const double _separatorSlot = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final radius = BorderRadius.circular(12);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Eight boxes and seven separators have to fit the sheet on the
+        // narrowest phones, so the box width follows the available width.
+        final boxWidth =
+            ((constraints.maxWidth -
+                        _boxGap * (kAuthUserCodeLength - 1) -
+                        _separatorSlot) /
+                    kAuthUserCodeLength)
+                .clamp(24.0, 48.0)
+                .toDouble();
+        final base = PinTheme(
+          width: boxWidth,
+          height: 52,
+          textStyle: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            fontFamily: 'monospace',
+          ),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: radius,
+            border: Border.all(color: scheme.outline),
+          ),
+        );
+
+        return Pinput(
+          length: kAuthUserCodeLength,
+          autofocus: autofocus,
+          textInputAction: TextInputAction.done,
+          keyboardType: TextInputType.visiblePassword,
+          textCapitalization: TextCapitalization.characters,
+          // A generated code is not a word: keep it out of the keyboard's
+          // dictionary and suggestion bar.
+          enableSuggestions: false,
+          enableIMEPersonalizedLearning: false,
+          inputFormatters: const [_AuthUserCodeFormatter()],
+          defaultPinTheme: base,
+          focusedPinTheme: base.copyWith(
+            decoration: base.decoration!.copyWith(
+              color: scheme.primaryContainer,
+              border: Border.all(color: scheme.primary, width: 2),
+            ),
+          ),
+          submittedPinTheme: base.copyWith(
+            decoration: base.decoration!.copyWith(
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+          ),
+          separatorBuilder: (index) => index == kAuthUserCodeGroupSize - 1
+              ? SizedBox(
+                  width: _separatorSlot,
+                  child: Center(
+                    child: Text(
+                      '-',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox(width: _boxGap),
+          onChanged: (value) => onChanged?.call(value),
+          onSubmitted: (value) => onSubmitted?.call(value),
+        );
+      },
+    );
+  }
+}
+
+/// Keeps the code to the server's alphabet, uppercased and separator-free.
+/// Formatters also run on pasted and autofilled text, which is why a code
+/// copied with the dash ends up as the same eight characters.
+class _AuthUserCodeFormatter extends TextInputFormatter {
+  const _AuthUserCodeFormatter();
+
+  static const _alphabet = 'BCDFGHJKLMNPQRSTVWXYZ';
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final letters = newValue.text
+        .toUpperCase()
+        .split('')
+        .where(_alphabet.contains)
+        .take(kAuthUserCodeLength)
+        .join();
+
+    return TextEditingValue(
+      text: letters,
+      selection: TextSelection.collapsed(offset: letters.length),
+      composing: TextRange.empty,
     );
   }
 }

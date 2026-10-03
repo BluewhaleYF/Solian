@@ -1833,56 +1833,22 @@ Future<void> _openDeviceAuthFlow(BuildContext context, WidgetRef ref) async {
   await _checkAndShowDeviceApproval(context, ref, userCode);
 }
 
-/// Keeps the user code in canonical `XXXX-XXXX` form: uppercases, drops the
-/// dash and anything outside the server's alphabet
-/// (`BCDFGHJKLMNPQRSTVWXYZ`), and re-inserts the separator. Applying the
-/// alphabet here means the Check button only ever enables for a code the server
-/// can actually have generated.
-class _UserCodeInputFormatter extends TextInputFormatter {
-  static const _alphabet = 'BCDFGHJKLMNPQRSTVWXYZ';
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final letters = newValue.text
-        .toUpperCase()
-        .split('')
-        .where(_alphabet.contains)
-        .take(8)
-        .join();
-    final text = letters.length > 4
-        ? '${letters.substring(0, 4)}-${letters.substring(4)}'
-        : letters;
-
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-      composing: TextRange.empty,
-    );
-  }
-}
-
 /// Device-code entry. Mirrors the web page's "check that the code matches"
-/// framing: the field is monospaced and spaced, and the action stays disabled
-/// until the code is complete.
+/// framing: one box per character, grouped `XXXX-XXXX`, and the action stays
+/// disabled until the code is complete.
 class _DeviceAuthUserCodeSheet extends HookWidget {
   const _DeviceAuthUserCodeSheet();
-
-  static final _userCodePattern = RegExp(r'^[A-Z]{4}-[A-Z]{4}$');
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final controller = useTextEditingController();
     final code = useState('');
 
-    final isValid = _userCodePattern.hasMatch(code.value);
+    final isComplete = code.value.length == kAuthUserCodeLength;
 
     void submit() {
-      if (!isValid) return;
-      Navigator.of(context).pop(code.value);
+      if (!isComplete) return;
+      Navigator.of(context).pop(formatAuthUserCode(code.value));
     }
 
     return SheetScaffold(
@@ -1901,33 +1867,14 @@ class _DeviceAuthUserCodeSheet extends HookWidget {
               ),
             ),
             const Gap(20),
-            TextField(
-              controller: controller,
+            AuthUserCodeInput(
               autofocus: true,
-              textCapitalization: TextCapitalization.characters,
-              textInputAction: TextInputAction.done,
-              autocorrect: false,
-              enableSuggestions: false,
-              inputFormatters: [_UserCodeInputFormatter()],
               onChanged: (value) => code.value = value,
               onSubmitted: (_) => submit(),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontFamily: 'monospace',
-                letterSpacing: 4,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: InputDecoration(
-                labelText: 'accountQrDeviceAuthUserCode'.tr(),
-                hintText: 'XXXX-XXXX',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
             ),
             const Spacer(),
             FilledButton(
-              onPressed: isValid ? submit : null,
+              onPressed: isComplete ? submit : null,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
