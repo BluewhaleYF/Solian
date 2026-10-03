@@ -29,6 +29,7 @@ import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/discovery/widgets/discovery_feedback_widget.dart';
 import 'package:island/discovery/widgets/discovery_profile_sheet.dart';
+import 'package:island/discovery/widgets/friend_presence_strip.dart';
 import 'package:island/discovery/widgets/friend_presence_widgets.dart';
 import 'package:island/discovery/widgets/subscribed_publishers_strip.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -502,18 +503,8 @@ class ExploreScreen extends HookConsumerWidget {
                     case _ExploreAction.footprints:
                       context.router.push(const BookmarksRoute());
                       break;
-                    default:
-                      break;
                   }
                 },
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () {
-                  context.router.push(UniversalSearchRoute());
-                },
-                icon: Icon(Symbols.search),
-                tooltip: 'search'.tr(),
               ),
             ],
           ).padding(
@@ -774,19 +765,24 @@ class ExploreScreen extends HookConsumerWidget {
             isWide: false,
           ),
           SliverToBoxAdapter(child: const Divider(height: 1)),
-          SliverSubscribedPublishersStrip(
-            selectedPublisherNames: selectedPublishers.value,
-            onSelectedPublishersChanged: (names) {
-              applyPublisherStripSelection(
-                names: names,
-                selectedPublishers: selectedPublishers,
-                selectedCategories: selectedCategoryIds,
-                selectedTags: selectedTagIds,
-                exploreSettings: exploreSettings,
-                appSettingsNotifier: appSettingsNotifier,
-              );
-            },
-          ),
+          // The Subscriptions tab keeps the publisher quick pick; Explore and
+          // Friends show the friend presence strip in the same slot.
+          if (currentFilter.value == 'subscriptions')
+            SliverSubscribedPublishersStrip(
+              selectedPublisherNames: selectedPublishers.value,
+              onSelectedPublishersChanged: (names) {
+                applyPublisherStripSelection(
+                  names: names,
+                  selectedPublishers: selectedPublishers,
+                  selectedCategories: selectedCategoryIds,
+                  selectedTags: selectedTagIds,
+                  exploreSettings: exploreSettings,
+                  appSettingsNotifier: appSettingsNotifier,
+                );
+              },
+            )
+          else
+            const SliverFriendPresenceStrip(),
           if (usePostList) ...[
             _buildPostList(
               context,
@@ -928,13 +924,46 @@ class ExploreScreen extends HookConsumerWidget {
     final hasCategoryTagSubscriptions =
         ref.watch(categoriesSubscriptionsProvider).value?.isNotEmpty ?? false;
 
-    final subscriptionPane = Card(
+    final categoryTagFilter = hasCategoryTagSubscriptions
+        ? PostCategoryTagFilterSection(
+            initialSelectedCategories: selectedCategories.value,
+            initialSelectedTags: selectedTags.value,
+            onSelectedCategoriesChanged: (ids) {
+              selectedCategories.value = ids;
+              appSettingsNotifier.setExploreSettings(
+                exploreSettings.copyWith(selectedCategoryIds: ids),
+              );
+            },
+            onSelectedTagsChanged: (ids) {
+              selectedTags.value = ids;
+              appSettingsNotifier.setExploreSettings(
+                exploreSettings.copyWith(selectedTagIds: ids),
+              );
+            },
+            onPublisherSelectionCleared: () {
+              selectedPublishers.value = [];
+              appSettingsNotifier.setExploreSettings(
+                exploreSettings.copyWith(
+                  selectedPublisherNames: const <String>[],
+                ),
+              );
+            },
+          ).padding(top: 8)
+        : null;
+
+    final isSubscriptionsTab = currentFilter.value == 'subscriptions';
+
+    Widget sidebarCard(Widget child) => Card(
       margin: EdgeInsets.zero,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
+      child: child,
+    );
+
+    final subscriptionPane = sidebarCard(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SubscribedPublishersStrip(
@@ -950,34 +979,16 @@ class ExploreScreen extends HookConsumerWidget {
               );
             },
           ),
-          if (hasCategoryTagSubscriptions)
-            PostCategoryTagFilterSection(
-              initialSelectedCategories: selectedCategories.value,
-              initialSelectedTags: selectedTags.value,
-              onSelectedCategoriesChanged: (ids) {
-                selectedCategories.value = ids;
-                appSettingsNotifier.setExploreSettings(
-                  exploreSettings.copyWith(selectedCategoryIds: ids),
-                );
-              },
-              onSelectedTagsChanged: (ids) {
-                selectedTags.value = ids;
-                appSettingsNotifier.setExploreSettings(
-                  exploreSettings.copyWith(selectedTagIds: ids),
-                );
-              },
-              onPublisherSelectionCleared: () {
-                selectedPublishers.value = [];
-                appSettingsNotifier.setExploreSettings(
-                  exploreSettings.copyWith(
-                    selectedPublisherNames: const <String>[],
-                  ),
-                );
-              },
-            ).padding(top: 8),
+          ?categoryTagFilter,
         ],
       ),
     );
+
+    // Explore/Friends hide the publisher quick pick but keep the category and
+    // tag filters, so they live in their own card there.
+    final categoryTagPane = categoryTagFilter == null
+        ? null
+        : sidebarCard(categoryTagFilter);
 
     return SidebarPanelHost(
       controller: sidebarPanel,
@@ -1064,10 +1075,19 @@ class ExploreScreen extends HookConsumerWidget {
                                     emphasizeHeader: false,
                                     borderRadius: 12,
                                   ),
-                                  if (hasPublisherSubscriptions ||
-                                      hasCategoryTagSubscriptions) ...[
+                                  if (isSubscriptionsTab) ...[
+                                    if (hasPublisherSubscriptions ||
+                                        hasCategoryTagSubscriptions) ...[
+                                      const Gap(12),
+                                      subscriptionPane,
+                                    ],
+                                  ] else ...[
                                     const Gap(12),
-                                    subscriptionPane,
+                                    const FriendPresenceStrip(),
+                                    if (categoryTagPane != null) ...[
+                                      const Gap(12),
+                                      categoryTagPane,
+                                    ],
                                   ],
                                   const Gap(12),
                                   const _ExplorePopularCategoriesCard(),
@@ -1430,16 +1450,6 @@ class _ExploreFilterToolbar extends StatelessWidget {
                 PopupMenuButton<_ExploreAction>(
                   itemBuilder: (context) => [
                     PopupMenuItem(
-                      value: _ExploreAction.search,
-                      child: Row(
-                        children: [
-                          const Icon(Symbols.search),
-                          const Gap(12),
-                          Text('search').tr(),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
                       value: _ExploreAction.categories,
                       child: Row(
                         children: [
@@ -1472,9 +1482,6 @@ class _ExploreFilterToolbar extends StatelessWidget {
                   ],
                   onSelected: (value) {
                     switch (value) {
-                      case _ExploreAction.search:
-                        context.router.push(UniversalSearchRoute());
-                        break;
                       case _ExploreAction.categories:
                         context.router.push(PostCategoriesListRoute());
                         break;
@@ -1487,7 +1494,7 @@ class _ExploreFilterToolbar extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Symbols.action_key),
-                  tooltip: 'search'.tr(),
+                  tooltip: 'more'.tr(),
                 ),
               ],
             ),
@@ -1606,7 +1613,7 @@ class _FilterToggleButton extends StatelessWidget {
   }
 }
 
-enum _ExploreAction { search, categories, shuffle, footprints }
+enum _ExploreAction { categories, shuffle, footprints }
 
 class _RankingToolbar extends StatelessWidget {
   final String currentMode;

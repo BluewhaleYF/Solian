@@ -1831,6 +1831,7 @@
   "searchError": "検索に失敗しました。もう一度お試しください。",
   "searchLinks": "リンク",
   "searchMessages": "メッセージを検索",
+  "messages": "メッセージ",
   "searchMessagesHint": "メッセージを検索…",
   "searchPosts": "投稿を検索",
   "searchPostsDescription": "タイトル、本文、またはキーワードで検索します。",

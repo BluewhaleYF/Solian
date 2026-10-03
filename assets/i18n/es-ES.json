@@ -1743,6 +1743,7 @@
   "searchError": "Search failed. Please try again.",
   "searchLinks": "Links",
   "searchMessages": "Search Messages",
+  "messages": "Mensajes",
   "searchMessagesHint": "Search messages...",
   "searchPosts": "Search Posts",
   "searchPostsDescription": "Search posts by title, content, or else.",

@@ -17,6 +17,7 @@ import 'package:island/chat/widgets/message_list_tile.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/data/message.dart';
+import 'package:island/discovery/search_navigation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
@@ -1132,9 +1133,9 @@ class SearchMessagesScreen extends HookConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Symbols.travel_explore),
-            tooltip: 'Search all chats',
+            tooltip: 'searchMessages'.tr(),
             onPressed: () =>
-                context.router.replace(const SearchAllMessagesRoute()),
+                openUniversalSearch(context, tab: SearchTab.messages),
           ),
           const Gap(8),
         ],
@@ -1284,17 +1285,18 @@ class SearchMessagesScreen extends HookConsumerWidget {
 // Cross-room search
 // ---------------------------------------------------------------------------
 
+/// Cross-room chat message search, embedded in the universal search page.
+///
 /// Local-first when offline / filtering attachments; cloud for text index.
-@RoutePage()
-class SearchAllMessagesScreen extends HookConsumerWidget {
-  const SearchAllMessagesScreen({super.key});
+/// [searchQuery] is the debounced text owned by the host page's search field.
+class ChatMessageSearchView extends HookConsumerWidget {
+  final ValueNotifier<String> searchQuery;
+
+  const ChatMessageSearchView({super.key, required this.searchQuery});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = useTextEditingController();
-    final focusNode = useFocusNode();
-    useListenable(controller);
-
+    final query = useValueListenable(searchQuery);
     final withLinks = useState(false);
     final withAttachments = useState(false);
     final cloudSearch = useState(true);
@@ -1307,13 +1309,11 @@ class SearchAllMessagesScreen extends HookConsumerWidget {
     final isSearching = useState(false);
     final hasSearched = useState(false);
     final error = useState<Object?>(null);
-    final debounce = useRef<Timer?>(null);
     final request = useRef(0);
     final database = ref.read(databaseProvider);
     final client = ref.read(apiClientProvider);
 
     Future<void> search(String rawQuery) async {
-      debounce.value?.cancel();
       final query = rawQuery.trim();
       final hasLocalFilters = withLinks.value || withAttachments.value;
       final hasCloudFilters =
@@ -1332,118 +1332,109 @@ class SearchAllMessagesScreen extends HookConsumerWidget {
       hasSearched.value = true;
       error.value = null;
 
-      debounce.value = Timer(const Duration(milliseconds: 250), () async {
-        try {
-          List<_SearchRoomGroup> nextGroups = [];
-          var total = 0;
+      try {
+        List<_SearchRoomGroup> nextGroups = [];
+        var total = 0;
 
-          final useCloud =
-              cloudSearch.value && query.isNotEmpty && !withAttachments.value;
+        final useCloud =
+            cloudSearch.value && query.isNotEmpty && !withAttachments.value;
 
-          if (useCloud) {
-            try {
-              final page = await _searchMessagesCloud(
-                client,
-                query: query,
-                sender: _senderQuery(sender.value),
-                after: after.value,
-                before: before.value,
-                take: 100,
-              );
-              nextGroups = page.groups;
-              total = page.total;
-
-              final flat = page.messages;
-              if (flat.isNotEmpty) {
-                await database.saveMessagesWithSenders(flat);
-              }
-
-              if (withLinks.value) {
-                nextGroups = [
-                  for (final g in nextGroups)
-                    _SearchRoomGroup(
-                      roomId: g.roomId,
-                      room: g.room,
-                      messages: g.messages.where(_messageHasLink).toList(),
-                    ),
-                ].where((g) => g.messages.isNotEmpty).toList();
-                total = nextGroups.fold<int>(
-                  0,
-                  (sum, g) => sum + g.messages.length,
-                );
-              }
-            } on DioException catch (exception) {
-              // Fall back to local cache when cloud fails.
-              if (currentRequest != request.value) return;
-              // Keep trying local; only surface error if local is also empty.
-              error.value = exception;
-            }
-          }
-
-          if (nextGroups.isEmpty || !useCloud) {
-            var local = await database.searchMessagesAcrossRooms(
-              query,
-              withAttachments: withAttachments.value,
+        if (useCloud) {
+          try {
+            final page = await _searchMessagesCloud(
+              client,
+              query: query,
+              sender: _senderQuery(sender.value),
+              after: after.value,
+              before: before.value,
+              take: 100,
             );
+            nextGroups = page.groups;
+            total = page.total;
+
+            final flat = page.messages;
+            if (flat.isNotEmpty) {
+              await database.saveMessagesWithSenders(flat);
+            }
+
             if (withLinks.value) {
-              local = local.where(_messageHasLink).toList();
+              nextGroups = [
+                for (final g in nextGroups)
+                  _SearchRoomGroup(
+                    roomId: g.roomId,
+                    room: g.room,
+                    messages: g.messages.where(_messageHasLink).toList(),
+                  ),
+              ].where((g) => g.messages.isNotEmpty).toList();
+              total = nextGroups.fold<int>(
+                0,
+                (sum, g) => sum + g.messages.length,
+              );
             }
-
-            if (sender.value != null) {
-              local = local
-                  .where((m) => _messageMatchesSender(m, sender.value))
-                  .toList();
-            }
-            if (after.value != null) {
-              local = local
-                  .where((m) => !m.createdAt.isBefore(after.value!.toUtc()))
-                  .toList();
-            }
-            if (before.value != null) {
-              local = local
-                  .where((m) => m.createdAt.isBefore(before.value!.toUtc()))
-                  .toList();
-            }
-
-            final rooms =
-                ref.read(chatRoomJoinedProvider).value ?? const <SnChatRoom>[];
-            final roomsById = {for (final room in rooms) room.id: room};
-            nextGroups = _groupMessagesByRoom(local, roomsById);
-            total = local.length;
-
-            // Local succeeded — clear cloud error if we have results.
-            if (local.isNotEmpty) error.value = null;
-          }
-
-          if (currentRequest != request.value) return;
-          groups.value = nextGroups;
-          totalMatches.value = total;
-          if (nextGroups.isNotEmpty) error.value = null;
-        } catch (exception) {
-          if (currentRequest == request.value) {
+          } on DioException catch (exception) {
+            // Fall back to local cache when cloud fails.
+            if (currentRequest != request.value) return;
+            // Keep trying local; only surface error if local is also empty.
             error.value = exception;
-            if (groups.value.isEmpty) {
-              totalMatches.value = 0;
-            }
           }
-        } finally {
-          if (currentRequest == request.value) isSearching.value = false;
         }
-      });
+
+        if (nextGroups.isEmpty || !useCloud) {
+          var local = await database.searchMessagesAcrossRooms(
+            query,
+            withAttachments: withAttachments.value,
+          );
+          if (withLinks.value) {
+            local = local.where(_messageHasLink).toList();
+          }
+
+          if (sender.value != null) {
+            local = local
+                .where((m) => _messageMatchesSender(m, sender.value))
+                .toList();
+          }
+          if (after.value != null) {
+            local = local
+                .where((m) => !m.createdAt.isBefore(after.value!.toUtc()))
+                .toList();
+          }
+          if (before.value != null) {
+            local = local
+                .where((m) => m.createdAt.isBefore(before.value!.toUtc()))
+                .toList();
+          }
+
+          final rooms =
+              ref.read(chatRoomJoinedProvider).value ?? const <SnChatRoom>[];
+          final roomsById = {for (final room in rooms) room.id: room};
+          nextGroups = _groupMessagesByRoom(local, roomsById);
+          total = local.length;
+
+          // Local succeeded — clear cloud error if we have results.
+          if (local.isNotEmpty) error.value = null;
+        }
+
+        if (currentRequest != request.value) return;
+        groups.value = nextGroups;
+        totalMatches.value = total;
+        if (nextGroups.isNotEmpty) error.value = null;
+      } catch (exception) {
+        if (currentRequest == request.value) {
+          error.value = exception;
+          if (groups.value.isEmpty) {
+            totalMatches.value = 0;
+          }
+        }
+      } finally {
+        if (currentRequest == request.value) isSearching.value = false;
+      }
     }
 
-    useEffect(
-      () =>
-          () => debounce.value?.cancel(),
-      [],
-    );
-
+    // Re-run whenever the host search field's debounced text changes.
     useEffect(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (focusNode.canRequestFocus) focusNode.requestFocus();
-      });
+      search(query);
       return null;
-    }, []);
+    }, [query]);
 
     // Enrich groups missing room metadata from the joined rooms list.
     final joinedRooms = ref.watch(chatRoomJoinedProvider).value ?? const [];
@@ -1461,143 +1452,105 @@ class SearchAllMessagesScreen extends HookConsumerWidget {
       ];
     }, [groups.value, joinedRooms]);
 
-    final hasQuery = controller.text.isNotEmpty;
-
-    return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Search all chats'),
-        actions: [
-          IconButton(
-            onPressed: () => isFilterVisible.value = !isFilterVisible.value,
-            icon: Icon(
-              isFilterVisible.value
-                  ? Symbols.filter_list_off
-                  : Symbols.filter_list,
-            ),
-            tooltip: isFilterVisible.value
-                ? 'hideFilters'.tr()
-                : 'showFilters'.tr(),
-          ),
-          const Gap(8),
-        ],
-        bottom: isSearching.value
-            ? const PreferredSize(
-                preferredSize: Size.fromHeight(2),
-                child: LinearProgressIndicator(),
-              )
-            : null,
-      ),
-      bottomNavigationBar: hasSearched.value
-          ? _SearchStatusBar(
-              totalMatches: totalMatches.value,
-              isSearching: isSearching.value,
-              infoTooltip: 'chatGlobalSearchHint'.tr(),
-            )
-          : null,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: Column(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: SearchBar(
-                  controller: controller,
-                  focusNode: focusNode,
-                  hintText: 'searchMessagesHint'.tr(),
-                  leading: const Icon(Symbols.search),
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  onTapOutside: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
-                  trailing: [
-                    if (hasQuery)
-                      IconButton(
-                        icon: const Icon(Symbols.close),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: 'clear'.tr(),
-                        onPressed: () {
-                          controller.clear();
-                          search('');
-                          focusNode.requestFocus();
-                        },
-                      ),
-                  ],
-                  onChanged: search,
-                  onSubmitted: (value) {
-                    search(value);
-                    focusNode.unfocus();
-                  },
-                ),
+              Icon(
+                Symbols.tune,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              _CollapsibleFilterHeader(
-                visible: isFilterVisible.value,
-                child: _ChatSearchFilterBar(
-                  cloudSearch: cloudSearch.value,
-                  onCloudSearchChanged: (value) => cloudSearch.value = value,
-                  withLinks: withLinks.value,
-                  withAttachments: withAttachments.value,
-                  onLinksChanged: (value) => withLinks.value = value,
-                  onAttachmentsChanged: (value) =>
-                      withAttachments.value = value,
-                  sender: sender.value,
-                  onSenderChanged: (value) => sender.value = value,
-                  after: after.value,
-                  before: before.value,
-                  onAfterChanged: (value) => after.value = value,
-                  onBeforeChanged: (value) => before.value = value,
-                  onFiltersChanged: () => search(controller.text),
-                ),
+              const Gap(6),
+              Text(
+                'filters'.tr(),
+                style: Theme.of(context).textTheme.labelLarge,
               ),
-              Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) =>
-                      _updateFilterVisibilityFromScroll(
-                        notification,
-                        isFilterVisible,
-                      ),
-                  child: !hasSearched.value
-                      ? _SearchEmptyState(
-                          icon: Symbols.search,
-                          title: 'Search messages in all chats',
-                        )
-                      : error.value != null && displayGroups.isEmpty
-                      ? _SearchEmptyState(
-                          icon: Symbols.error_outline,
-                          title: 'searchError'.tr(),
-                        )
-                      : displayGroups.isEmpty && !isSearching.value
-                      ? _SearchEmptyState(
-                          icon: Symbols.search_off,
-                          title: 'noMessagesFound'.tr(),
-                        )
-                      : SuperListView.builder(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          itemCount: displayGroups.length,
-                          itemBuilder: (context, index) {
-                            final group = displayGroups[index];
-                            return _SearchRoomSection(
-                              group: group,
-                              onOpenRoom: () => context.router.navigate(
-                                ChatRoomRoute(id: group.roomId),
-                              ),
-                              onJumpMessage: (messageId) =>
-                                  context.router.navigate(
-                                    ChatRoomRoute(
-                                      id: group.roomId,
-                                      initialMessageId: messageId,
-                                    ),
-                                  ),
-                            );
-                          },
-                        ),
+              const Spacer(),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: () => isFilterVisible.value = !isFilterVisible.value,
+                icon: Icon(
+                  isFilterVisible.value
+                      ? Symbols.filter_list_off
+                      : Symbols.filter_list,
                 ),
+                tooltip: isFilterVisible.value
+                    ? 'hideFilters'.tr()
+                    : 'showFilters'.tr(),
               ),
             ],
           ),
         ),
-      ),
+        _CollapsibleFilterHeader(
+          visible: isFilterVisible.value,
+          child: _ChatSearchFilterBar(
+            cloudSearch: cloudSearch.value,
+            onCloudSearchChanged: (value) => cloudSearch.value = value,
+            withLinks: withLinks.value,
+            withAttachments: withAttachments.value,
+            onLinksChanged: (value) => withLinks.value = value,
+            onAttachmentsChanged: (value) => withAttachments.value = value,
+            sender: sender.value,
+            onSenderChanged: (value) => sender.value = value,
+            after: after.value,
+            before: before.value,
+            onAfterChanged: (value) => after.value = value,
+            onBeforeChanged: (value) => before.value = value,
+            onFiltersChanged: () => search(query),
+          ),
+        ),
+        Expanded(
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) => _updateFilterVisibilityFromScroll(
+              notification,
+              isFilterVisible,
+            ),
+            child: !hasSearched.value
+                ? _SearchEmptyState(
+                    icon: Symbols.search,
+                    title: 'searchMessages'.tr(),
+                  )
+                : error.value != null && displayGroups.isEmpty
+                ? _SearchEmptyState(
+                    icon: Symbols.error_outline,
+                    title: 'searchError'.tr(),
+                  )
+                : displayGroups.isEmpty && !isSearching.value
+                ? _SearchEmptyState(
+                    icon: Symbols.search_off,
+                    title: 'noMessagesFound'.tr(),
+                  )
+                : SuperListView.builder(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    itemCount: displayGroups.length,
+                    itemBuilder: (context, index) {
+                      final group = displayGroups[index];
+                      return _SearchRoomSection(
+                        group: group,
+                        onOpenRoom: () => context.router.navigate(
+                          ChatRoomRoute(id: group.roomId),
+                        ),
+                        onJumpMessage: (messageId) => context.router.navigate(
+                          ChatRoomRoute(
+                            id: group.roomId,
+                            initialMessageId: messageId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+        if (hasSearched.value)
+          _SearchStatusBar(
+            totalMatches: totalMatches.value,
+            isSearching: isSearching.value,
+            infoTooltip: 'chatGlobalSearchHint'.tr(),
+          ),
+      ],
     );
   }
 }

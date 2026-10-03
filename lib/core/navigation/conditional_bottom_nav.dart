@@ -6,6 +6,7 @@ import 'package:island/core/services/responsive.dart';
 const kTabRoutes = [
   '/',
   '/explore',
+  '/search',
   '/chat',
   '/realms',
   '/account',
@@ -13,7 +14,7 @@ const kTabRoutes = [
   '/creators',
 ];
 
-const kWideScreenRouteStart = 5;
+const kWideScreenRouteStart = 6;
 
 String? _normalizeRoutePath(String? route) {
   if (route == null) return null;

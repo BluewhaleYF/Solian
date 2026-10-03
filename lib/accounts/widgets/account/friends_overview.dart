@@ -103,7 +103,7 @@ class FriendsOverviewWidget extends HookConsumerWidget {
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _showFriendsOverviewSheet(context),
+            onTap: () => showFriendsOverviewSheet(context),
             child: Column(
               children: [
                 Row(
@@ -223,7 +223,8 @@ class FriendsOverviewWidget extends HookConsumerWidget {
   }
 }
 
-void _showFriendsOverviewSheet(BuildContext context) {
+/// Opens the full friends list sheet (online / active / total counts).
+void showFriendsOverviewSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -413,7 +414,7 @@ class _FriendOverviewListTile extends StatelessWidget {
             Positioned(
               bottom: 0,
               right: 0,
-              child: _FriendStatusBadge(friend: friend),
+              child: FriendPresenceBadge(friend: friend),
             ),
           ],
         ),
@@ -450,10 +451,13 @@ class _FriendOverviewListTile extends StatelessWidget {
   }
 }
 
-class _FriendStatusBadge extends StatelessWidget {
+/// Presence badge overlaid on a friend avatar: blue play arrow while the friend
+/// has an activity, otherwise the account status indicator.
+class FriendPresenceBadge extends StatelessWidget {
   final SnFriendOverviewItem friend;
+  final double size;
 
-  const _FriendStatusBadge({required this.friend});
+  const FriendPresenceBadge({super.key, required this.friend, this.size = 16});
 
   @override
   Widget build(BuildContext context) {
@@ -465,23 +469,20 @@ class _FriendStatusBadge extends StatelessWidget {
     final statusColor = hasActivities
         ? Colors.blue.withOpacity(0.8)
         : getStatusIndicatorColor(friend.status);
+    final squared = hasActivities || statusIcon != Symbols.circle;
 
     return Container(
-      width: 16,
-      height: 16,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: statusColor,
-        shape: hasActivities || statusIcon != Symbols.circle
-            ? BoxShape.rectangle
-            : BoxShape.circle,
-        borderRadius: hasActivities || statusIcon != Symbols.circle
-            ? BorderRadius.circular(4)
-            : null,
+        shape: squared ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: squared ? BorderRadius.circular(4) : null,
         border: Border.all(color: theme.colorScheme.surface, width: 2),
       ),
       child: Icon(
         statusIcon,
-        size: 10,
+        size: size * 0.625,
         color: hasActivities ? Colors.white : statusColor,
         fill: hasActivities ? 1 : getStatusIndicatorFill(friend.status),
       ),
@@ -512,47 +513,11 @@ class _FriendTile extends ConsumerWidget {
                 fallbackName: friend.account.nick,
                 radius: 24,
               ),
-              // Online indicator - show play arrow if user has activities, otherwise green dot
+              // Play arrow while the friend has an activity, else status dot.
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: friend.activities.isNotEmpty
-                        ? Colors.blue.withOpacity(0.8)
-                        : getStatusIndicatorColor(friend.status),
-                    shape: friend.activities.isNotEmpty
-                        ? BoxShape.rectangle
-                        : getStatusIndicatorIcon(friend.status) ==
-                              Symbols.circle
-                        ? BoxShape.circle
-                        : BoxShape.rectangle,
-                    borderRadius: friend.activities.isNotEmpty
-                        ? BorderRadius.circular(4)
-                        : getStatusIndicatorIcon(friend.status) ==
-                              Symbols.circle
-                        ? null
-                        : BorderRadius.circular(4),
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    friend.activities.isNotEmpty
-                        ? Symbols.play_arrow
-                        : getStatusIndicatorIcon(friend.status),
-                    size: 10,
-                    color: friend.activities.isNotEmpty
-                        ? Colors.white
-                        : getStatusIndicatorColor(friend.status),
-                    fill: friend.activities.isNotEmpty
-                        ? 1
-                        : getStatusIndicatorFill(friend.status),
-                  ),
-                ),
+                child: FriendPresenceBadge(friend: friend),
               ),
             ],
           ),

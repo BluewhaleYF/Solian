@@ -2035,21 +2035,6 @@ class ChatListWidget extends HookConsumerWidget {
                           ],
                         ).padding(horizontal: 8),
                         const Divider(height: 1),
-                        ListTile(
-                          dense: true,
-                          tileColor: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHigh.withOpacity(0.5),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                          ),
-                          leading: const Icon(Symbols.search),
-                          title: const Text('searchMessages').tr(),
-                          onTap: () => context.router.push(
-                            const SearchAllMessagesRoute(),
-                          ),
-                        ),
-                        const Divider(height: 1),
                         Expanded(
                           child: ChatListBodyWidget(
                             isFloating: false,
@@ -2173,15 +2158,6 @@ class ChatListWidget extends HookConsumerWidget {
           ? const ResponseUnauthorizedWidget()
           : Column(
               children: [
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  leading: const Icon(Symbols.search),
-                  title: const Text('searchMessages').tr(),
-                  onTap: () =>
-                      context.router.push(const SearchAllMessagesRoute()),
-                ),
-                const Divider(height: 1),
                 Expanded(
                   child: ChatListBodyWidget(
                     isFloating: false,

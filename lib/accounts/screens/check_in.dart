@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -323,64 +324,79 @@ class _CheckInDatePageState extends ConsumerState<_CheckInDatePage> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _CheckInDateRail(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // The strip runs to the sheet's edges: it should read as
+                  // continuing past them, not as a row of tiles in a gutter.
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: _CheckInDateRail(
                       dates: dates,
+                      results: results,
                       selected: selected,
                       today: today,
                       onSelected: (date) => setState(() => _selected = date),
                       onExtendOlder: _extendOlder,
                     ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 320),
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment.topCenter,
-                      child: results[today] == null
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: _CheckInTodayBanner(
-                                isLoading: widget.checkingInDays.contains(
-                                  today,
-                                ),
-                                onCheckIn: widget.onCheckIn,
-                              ),
-                            )
-                          : const SizedBox(width: double.infinity),
-                    ),
-                    const Gap(24),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 420),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      transitionBuilder: (child, animation) => FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, .04),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 320),
+                          curve: Curves.easeOutCubic,
+                          alignment: Alignment.topCenter,
+                          child: results[today] == null
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: _CheckInTodayBanner(
+                                    isLoading: widget.checkingInDays.contains(
+                                      today,
+                                    ),
+                                    onCheckIn: widget.onCheckIn,
+                                  ),
+                                )
+                              : const SizedBox(width: double.infinity),
                         ),
-                      ),
-                      child: _CheckInContent(
-                        key: ValueKey(selected),
-                        result: selectedResult,
-                        // There is nothing to draw for a day still ahead of the
-                        // visitor, even inside the rail's forward window.
-                        isFuture: selected.isAfter(today),
-                        isToday: _sameDay(selected, today),
-                        isCheckingIn: widget.checkingInDays.contains(selected),
-                        onCheckInBackdated: () =>
-                            widget.onCheckInBackdated(selected),
-                        debugResults: widget.debugResults,
-                      ),
+                        const Gap(20),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 420),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, .04),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              ),
+                          child: _CheckInContent(
+                            key: ValueKey(selected),
+                            result: selectedResult,
+                            // There is nothing to draw for a day still ahead of
+                            // the visitor, even inside the rail's forward
+                            // window.
+                            isFuture: selected.isAfter(today),
+                            isToday: _sameDay(selected, today),
+                            isCheckingIn: widget.checkingInDays.contains(
+                              selected,
+                            ),
+                            onCheckInBackdated: () =>
+                                widget.onCheckInBackdated(selected),
+                            debugResults: widget.debugResults,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -460,6 +476,10 @@ class _CheckInDatePageState extends ConsumerState<_CheckInDatePage> {
 
 class _CheckInDateRail extends StatefulWidget {
   final List<DateTime> dates;
+
+  /// The day the strip is showing, with its draw when there is one: a tile
+  /// wears the stamp of the tier it landed on.
+  final Map<DateTime, SnCheckInResult> results;
   final DateTime selected;
   final DateTime today;
   final ValueChanged<DateTime> onSelected;
@@ -470,6 +490,7 @@ class _CheckInDateRail extends StatefulWidget {
 
   const _CheckInDateRail({
     required this.dates,
+    required this.results,
     required this.selected,
     required this.today,
     required this.onSelected,
@@ -481,14 +502,24 @@ class _CheckInDateRail extends StatefulWidget {
 }
 
 class _CheckInDateRailState extends State<_CheckInDateRail> {
-  static const _cardWidth = 92.0;
-  static const _cardHeight = 104.0;
-  static const _railHeight = 116.0;
+  static const _cardWidth = 108.0;
+  static const _cardHeight = 122.0;
 
-  /// Slack around a scaled card and the separator between cards. Kept tight so
-  /// a day reads as one segment of a strip rather than a tile with margins.
+  /// The card, plus the slack the corner stamps hang into; a rotated stamp
+  /// reaches a few pixels further than its overhang, so the rail keeps extra.
+  static const _railHeight = 170.0;
+
+  /// Room at both ends of the strip for the first and last tile's corner
+  /// stamps; without it the strip's viewport would shave them off.
+  static const _stampMargin = 24.0;
+
+  /// Slack around a scaled card, so a smaller neighbour does not hug the one
+  /// beside it.
   static const _slack = 8.0;
-  static const _gap = 4.0;
+
+  /// Space between two days: wide enough that a corner stamp hanging off one
+  /// tile does not reach the next.
+  static const _gap = 12.0;
 
   /// Distance the strip has to travel back from an edge before it may page
   /// again, so one continuous drag does not unroll a month at a time.
@@ -557,7 +588,7 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
           reverse: true,
           controller: _controller,
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(horizontal: _stampMargin),
           itemCount: widget.dates.length,
           separatorBuilder: (_, _) => const Gap(_gap),
           itemBuilder: (context, index) {
@@ -565,6 +596,7 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
             final distance = date.difference(widget.selected).inDays.abs();
             final active = distance == 0;
             final scale = _scaleFor(distance);
+            final level = widget.results[date]?.level;
             return AnimatedContainer(
               // Keyed by day so paging in history rebuilds the strip instead of
               // morphing every card into its new neighbour's size.
@@ -595,7 +627,6 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
                           duration: const Duration(milliseconds: 280),
                           width: _cardWidth,
                           height: _cardHeight,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: active
                                 ? theme.colorScheme.primaryContainer
@@ -612,31 +643,54 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
                                     ),
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          // The stamp is stuck to the tile's edge and hangs
+                          // past it, so the layer it rides on does not clip.
+                          child: Stack(
+                            fit: StackFit.passthrough,
+                            clipBehavior: Clip.none,
                             children: [
-                              Text(
-                                _sameDay(date, widget.today)
-                                    ? 'TODAY'
-                                    : DateFormat.E().format(date).toUpperCase(),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  letterSpacing: 1.1,
-                                  fontWeight: FontWeight.w800,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _sameDay(date, widget.today)
+                                          ? 'TODAY'
+                                          : DateFormat.E()
+                                                .format(date)
+                                                .toUpperCase(),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            letterSpacing: 1.1,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    const Gap(5),
+                                    Text(
+                                      '${date.day}',
+                                      style: theme.textTheme.headlineMedium
+                                          ?.copyWith(
+                                            height: .95,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    const Gap(4),
+                                    Text(
+                                      DateFormat.MMM().format(date),
+                                      style: theme.textTheme.labelSmall,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const Gap(5),
-                              Text(
-                                '${date.day}',
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  height: .95,
-                                  fontWeight: FontWeight.w800,
+                              if (level != null)
+                                _RailStamp(
+                                  date: date,
+                                  level: level,
+                                  selected: active,
                                 ),
-                              ),
-                              const Gap(4),
-                              Text(
-                                DateFormat.MMM().format(date),
-                                style: theme.textTheme.labelSmall,
-                              ),
                             ],
                           ),
                         ),
@@ -648,6 +702,66 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// The stamp of the tier a day landed on. On its corner it hangs off the tile
+/// edge; on the day the visitor picked it grows over the whole tile and parks
+/// in the middle, hiding the date. Corner and tilt come off the date, so a tile
+/// keeps the same look on every rebuild while the next day's lands elsewhere.
+class _RailStamp extends StatelessWidget {
+  static const _size = 64.0;
+
+  /// Fills the tile, so a selected day reads as its stamp rather than a date
+  /// with a picture on it.
+  static const _selectedSize = _CheckInDateRailState._cardWidth;
+
+  /// How far the stamp reaches past the tile edge, so it reads as stuck on
+  /// rather than placed inside. The rail leaves slack for it on every side.
+  static const _overhang = -16.0;
+
+  static const _morph = Duration(milliseconds: 380);
+
+  final DateTime date;
+  final int level;
+  final bool selected;
+
+  const _RailStamp({
+    required this.date,
+    required this.level,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final random = checkInStampRandom(date);
+    final corner = random.nextInt(4);
+    final width = _CheckInDateRailState._cardWidth;
+    final height = _CheckInDateRailState._cardHeight;
+    final size = selected ? _selectedSize : _size;
+    // Anchored by its top-left in both states, so the implicit animation can
+    // tween straight from the corner it was dealt to the middle.
+    final left = selected
+        ? (width - size) / 2
+        : (corner.isEven ? _overhang : width - size - _overhang);
+    final top = selected
+        ? (height - size) / 2
+        : (corner < 2 ? _overhang : height - size - _overhang);
+
+    return AnimatedPositioned(
+      duration: _morph,
+      curve: Curves.easeOutCubic,
+      left: left,
+      top: top,
+      width: size,
+      height: size,
+      child: AnimatedRotation(
+        turns: selected ? 0 : (random.nextDouble() - 0.5) * 0.36 / (2 * pi),
+        duration: _morph,
+        curve: Curves.easeOutCubic,
+        child: Image.asset(checkInStampAsset(level), fit: BoxFit.contain),
       ),
     );
   }
@@ -681,6 +795,73 @@ class _CheckInTodayBanner extends StatelessWidget {
 DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// Space between two blocks of the reading, and the radius every block shares.
+const _panelGap = 14.0;
+const _panelRadius = 16.0;
+
+/// Flat shell for everything below the date rail: one tinted surface, a
+/// hairline edge, no shadow. The rail's stamps carry the decoration on this
+/// page, so the blocks underneath stay quiet and let the type do the talking.
+class _Panel extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final Color? background;
+  final Color? borderColor;
+
+  const _Panel({
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+    this.background,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background ?? theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(_panelRadius),
+        border: Border.all(
+          color:
+              borderColor ??
+              theme.colorScheme.outlineVariant.withValues(alpha: .45),
+        ),
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+  }
+}
+
+/// One heading treatment for every block, so the scroll keeps a single voice.
+class _PanelHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _PanelHeader({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      spacing: 9,
+      children: [
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
+        Expanded(
+          child: Text(
+            label,
+            style: checkInSerif(
+              context,
+              base: theme.textTheme.titleMedium,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _CheckInContent extends ConsumerWidget {
   final SnCheckInResult? result;
@@ -742,23 +923,22 @@ class _CheckInContent extends ConsumerWidget {
                 showArtwork: false,
               ),
               if (report != null) ...[
-                const Gap(16),
+                const Gap(_panelGap),
                 FortuneGuidanceCard(report: report),
                 if (checkInResult.tips.isNotEmpty) ...[
-                  const Gap(16),
+                  const Gap(_panelGap),
                   FortuneTipsCard(tips: checkInResult.tips),
                 ],
-                const Gap(16),
+                const Gap(_panelGap),
                 FortuneLuckyGrid(report: report),
-                const Gap(16),
+                const Gap(_panelGap),
                 FortuneDetails(report: report),
-                const Gap(16),
+                const Gap(_panelGap),
                 FortuneActionCard(report: report),
-                const Gap(16),
+                const Gap(_panelGap),
                 FortuneRitualCard(report: report),
-                const Gap(16),
-                Card(
-                  margin: EdgeInsets.zero,
+                const Gap(_panelGap),
+                _Panel(
                   child: FortuneGraphWidget(
                     events: debugResults == null
                         ? ref.watch(
@@ -780,8 +960,10 @@ class _CheckInContent extends ConsumerWidget {
                     eventCalandarUser: 'me',
                   ),
                 ),
-              ] else
-                FallbackMessage(),
+              ] else ...[
+                const Gap(_panelGap),
+                const FallbackMessage(),
+              ],
             ];
           })(),
       ],
@@ -836,34 +1018,31 @@ class _CheckInPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Icon(
-              Symbols.local_fire_department,
-              size: 48,
-              color: theme.colorScheme.primary,
+    return _Panel(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Icon(
+            Symbols.local_fire_department,
+            size: 48,
+            color: theme.colorScheme.primary,
+          ),
+          const Gap(16),
+          Text(
+            'checkInNone'.tr(),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const Gap(16),
-            Text(
-              'checkInNone'.tr(),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const Gap(8),
+          Text(
+            'checkInTempleHint'.tr(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const Gap(8),
-            Text(
-              'checkInTempleHint'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -881,53 +1060,50 @@ class _BackdatePrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Icon(Symbols.history, size: 48, color: theme.colorScheme.primary),
-            const Gap(16),
-            Text(
-              'checkInBackdateTitle'.tr(),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+    return _Panel(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Icon(Symbols.history, size: 48, color: theme.colorScheme.primary),
+          const Gap(16),
+          Text(
+            'checkInBackdateTitle'.tr(),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const Gap(8),
-            Text(
-              'checkInBackdateHint'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const Gap(8),
+          Text(
+            'checkInBackdateHint'.tr(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const Gap(20),
-            FilledButton.icon(
-              onPressed: isLoading ? null : onCheckIn,
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Symbols.auto_awesome),
-              label: Text('checkInBackdateDraw'.tr()),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
+            textAlign: TextAlign.center,
+          ),
+          const Gap(20),
+          FilledButton.icon(
+            onPressed: isLoading ? null : onCheckIn,
+            icon: isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Symbols.auto_awesome),
+            label: Text('checkInBackdateDraw'.tr()),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
             ),
-            const Gap(10),
-            Text(
-              'checkInBackdateNote'.tr(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const Gap(10),
+          Text(
+            'checkInBackdateNote'.tr(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -941,27 +1117,23 @@ class _NoCheckInRecorded extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: .5),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Icon(
-              Symbols.event_busy,
-              size: 40,
+    return _Panel(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Icon(
+            Symbols.event_busy,
+            size: 40,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const Gap(12),
+          Text(
+            'checkInNonePast'.tr(),
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
-            const Gap(12),
-            Text(
-              'checkInNonePast'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -995,127 +1167,107 @@ class FortuneCard extends StatelessWidget {
     final artBackdrop = checkInResultBackdrop(level);
     final lunarDate = createdAt != null ? Lunar.fromDate(createdAt!) : null;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              levelColor.withValues(alpha: 0.1),
-              levelColor.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              if (showArtwork && artAsset != null) ...[
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: artBackdrop,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: artBackdrop.withValues(alpha: 0.28),
-                        blurRadius: 24,
-                        offset: const Offset(0, 12),
+    // The draw is the one block that wears a colour of its own: the tier it
+    // landed on. Still flat, tinted and edged rather than raised.
+    return _Panel(
+      background: levelColor.withValues(alpha: .07),
+      borderColor: levelColor.withValues(alpha: .26),
+      child: Column(
+        children: [
+          if (showArtwork && artAsset != null) ...[
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: artBackdrop,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.08),
+                              Colors.black.withValues(alpha: 0.1),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.08),
-                                  Colors.black.withValues(alpha: 0.1),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (artHeight != null)
-                          SizedBox(
-                            height: artHeight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Image.asset(artAsset, fit: BoxFit.contain),
-                            ),
-                          )
-                        else
-                          AspectRatio(
-                            aspectRatio: 1,
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Image.asset(artAsset, fit: BoxFit.contain),
-                            ),
-                          ),
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.2),
-                                ],
-                                stops: const [0.55, 1],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
+                    if (artHeight != null)
+                      SizedBox(
+                        height: artHeight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Image.asset(artAsset, fit: BoxFit.contain),
+                        ),
+                      )
+                    else
+                      AspectRatio(
+                        aspectRatio: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Image.asset(artAsset, fit: BoxFit.contain),
+                        ),
+                      ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.2),
+                            ],
+                            stops: const [0.55, 1],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const Gap(18),
-              ],
-              if (showSealHeader)
-                FortuneSealHeader(
-                  level: level,
-                  lunarDate: lunarDate,
-                  levelColor: levelColor,
-                ),
-              if (poem?.isNotEmpty ?? false) ...[
-                const Gap(8),
-                Text(
-                  poem!,
-                  style: checkInSerif(
-                    context,
-                    base: theme.textTheme.titleMedium,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (summary?.isNotEmpty ?? false) ...[
-                const Gap(16),
-                Text(
-                  summary!,
-                  style: checkInSerif(
-                    context,
-                    base: theme.textTheme.bodyMedium,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    height: 1.6,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+            const Gap(18),
+          ],
+          if (showSealHeader)
+            FortuneSealHeader(
+              level: level,
+              lunarDate: lunarDate,
+              levelColor: levelColor,
+            ),
+          if (poem?.isNotEmpty ?? false) ...[
+            const Gap(8),
+            Text(
+              poem!,
+              style: checkInSerif(
+                context,
+                base: theme.textTheme.titleMedium,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (summary?.isNotEmpty ?? false) ...[
+            const Gap(16),
+            Text(
+              summary!,
+              style: checkInSerif(
+                context,
+                base: theme.textTheme.bodyMedium,
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1148,74 +1300,40 @@ class FortuneDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // One panel, one heading, hairline rules: the readings are a list of the
+    // same kind, so they read as one block rather than six stacked cards.
+    final items = [
+      (Symbols.volunteer_activism, 'checkInFortuneWish'.tr(), report.wish),
+      (Symbols.favorite, 'checkInFortuneLove'.tr(), report.love),
+      (Symbols.school, 'checkInFortuneStudy'.tr(), report.study),
+      (Symbols.work, 'checkInFortuneCareer'.tr(), report.career),
+      (Symbols.spa, 'checkInFortuneHealth'.tr(), report.health),
+      (Symbols.travel_explore, 'checkInFortuneLostItem'.tr(), report.lostItem),
+    ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          spacing: 8,
-          children: [
-            Icon(
-              Symbols.auto_awesome,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-            Expanded(
-              child: Text(
-                'fortuneDetails'.tr(),
-                style: checkInSerif(
-                  context,
-                  base: theme.textTheme.titleMedium,
-                  fontWeight: FontWeight.w700,
-                ),
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PanelHeader(
+            icon: Symbols.auto_awesome,
+            label: 'fortuneDetails'.tr(),
+          ),
+          const Gap(4),
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: .4),
               ),
+            _FortuneItem(
+              icon: items[i].$1,
+              label: items[i].$2,
+              value: items[i].$3,
             ),
           ],
-        ),
-        const Gap(12),
-        Card(
-          margin: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _FortuneItem(
-                icon: Symbols.volunteer_activism,
-                label: 'checkInFortuneWish'.tr(),
-                value: report.wish,
-              ),
-              const Divider(height: 1),
-              _FortuneItem(
-                icon: Symbols.favorite,
-                label: 'checkInFortuneLove'.tr(),
-                value: report.love,
-              ),
-              const Divider(height: 1),
-              _FortuneItem(
-                icon: Symbols.school,
-                label: 'checkInFortuneStudy'.tr(),
-                value: report.study,
-              ),
-              const Divider(height: 1),
-              _FortuneItem(
-                icon: Symbols.work,
-                label: 'checkInFortuneCareer'.tr(),
-                value: report.career,
-              ),
-              const Divider(height: 1),
-              _FortuneItem(
-                icon: Symbols.spa,
-                label: 'checkInFortuneHealth'.tr(),
-                value: report.health,
-              ),
-              const Divider(height: 1),
-              _FortuneItem(
-                icon: Symbols.travel_explore,
-                label: 'checkInFortuneLostItem'.tr(),
-                value: report.lostItem,
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1229,76 +1347,56 @@ class FortuneTipsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              spacing: 8,
-              children: [
-                Icon(
-                  Symbols.tips_and_updates,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                Expanded(
-                  child: Text(
-                    'checkInFortuneTips'.tr(),
-                    style: checkInSerif(
-                      context,
-                      base: theme.textTheme.titleMedium,
-                      fontWeight: FontWeight.w700,
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PanelHeader(
+            icon: Symbols.tips_and_updates,
+            label: 'checkInFortuneTips'.tr(),
+          ),
+          const Gap(12),
+          for (final tip in tips)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    tip.isPositive ? Symbols.thumb_up : Symbols.thumb_down,
+                    size: 16,
+                    color: tip.isPositive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.error,
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tip.title,
+                          style: checkInSerif(
+                            context,
+                            base: theme.textTheme.bodyMedium,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          tip.content,
+                          style: checkInSerif(
+                            context,
+                            base: theme.textTheme.bodySmall,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const Gap(12),
-            for (final tip in tips)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      tip.isPositive ? Symbols.thumb_up : Symbols.thumb_down,
-                      size: 16,
-                      color: tip.isPositive
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.error,
-                    ),
-                    const Gap(8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tip.title,
-                            style: checkInSerif(
-                              context,
-                              base: theme.textTheme.bodyMedium,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            tip.content,
-                            style: checkInSerif(
-                              context,
-                              base: theme.textTheme.bodySmall,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -1313,58 +1411,38 @@ class FortuneActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              spacing: 8,
-              children: [
-                Icon(
-                  Symbols.directions_run,
-                  size: 20,
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PanelHeader(
+            icon: Symbols.directions_run,
+            label: 'checkInFortuneActions'.tr(),
+          ),
+          const Gap(12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _ActionItem(
+                  icon: Symbols.task_alt,
+                  label: 'checkInFortuneLuckyAction'.tr(),
+                  value: report.luckyAction,
                   color: theme.colorScheme.primary,
                 ),
-                Expanded(
-                  child: Text(
-                    'checkInFortuneActions'.tr(),
-                    style: checkInSerif(
-                      context,
-                      base: theme.textTheme.titleMedium,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              ),
+              const Gap(16),
+              Expanded(
+                child: _ActionItem(
+                  icon: Symbols.block,
+                  label: 'checkInFortuneAvoidAction'.tr(),
+                  value: report.avoidAction,
+                  color: theme.colorScheme.error,
                 ),
-              ],
-            ),
-            const Gap(12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _ActionItem(
-                    icon: Symbols.task_alt,
-                    label: 'checkInFortuneLuckyAction'.tr(),
-                    value: report.luckyAction,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const Gap(16),
-                Expanded(
-                  child: _ActionItem(
-                    icon: Symbols.block,
-                    label: 'checkInFortuneAvoidAction'.tr(),
-                    value: report.avoidAction,
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1537,46 +1615,26 @@ class FortuneGuidanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              spacing: 8,
-              children: [
-                Icon(
-                  Symbols.menu_book,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                Expanded(
-                  child: Text(
-                    'checkInFortuneGuidance'.tr(),
-                    style: checkInSerif(
-                      context,
-                      base: theme.textTheme.titleMedium,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Gap(12),
-            if (report.summaryDetail != null)
-              Text(
-                report.summaryDetail!,
-                style: checkInSerif(
-                  context,
-                  base: theme.textTheme.bodyMedium,
-                  height: 1.75,
-                  color: theme.colorScheme.onSurface,
-                ),
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PanelHeader(
+            icon: Symbols.menu_book,
+            label: 'checkInFortuneGuidance'.tr(),
+          ),
+          const Gap(12),
+          if (report.summaryDetail != null)
+            Text(
+              report.summaryDetail!,
+              style: checkInSerif(
+                context,
+                base: theme.textTheme.bodyMedium,
+                height: 1.75,
+                color: theme.colorScheme.onSurface,
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -1603,67 +1661,69 @@ class FortuneLuckyGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 520 ? 2 : 1;
-        return GridView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: columns == 2 ? 2.8 : 3.6,
+        // One panel, no inner cards: the four omens are the same kind of fact,
+        // so they get one surface and a steady row height.
+        const panelPadding = 40.0;
+        const rowHeight = 58.0;
+        const columnGap = 20.0;
+        final tile =
+            (constraints.maxWidth - panelPadding - columnGap * (columns - 1)) /
+            columns;
+        return _Panel(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          child: GridView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: columnGap,
+              mainAxisSpacing: 0,
+              childAspectRatio: tile / rowHeight,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return Row(
+                children: [
+                  Icon(
+                    item.$1,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.$2,
+                          style: checkInSerif(
+                            context,
+                            base: Theme.of(context).textTheme.bodySmall,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const Gap(4),
+                        Text(
+                          item.$3,
+                          style: checkInSerif(
+                            context,
+                            base: Theme.of(context).textTheme.bodyMedium,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      item.$1,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const Gap(12),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.$2,
-                            style: checkInSerif(
-                              context,
-                              base: Theme.of(context).textTheme.bodySmall,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const Gap(4),
-                          Text(
-                            item.$3,
-                            style: checkInSerif(
-                              context,
-                              base: Theme.of(context).textTheme.bodyMedium,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
         );
       },
     );
@@ -1679,45 +1739,25 @@ class FortuneRitualCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              spacing: 8,
-              children: [
-                Icon(
-                  Symbols.auto_fix_high,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                Expanded(
-                  child: Text(
-                    'checkInFortuneRitual'.tr(),
-                    style: checkInSerif(
-                      context,
-                      base: theme.textTheme.titleMedium,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+    return _Panel(
+      background: theme.colorScheme.primaryContainer.withValues(alpha: .3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PanelHeader(
+            icon: Symbols.auto_fix_high,
+            label: 'checkInFortuneRitual'.tr(),
+          ),
+          const Gap(12),
+          Text(
+            report.ritual,
+            style: checkInSerif(
+              context,
+              base: theme.textTheme.bodyMedium,
+              height: 1.65,
             ),
-            const Gap(12),
-            Text(
-              report.ritual,
-              style: checkInSerif(
-                context,
-                base: theme.textTheme.bodyMedium,
-                height: 1.65,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1738,7 +1778,7 @@ class _FortuneItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1781,30 +1821,23 @@ class FallbackMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Card(
-        margin: EdgeInsets.zero,
-        color: theme.colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            spacing: 12,
-            children: [
-              Icon(
-                Symbols.info,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              Expanded(
-                child: Text(
-                  'checkInReportPending'.tr(),
-                  style: theme.textTheme.bodySmall,
-                ),
-              ),
-            ],
+    return _Panel(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        spacing: 12,
+        children: [
+          Icon(
+            Symbols.info,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-        ),
+          Expanded(
+            child: Text(
+              'checkInReportPending'.tr(),
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }

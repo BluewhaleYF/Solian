@@ -235,6 +235,7 @@ flutter:
     - assets/i18n/zh-OG.json
     - assets/i18n/zh-TW.json
     - assets/images/
+    - assets/images/check-in/
     - assets/images/oidc/
     - assets/images/stickers/
     - assets/images/michan/

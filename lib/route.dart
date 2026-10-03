@@ -57,7 +57,6 @@ class AppRouter extends RootStackRouter {
       path: '/fediverse/actors/:id',
     ),
     AutoRoute(page: AccountProfileRoute.page, path: '/accounts/:name'),
-    AutoRoute(page: UniversalSearchRoute.page, path: '/search'),
     AutoRoute(page: EventHubRoute.page, path: '/calendar/:name'),
     AutoRoute(
       page: CalendarEventDetailRoute.page,
@@ -94,6 +93,13 @@ class AppRouter extends RootStackRouter {
           maintainState: false,
         ),
 
+        // Universal search tab
+        AutoRoute(
+          page: UniversalSearchRoute.page,
+          path: 'search',
+          maintainState: false,
+        ),
+
         // Chat tab with nested routes - ChatScreen handles the layout internally
         AutoRoute(
           page: ChatRoute.page,
@@ -102,8 +108,6 @@ class AppRouter extends RootStackRouter {
           children: [
             // Default child route -> Chat list
             AutoRoute(page: ChatListRoute.page, path: '', initial: true),
-            // Search locally cached messages across every joined chat room.
-            AutoRoute(page: SearchAllMessagesRoute.page, path: 'search'),
             // Chat room
             AutoRoute(page: ChatRoomRoute.page, path: ':id'),
             // Chat room detail

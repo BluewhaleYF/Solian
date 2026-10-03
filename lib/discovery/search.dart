@@ -10,7 +10,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/accounts/widgets/account/account_picker.dart';
+import 'package:island/chat/widgets/chat_search_screen.dart';
 import 'package:island/core/network.dart';
+import 'package:island/discovery/search_navigation.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -29,21 +31,18 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 const kSearchPostListId = 'search';
 
-enum SearchTab { posts, accounts, realms }
-
 enum SearchScope { local, remote }
 
 @RoutePage()
 class UniversalSearchScreen extends HookConsumerWidget {
-  final SearchTab initialTab;
-
-  const UniversalSearchScreen({super.key, this.initialTab = SearchTab.posts});
+  const UniversalSearchScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final selectedTab = ref.watch(searchTabProvider);
     final tabController = useMaterialTabController(
-      initialLength: 3,
-      initialIndex: initialTab.index,
+      initialLength: SearchTab.values.length,
+      initialIndex: selectedTab.index,
     );
     final searchQuery = useState<String>('');
     final debouncedSearchQuery = useState<String>('');
@@ -69,9 +68,36 @@ class UniversalSearchScreen extends HookConsumerWidget {
       };
     }, [searchQuery.value]);
 
+    // Follow section requests from outside the page (chat list, realms...).
+    useEffect(() {
+      if (tabController.index != selectedTab.index) {
+        tabController.animateTo(selectedTab.index);
+      }
+      return null;
+    }, [selectedTab]);
+
+    // Publish section switches so they survive leaving the tab.
+    useEffect(() {
+      void onTabChanged() {
+        final tab = SearchTab.values[tabController.index];
+        if (ref.read(searchTabProvider) != tab) {
+          ref.read(searchTabProvider.notifier).select(tab);
+        }
+      }
+
+      tabController.addListener(onTabChanged);
+      return () => tabController.removeListener(onTabChanged);
+    }, [tabController]);
+
     return AppScaffold(
       isNoBackground: false,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Symbols.menu),
+          onPressed: () {
+            rootScaffoldKey.currentState?.openDrawer();
+          },
+        ),
         title: SearchBar(
           controller: searchController,
           focusNode: searchFocusNode,
@@ -124,6 +150,7 @@ class UniversalSearchScreen extends HookConsumerWidget {
               Tab(text: 'posts'.tr()),
               Tab(text: 'accounts'.tr()),
               Tab(text: 'realms'.tr()),
+              Tab(text: 'messages'.tr()),
             ],
           ),
           Expanded(
@@ -133,6 +160,7 @@ class UniversalSearchScreen extends HookConsumerWidget {
                 _PostsSearchTab(searchQuery: debouncedSearchQuery),
                 _AccountSearchTab(searchQuery: debouncedSearchQuery),
                 _RealmsSearchTab(searchQuery: debouncedSearchQuery),
+                ChatMessageSearchView(searchQuery: debouncedSearchQuery),
               ],
             ),
           ),
@@ -178,9 +206,7 @@ class _PostsSearchTab extends HookConsumerWidget {
     final realmController = useTextEditingController();
 
     final categoryTabController = useMaterialTabController(initialLength: 3);
-    final queryState = useState(
-      const PostListQuery(includeReplies: false),
-    );
+    final queryState = useState(const PostListQuery(includeReplies: false));
 
     final noti = ref.read(
       postListProvider(PostListQueryConfig(id: kSearchPostListId)).notifier,
@@ -350,10 +376,15 @@ class _PostsSearchTab extends HookConsumerWidget {
                         child: showFilters.value
                             ? Padding(
                                 key: const ValueKey('filters-visible'),
-                                padding:
-                                    const EdgeInsets.fromLTRB(8, 12, 8, 12),
-                                child: buildFilterPanel()
-                                    .padding(horizontal: 8),
+                                padding: const EdgeInsets.fromLTRB(
+                                  8,
+                                  12,
+                                  8,
+                                  12,
+                                ),
+                                child: buildFilterPanel().padding(
+                                  horizontal: 8,
+                                ),
                               )
                             : const SizedBox(key: ValueKey('filters-hidden')),
                       ),
@@ -387,8 +418,9 @@ class _PostsSearchTab extends HookConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         footerSkeletonChild: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child:
-                              const PostItemSkeleton(maxWidth: double.infinity),
+                          child: const PostItemSkeleton(
+                            maxWidth: double.infinity,
+                          ),
                         ),
                         itemBuilder: (context, index, post) {
                           return Card(
@@ -396,8 +428,10 @@ class _PostsSearchTab extends HookConsumerWidget {
                               horizontal: 8,
                               vertical: 4,
                             ),
-                            child:
-                                PostActionableItem(item: post, borderRadius: 8),
+                            child: PostActionableItem(
+                              item: post,
+                              borderRadius: 8,
+                            ),
                           );
                         },
                       ),

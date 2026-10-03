@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -65,6 +67,20 @@ SnNotableDay? _specializeNotableDay(SnNotableDay? day) {
       : day.copyWith(date: date);
 }
 
+/// The 1:1 stamps that dress a draw, under `assets/images/check-in/`. `t{n}` is
+/// the stamp for check-in tier `n`.
+const checkInStampCount = 5;
+
+String checkInStampAsset(int level) =>
+    'assets/images/check-in/t${level.clamp(0, checkInStampCount - 1)}.webp';
+
+/// Generator seeded by the draw's local date: the same day always lands its
+/// stamp on the same corner at the same tilt, the next day picks another.
+Random checkInStampRandom(DateTime date) {
+  final local = date.toLocal();
+  return Random(local.year * 10000 + local.month * 100 + local.day);
+}
+
 /// Dashboard card for today's draw: what today looks like, and the way in.
 class CheckInWidget extends ConsumerWidget {
   final EdgeInsets? margin;
@@ -74,14 +90,29 @@ class CheckInWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final view = _CheckInView.of(ref.watch(checkInResultTodayProvider));
+    final today = ref.watch(checkInResultTodayProvider);
+    final view = _CheckInView.of(today);
+    // A drawn day leads with the stamp of the tier it landed on.
+    final level = today.value?.level;
 
     return Card(
       margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 6, 12),
+        padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
         child: Row(
           children: [
+            if (level != null) ...[
+              Padding(
+                padding: const .symmetric(vertical: 12, horizontal: 4),
+                child: Image.asset(
+                  checkInStampAsset(level),
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const Gap(12),
+            ],
             Expanded(
               // Keyed by state, so the three lines cross-fade as one block
               // instead of each line swapping on its own.
@@ -92,15 +123,6 @@ class CheckInWidget extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'checkIn'.tr(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const Gap(4),
                     Text(
                       view.title,
                       maxLines: 1,
@@ -127,7 +149,6 @@ class CheckInWidget extends ConsumerWidget {
             IconButton.filledTonal(
               onPressed: () => showCheckInSheet(context),
               tooltip: 'checkIn'.tr(),
-              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
               icon: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 260),
                 child: Icon(view.icon, key: ValueKey(view.icon)),
@@ -136,9 +157,9 @@ class CheckInWidget extends ConsumerWidget {
             IconButton(
               onPressed: () => context.router.push(EventHubRoute(name: 'me')),
               tooltip: 'eventCalendar'.tr(),
-              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
               icon: const Icon(Symbols.event),
             ),
+            const Gap(8),
           ],
         ),
       ),

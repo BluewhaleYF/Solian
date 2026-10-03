@@ -2426,22 +2426,6 @@ class RelationshipRoute extends _i73.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i57.SearchAllMessagesScreen]
-class SearchAllMessagesRoute extends _i73.PageRouteInfo<void> {
-  const SearchAllMessagesRoute({List<_i73.PageRouteInfo>? children})
-    : super(SearchAllMessagesRoute.name, initialChildren: children);
-
-  static const String name = 'SearchAllMessagesRoute';
-
-  static _i73.PageInfo page = _i73.PageInfo(
-    name,
-    builder: (data) {
-      return const _i57.SearchAllMessagesScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [_i57.SearchMessagesScreen]
 class SearchMessagesRoute extends _i73.PageRouteInfo<SearchMessagesRouteArgs> {
   SearchMessagesRoute({
@@ -2968,58 +2952,18 @@ class TransactionDetailRouteArgs {
 
 /// generated route for
 /// [_i69.UniversalSearchScreen]
-class UniversalSearchRoute
-    extends _i73.PageRouteInfo<UniversalSearchRouteArgs> {
-  UniversalSearchRoute({
-    _i74.Key? key,
-    _i69.SearchTab initialTab = _i69.SearchTab.posts,
-    List<_i73.PageRouteInfo>? children,
-  }) : super(
-         UniversalSearchRoute.name,
-         args: UniversalSearchRouteArgs(key: key, initialTab: initialTab),
-         initialChildren: children,
-       );
+class UniversalSearchRoute extends _i73.PageRouteInfo<void> {
+  const UniversalSearchRoute({List<_i73.PageRouteInfo>? children})
+    : super(UniversalSearchRoute.name, initialChildren: children);
 
   static const String name = 'UniversalSearchRoute';
 
   static _i73.PageInfo page = _i73.PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<UniversalSearchRouteArgs>(
-        orElse: () => const UniversalSearchRouteArgs(),
-      );
-      return _i69.UniversalSearchScreen(
-        key: args.key,
-        initialTab: args.initialTab,
-      );
+      return const _i69.UniversalSearchScreen();
     },
   );
-}
-
-class UniversalSearchRouteArgs {
-  const UniversalSearchRouteArgs({
-    this.key,
-    this.initialTab = _i69.SearchTab.posts,
-  });
-
-  final _i74.Key? key;
-
-  final _i69.SearchTab initialTab;
-
-  @override
-  String toString() {
-    return 'UniversalSearchRouteArgs{key: $key, initialTab: $initialTab}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! UniversalSearchRouteArgs) return false;
-    return key == other.key && initialTab == other.initialTab;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ initialTab.hashCode;
 }
 
 /// generated route for
