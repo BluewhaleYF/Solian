@@ -1,13 +1,15 @@
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:gap/gap.dart';
 import 'package:island/core/network/domain_trust.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/content/trust_rail_card.dart';
+import 'package:island/shared/widgets/hold_to_confirm_button.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum DomainTrustAction { openLink, loadImage }
 
@@ -23,12 +25,20 @@ Future<DomainTrustDecision> showDomainTrustSheet(
     context: context,
     isScrollControlled: true,
     useRootNavigator: true,
+    useSafeArea: true,
     builder: (context) =>
         DomainTrustSheet(uri: uri, result: result, action: action),
   );
   return decision ?? DomainTrustDecision.cancelled;
 }
 
+/// The anti-fraud prompt shown before leaving the app for a domain the
+/// service did not verify, or before loading an image from a blocked one.
+///
+/// The prompt has one job: say what will happen, show where it goes, show why
+/// it was flagged, and let the user back out. Nothing here is decorative —
+/// the verdict lives in the header icon, the rail and the accent, so the
+/// destination itself can be presented plainly.
 class DomainTrustSheet extends StatelessWidget {
   final Uri uri;
   final DomainTrustResult result;
@@ -41,202 +51,243 @@ class DomainTrustSheet extends StatelessWidget {
     required this.action,
   });
 
+  /// `SheetScaffold` renders exactly the height it is given — the content goes
+  /// into an `Expanded` slot, so it cannot hug its child — while this prompt
+  /// has to stay short instead of taking the default 80% of the screen.
+  ///
+  /// The height is therefore summed from the blocks below: the wrapping ones
+  /// (description, destination, block reason) are measured with a
+  /// [TextPainter] in the style, width and text scale their widgets get, and
+  /// the fixed ones are constants. A warning that the actions have slipped
+  /// below the fold is worse than a few pixels of air, so the sum keeps a
+  /// margin of one line.
+  ///
+  /// `SheetScaffold`'s own header is 28dp of padding around the close
+  /// button's 48dp tap target, and does not scale with the content.
+  static const _headerBlock = 76.0;
+  static const _gapBeforeDestination = 16.0;
+  static const _gapBeforeReason = 12.0;
+  static const _gapBeforeActions = 20.0;
+  static const _reasonPadding = 24.0;
+  static const _reasonIconWidth = 26.0;
+  static const _reasonIconHeight = 18.0;
+  static const _sheetPadding = 40.0;
+  static const _bottomBlock = 24.0;
+
+  /// One row of buttons at the 48dp tap target, with the margin a label in a
+  /// bigger text scale would eat.
+  static const _actionsBlock = 56.0;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final isBlocked = result.trustLevel == DomainTrustLevel.blocked;
-    final scheme = Theme.of(context).colorScheme;
-    final characterAsset = isBlocked
-        ? 'assets/images/michan/link-warning.webp'
-        : 'assets/images/michan/link-prompt.webp';
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 420;
-    final characterHeight = isCompact ? 180.0 : 240.0;
-    final contentRightPadding = isCompact ? 120.0 : 156.0;
+    final accent = isBlocked ? scheme.error : scheme.primary;
 
-    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
-    return SheetScaffold(
-      showHeader: false,
-      height: 320 + bottomSafeArea,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            right: isCompact ? -18 : -8,
-            top: -(characterHeight * 0.48),
-            child: IgnorePointer(
-              child: Image.asset(
-                characterAsset,
-                height: characterHeight,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(20, 28, 20, 20 + bottomSafeArea),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(right: contentRightPadding),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isBlocked ? Symbols.warning : Symbols.verified_user,
-                        color: isBlocked ? scheme.error : scheme.primary,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'domainTrustTitle'.tr(),
-                          style: GoogleFonts.notoSerifSc(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: EdgeInsets.only(right: contentRightPadding),
-                  child: Text(
-                    _descriptionKey.tr(),
-                    style: GoogleFonts.notoSerifSc(fontSize: 14),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: EdgeInsets.fromLTRB(
-                    12,
-                    12,
-                    isCompact ? 12 : contentRightPadding - 24,
-                    12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    uri.toString(),
-                    style: Theme.of(
+    final description = _descriptionKey.tr();
+    final descriptionStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: scheme.onSurface,
+      height: 1.45,
+    );
+    final hostStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+    final urlStyle = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+    final reasonText = result.blockReason == null
+        ? null
+        : '${'domainTrustReason'.tr()}: ${result.blockReason}';
+    final reasonColor = isBlocked
+        ? scheme.onErrorContainer
+        : scheme.onSurfaceVariant;
+    final reasonStyle = theme.textTheme.bodySmall?.copyWith(
+      color: reasonColor,
+      height: 1.4,
+    );
+
+    // `useSafeArea` keeps the sheet's top clear but leaves its bottom edge to
+    // the content, so the home indicator is accounted for here as well.
+    final contentWidth = MediaQuery.of(context).size.width - _sheetPadding;
+    final cardInnerWidth =
+        contentWidth -
+        TrustRailCard.railWidth -
+        TrustRailCard.defaultPadding.horizontal;
+    final destinationBlock =
+        TrustRailCard.defaultPadding.vertical +
+        2 +
+        _textHeight(context, uri.host, hostStyle, cardInnerWidth, maxLines: 1) +
+        _textHeight(
+          context,
+          uri.toString(),
+          urlStyle,
+          cardInnerWidth,
+          maxLines: 2,
+        );
+    final height =
+        _headerBlock +
+        _bottomBlock +
+        _actionsBlock +
+        _gapBeforeActions +
+        destinationBlock +
+        _gapBeforeDestination +
+        _textHeight(context, description, descriptionStyle, contentWidth) +
+        (reasonText == null
+            ? 0
+            : _gapBeforeReason +
+                  _reasonPadding +
+                  math.max(
+                    _reasonIconHeight,
+                    _textHeight(
                       context,
-                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                      reasonText,
+                      reasonStyle,
+                      contentWidth - _reasonIconWidth - _reasonPadding,
+                    ),
+                  )) +
+        MediaQuery.of(context).padding.bottom;
+
+    return SheetScaffold(
+      titleText: 'domainTrustTitle'.tr(),
+      leading: Icon(
+        isBlocked ? Symbols.gpp_bad : Symbols.gpp_maybe,
+        color: accent,
+        size: 26,
+      ),
+      height: height,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          _sheetPadding / 2,
+          0,
+          _sheetPadding / 2,
+          _bottomBlock,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(description, style: descriptionStyle),
+            const Gap(_gapBeforeDestination),
+            TrustRailCard(
+              accent: accent,
+              background: scheme.surfaceContainerHigh,
+              border: isBlocked
+                  ? scheme.error.withOpacity(0.35)
+                  : scheme.outlineVariant,
+              padding: TrustRailCard.defaultPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    uri.host,
+                    style: hostStyle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                if (result.blockReason != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isBlocked
-                          ? scheme.errorContainer
-                          : scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      '${'domainTrustReason'.tr()}: ${result.blockReason}',
-                      style: TextStyle(
-                        color: isBlocked
-                            ? scheme.onErrorContainer
-                            : scheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    ),
+                  const Gap(2),
+                  Text(
+                    uri.toString(),
+                    style: urlStyle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                const SizedBox(height: 24),
-                isCompact
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(text: uri.toString()),
-                              );
-                              showSnackBar('copyToClipboard'.tr());
-                            },
-                            icon: const Icon(Symbols.content_copy),
-                            label: Text('domainTrustCopyLink'.tr()),
+              ),
+            ),
+            if (reasonText != null) ...[
+              const Gap(_gapBeforeReason),
+              Container(
+                padding: const EdgeInsets.all(_reasonPadding / 2),
+                decoration: BoxDecoration(
+                  color: isBlocked
+                      ? scheme.errorContainer
+                      : scheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Symbols.report,
+                      size: _reasonIconHeight,
+                      color: reasonColor,
+                    ),
+                    const Gap(8),
+                    Expanded(child: Text(reasonText, style: reasonStyle)),
+                  ],
+                ),
+              ),
+            ],
+            const Gap(_gapBeforeActions),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: uri.toString()));
+                      showSnackBar('copyToClipboard'.tr());
+                    },
+                    icon: const Icon(Symbols.content_copy, size: 18),
+                    label: Text(
+                      'domainTrustCopyLink'.tr(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const Gap(12),
+                Expanded(
+                  child: isBlocked
+                      ? HoldToConfirmButton(
+                          label: _ctaKey.tr(),
+                          icon: _actionIcon,
+                          onConfirmed: () => Navigator.pop(
+                            context,
+                            DomainTrustDecision.proceed,
                           ),
-                          const SizedBox(height: 12),
-                          isBlocked
-                              ? _LongPressProceedButton(
-                                  label: _ctaKey.tr(),
-                                  onCompleted: () => Navigator.pop(
-                                    context,
-                                    DomainTrustDecision.proceed,
-                                  ),
-                                )
-                              : FilledButton.icon(
-                                  onPressed: () {
-                                    Navigator.pop(
-                                      context,
-                                      DomainTrustDecision.proceed,
-                                    );
-                                  },
-                                  icon: Icon(
-                                    action == DomainTrustAction.openLink
-                                        ? Symbols.open_in_new
-                                        : Symbols.image,
-                                  ),
-                                  label: Text(_ctaKey.tr()),
-                                ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Clipboard.setData(
-                                  ClipboardData(text: uri.toString()),
-                                );
-                                showSnackBar('copyToClipboard'.tr());
-                              },
-                              icon: const Icon(Symbols.content_copy),
-                              label: Text('domainTrustCopyLink'.tr()),
-                            ),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => Navigator.pop(
+                            context,
+                            DomainTrustDecision.proceed,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: isBlocked
-                                ? _LongPressProceedButton(
-                                    label: _ctaKey.tr(),
-                                    onCompleted: () => Navigator.pop(
-                                      context,
-                                      DomainTrustDecision.proceed,
-                                    ),
-                                  )
-                                : FilledButton.icon(
-                                    onPressed: () {
-                                      Navigator.pop(
-                                        context,
-                                        DomainTrustDecision.proceed,
-                                      );
-                                    },
-                                    icon: Icon(
-                                      action == DomainTrustAction.openLink
-                                          ? Symbols.open_in_new
-                                          : Symbols.image,
-                                    ),
-                                    label: Text(_ctaKey.tr()),
-                                  ),
+                          icon: Icon(_actionIcon, size: 18),
+                          label: Text(
+                            _ctaKey.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        ),
+                ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  double _textHeight(
+    BuildContext context,
+    String text,
+    TextStyle? style,
+    double width, {
+    int? maxLines,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: maxLines,
+    )..layout(maxWidth: width);
+    return painter.height;
+  }
+
+  IconData get _actionIcon => action == DomainTrustAction.openLink
+      ? Symbols.open_in_new
+      : Symbols.image;
 
   String get _descriptionKey {
     if (result.trustLevel == DomainTrustLevel.blocked) {
@@ -258,83 +309,5 @@ class DomainTrustSheet extends StatelessWidget {
     return action == DomainTrustAction.openLink
         ? 'domainTrustOpenAnyway'
         : 'domainTrustLoadImage';
-  }
-}
-
-class _LongPressProceedButton extends StatefulWidget {
-  final String label;
-  final VoidCallback onCompleted;
-
-  const _LongPressProceedButton({
-    required this.label,
-    required this.onCompleted,
-  });
-
-  @override
-  State<_LongPressProceedButton> createState() =>
-      _LongPressProceedButtonState();
-}
-
-class _LongPressProceedButtonState extends State<_LongPressProceedButton> {
-  static const _holdDuration = Duration(milliseconds: 900);
-
-  Timer? _timer;
-  bool _holding = false;
-
-  void _startHold() {
-    setState(() => _holding = true);
-    _timer = Timer(_holdDuration, widget.onCompleted);
-  }
-
-  void _cancelHold() {
-    _timer?.cancel();
-    _timer = null;
-    if (_holding && mounted) {
-      setState(() => _holding = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _cancelHold();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onLongPressStart: (_) => _startHold(),
-      onLongPressEnd: (_) => _cancelHold(),
-      onLongPressCancel: _cancelHold,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        height: 40,
-        decoration: BoxDecoration(
-          color: _holding ? scheme.error : scheme.errorContainer,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: scheme.error.withOpacity(0.35)),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.touch_app,
-              size: 18,
-              color: _holding ? scheme.onError : scheme.error,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              widget.label,
-              style: TextStyle(
-                color: _holding ? scheme.onError : scheme.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

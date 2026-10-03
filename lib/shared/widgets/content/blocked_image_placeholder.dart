@@ -1,9 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:gap/gap.dart';
 import 'package:island/core/network/domain_trust.dart';
+import 'package:island/shared/widgets/content/trust_rail_card.dart';
+import 'package:island/shared/widgets/hold_to_confirm_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:material_ui/material_ui.dart';
 
+/// Stands in for an image whose host the anti-fraud service would not vouch
+/// for, in the middle of whatever the image was embedded in.
+///
+/// Nothing has failed here — the image is waiting on a decision — so the card
+/// reads as the blocked image itself rather than as an error, and carries the
+/// same rail and icons as the prompt sheet so both ask the same question in
+/// the same voice.
 class BlockedImagePlaceholder extends StatelessWidget {
   final Uri uri;
   final DomainTrustResult result;
@@ -18,248 +27,109 @@ class BlockedImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final isBlocked = result.trustLevel == DomainTrustLevel.blocked;
-    final scheme = Theme.of(context).colorScheme;
-    final characterAsset = isBlocked
-        ? 'assets/images/michan/link-warning.webp'
-        : 'assets/images/michan/link-prompt.webp';
+    final accent = isBlocked ? scheme.error : scheme.primary;
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 180),
-      decoration: BoxDecoration(
-        color: isBlocked
-            ? scheme.errorContainer.withOpacity(0.35)
-            : scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isBlocked
-              ? scheme.error.withOpacity(0.35)
-              : scheme.outlineVariant,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  isBlocked ? Symbols.privacy_tip : Symbols.travel_explore,
-                  color: isBlocked ? scheme.error : scheme.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'domainTrustTitle'.tr(),
-                    style: GoogleFonts.notoSerifSc(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: isBlocked ? scheme.error : scheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isBlocked
-                  ? 'domainUntrustLoadImageDescription'.tr()
-                  : 'domainTrustLoadImageDescription'.tr(),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (result.blockReason != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+    return TrustRailCard(
+      accent: accent,
+      background: isBlocked
+          ? scheme.errorContainer.withOpacity(0.35)
+          : scheme.surfaceContainerHigh,
+      border: isBlocked
+          ? scheme.error.withOpacity(0.35)
+          : scheme.outlineVariant,
+      padding: const EdgeInsets.fromLTRB(16, 14, 14, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isBlocked ? Symbols.gpp_bad : Symbols.gpp_maybe,
+                size: 20,
+                color: accent,
+              ),
+              const Gap(8),
+              Expanded(
                 child: Text(
-                  '${'domainTrustReason'.tr()}: ${result.blockReason}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  'domainTrustTitle'.tr(),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 50),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          uri.host,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                fontFamily: 'monospace',
-                                color: scheme.onSurfaceVariant,
-                              ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      isBlocked
-                          ? _InlineLongPressButton(
-                              label: 'domainTrustLongPressLoadImage'.tr(),
-                              onCompleted: onProceed,
-                            )
-                          : TextButton.icon(
-                              onPressed: onProceed,
-                              icon: const Icon(Symbols.image, size: 16),
-                              label: Text('domainTrustLoadImage'.tr()),
-                              style: TextButton.styleFrom(
-                                foregroundColor: scheme.primary,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  right: -60,
-                  bottom: 32,
-                  child: IgnorePointer(
-                    child: Image.asset(
-                      characterAsset,
-                      height: 240,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InlineLongPressButton extends StatefulWidget {
-  final String label;
-  final VoidCallback onCompleted;
-
-  const _InlineLongPressButton({
-    required this.label,
-    required this.onCompleted,
-  });
-
-  @override
-  State<_InlineLongPressButton> createState() => _InlineLongPressButtonState();
-}
-
-class _InlineLongPressButtonState extends State<_InlineLongPressButton>
-    with SingleTickerProviderStateMixin {
-  static const _holdDuration = Duration(milliseconds: 900);
-
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: _holdDuration)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          widget.onCompleted();
-          _controller.reset();
-        }
-      });
-  }
-
-  void _startHold() {
-    if (_controller.isAnimating) return;
-    _controller.forward(from: 0);
-  }
-
-  void _cancelHold() {
-    if (_controller.isCompleted) return;
-    _controller.stop();
-    _controller.reset();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Listener(
-      onPointerDown: (_) => _startHold(),
-      onPointerUp: (_) => _cancelHold(),
-      onPointerCancel: (_) => _cancelHold(),
-      behavior: HitTestBehavior.opaque,
-      child: GestureDetector(
-        onLongPress: () {},
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            final isHolding = _controller.value > 0;
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: Stack(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: scheme.errorContainer,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: child,
-                  ),
-                  Positioned.fill(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: _controller.value,
-                        child: Container(color: scheme.error),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      alignment: Alignment.center,
-                      child: Text(
-                        widget.label,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: isHolding ? scheme.onError : scheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-          child: Text(
-            widget.label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: scheme.error,
-              fontWeight: FontWeight.w600,
+          ),
+          const Gap(8),
+          Text(
+            isBlocked
+                ? 'domainUntrustLoadImageDescription'.tr()
+                : 'domainTrustLoadImageDescription'.tr(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.45,
             ),
           ),
-        ),
+          if (result.blockReason != null) ...[
+            const Gap(10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${'domainTrustReason'.tr()}: ${result.blockReason}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+          const Gap(12),
+          // Everything above explains the decision; everything below is the
+          // destination and the one way to act on it.
+          Divider(height: 1, color: scheme.outlineVariant),
+          const Gap(10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  uri.host,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Gap(8),
+              isBlocked
+                  ? HoldToConfirmButton(
+                      dense: true,
+                      label: 'domainTrustLongPressLoadImage'.tr(),
+                      icon: Symbols.image,
+                      onConfirmed: onProceed,
+                    )
+                  : TextButton.icon(
+                      onPressed: onProceed,
+                      icon: const Icon(Symbols.image, size: 16),
+                      label: Text(
+                        'domainTrustLoadImage'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.primary,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+            ],
+          ),
+        ],
       ),
     );
   }
