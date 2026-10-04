@@ -34,7 +34,6 @@ class TabsScreen extends StatelessWidget {
         ChatRoute(),
         RealmListRoute(),
         AccountRoute(),
-        FileListRoute(),
         WalletRoute(),
         CreatorHubRoute(),
       ],
@@ -177,17 +176,8 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       ),
     ),
     _TabDestination(
-      id: 'files',
-      routeIndex: 6,
-      routePath: '/files',
-      label: 'files'.tr(),
-      navigationIcon: Symbols.folder_rounded,
-      iconBuilder: (selected) =>
-          Icon(Symbols.folder_rounded, fill: selected ? 1 : null),
-    ),
-    _TabDestination(
       id: 'wallet',
-      routeIndex: 7,
+      routeIndex: 6,
       routePath: '/wallet',
       label: 'wallet'.tr(),
       navigationIcon: Symbols.wallet,
@@ -196,7 +186,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     ),
     _TabDestination(
       id: 'creators',
-      routeIndex: 8,
+      routeIndex: 7,
       routePath: '/creators',
       label: 'creatorHub'.tr(),
       navigationIcon: Symbols.design_services_rounded,

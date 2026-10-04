@@ -166,13 +166,6 @@ class AppRouter extends RootStackRouter {
           ],
         ),
 
-        // Files tab
-        AutoRoute(
-          page: FileListRoute.page,
-          path: 'files',
-          maintainState: false,
-        ),
-
         // Creator hub tab with nested routes
         AutoRoute(
           page: CreatorHubRoute.page,

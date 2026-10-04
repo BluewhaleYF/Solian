@@ -18,11 +18,13 @@ import 'dart:ui' as ui;
 import 'package:island/core/data_saving_gate.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/utils/file_icon_utils.dart';
-import 'package:island/drive/widgets/file_list_view.dart' show FileListViewMode;
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
+
+/// How a collection of cloud files lays its items out.
+enum FileListViewMode { list, columns, waterfall }
 
 final folderChildrenProvider = FutureProvider.family<List<SnCloudFile>, String>(
   (ref, parentId) async {
