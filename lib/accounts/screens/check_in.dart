@@ -1311,6 +1311,8 @@ class FortuneCard extends StatelessWidget {
     final artAsset = checkInResultAsset(level);
     final artBackdrop = checkInResultBackdrop(level);
     final lunarDate = createdAt != null ? Lunar.fromDate(createdAt!) : null;
+    final hasPoem = poem?.isNotEmpty ?? false;
+    final hasSummary = summary?.isNotEmpty ?? false;
 
     // The draw is the one block that wears a colour of its own: the tier it
     // landed on. Still flat, tinted and edged rather than raised.
@@ -1380,38 +1382,47 @@ class FortuneCard extends StatelessWidget {
             ),
             const Gap(18),
           ],
-          if (showSealHeader)
+          if (showSealHeader) ...[
             FortuneSealHeader(
               level: level,
               lunarDate: lunarDate,
               levelColor: levelColor,
             ),
-          if (poem?.isNotEmpty ?? false) ...[
-            const Gap(8),
+            // The tier's rule closes the heading and opens the verse. There is
+            // nothing to open on a draw whose report has not landed yet, so the
+            // card keeps it in reserve until the verse is there.
+            if (hasPoem || hasSummary) ...[
+              const Gap(18),
+              // The rule hangs with the verse rather than the heading: the
+              // opening lines of a slip sit just under its frame line.
+              Container(height: 1, color: levelColor.withValues(alpha: .28)),
+              const Gap(10),
+            ],
+          ],
+          // The verse is the body of the card and the gloss is its caption, so
+          // they are told apart by size and colour rather than by decoration.
+          if (hasPoem)
             Text(
               poem!,
               style: checkInSerif(
                 context,
                 base: theme.textTheme.titleMedium,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
+                height: 1.9,
               ),
               textAlign: TextAlign.center,
             ),
-          ],
-          if (summary?.isNotEmpty ?? false) ...[
-            const Gap(16),
+          if (hasPoem && hasSummary) const Gap(18),
+          if (hasSummary)
             Text(
               summary!,
               style: checkInSerif(
                 context,
-                base: theme.textTheme.bodyMedium,
+                base: theme.textTheme.bodySmall,
                 color: theme.colorScheme.onSurfaceVariant,
-                height: 1.6,
+                height: 1.7,
               ),
               textAlign: TextAlign.center,
             ),
-          ],
         ],
       ),
     );
@@ -1659,93 +1670,55 @@ class FortuneSealHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lunarMonth = lunarDate?.getMonthInChinese() ?? '--';
-    final lunarDay = lunarDate?.getDayInChinese() ?? '--';
+    final lunar = lunarDate;
+    // Both halves of the note are set identically: stacking only says which
+    // half is the label, it does not make the label a lesser note.
+    final noteStyle = checkInSerif(
+      context,
+      base: theme.textTheme.bodySmall,
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
-    // Both halves scale down instead of overflowing: "A Normal Day" at
-    // headline weight is wider than a phone-sized card.
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    // One axis, one hero. The tier the draw landed on is the answer the visitor
+    // opened the sheet for, so it is the loudest thing on the card; everything
+    // under it is quieter, and all of it sits on the card's midline.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          flex: 3,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '农\n历',
-                  style: checkInSerif(
-                    context,
-                    base: theme.textTheme.bodyMedium,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const Gap(10),
-                Text(
-                  lunarMonth,
-                  style: checkInSerif(
-                    context,
-                    base: theme.textTheme.headlineMedium,
-                    fontWeight: FontWeight.w900,
-                    color: levelColor,
-                  ),
-                ),
-                const Gap(6),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    '月',
-                    style: checkInSerif(
-                      context,
-                      base: theme.textTheme.titleMedium,
-                      fontWeight: FontWeight.w700,
-                      color: levelColor,
-                    ),
-                  ),
-                ),
-              ],
+        // Scales down rather than overflowing on the long tiers ("Happy
+        // Birthday 🥳", "생일 축하합니다 🥳").
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Text(
+            'checkInResultLevel$level'.tr(),
+            style: checkInSerif(
+              context,
+              base: theme.textTheme.headlineSmall,
+              fontWeight: FontWeight.w900,
+              height: 1.1,
+              color: levelColor,
             ),
           ),
         ),
-        const Gap(12),
-        Flexible(
-          flex: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
+        if (lunar != null) ...[
+          const Gap(9),
+          // Month and day belong together, so they read as one note under the
+          // tier instead of two numerals pulled to opposite edges, with the
+          // 农历 mark stacked in the margin the way a slip is annotated.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text(
-                  'checkInResultLevel$level'.tr(),
-                  style: checkInSerif(
-                    context,
-                    base: theme.textTheme.headlineMedium,
-                    fontWeight: FontWeight.w900,
-                    color: levelColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
+              Text('农\n历', style: noteStyle.copyWith(height: 1.05)),
+              const Gap(10),
               Text(
-                lunarDay,
-                style: checkInSerif(
-                  context,
-                  base: theme.textTheme.titleMedium,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                '${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}',
+                style: noteStyle,
               ),
             ],
           ),
-        ),
+        ],
       ],
     );
   }
