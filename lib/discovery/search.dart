@@ -30,6 +30,10 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 const kSearchPostListId = 'search';
 
+/// Wide-screen posts search: the results card and the side pane both start this
+/// far below the tab bar, so their top edges line up across the gutter.
+const _kWidePaneInset = 12.0;
+
 enum SearchScope { local, remote }
 
 @RoutePage()
@@ -296,7 +300,12 @@ class _PostsSearchTab extends HookConsumerWidget {
                   Flexible(
                     flex: 4,
                     child: Card(
-                      margin: const EdgeInsets.fromLTRB(12, 12, 0, 0),
+                      margin: const EdgeInsets.fromLTRB(
+                        _kWidePaneInset,
+                        _kWidePaneInset,
+                        0,
+                        0,
+                      ),
                       shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(16),
@@ -360,7 +369,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Gap(8),
+                            Gap(_kWidePaneInset),
                             Card(
                               margin: EdgeInsets.symmetric(horizontal: 8),
                               child: Padding(

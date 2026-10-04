@@ -137,6 +137,10 @@ void main() {
     expect(items, findsNWidgets(3));
 
     // Every row's only Card ancestor is the shared pane wrapper.
+    final resultsCard = find.ancestor(
+      of: items.first,
+      matching: find.byType(Card),
+    );
     for (var i = 0; i < 3; i++) {
       final cardFinder = find.ancestor(
         of: items.at(i),
@@ -160,6 +164,19 @@ void main() {
       }
     }
     expect(find.byType(Divider), findsAtLeastNWidgets(2));
+
+    // The side pane's filter card starts on the same line as the results card
+    // rather than floating above it.
+    Rect surfaceOf(Finder card) => tester.getRect(
+      find.descendant(of: card, matching: find.byType(Material)).first,
+    );
+    final filterHeaderCard = find.ancestor(
+      of: find.byIcon(Symbols.filter_alt),
+      matching: find.byType(Card),
+    );
+    expect(filterHeaderCard, findsOneWidget);
+    expect(surfaceOf(filterHeaderCard).top, surfaceOf(resultsCard).top);
+
     await disposeTree(tester);
   });
 

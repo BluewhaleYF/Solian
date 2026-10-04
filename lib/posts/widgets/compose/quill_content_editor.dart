@@ -631,8 +631,7 @@ class QuillContentEditor extends HookConsumerWidget {
         return KeyEventResult.handled;
       }
       if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        highlighted.value =
-            (highlighted.value - 1 + list.length) % list.length;
+        highlighted.value = (highlighted.value - 1 + list.length) % list.length;
         overlayEntry.value?.markNeedsBuild();
         return KeyEventResult.handled;
       }
@@ -830,9 +829,14 @@ class _FloatingToolbarState extends State<_FloatingToolbar> {
     );
     final aboveTop = globalCaret.dy - _toolbarHeight - _kToolbarCaretGap;
     final belowTop = globalCaret.dy + _kToolbarCaretGap;
+    // Desktop/large screens hang the pill below the caret and only flip it
+    // above when it would run past the bottom of the window; touch platforms
+    // keep it pinned above the soft keyboard.
     final toolbarTop = widget.isTouchPlatform
         ? maxTop
-        : (aboveTop >= 0 ? aboveTop : belowTop).clamp(0.0, maxTop).toDouble();
+        : (belowTop <= maxTop ? belowTop : aboveTop)
+              .clamp(0.0, maxTop)
+              .toDouble();
 
     return AnimatedPositioned(
       duration: _kToolbarAnimationDuration,

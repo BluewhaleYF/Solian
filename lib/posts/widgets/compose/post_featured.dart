@@ -285,8 +285,9 @@ class _FlushFeaturedStrip extends StatelessWidget {
         alignment: Alignment.topCenter,
         // Cards keep their own width so a card entering the viewport can never
         // be squeezed into the space left over by the previous one.
-        child: SizedBox(
+        child: Container(
           width: itemWidth,
+          margin: const .only(bottom: 12),
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(

@@ -198,6 +198,53 @@ void main() {
     }
   });
 
+  testWidgets('desktop toolbar hangs below the caret', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    try {
+      final state = ComposeLogic.createState();
+      await pumpEditor(
+        tester,
+        state,
+        _FakeAutocompleteService(const []),
+        platform: TargetPlatform.macOS,
+      );
+
+      await tester.tap(find.byType(QuillEditor));
+      await tester.pump();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await tester.pump();
+      await mouse.moveTo(tester.getCenter(find.byType(QuillEditor)));
+      await tester.pump(const Duration(milliseconds: 200));
+      await imeType(tester, List.generate(12, (i) => 'line $i').join('\n'));
+      await tester.pumpAndSettle();
+
+      final toolbar = find.byKey(const ValueKey('compose-floating-toolbar'));
+      expect(toolbar, findsOneWidget);
+      final toolbarTop = tester.getTopLeft(toolbar).dy;
+
+      final renderEditor = tester
+          .state<QuillEditorState>(find.byType(QuillEditor))
+          .editableTextKey
+          .currentState!
+          .renderEditor;
+      final caretBottom = renderEditor
+          .localToGlobal(
+            renderEditor
+                .getEndpointsForSelection(
+                  state.contentQuillController.selection,
+                )
+                .last
+                .point,
+          )
+          .dy;
+      expect(toolbarTop, greaterThan(caretBottom));
+      expect(toolbarTop - caretBottom, lessThan(120));
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   testWidgets('unmounting with the toolbar open does not throw', (
     tester,
   ) async {
@@ -249,9 +296,11 @@ void main() {
     final toolbar = find.byKey(const ValueKey('compose-floating-toolbar'));
     expect(toolbar, findsOneWidget);
     final toolbarBox = tester.renderObject<RenderBox>(toolbar);
-    final toolbarBottom = toolbarBox.localToGlobal(Offset(0, toolbarBox.size.height)).dy;
-    final keyboardTop = tester.view.physicalSize.height /
-        tester.view.devicePixelRatio -
+    final toolbarBottom = toolbarBox
+        .localToGlobal(Offset(0, toolbarBox.size.height))
+        .dy;
+    final keyboardTop =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio -
         tester.view.viewInsets.bottom / tester.view.devicePixelRatio;
     expect(toolbarBottom, lessThanOrEqualTo(keyboardTop));
   });
