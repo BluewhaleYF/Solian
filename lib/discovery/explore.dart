@@ -226,16 +226,33 @@ class ExploreScreen extends HookConsumerWidget {
     );
   }
 
+  /// Header of the explore feed.
+  ///
+  /// With the transparent app bar setting off the header is a solid primary
+  /// band (see [AppSettings.appBarTransparent]); with it on it defers to the
+  /// theme's transparent treatment. [foreground] carries the matching on-color
+  /// into every child because the icon/label colors below are picked locally
+  /// rather than inherited from the [AppBar]'s [IconTheme].
   SliverAppBar _buildExploreSliverAppBar({
     required BuildContext context,
     required TabController filterTabController,
     required bool hasSubscriptionFiltersApplied,
     required void Function(String?) handleFilterChange,
     required bool isWide,
+    required bool appBarTransparent,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final foreground = appBarTransparent
+        ? (Theme.of(context).appBarTheme.foregroundColor ??
+              colorScheme.onSurface)
+        : colorScheme.onPrimary;
+
     return SliverAppBar(
       automaticallyImplyLeading: false,
       automaticallyImplyActions: false,
+      // Null keeps the theme background (transparent when the setting is on).
+      backgroundColor: appBarTransparent ? null : colorScheme.primary,
+      foregroundColor: foreground,
       shape: isWide
           ? const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
@@ -244,30 +261,26 @@ class ExploreScreen extends HookConsumerWidget {
               ),
             )
           : null,
-      flexibleSpace:
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Symbols.category),
-                color: Theme.of(context).colorScheme.onSurface,
-                tooltip: 'categoriesAndTags'.tr(),
-                onPressed: () => context.router.push(PostCategoriesListRoute()),
-              ),
-              IconButton(
-                icon: const Icon(Symbols.shuffle),
-                color: Theme.of(context).colorScheme.onSurface,
-                tooltip: 'postShuffle'.tr(),
-                onPressed: () => context.router.push(const PostShuffleRoute()),
-              ),
-            ],
-          ).padding(
-            horizontal: 12,
-            bottom: 8,
-            top: MediaQuery.paddingOf(context).top + 8,
-          ),
+      // Category/tag browsing is the left-hand action; shuffle is a regular
+      // trailing action.
+      leading: IconButton(
+        icon: const Icon(Symbols.category),
+        color: foreground,
+        tooltip: 'categoriesAndTags'.tr(),
+        onPressed: () => context.router.push(PostCategoriesListRoute()),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Symbols.shuffle),
+          color: foreground,
+          tooltip: 'postShuffle'.tr(),
+          onPressed: () => context.router.push(const PostShuffleRoute()),
+        ),
+        const Gap(8)
+      ],
       title: SvgPicture.asset(
         'assets/icons/icon-outline.svg',
-        color: Theme.of(context).appBarTheme.foregroundColor,
+        color: foreground,
         width: 32,
         height: 32,
       ),
@@ -280,7 +293,7 @@ class ExploreScreen extends HookConsumerWidget {
               child: IgnorePointer(
                 ignoring: hasSubscriptionFiltersApplied,
                 child: TabBar(
-                  indicatorColor: Theme.of(context).appBarTheme.foregroundColor,
+                  indicatorColor: foreground,
                   controller: filterTabController,
                   dividerHeight: 0,
                   onTap: hasSubscriptionFiltersApplied
@@ -303,20 +316,14 @@ class ExploreScreen extends HookConsumerWidget {
                             Symbols.explore,
                             size: 18,
                             fill: filterTabController.index == 0 ? 1 : 0,
-                            color: Theme.of(
-                              context,
-                            ).appBarTheme.foregroundColor,
+                            color: foreground,
                           ),
                           Flexible(
                             child: Text(
                               'explore'.tr(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).appBarTheme.foregroundColor,
-                              ),
+                              style: TextStyle(color: foreground),
                             ),
                           ),
                         ],
@@ -331,20 +338,14 @@ class ExploreScreen extends HookConsumerWidget {
                             Symbols.subscriptions,
                             size: 18,
                             fill: filterTabController.index == 1 ? 1 : 0,
-                            color: Theme.of(
-                              context,
-                            ).appBarTheme.foregroundColor,
+                            color: foreground,
                           ),
                           Flexible(
                             child: Text(
                               'exploreFilterSubscriptions'.tr(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).appBarTheme.foregroundColor,
-                              ),
+                              style: TextStyle(color: foreground),
                             ),
                           ),
                         ],
@@ -359,20 +360,14 @@ class ExploreScreen extends HookConsumerWidget {
                             Symbols.people,
                             size: 18,
                             fill: filterTabController.index == 2 ? 1 : 0,
-                            color: Theme.of(
-                              context,
-                            ).appBarTheme.foregroundColor,
+                            color: foreground,
                           ),
                           Flexible(
                             child: Text(
                               'exploreFilterFriends'.tr(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).appBarTheme.foregroundColor,
-                              ),
+                              style: TextStyle(color: foreground),
                             ),
                           ),
                         ],
@@ -446,7 +441,8 @@ class ExploreScreen extends HookConsumerWidget {
     void Function(String?) handleFilterChange,
     String? currentFilter,
   ) {
-    final exploreSettings = ref.watch(appSettingsProvider).exploreSettings;
+    final appSettings = ref.watch(appSettingsProvider);
+    final exploreSettings = appSettings.exploreSettings;
     final sliverRefreshInset =
         MediaQuery.paddingOf(context).top + kToolbarHeight + 48;
     final usePostList =
@@ -477,6 +473,7 @@ class ExploreScreen extends HookConsumerWidget {
             hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
             handleFilterChange: handleFilterChange,
             isWide: false,
+            appBarTransparent: appSettings.appBarTransparent,
           ),
           SliverToBoxAdapter(child: const Divider(height: 1)),
           // The Subscriptions tab keeps the publisher quick pick; Explore and
@@ -529,7 +526,8 @@ class ExploreScreen extends HookConsumerWidget {
     void Function(String?) handleFilterChange,
     String? currentFilter,
   ) {
-    final exploreSettings = ref.watch(appSettingsProvider).exploreSettings;
+    final appSettings = ref.watch(appSettingsProvider);
+    final exploreSettings = appSettings.exploreSettings;
     final sliverRefreshInset =
         MediaQuery.paddingOf(context).top + kToolbarHeight + 48;
     final usePostList =
@@ -584,6 +582,7 @@ class ExploreScreen extends HookConsumerWidget {
               hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
               handleFilterChange: handleFilterChange,
               isWide: true,
+              appBarTransparent: appSettings.appBarTransparent,
             ),
             SliverToBoxAdapter(child: const Divider(height: 1)),
             // The quick pick lives under the section app bar (same slot as the
