@@ -18,7 +18,7 @@ import 'package:island/core/utils/share_utils.dart';
 import 'package:island/drive/widgets/usage_overview.dart';
 import 'package:island/drive/screens/file_list.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
-import 'package:island/workspaces/workspace_management.dart';
+import 'package:island/drive/workspace_context.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/core/network.dart';

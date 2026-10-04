@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:gap/gap.dart';
-import 'package:island/workspaces/workspace_management.dart';
+import 'package:island/drive/workspace_context.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';

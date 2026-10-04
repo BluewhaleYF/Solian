@@ -16,8 +16,6 @@ void main() {
         '/chat/room-1/search',
         '/chat/search',
         '/realms',
-        '/workspaces',
-        '/workspaces/studio',
         '/realms/foo',
         '/account/me/leveling',
         '/account/me/meet/7',

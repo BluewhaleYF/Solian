@@ -86,7 +86,7 @@ final class NextNotableDayProvider
   }
 }
 
-String _$nextNotableDayHash() => r'0b435a1efa050314a5cd64c415e3f62564769db8';
+String _$nextNotableDayHash() => r'86e3793c048cc3e04c10abdde9e80b2833146371';
 
 @ProviderFor(recentNotableDay)
 final recentNotableDayProvider = RecentNotableDayProvider._();
@@ -125,7 +125,7 @@ final class RecentNotableDayProvider
   }
 }
 
-String _$recentNotableDayHash() => r'01d15edb92721853bbdaf5a326de437521d2737a';
+String _$recentNotableDayHash() => r'34280316562a9ef58d2f266f37150f47ce2acd6f';
 
 @ProviderFor(randomFortuneSaying)
 final randomFortuneSayingProvider = RandomFortuneSayingProvider._();

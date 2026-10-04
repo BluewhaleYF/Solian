@@ -64,7 +64,6 @@ class AppRouter extends RootStackRouter {
     ),
 
     AutoRoute(page: RealmDetailRoute.page, path: '/realms/:slug'),
-    AutoRoute(page: WorkspaceDetailRoute.page, path: '/workspaces/:slug'),
     AutoRoute(page: SurveySubmitRoute.page, path: '/surveys/:id'),
     AutoRoute(
       page: TransactionDetailRoute.page,
@@ -121,13 +120,6 @@ class AppRouter extends RootStackRouter {
         AutoRoute(
           page: RealmListRoute.page,
           path: 'realms',
-          maintainState: false,
-        ),
-
-        // Workspaces tab
-        AutoRoute(
-          page: WorkspaceManagementRoute.page,
-          path: 'workspaces',
           maintainState: false,
         ),
 

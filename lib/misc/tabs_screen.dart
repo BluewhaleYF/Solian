@@ -33,7 +33,6 @@ class TabsScreen extends StatelessWidget {
         UniversalSearchRoute(),
         ChatRoute(),
         RealmListRoute(),
-        WorkspaceManagementRoute(),
         AccountRoute(),
         FileListRoute(),
         WalletRoute(),
@@ -152,17 +151,8 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
           Icon(Symbols.groups_3, fill: selected ? 1 : null),
     ),
     _TabDestination(
-      id: 'workspaces',
-      routeIndex: 5,
-      routePath: '/workspaces',
-      label: 'workspaceManagement'.tr(),
-      navigationIcon: Symbols.workspaces,
-      iconBuilder: (selected) =>
-          Icon(Symbols.workspaces, fill: selected ? 1 : null),
-    ),
-    _TabDestination(
       id: 'account',
-      routeIndex: 6,
+      routeIndex: 5,
       routePath: '/account',
       label: 'account'.tr(),
       navigationIcon: Symbols.account_circle_rounded,
@@ -188,7 +178,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     ),
     _TabDestination(
       id: 'files',
-      routeIndex: 7,
+      routeIndex: 6,
       routePath: '/files',
       label: 'files'.tr(),
       navigationIcon: Symbols.folder_rounded,
@@ -197,7 +187,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     ),
     _TabDestination(
       id: 'wallet',
-      routeIndex: 8,
+      routeIndex: 7,
       routePath: '/wallet',
       label: 'wallet'.tr(),
       navigationIcon: Symbols.wallet,
@@ -206,7 +196,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     ),
     _TabDestination(
       id: 'creators',
-      routeIndex: 9,
+      routeIndex: 8,
       routePath: '/creators',
       label: 'creatorHub'.tr(),
       navigationIcon: Symbols.design_services_rounded,
