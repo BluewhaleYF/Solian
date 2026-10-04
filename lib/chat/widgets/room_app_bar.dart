@@ -211,7 +211,7 @@ class RoomAppBar extends ConsumerWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ).fontSize(17),
+              ).fontSize(15),
               if (subtitle != null)
                 GestureDetector(
                   onTap: hasOnlineAccounts

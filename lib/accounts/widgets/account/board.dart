@@ -6,7 +6,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/accounts/widgets/account/activity_presence.dart';
 import 'package:island/accounts/screens/me/settings_connections.dart';
 import 'package:island/activity/activity_rpc.dart';
@@ -495,11 +494,6 @@ class AccountBoard extends StatelessWidget {
         widgetKey: 'notable_days',
       ),
       AccountBoardItem(
-        order: 7,
-        kind: BoardWidgetKind.prebuilt,
-        widgetKey: 'verification',
-      ),
-      AccountBoardItem(
         order: 8,
         kind: BoardWidgetKind.prebuilt,
         widgetKey: 'links',
@@ -625,9 +619,6 @@ class AccountBoard extends StatelessWidget {
             level: account.profile.level,
             experience: account.profile.experience,
             progress: account.profile.levelingProgress,
-          ),
-          'verification' => _VerificationBoardWidget(
-            verification: account.profile.verification,
           ),
           'contacts' => _ContactsBoardWidget(contacts: account.contacts),
           // Keep legacy `connections` board items in the combined links section.
@@ -1332,45 +1323,6 @@ class _LevelingBoardWidget extends StatelessWidget {
     if (exp >= 1000000) return '${(exp / 1000000).toStringAsFixed(1)}M';
     if (exp >= 1000) return '${(exp / 1000).toStringAsFixed(1)}K';
     return exp.toString();
-  }
-}
-
-class _VerificationBoardWidget extends StatelessWidget {
-  final SnVerificationMark? verification;
-
-  const _VerificationBoardWidget({this.verification});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Symbols.verified, size: 18, color: theme.colorScheme.primary),
-            const Gap(8),
-            Text(
-              'verification'.tr(),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const Gap(12),
-        if (verification != null)
-          VerificationStatusCard(mark: verification!, noPadding: true)
-        else
-          Text(
-            'verificationNone'.tr(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-      ],
-    );
   }
 }
 

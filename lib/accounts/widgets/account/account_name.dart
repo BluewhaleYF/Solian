@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/badge.dart';
 import 'package:island/route.gr.dart';
+import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -48,6 +49,23 @@ const List<Color> kVerificationMarkColors = [
   Colors.blueAccent,
 ];
 
+/// Opens a sheet showing the full details of a verification mark.
+Future<void> showVerificationMarkSheet(
+  BuildContext context,
+  SnVerificationMark mark,
+) {
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    useRootNavigator: true,
+    builder: (context) => SheetScaffold(
+      titleText: 'verification'.tr(),
+      heightFactor: 0.4,
+      child: VerificationStatusCard(mark: mark),
+    ),
+  );
+}
+
 class AccountName extends StatelessWidget {
   final SnAccount account;
   final TextStyle? style;
@@ -55,6 +73,7 @@ class AccountName extends StatelessWidget {
   final bool ignorePermissions;
   final bool hideVerificationMark;
   final bool hideOverlay;
+  final VoidCallback? onVerificationTap;
   final List<Widget>? suffixWidgets;
   const AccountName({
     super.key,
@@ -64,6 +83,7 @@ class AccountName extends StatelessWidget {
     this.ignorePermissions = false,
     this.hideVerificationMark = false,
     this.hideOverlay = false,
+    this.onVerificationTap,
     this.suffixWidgets,
   });
 
@@ -217,6 +237,7 @@ class AccountName extends StatelessWidget {
                   VerificationMark(
                     mark: account.profile.verification!,
                     hideOverlay: hideOverlay,
+                    onTap: onVerificationTap,
                   ),
                 if (account.profile.activeBadge != null)
                   ActiveBadgeMark(
@@ -279,6 +300,7 @@ class AccountName extends StatelessWidget {
           VerificationMark(
             mark: account.profile.verification!,
             hideOverlay: hideOverlay,
+            onTap: onVerificationTap,
           ),
         if (account.profile.activeBadge != null)
           ActiveBadgeMark(
@@ -310,10 +332,12 @@ class AccountName extends StatelessWidget {
 class VerificationMark extends StatelessWidget {
   final SnVerificationMark mark;
   final bool hideOverlay;
+  final VoidCallback? onTap;
   const VerificationMark({
     super.key,
     required this.mark,
     this.hideOverlay = false,
+    this.onTap,
   });
 
   @override
@@ -329,8 +353,16 @@ class VerificationMark extends StatelessWidget {
       fill: 1,
     );
 
-    return hideOverlay
+    final tappable = onTap == null
         ? icon
+        : GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: icon,
+          );
+
+    return hideOverlay
+        ? tappable
         : Tooltip(
             richMessage: TextSpan(
               text: mark.title ?? 'No title',
@@ -343,7 +375,7 @@ class VerificationMark extends StatelessWidget {
               ],
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            child: icon,
+            child: tappable,
           );
   }
 }
@@ -462,7 +494,11 @@ class ActiveBadgeMark extends ConsumerWidget {
 class VerificationStatusCard extends StatelessWidget {
   final SnVerificationMark mark;
   final bool noPadding;
-  const VerificationStatusCard({super.key, required this.mark, this.noPadding = false});
+  const VerificationStatusCard({
+    super.key,
+    required this.mark,
+    this.noPadding = false,
+  });
 
   @override
   Widget build(BuildContext context) {

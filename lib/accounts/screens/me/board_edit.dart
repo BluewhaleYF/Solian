@@ -393,11 +393,6 @@ class _PrebuiltWidgetMeta {
       'notableDay',
       'notableDaysBoardDescription',
     ),
-    'verification': _WidgetInfo(
-      Symbols.verified,
-      'verification',
-      'verificationBoardDescription',
-    ),
     'fortune': _WidgetInfo(
       Symbols.auto_awesome,
       'fortuneGraph',

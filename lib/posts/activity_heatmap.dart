@@ -128,6 +128,7 @@ class ActivityHeatmapWidget extends HookConsumerWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

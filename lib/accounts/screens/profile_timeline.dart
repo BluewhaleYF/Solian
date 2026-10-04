@@ -79,7 +79,7 @@ class AccountTimelineList extends HookConsumerWidget {
               final groupedItem = filteredItems[itemIndex];
               if (groupedItem.items.length > 1) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
                   child: AccountTimelineItem(
                     item: groupedItem.items.first,
                     duplicateCount: groupedItem.items.length,
@@ -88,7 +88,7 @@ class AccountTimelineList extends HookConsumerWidget {
                 );
               }
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
                 child: AccountTimelineItem(
                   item: groupedItem.items.first,
                   duration: groupedItem.duration,
@@ -208,35 +208,32 @@ class _TimelineFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            spacing: 8,
-            children: TimelineFilter.values.map((filter) {
-              final isSelected = filter == selectedFilter;
-              return ChoiceChip(
-                label: Text(
-                  _timelineFilterLabels[filter]!.tr(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: isSelected
-                        ? theme.colorScheme.onPrimaryContainer
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          spacing: 8,
+          children: TimelineFilter.values.map((filter) {
+            final isSelected = filter == selectedFilter;
+            return ChoiceChip(
+              label: Text(
+                _timelineFilterLabels[filter]!.tr(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isSelected
+                      ? theme.colorScheme.onPrimaryContainer
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
-                selected: isSelected,
-                onSelected: (_) => onFilterChanged(filter),
-                selectedColor: theme.colorScheme.primaryContainer,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              );
-            }).toList(),
-          ),
+              ),
+              selected: isSelected,
+              onSelected: (_) => onFilterChanged(filter),
+              selectedColor: theme.colorScheme.primaryContainer,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            );
+          }).toList(),
         ),
       ),
     );

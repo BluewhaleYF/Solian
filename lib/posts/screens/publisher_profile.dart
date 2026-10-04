@@ -18,6 +18,7 @@ import 'package:island/posts/pods/post_list.dart';
 import 'package:island/creators/screens/stickers/stickers.dart';
 import 'package:island/creators/screens/survey/survey_list.dart';
 import 'package:island/stickers/models/sticker.dart';
+import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -30,8 +31,8 @@ import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/content/markdown.dart';
-import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
+import 'package:island/shared/widgets/profile_header_app_bar.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:island/posts/activity_heatmap.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -42,20 +43,10 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 part 'publisher_profile.g.dart';
 
-Future<void> showPublisherProfileAttentionModal(String name) async {
-  showAttentionModal(
-    id: 'publisher-profile:$name',
-    replaceIfExists: true,
-    barrierDismissible: true,
-    builder: (context, dismiss) =>
-        PublisherProfileAttentionModal(name: name, onDismiss: dismiss),
-  );
-}
-
 /// Opens the profile of a publisher, local or remote.
 ///
 /// Remote fediverse actors have no local handle, so they navigate to the
-/// actor deep link while local publishers keep the in-place modal.
+/// actor deep link; local publishers push the full publisher profile route.
 void openPublisherProfile(BuildContext context, SnPublisher publisher) {
   if (publisher.isFediverse || publisher.name.isEmpty) {
     context.router.push(
@@ -66,37 +57,7 @@ void openPublisherProfile(BuildContext context, SnPublisher publisher) {
     );
     return;
   }
-  showPublisherProfileAttentionModal(publisher.name);
-}
-
-class PublisherProfileAttentionModal extends StatelessWidget {
-  final String name;
-  final VoidCallback onDismiss;
-
-  const PublisherProfileAttentionModal({
-    super.key,
-    required this.name,
-    required this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AttentionModalScaffold(
-      titleText: '@$name',
-      onDismiss: onDismiss,
-      actions: [
-        IconButton(
-          onPressed: () {
-            onDismiss();
-            context.router.push(PublisherProfileRoute(name: name));
-          },
-          icon: const Icon(Symbols.open_in_new),
-          tooltip: 'open'.tr(),
-        ),
-      ],
-      child: PublisherProfileContent(name: name, isEmbedded: true),
-    );
-  }
+  context.router.push(PublisherProfileRoute(name: publisher.name));
 }
 
 class _PinnedPostsPageView extends HookConsumerWidget {
@@ -199,12 +160,14 @@ class _PinnedPostsPageView extends HookConsumerWidget {
 
         if (!isWideScreen(context)) {
           return Card(
+            elevation: 0,
             margin: EdgeInsets.only(top: 16, bottom: 8),
             child: contentWidget,
           );
         }
 
-        return Card.outlined(
+        return Card(
+          elevation: 0,
           margin: EdgeInsets.only(bottom: 8),
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           child: contentWidget,
@@ -275,6 +238,10 @@ class _PublisherBasisWidget extends HookWidget {
   final VoidCallback unsubscribe;
   final void Function(bool currentNotify) toggleNotify;
 
+  /// Whether the in-card header image (and overlapping avatar) is drawn.
+  /// Narrow layouts pin the header to the app bar instead.
+  final bool showHeaderImage;
+
   const _PublisherBasisWidget({
     required this.data,
     required this.subStatus,
@@ -283,6 +250,7 @@ class _PublisherBasisWidget extends HookWidget {
     required this.subscribe,
     required this.unsubscribe,
     required this.toggleNotify,
+    this.showHeaderImage = true,
   });
 
   String _getFirstLine(String bio) {
@@ -305,11 +273,27 @@ class _PublisherBasisWidget extends HookWidget {
     final isBioExpanded = useState(false);
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    Widget avatarWithBorder() {
+      final isCircle = data.type == 0 || data.isFediverse;
+      return Container(
+        decoration: BoxDecoration(
+          shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: isCircle ? null : BorderRadius.all(Radius.circular(12)),
+          border: Border.all(color: theme.colorScheme.surface, width: 3),
+        ),
+        child: _publisherAvatarImage(
+          context,
+          data,
+          radius: 32,
+          borderRadius: isCircle ? null : 12,
+        ),
+      );
+    }
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHeaderImage)
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -322,208 +306,193 @@ class _PublisherBasisWidget extends HookWidget {
                   child: _publisherHeaderImage(context, data),
                 ),
               ),
-              Positioned(
-                bottom: -24,
-                left: 16,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: data.type == 0 || data.isFediverse
-                        ? BoxShape.circle
-                        : BoxShape.rectangle,
-                    borderRadius: data.type == 0 || data.isFediverse
-                        ? null
-                        : BorderRadius.all(Radius.circular(12)),
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 3,
-                    ),
-                  ),
-                  child: _publisherAvatarImage(
-                    context,
-                    data,
-                    radius: 32,
-                    borderRadius: data.type == 0 || data.isFediverse
-                        ? null
-                        : 12,
-                  ),
-                ),
-              ),
+              Positioned(bottom: -24, left: 16, child: avatarWithBorder()),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showHeaderImage) const Gap(16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
               children: [
-                const Gap(16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
-                  children: [
-                    Flexible(
-                      child: data.account != null && data.type == 0
-                          ? AccountName(
-                              account: data.account!,
-                              textOverride: data.nick,
-                              hideVerificationMark: true,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              suffixWidgets: [
-                                if (data.isModerateSubscription)
-                                  Tooltip(
-                                    message: 'publisherGatekeptHintShort'.tr(),
-                                    child: Icon(
-                                      Symbols.lock,
-                                      size: 14,
-                                      fill: 1,
-                                      color: theme.colorScheme.error,
+                if (!showHeaderImage) avatarWithBorder(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        spacing: 4,
+                        children: [
+                          Flexible(
+                            child: data.account != null && data.type == 0
+                                ? AccountName(
+                                    account: data.account!,
+                                    textOverride: data.nick,
+                                    hideVerificationMark: true,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    suffixWidgets: [
+                                      if (data.isModerateSubscription)
+                                        Tooltip(
+                                          message: 'publisherGatekeptHintShort'
+                                              .tr(),
+                                          child: Icon(
+                                            Symbols.lock,
+                                            size: 14,
+                                            fill: 1,
+                                            color: theme.colorScheme.error,
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : Text(
+                                    data.effectiveName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                              ],
-                            )
-                          : Text(
-                              data.effectiveName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
+                          ),
+                          if (data.isBot)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'BOT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onTertiaryContainer,
+                                ),
                               ),
                             ),
-                    ),
-                    if (data.isBot)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.tertiaryContainer,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'BOT',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onTertiaryContainer,
+                          if (data.verification != null)
+                            VerificationMark(
+                              mark: data.verification!,
+                              onTap: () => showVerificationMarkSheet(
+                                context,
+                                data.verification!,
+                              ),
+                            ),
+                          HandleChip(
+                            handle: data.username ?? data.name,
+                            domain: data.isFediverse ? data.domain : null,
+                            isRemote: data.isFediverse,
+                            allowCopy: true,
+                            maxLines: 1,
                           ),
-                        ),
-                      ),
-                    if (data.verification != null)
-                      VerificationMark(mark: data.verification!),
-                    // Rating grade indicator
-                    ratingOverview.when(
-                      data: (overview) {
-                        if (overview == null) return const SizedBox.shrink();
-                        final textColor = switch (overview.grade) {
-                          'S++' => theme.colorScheme.tertiary,
-                          'S+' => theme.colorScheme.tertiary,
-                          'S' => theme.colorScheme.primary,
-                          'A++' => theme.colorScheme.primary,
-                          'A+' => theme.colorScheme.primary,
-                          'A' => theme.colorScheme.primary,
-                          'A-' => theme.colorScheme.primary,
-                          'B+' => theme.colorScheme.secondary,
-                          'B' => theme.colorScheme.secondary,
-                          'C' => theme.colorScheme.onSurfaceVariant,
-                          'D' => theme.colorScheme.error,
-                          _ => theme.colorScheme.onSurfaceVariant,
-                        };
-                        return Tooltip(
-                          message:
-                              '${overview.rating.toStringAsFixed(1)} · ${'ratingPercentile'.tr(args: [overview.percentile.toStringAsFixed(1)])}',
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: switch (overview.grade) {
-                                'S++' => theme.colorScheme.tertiaryContainer,
-                                'S+' => theme.colorScheme.tertiaryContainer,
-                                'S' => theme.colorScheme.primaryContainer,
-                                'A++' => theme.colorScheme.primaryContainer,
-                                'A+' => theme.colorScheme.primaryContainer,
-                                'A' => theme.colorScheme.primaryContainer,
-                                'A-' => theme.colorScheme.primaryContainer,
-                                'B+' => theme.colorScheme.secondaryContainer,
-                                'B' => theme.colorScheme.secondaryContainer,
-                                'C' =>
-                                  theme.colorScheme.surfaceContainerHighest,
-                                'D' => theme.colorScheme.errorContainer,
-                                _ => theme.colorScheme.surfaceContainerHighest,
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  switch (overview.grade) {
-                                    'S++' => Symbols.emoji_events,
-                                    'S+' => Symbols.emoji_events,
-                                    'S' => Symbols.star,
-                                    'A++' => Symbols.trending_up,
-                                    'A+' => Symbols.trending_up,
-                                    'A' => Symbols.trending_up,
-                                    'A-' => Symbols.trending_up,
-                                    'B+' => Symbols.thumb_up,
-                                    'B' => Symbols.thumb_up,
-                                    'C' => Symbols.remove,
-                                    'D' => Symbols.trending_down,
-                                    _ => Symbols.remove,
-                                  },
-                                  size: 14,
-                                  color: textColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${overview.grade} ${_formatRating(overview.rating)}',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
+                          // Rating grade indicator
+                          ratingOverview.when(
+                            data: (overview) {
+                              if (overview == null) {
+                                return const SizedBox.shrink();
+                              }
+                              final textColor = switch (overview.grade) {
+                                'S++' => theme.colorScheme.tertiary,
+                                'S+' => theme.colorScheme.tertiary,
+                                'S' => theme.colorScheme.primary,
+                                'A++' => theme.colorScheme.primary,
+                                'A+' => theme.colorScheme.primary,
+                                'A' => theme.colorScheme.primary,
+                                'A-' => theme.colorScheme.primary,
+                                'B+' => theme.colorScheme.secondary,
+                                'B' => theme.colorScheme.secondary,
+                                'C' => theme.colorScheme.onSurfaceVariant,
+                                'D' => theme.colorScheme.error,
+                                _ => theme.colorScheme.onSurfaceVariant,
+                              };
+                              return Tooltip(
+                                message:
+                                    '${overview.rating.toStringAsFixed(1)} · ${'ratingPercentile'.tr(args: [overview.percentile.toStringAsFixed(1)])}',
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: switch (overview.grade) {
+                                      'S++' =>
+                                        theme.colorScheme.tertiaryContainer,
+                                      'S+' =>
+                                        theme.colorScheme.tertiaryContainer,
+                                      'S' => theme.colorScheme.primaryContainer,
+                                      'A++' =>
+                                        theme.colorScheme.primaryContainer,
+                                      'A+' =>
+                                        theme.colorScheme.primaryContainer,
+                                      'A' => theme.colorScheme.primaryContainer,
+                                      'A-' =>
+                                        theme.colorScheme.primaryContainer,
+                                      'B+' =>
+                                        theme.colorScheme.secondaryContainer,
+                                      'B' =>
+                                        theme.colorScheme.secondaryContainer,
+                                      'C' =>
+                                        theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                      'D' => theme.colorScheme.errorContainer,
+                                      _ =>
+                                        theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        switch (overview.grade) {
+                                          'S++' => Symbols.emoji_events,
+                                          'S+' => Symbols.emoji_events,
+                                          'S' => Symbols.star,
+                                          'A++' => Symbols.trending_up,
+                                          'A+' => Symbols.trending_up,
+                                          'A' => Symbols.trending_up,
+                                          'A-' => Symbols.trending_up,
+                                          'B+' => Symbols.thumb_up,
+                                          'B' => Symbols.thumb_up,
+                                          'C' => Symbols.remove,
+                                          'D' => Symbols.trending_down,
+                                          _ => Symbols.remove,
+                                        },
+                                        size: 14,
+                                        color: textColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${overview.grade} ${_formatRating(overview.rating)}',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: textColor,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
                           ),
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                    ),
-                    // Handle chip - responsive layout
-                    if (isWideScreen(context))
-                      Flexible(
-                        child: HandleChip(
-                          handle: data.username ?? data.name,
-                          domain: data.isFediverse ? data.domain : null,
-                          isRemote: data.isFediverse,
-                          allowCopy: true,
-                          maxLines: 1,
-                        ),
+                        ],
                       ),
-                  ],
-                ),
-                if (!isWideScreen(context))
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 4),
-                      child: HandleChip(
-                        handle: data.username ?? data.name,
-                        domain: data.isFediverse ? data.domain : null,
-                        isRemote: data.isFediverse,
-                        allowCopy: true,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                if (data.account != null && data.type == 0) ...[
-                  Row(
-                    children: [
-                      Flexible(
+
+                      Padding(
+                        padding: const .only(top: 8, bottom: 4),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
@@ -550,7 +519,7 @@ class _PublisherBasisWidget extends HookWidget {
                                 Flexible(
                                   child: Text(
                                     'publisherBelongsTo'.tr(
-                                      args: ['@${data.account!.name}'],
+                                      args: ['@${data.name}'],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -564,230 +533,232 @@ class _PublisherBasisWidget extends HookWidget {
                           ),
                           onTap: () {
                             context.router.push(
-                              AccountProfileRoute(name: data.account!.name),
+                              AccountProfileRoute(name: data.name),
                             );
                           },
-                        ).padding(top: 8, bottom: 4),
+                        ),
+                      ),
+                      const Gap(4),
+                      AccountStatusWidget(
+                        uname: data.name,
+                        padding: EdgeInsets.zero,
                       ),
                     ],
                   ),
-                ],
-                if (data.realm != null) ...[
-                  Row(
-                    children: [
-                      Flexible(
-                        child: InkWell(
+                ),
+              ],
+            ),
+            if (data.realm != null) ...[
+              Row(
+                children: [
+                  Flexible(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.tertiaryContainer
+                              .withOpacity(0.5),
                           borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 8,
+                          children: [
+                            Icon(
+                              Symbols.public,
+                              size: 18,
+                              color: theme.colorScheme.onTertiaryContainer,
+                              fill: 1,
                             ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.tertiaryContainer
-                                  .withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              spacing: 8,
-                              children: [
-                                Icon(
-                                  Symbols.public,
-                                  size: 18,
-                                  color: theme.colorScheme.onTertiaryContainer,
-                                  fill: 1,
+                            Flexible(
+                              child: Text(
+                                'publisherBelongsToRealm'.tr(
+                                  args: [data.realm!.name],
                                 ),
-                                Flexible(
-                                  child: Text(
-                                    'publisherBelongsToRealm'.tr(
-                                      args: [data.realm!.name],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          onTap: () {
-                            context.router.push(
-                              RealmDetailRoute(slug: data.realm!.slug),
-                            );
-                          },
-                        ).padding(top: 8, bottom: 4),
-                      ),
-                    ],
-                  ),
-                ],
-                const Gap(4),
-                if (data.account != null && data.type == 0)
-                  AccountStatusWidget(
-                    uname: data.account!.name,
-                    padding: EdgeInsets.zero,
-                  ),
-                subStatus
-                    .when(
-                      data: (status) {
-                        if (status == null) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              FilledButton.icon(
-                                onPressed: subscribing.value ? null : subscribe,
-                                icon: const Icon(Symbols.add_circle),
-                                label: Text(
-                                  data.isFediverse ? 'follow' : 'subscribe',
-                                ).tr(),
-                                style: ButtonStyle(
-                                  visualDensity: VisualDensity(vertical: -2),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              if (!data.isFediverse && data.isGatekept)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'publisherFollowRequiresApprovalHint'.tr(),
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                            ],
-                          );
-                        }
-                        if (status.isPending) {
-                          return OutlinedButton.icon(
-                            onPressed: subscribing.value ? null : unsubscribe,
-                            icon: const Icon(Symbols.hourglass_top),
-                            label: Text('publisherFollowPendingHint'.tr()),
+                            ),
+                          ],
+                        ),
+                      ),
+                      onTap: () {
+                        context.router.push(
+                          RealmDetailRoute(slug: data.realm!.slug),
+                        );
+                      },
+                    ).padding(top: 8, bottom: 4),
+                  ),
+                ],
+              ),
+            ],
+            const Gap(4),
+            subStatus
+                .when(
+                  data: (status) {
+                    if (status == null) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          FilledButton.icon(
+                            onPressed: subscribing.value ? null : subscribe,
+                            icon: const Icon(Symbols.add_circle),
+                            label: Text(
+                              data.isFediverse ? 'follow' : 'subscribe',
+                            ).tr(),
                             style: ButtonStyle(
                               visualDensity: VisualDensity(vertical: -2),
                             ),
-                          );
-                        }
-                        final isFollowing =
-                            status.status == 'following' ||
-                            status.status == 'subscribed' ||
-                            status.subscription?.isActive == true;
-                        final currentNotify =
-                            status.subscription?.notify ?? true;
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 8,
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: subscribing.value
-                                    ? null
-                                    : (isFollowing ? unsubscribe : subscribe),
-                                icon: Icon(
-                                  isFollowing
-                                      ? Symbols.remove_circle
-                                      : Symbols.add_circle,
-                                ),
-                                label: Text(
-                                  data.isFediverse
-                                      ? (isFollowing ? 'unfollow' : 'follow')
-                                      : (isFollowing
-                                            ? 'unsubscribe'
-                                            : 'subscribe'),
-                                ).tr(),
-                                style: ButtonStyle(
-                                  visualDensity: VisualDensity(vertical: -2),
-                                ),
+                          ),
+                          if (!data.isFediverse && data.isGatekept)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'publisherFollowRequiresApprovalHint'.tr(),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                            if (isFollowing && !data.isFediverse)
-                              IconButton(
-                                onPressed: () => toggleNotify(currentNotify),
-                                icon: Icon(
-                                  currentNotify
-                                      ? Symbols.notifications
-                                      : Symbols.notifications_off,
-                                ),
-                                tooltip: currentNotify
-                                    ? 'notificationsEnabled'.tr()
-                                    : 'notificationsDisabled'.tr(),
-                              ),
-                          ],
-                        );
-                      },
-                      error: (_, _) => const SizedBox(),
-                      loading: () => const SizedBox(
-                        height: 36,
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                        ],
+                      );
+                    }
+                    if (status.isPending) {
+                      return OutlinedButton.icon(
+                        onPressed: subscribing.value ? null : unsubscribe,
+                        icon: const Icon(Symbols.hourglass_top),
+                        label: Text('publisherFollowPendingHint'.tr()),
+                        style: ButtonStyle(
+                          visualDensity: VisualDensity(vertical: -2),
+                        ),
+                      );
+                    }
+                    final isFollowing =
+                        status.status == 'following' ||
+                        status.status == 'subscribed' ||
+                        status.subscription?.isActive == true;
+                    final currentNotify = status.subscription?.notify ?? true;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: subscribing.value
+                                ? null
+                                : (isFollowing ? unsubscribe : subscribe),
+                            icon: Icon(
+                              isFollowing
+                                  ? Symbols.remove_circle
+                                  : Symbols.add_circle,
+                            ),
+                            label: Text(
+                              data.isFediverse
+                                  ? (isFollowing ? 'unfollow' : 'follow')
+                                  : (isFollowing ? 'unsubscribe' : 'subscribe'),
+                            ).tr(),
+                            style: ButtonStyle(
+                              visualDensity: VisualDensity(vertical: -2),
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                    .padding(vertical: 12),
-                // Bio section
-                if (_publisherBio(data).isNotEmpty) ...[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              child: isBioExpanded.value
-                                  ? MarkdownTextContent(
-                                      key: const ValueKey('expanded'),
-                                      content: _publisherBio(data),
-                                      linesMargin: EdgeInsets.zero,
-                                    )
-                                  : Text(
-                                      _getFirstLine(_publisherBio(data)),
-                                      key: const ValueKey('collapsed'),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                            ).alignment(Alignment.centerLeft),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              isBioExpanded.value = !isBioExpanded.value;
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Text(
-                                isBioExpanded.value
-                                    ? 'collapse'.tr()
-                                    : 'expand'.tr(),
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ).tr(),
+                        if (isFollowing && !data.isFediverse)
+                          IconButton(
+                            onPressed: () => toggleNotify(currentNotify),
+                            icon: Icon(
+                              currentNotify
+                                  ? Symbols.notifications
+                                  : Symbols.notifications_off,
                             ),
+                            tooltip: currentNotify
+                                ? 'notificationsEnabled'.tr()
+                                : 'notificationsDisabled'.tr(),
                           ),
-                        ],
+                      ],
+                    );
+                  },
+                  error: (_, _) => const SizedBox(),
+                  loading: () => const SizedBox(
+                    height: 36,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                )
+                .padding(vertical: 12),
+            // Bio section
+            if (_publisherBio(data).isNotEmpty) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: isBioExpanded.value
+                              ? MarkdownTextContent(
+                                  key: const ValueKey('expanded'),
+                                  content: _publisherBio(data),
+                                  linesMargin: EdgeInsets.zero,
+                                )
+                              : Text(
+                                  _getFirstLine(_publisherBio(data)),
+                                  key: const ValueKey('collapsed'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                        ).alignment(Alignment.centerLeft),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          isBioExpanded.value = !isBioExpanded.value;
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            isBioExpanded.value
+                                ? 'collapse'.tr()
+                                : 'expand'.tr(),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ).tr(),
+                        ),
                       ),
                     ],
                   ),
                 ],
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            ],
+          ],
+        ).padding(
+          horizontal: showHeaderImage ? 16 : 8,
+          vertical: showHeaderImage ? 16 : 0,
+        ),
+      ],
     );
+
+    return showHeaderImage
+        ? Card(margin: EdgeInsets.zero, child: content)
+        : content;
   }
 }
 
@@ -801,27 +772,12 @@ class _PublisherBadgesWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return (badges.value?.isNotEmpty ?? false)
         ? Card(
+            elevation: 0,
             margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: BadgeList(badges: badges.value!),
             ),
-          )
-        : const SizedBox.shrink();
-  }
-}
-
-class _PublisherVerificationWidget extends StatelessWidget {
-  final SnPublisher data;
-
-  const _PublisherVerificationWidget({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return (data.verification != null)
-        ? Card(
-            margin: EdgeInsets.zero,
-            child: VerificationStatusCard(mark: data.verification!),
           )
         : const SizedBox.shrink();
   }
@@ -951,7 +907,15 @@ final publisherCollectionsProvider = FutureProvider.autoDispose
     });
 
 class _PublisherTabBar extends StatelessWidget {
-  const _PublisherTabBar();
+  final Color? labelColor;
+  final Color? unselectedLabelColor;
+  final Color? indicatorColor;
+
+  const _PublisherTabBar({
+    this.labelColor,
+    this.unselectedLabelColor,
+    this.indicatorColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -970,19 +934,20 @@ class _PublisherTabBar extends StatelessWidget {
       color: Colors.transparent,
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const .symmetric(horizontal: 8, vertical: 8),
         child: TabBar(
           isScrollable: true,
           tabAlignment: TabAlignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           indicator: BoxDecoration(
-            color: theme.colorScheme.secondaryContainer,
+            color: indicatorColor ?? theme.colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(20),
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerHeight: 0,
-          labelColor: theme.colorScheme.onSecondaryContainer,
-          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          labelColor: labelColor ?? theme.colorScheme.onSecondaryContainer,
+          unselectedLabelColor:
+              unselectedLabelColor ?? theme.colorScheme.onSurfaceVariant,
           splashBorderRadius: BorderRadius.circular(20),
           labelStyle: theme.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w600,
@@ -1426,13 +1391,17 @@ class PublisherProfileScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final publisher = ref.watch(publisherProvider(name));
+    final narrow =
+        !isWideScreen(context) || MediaQuery.sizeOf(context).width < 900;
 
     return AppScaffold(
       isNoBackground: false,
-      appBar: AppBar(
-        leading: const AutoLeadingButton(),
-        title: Text(publisher.value?.nick ?? '@$name'),
-      ),
+      appBar: narrow
+          ? null
+          : AppBar(
+              leading: const AutoLeadingButton(),
+              title: Text(publisher.value?.nick ?? '@$name'),
+            ),
       body: PublisherProfileContent(name: name),
     );
   }
@@ -1442,13 +1411,8 @@ class PublisherProfileContent extends HookConsumerWidget {
   static const double _wideLayoutMinWidth = 900;
 
   final String name;
-  final bool isEmbedded;
 
-  const PublisherProfileContent({
-    super.key,
-    required this.name,
-    this.isEmbedded = false,
-  });
+  const PublisherProfileContent({super.key, required this.name});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1485,8 +1449,11 @@ class PublisherProfileContent extends HookConsumerWidget {
     final ratingOverview = isFediverse
         ? const AsyncValue<SnPublisherRatingOverview?>.data(null)
         : ref.watch(publisherRatingOverviewProvider(name));
+    final serverUrl = ref.watch(serverUrlProvider);
 
     final subscribing = useState(false);
+    final collapsed = useState(false);
+    final headerTint = useState<Color?>(null);
 
     Future<void> subscribe() async {
       final client = ref.watch(solarNetworkClientProvider);
@@ -1560,6 +1527,8 @@ class PublisherProfileContent extends HookConsumerWidget {
               subscribing,
               subscribe,
               unsubscribe,
+              collapsed,
+              headerTint,
             );
           }
           return LayoutBuilder(
@@ -1581,35 +1550,61 @@ class PublisherProfileContent extends HookConsumerWidget {
               final tabBar = const _PublisherTabBar();
 
               if (!useWideLayout) {
+                final isHeaderCollapsed = collapsed.value;
+                final headerColors = profileHeaderColors(
+                  Theme.of(context),
+                  headerTint.value,
+                );
+                final tabBar = _PublisherTabBar(
+                  labelColor: isHeaderCollapsed ? headerColors.onPrimary : null,
+                  unselectedLabelColor: isHeaderCollapsed
+                      ? headerColors.onPrimary.withOpacity(0.7)
+                      : null,
+                  indicatorColor: isHeaderCollapsed
+                      ? headerColors.onPrimary.withOpacity(0.22)
+                      : null,
+                );
                 // NestedScrollView lets the tall profile header scroll away on
                 // short/narrow viewports instead of overflowing the Column.
-                return NestedScrollView(
+                final headerAppBar = ProfileHeaderAppBar(
+                  title: data.effectiveName,
+                  background: _publisherHeaderImage(context, data),
+                  samplingProvider: data.background != null
+                      ? CloudImageWidget.provider(
+                          file: data.background!,
+                          serverUrl: serverUrl,
+                        )
+                      : null,
+                  leading: const AutoLeadingButton(),
+                  collapsed: collapsed,
+                  tintNotifier: headerTint,
+                );
+                final scrollView = NestedScrollView(
                   headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    headerAppBar,
                     SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Gap(12),
-                          _PublisherBasisWidget(
-                            data: data,
-                            subStatus: subStatus,
-                            ratingOverview: ratingOverview,
-                            subscribing: subscribing,
-                            subscribe: subscribe,
-                            unsubscribe: unsubscribe,
-                            toggleNotify: toggleNotify,
-                          ).padding(horizontal: 12),
+                          Padding(
+                            padding: const .symmetric(horizontal: 8),
+                            child: _PublisherBasisWidget(
+                              data: data,
+                              subStatus: subStatus,
+                              ratingOverview: ratingOverview,
+                              subscribing: subscribing,
+                              subscribe: subscribe,
+                              unsubscribe: unsubscribe,
+                              toggleNotify: toggleNotify,
+                              showHeaderImage: false,
+                            ).padding(horizontal: 12),
+                          ),
                           const Gap(12),
                           if (data.account?.badges.isNotEmpty ?? false) ...[
                             _PublisherBadgesWidget(
                               data: data,
                               badges: badges,
-                            ).padding(horizontal: 12),
-                            const Gap(12),
-                          ],
-                          if (data.verification != null) ...[
-                            _PublisherVerificationWidget(
-                              data: data,
                             ).padding(horizontal: 12),
                             const Gap(12),
                           ],
@@ -1624,11 +1619,19 @@ class PublisherProfileContent extends HookConsumerWidget {
                       pinned: true,
                       delegate: _PublisherTabBarHeaderDelegate(
                         child: tabBar,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        backgroundColor: isHeaderCollapsed
+                            ? headerColors.primary
+                            : Theme.of(context).colorScheme.surface,
                       ),
                     ),
                   ],
                   body: TabBarView(children: publicationViews),
+                );
+
+                return ProfileHeaderScrollListener(
+                  collapsed: collapsed,
+                  threshold: profileHeaderCollapseThreshold(context, 220),
+                  child: scrollView,
                 );
               }
 
@@ -1673,8 +1676,6 @@ class PublisherProfileContent extends HookConsumerWidget {
                           ),
                           if (data.account?.badges.isNotEmpty ?? false)
                             _PublisherBadgesWidget(data: data, badges: badges),
-                          if (data.verification != null)
-                            _PublisherVerificationWidget(data: data),
                           _PublisherHeatmapWidget(
                             heatmap: heatmap,
                             forceDense: true,
@@ -1704,8 +1705,16 @@ class PublisherProfileContent extends HookConsumerWidget {
     ValueNotifier<bool> subscribing,
     Future<void> Function() subscribe,
     Future<void> Function() unsubscribe,
+    ValueNotifier<bool> collapsed,
+    ValueNotifier<Color?> headerTint,
   ) {
     final actorId = data.id;
+    final cards = FediversePublisherInfoCards(data: data);
+    final availableWidth = MediaQuery.of(context).size.width;
+    final useWideLayout =
+        isWideScreen(context) && availableWidth >= _wideLayoutMinWidth;
+    final bottomInset = MediaQuery.of(context).padding.bottom + 16;
+    final showHeaderImage = useWideLayout;
     final basis = _PublisherBasisWidget(
       data: data,
       subStatus: subStatus,
@@ -1714,16 +1723,23 @@ class PublisherProfileContent extends HookConsumerWidget {
       subscribe: subscribe,
       unsubscribe: unsubscribe,
       toggleNotify: (bool current) {},
+      showHeaderImage: showHeaderImage,
     );
-    final cards = FediversePublisherInfoCards(data: data);
-    final availableWidth = MediaQuery.of(context).size.width;
-    final useWideLayout =
-        isWideScreen(context) && availableWidth >= _wideLayoutMinWidth;
-    final bottomInset = MediaQuery.of(context).padding.bottom + 16;
 
     if (!useWideLayout) {
-      return CustomScrollView(
+      final headerAppBar = ProfileHeaderAppBar(
+        title: data.effectiveName,
+        background: _publisherHeaderImage(context, data),
+        samplingProvider: (data.headerUrl != null && data.headerUrl!.isNotEmpty)
+            ? CachedNetworkImageProvider(data.headerUrl!)
+            : null,
+        leading: const AutoLeadingButton(),
+        collapsed: collapsed,
+        tintNotifier: headerTint,
+      );
+      final scrollView = CustomScrollView(
         slivers: [
+          headerAppBar,
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1739,6 +1755,12 @@ class PublisherProfileContent extends HookConsumerWidget {
           FediverseActorPostsWidget(actorId: actorId),
           SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
         ],
+      );
+
+      return ProfileHeaderScrollListener(
+        collapsed: collapsed,
+        threshold: profileHeaderCollapseThreshold(context, 220),
+        child: scrollView,
       );
     }
 

@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:styled_widget/styled_widget.dart';
 
 class PostFilterWidget extends HookConsumerWidget {
   final TabController categoryTabController;
@@ -129,7 +130,9 @@ class PostFilterWidget extends HookConsumerWidget {
       return () => categoryTabController.removeListener(onTabChanged);
     }, [categoryTabController]);
 
-    return Card.outlined(
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -199,7 +202,7 @@ class PostFilterWidget extends HookConsumerWidget {
                     decoration: InputDecoration(
                       labelText: 'search'.tr(),
                       hintText: 'searchPosts'.tr(),
-                      prefixIcon: const Icon(Symbols.search),
+                      prefixIcon: const Icon(Symbols.search).padding(left: 16, right: 8),
                       suffixIcon: (queryTerm.value?.isNotEmpty ?? false)
                           ? IconButton(
                               visualDensity: const VisualDensity(
@@ -223,7 +226,7 @@ class PostFilterWidget extends HookConsumerWidget {
                 ],
                 const Gap(8),
                 Material(
-                  color: colorScheme.surfaceContainerLow,
+                  color: colorScheme.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(14),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
@@ -310,7 +313,7 @@ class PostFilterWidget extends HookConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerLow,
+                        color: colorScheme.surfaceContainerLowest,
                         border: Border.all(
                           color: colorScheme.outlineVariant.withOpacity(0.5),
                         ),

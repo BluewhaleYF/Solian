@@ -14,17 +14,17 @@ import 'package:island/accounts/widgets/account/board.dart';
 import 'package:island/accounts/screens/profile_timeline.dart';
 import 'package:island/developers/models/developer.dart';
 import 'package:island/accounts/account_pod.dart';
+import 'package:island/core/config.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
-import 'package:island/shared/widgets/attention_modal.dart';
+import 'package:island/shared/widgets/profile_header_app_bar.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
-import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
 import 'package:island/tickets/widgets/ticket_fire.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -35,55 +35,17 @@ import 'package:island/accounts/screens/punishment_user_sheet.dart';
 
 part 'profile.g.dart';
 
-Future<void> showAccountProfileAttentionModal(String name) async {
-  showAttentionModal(
-    id: 'account-profile:$name',
-    replaceIfExists: true,
-    barrierDismissible: true,
-    builder: (context, dismiss) =>
-        AccountProfileAttentionModal(name: name, onDismiss: dismiss),
-  );
-}
-
-class AccountProfileAttentionModal extends StatelessWidget {
-  final String name;
-  final VoidCallback onDismiss;
-
-  const AccountProfileAttentionModal({
-    super.key,
-    required this.name,
-    required this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AttentionModalScaffold(
-      titleText: '@$name',
-      onDismiss: onDismiss,
-      actions: [
-        IconButton(
-          onPressed: () {
-            onDismiss();
-            context.router.push(AccountProfileRoute(name: name));
-          },
-          icon: const Icon(Symbols.open_in_new),
-          tooltip: 'open'.tr(),
-        ),
-      ],
-      child: AccountProfileContent(name: name),
-    );
-  }
-}
-
 class _AccountBasicInfo extends HookWidget {
   final SnAccount data;
   final String uname;
   final AsyncValue<SnDeveloper?> accountDeveloper;
+  final bool showHeaderImage;
 
   const _AccountBasicInfo({
     required this.data,
     required this.uname,
     required this.accountDeveloper,
+    this.showHeaderImage = true,
   });
 
   String _getFirstLine(String bio) {
@@ -107,11 +69,22 @@ class _AccountBasicInfo extends HookWidget {
     final isBioExpanded = useState(false);
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    final avatar = Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.surface, width: 3),
+      ),
+      child: ProfilePictureWidget(
+        file: data.profile.picture,
+        fallbackName: data.nick,
+        radius: 32,
+      ),
+    );
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHeaderImage)
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -128,240 +101,214 @@ class _AccountBasicInfo extends HookWidget {
                   ),
                 ),
               ),
-              Positioned(
-                bottom: -24,
-                left: 16,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 3,
-                    ),
-                  ),
-                  child: ProfilePictureWidget(
-                    file: data.profile.picture,
-                    fallbackName: data.nick,
-                    radius: 32,
-                  ),
-                ),
-              ),
+              Positioned(bottom: -24, left: 16, child: avatar),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: showHeaderImage ? 16 : 4,
+            vertical: showHeaderImage ? 16 : 0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (showHeaderImage) const Gap(12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 12,
+                children: [
+                  if (!showHeaderImage) avatar,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          spacing: 8,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: AccountName(
+                                account: data,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                onVerificationTap:
+                                    data.profile.verification == null
+                                    ? null
+                                    : () => showVerificationMarkSheet(
+                                        context,
+                                        data.profile.verification!,
+                                      ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '@${data.name}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(4),
+                        AccountStatusWidget(
+                          uname: uname,
+                          padding: EdgeInsets.zero,
+                        ),
+                        if (data.profile.location.trim().isNotEmpty)
+                          _AccountProfileInfoRow(
+                            icon: Symbols.location_on,
+                            value: data.profile.location.trim(),
+                          ),
+                        if (data.profile.birthday != null)
+                          _AccountProfileInfoRow(
+                            icon: Symbols.cake,
+                            value:
+                                '${_getAge(data.profile.birthday!.toLocal())} yrs',
+                          ),
+                        if (data.profile.timeZone.trim().isNotEmpty)
+                          _AccountProfileInfoRow(
+                            icon: Symbols.schedule,
+                            value: data.profile.timeZone.trim(),
+                          ),
+                        if (accountDeveloper.value != null) ...[
+                          const Gap(12),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              context.router.push(
+                                PublisherProfileRoute(
+                                  name: accountDeveloper.value!.publisher!.name,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.secondaryContainer
+                                    .withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                spacing: 8,
+                                children: [
+                                  Icon(
+                                    Symbols.smart_toy,
+                                    size: 18,
+                                    color:
+                                        theme.colorScheme.onSecondaryContainer,
+                                  ),
+                                  Text(
+                                    'botAutomatedBy'.tr(
+                                      args: [
+                                        accountDeveloper.value!.publisher!.nick,
+                                      ],
+                                    ),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme
+                                          .colorScheme
+                                          .onSecondaryContainer,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        SharePlus.instance.share(
+                          ShareParams(
+                            uri: Uri.parse('https://solian.app/@${data.name}'),
+                          ),
+                        );
+                      },
+                      icon: Icon(
+                        Symbols.share,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Collapsible Bio Section
+              if (data.profile.bio.isNotEmpty) ...[
+                const Gap(12),
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Gap(12),
-                              Row(
-                                spacing: 8,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Flexible(
-                                    child: AccountName(
-                                      account: data,
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: isBioExpanded.value
+                                ? MarkdownTextContent(
+                                    key: const ValueKey('expanded'),
+                                    content: data.profile.bio,
+                                    linesMargin: EdgeInsets.zero,
+                                  )
+                                : Text(
+                                    _getFirstLine(data.profile.bio),
+                                    key: const ValueKey('collapsed'),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '@${data.name}',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Gap(4),
-                              AccountStatusWidget(
-                                uname: uname,
-                                padding: EdgeInsets.zero,
-                              ),
-                              if (data.profile.location.trim().isNotEmpty)
-                                _AccountProfileInfoRow(
-                                  icon: Symbols.location_on,
-                                  value: data.profile.location.trim(),
-                                ),
-                              if (data.profile.birthday != null)
-                                _AccountProfileInfoRow(
-                                  icon: Symbols.cake,
-                                  value:
-                                      '${_getAge(data.profile.birthday!.toLocal())} yrs',
-                                ),
-                              if (data.profile.timeZone.trim().isNotEmpty)
-                                _AccountProfileInfoRow(
-                                  icon: Symbols.schedule,
-                                  value: data.profile.timeZone.trim(),
-                                ),
-                              if (accountDeveloper.value != null) ...[
-                                const Gap(12),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () {
-                                    context.router.push(
-                                      PublisherProfileRoute(
-                                        name: accountDeveloper
-                                            .value!
-                                            .publisher!
-                                            .name,
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme
-                                          .colorScheme
-                                          .secondaryContainer
-                                          .withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      spacing: 8,
-                                      children: [
-                                        Icon(
-                                          Symbols.smart_toy,
-                                          size: 18,
-                                          color: theme
-                                              .colorScheme
-                                              .onSecondaryContainer,
-                                        ),
-                                        Text(
-                                          'botAutomatedBy'.tr(
-                                            args: [
-                                              accountDeveloper
-                                                  .value!
-                                                  .publisher!
-                                                  .nick,
-                                            ],
-                                          ),
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSecondaryContainer,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                          ).alignment(Alignment.centerLeft),
                         ),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            onPressed: () {
-                              SharePlus.instance.share(
-                                ShareParams(
-                                  uri: Uri.parse(
-                                    'https://solian.app/@${data.name}',
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: Icon(
-                              Symbols.share,
-                              color: theme.colorScheme.primary,
-                            ),
+                        InkWell(
+                          onTap: () {
+                            isBioExpanded.value = !isBioExpanded.value;
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              isBioExpanded.value
+                                  ? 'collapse'.tr()
+                                  : 'expand'.tr(),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ).tr(),
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                // Collapsible Bio Section
-                if (data.profile.bio.isNotEmpty) ...[
-                  const Gap(12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              child: isBioExpanded.value
-                                  ? MarkdownTextContent(
-                                      key: const ValueKey('expanded'),
-                                      content: data.profile.bio,
-                                      linesMargin: EdgeInsets.zero,
-                                    )
-                                  : Text(
-                                      _getFirstLine(data.profile.bio),
-                                      key: const ValueKey('collapsed'),
-                                    ),
-                            ).alignment(Alignment.centerLeft),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              isBioExpanded.value = !isBioExpanded.value;
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Text(
-                                isBioExpanded.value
-                                    ? 'collapse'.tr()
-                                    : 'expand'.tr(),
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ).tr(),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
+
+    return showHeaderImage
+        ? Card(margin: EdgeInsets.zero, child: content)
+        : content;
   }
 }
 
@@ -780,13 +727,17 @@ class AccountProfileScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = ref.watch(accountProvider(name));
+    final isNarrow =
+        !isWideScreen(context) || MediaQuery.sizeOf(context).width < 900;
 
     return AppScaffold(
       isNoBackground: false,
-      appBar: AppBar(
-        leading: const AutoLeadingButton(),
-        title: Text(account.value?.nick ?? '@$name'),
-      ),
+      appBar: isNarrow
+          ? null
+          : AppBar(
+              leading: const AutoLeadingButton(),
+              title: Text(account.value?.nick ?? '@$name'),
+            ),
       body: AccountProfileContent(name: name),
     );
   }
@@ -806,6 +757,8 @@ class AccountProfileContent extends HookConsumerWidget {
     final accountPunishment = ref.watch(
       accountPunishmentOverviewProvider(name),
     );
+    final collapsed = useState(false);
+    final headerTint = useState<Color?>(null);
 
     void showPunishmentSheet() {
       showModalBottomSheet(
@@ -924,6 +877,7 @@ class AccountProfileContent extends HookConsumerWidget {
             accountPublishersProvider(data.id),
           );
           final theme = Theme.of(context);
+          final serverUrl = ref.watch(serverUrlProvider);
           final savedBoard = isCurrentUser
               ? ref.watch(myAccountBoardProvider).asData?.value
               : ref.watch(accountBoardProvider(name)).asData?.value;
@@ -933,47 +887,55 @@ class AccountProfileContent extends HookConsumerWidget {
 
           final showActions = user.value != null && !isCurrentUser;
 
-          final boardContent = ExtendedRefreshIndicator(
-            onRefresh: refreshProfile,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                spacing: 12,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _AccountBasicInfo(
-                    data: data,
-                    uname: name,
-                    accountDeveloper: accountDeveloper,
-                  ),
-                  if (showActions)
-                    _AccountAction(
+          Widget buildBoardContent() {
+            return ExtendedRefreshIndicator(
+              onRefresh: refreshProfile,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Column(
+                  spacing: 12,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _AccountBasicInfo(
                       data: data,
-                      accountRelationship: accountRelationship,
-                      accountChat: accountChat,
-                      relationshipAction: relationshipAction,
-                      blockAction: blockAction,
-                      directMessageAction: directMessageAction,
+                      uname: name,
+                      accountDeveloper: accountDeveloper,
+                      showHeaderImage: false,
                     ),
-                  AccountBoard(
-                    account: data,
-                    items: accountBoard,
-                    uname: name,
-                    publishers: accountPublishers.value ?? [],
-                  ),
-                  ?accountPunishment.whenOrNull(
-                    data: (punishmentData) => punishmentData != null
-                        ? _AccountPunishment(
-                            punishment: punishmentData,
-                            onTap: showPunishmentSheet,
-                          )
-                        : null,
-                  ),
-                ],
+                    if (showActions)
+                      _AccountAction(
+                        data: data,
+                        accountRelationship: accountRelationship,
+                        accountChat: accountChat,
+                        relationshipAction: relationshipAction,
+                        blockAction: blockAction,
+                        directMessageAction: directMessageAction,
+                      ),
+                    AccountBoard(
+                      account: data,
+                      items: accountBoard,
+                      uname: name,
+                      publishers: accountPublishers.value ?? [],
+                    ),
+                    ?accountPunishment.whenOrNull(
+                      data: (punishmentData) => punishmentData != null
+                          ? _AccountPunishment(
+                              punishment: punishmentData,
+                              onTap: showPunishmentSheet,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
+          }
+
+          final boardContentWithoutHeader = buildBoardContent();
 
           final boardContentNoHeader = ExtendedRefreshIndicator(
             onRefresh: refreshProfile,
@@ -1000,10 +962,7 @@ class AccountProfileContent extends HookConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  sliver: AccountTimelineList(uname: name),
-                ),
+                AccountTimelineList(uname: name),
                 SliverGap(MediaQuery.of(context).padding.bottom + 16),
               ],
             ),
@@ -1014,21 +973,32 @@ class AccountProfileContent extends HookConsumerWidget {
               final useWide =
                   isWideScreen(context) && constraints.maxWidth >= 900;
 
+              final isHeaderCollapsed = !useWide && collapsed.value;
+              final headerColors = profileHeaderColors(theme, headerTint.value);
+
               final tabBar = Material(
-                color: theme.colorScheme.surface,
+                color: isHeaderCollapsed
+                    ? headerColors.primary
+                    : theme.colorScheme.surface,
                 elevation: 0,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: TabBar(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     indicator: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer,
+                      color: isHeaderCollapsed
+                          ? headerColors.onPrimary.withOpacity(0.22)
+                          : theme.colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     indicatorSize: TabBarIndicatorSize.tab,
                     dividerHeight: 0,
-                    labelColor: theme.colorScheme.onSecondaryContainer,
-                    unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                    labelColor: isHeaderCollapsed
+                        ? headerColors.onPrimary
+                        : theme.colorScheme.onSecondaryContainer,
+                    unselectedLabelColor: isHeaderCollapsed
+                        ? headerColors.onPrimary.withOpacity(0.7)
+                        : theme.colorScheme.onSurfaceVariant,
                     splashBorderRadius: BorderRadius.circular(20),
                     labelStyle: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
@@ -1052,15 +1022,45 @@ class AccountProfileContent extends HookConsumerWidget {
               );
 
               if (!useWide) {
-                return Column(
-                  children: [
-                    tabBar,
-                    Expanded(
-                      child: TabBarView(
-                        children: [boardContent, timelineContent],
+                return ProfileHeaderScrollListener(
+                  collapsed: collapsed,
+                  threshold: profileHeaderCollapseThreshold(context, 220),
+                  child: NestedScrollView(
+                    headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                      ProfileHeaderAppBar(
+                        title: data.nick,
+                        background: CloudImageWidget(
+                          file: data.profile.background,
+                          fit: BoxFit.cover,
+                          imageOnly: true,
+                        ),
+                        samplingProvider: data.profile.background == null
+                            ? null
+                            : CloudImageWidget.provider(
+                                file: data.profile.background!,
+                                serverUrl: serverUrl,
+                              ),
+                        leading: const AutoLeadingButton(),
+                        collapsed: collapsed,
+                        tintNotifier: headerTint,
                       ),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _ProfileTabBarHeaderDelegate(
+                          child: Padding(
+                            padding: const .symmetric(vertical: 4),
+                            child: tabBar,
+                          ),
+                          backgroundColor: isHeaderCollapsed
+                              ? headerColors.primary
+                              : theme.colorScheme.surface,
+                        ),
+                      ),
+                    ],
+                    body: TabBarView(
+                      children: [boardContentWithoutHeader, timelineContent],
                     ),
-                  ],
+                  ),
                 );
               }
 
@@ -1130,5 +1130,43 @@ class AccountProfileContent extends HookConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
+  }
+}
+
+class _ProfileTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final Color backgroundColor;
+
+  /// TabBar (~48) plus its symmetric vertical padding (8 top + 8 bottom).
+  static const double _height = 64;
+
+  _ProfileTabBarHeaderDelegate({
+    required this.child,
+    required this.backgroundColor,
+  });
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: backgroundColor,
+      elevation: 0,
+      child: SizedBox(height: _height, child: child),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _ProfileTabBarHeaderDelegate oldDelegate) {
+    return child != oldDelegate.child ||
+        backgroundColor != oldDelegate.backgroundColor;
   }
 }

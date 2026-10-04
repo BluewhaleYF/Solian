@@ -161,7 +161,8 @@ class AccountStatusWidget extends HookConsumerWidget {
     final hasMedia = statusValue.icon != null || statusValue.background != null;
     if (!hasMedia) {
       return Padding(
-        padding: padding ?? const EdgeInsets.symmetric(horizontal: 27, vertical: 4),
+        padding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 27, vertical: 4),
         child: Row(
           spacing: 4,
           children: [
@@ -228,7 +229,14 @@ class AccountStatusWidget extends HookConsumerWidget {
               )
             else if (getStatusOnlineDeviceLabel(statusValue) case final device?)
               Flexible(
-                child: Text(device).opacity(0.75),
+                child: Tooltip(
+                  message: device,
+                  child: Text(
+                    device,
+                    maxLines: 1,
+                    overflow: .ellipsis,
+                  ).opacity(0.75),
+                ),
               )
             else if (!statusValue.isOnline &&
                 account.value?.profile.lastSeenAt != null)
@@ -345,7 +353,8 @@ class _StatusStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
       child: Row(
         children: [
           Icon(icon, color: colorScheme.onSurfaceVariant),
@@ -433,7 +442,8 @@ class _StatusDisplayCard extends StatelessWidget {
     Widget card = Container(
       margin: hasBackground
           ? EdgeInsets.zero
-          : (padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+          : (padding ??
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),

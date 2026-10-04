@@ -99,7 +99,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       settings.customFonts?.split(',').map((ele) => ele.trim()).toList() ??
       ['Nunito'];
 
-  return ThemeData(
+  final theme = ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
     brightness: brightness,
@@ -114,8 +114,12 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     appBarTheme: AppBarTheme(
       centerTitle: true,
       elevation: hasAppBarTransparent ? 0 : null,
-      backgroundColor: hasAppBarTransparent ? Colors.transparent : colorScheme.surface,
-      foregroundColor: hasAppBarTransparent ? colorScheme.onSurface : colorScheme.onSurface,
+      backgroundColor: hasAppBarTransparent
+          ? Colors.transparent
+          : colorScheme.surface,
+      foregroundColor: hasAppBarTransparent
+          ? colorScheme.onSurface
+          : colorScheme.onSurface,
     ),
     cardTheme: CardThemeData(
       color: colorScheme.surfaceContainer.withOpacity(
@@ -130,7 +134,9 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     sliderTheme: SliderThemeData(year2023: false),
     popupMenuTheme: const PopupMenuThemeData(shape: _menuShape),
     menuTheme: const MenuThemeData(
-      style: MenuStyle(shape: WidgetStatePropertyAll<OutlinedBorder>(_menuShape)),
+      style: MenuStyle(
+        shape: WidgetStatePropertyAll<OutlinedBorder>(_menuShape),
+      ),
     ),
     pageTransitionsTheme: PageTransitionsTheme(
       builders: {
@@ -141,6 +147,18 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
         TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
         TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
       },
+    ),
+  );
+
+  // App bar titles keep the app-wide font (taken from the theme's own text
+  // style) while shrinking to 16 and going semibold.
+  return theme.copyWith(
+    appBarTheme: theme.appBarTheme.copyWith(
+      titleTextStyle: theme.textTheme.titleLarge?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      ),
     ),
   );
 }

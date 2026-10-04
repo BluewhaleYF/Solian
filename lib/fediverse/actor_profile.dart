@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:island/core/services/responsive.dart';
 import 'package:island/posts/screens/publisher_profile.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 
@@ -24,15 +25,19 @@ class FediverseActorProfileScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final publisher = ref.watch(publisherProvider(id));
+    final narrow =
+        !isWideScreen(context) || MediaQuery.sizeOf(context).width < 900;
 
     return AppScaffold(
       isNoBackground: false,
-      appBar: AppBar(
-        leading: const AutoLeadingButton(),
-        title: Text(
-          publisher.value?.effectiveName ?? fullHandle ?? '@$id',
-        ),
-      ),
+      appBar: narrow
+          ? null
+          : AppBar(
+              leading: const AutoLeadingButton(),
+              title: Text(
+                publisher.value?.effectiveName ?? fullHandle ?? '@$id',
+              ),
+            ),
       body: PublisherProfileContent(name: id),
     );
   }

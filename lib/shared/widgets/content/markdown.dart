@@ -18,6 +18,7 @@ import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/screens/publisher_profile.dart';
 import 'package:island/route.dart';
+import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/content/markdown_latex.dart';
 import 'package:island/shared/widgets/content/markdown_remote_image.dart';
@@ -197,10 +198,7 @@ class _HeadingAnchorBuilder extends MarkdownElementBuilder {
         if (node is markdown.Text)
           TextSpan(text: node.text)
         else if (node is markdown.Element)
-          TextSpan(
-            style: _inlineStyle(node.tag),
-            children: _inlineSpans(node),
-          )
+          TextSpan(style: _inlineStyle(node.tag), children: _inlineSpans(node))
         else
           const TextSpan(),
     ];
@@ -261,11 +259,11 @@ class MarkdownTextContent extends HookConsumerWidget {
 
     final onMentionTap = useCallback((String type, String id) {
       if (type == 'accounts') {
-        showAccountProfileAttentionModal(id);
+        context.router.push(AccountProfileRoute(name: id));
         return;
       }
       if (type == 'publishers') {
-        showPublisherProfileAttentionModal(id);
+        context.router.push(PublisherProfileRoute(name: id));
         return;
       }
       context.router.navigatePath('/$type/$id');

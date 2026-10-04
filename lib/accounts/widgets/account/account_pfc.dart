@@ -1,5 +1,6 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:island/route.gr.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:island/accounts/screens/profile.dart';
 
 class AccountPfcRegion extends StatelessWidget {
   final String? uname;
@@ -20,10 +21,6 @@ class AccountPfcRegion extends StatelessWidget {
   }
 }
 
-Future<void> showAccountProfileCard(
-  BuildContext context,
-  String uname, {
-  Offset? offset,
-}) {
-  return showAccountProfileAttentionModal(uname);
+Future<void> showAccountProfileCard(BuildContext context, String uname) async {
+  await context.router.push(AccountProfileRoute(name: uname));
 }
