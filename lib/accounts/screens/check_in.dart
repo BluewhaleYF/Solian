@@ -78,6 +78,31 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   /// show their own spinner.
   final _checkingInDays = <DateTime>{};
 
+  /// Days whose draw just landed. The rail pastes their stamp on while they
+  /// stay here; _markFresh drops them again shortly after, so a later rebuild
+  /// — a scroll, a re-selection — never replays the entrance.
+  final _freshDays = <DateTime>{};
+  final _freshTimers = <Timer>[];
+
+  /// Marks [day] as just drawn, for the length of its stamp's entrance.
+  void _markFresh(DateTime day) {
+    _freshDays.add(day);
+    _freshTimers.add(
+      Timer(const Duration(milliseconds: 1200), () {
+        if (!mounted) return;
+        setState(() => _freshDays.remove(day));
+      }),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final timer in _freshTimers) {
+      timer.cancel();
+    }
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +136,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         );
         _checkingInDays.remove(target);
       });
+      _markFresh(target);
       return;
     }
     setState(() => _checkingInDays.add(target));
@@ -119,6 +145,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       final result = await client.accounts.checkIn(backdated: day);
       if (!mounted) return;
       setState(() => _instantResults[target] = result);
+      _markFresh(target);
       ref.invalidate(checkInResultTodayProvider);
       // Backdated draws leave the daily streak and the wallet untouched, so
       // only a draw on its own day is worth refreshing the account for.
@@ -157,6 +184,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         .checkIn(captchaToken: token, backdated: day);
     if (!mounted) return;
     setState(() => _instantResults[target] = result);
+    _markFresh(target);
     ref.invalidate(checkInResultTodayProvider);
     if (result.fortuneReport == null) {
       unawaited(_refreshReport(ref.read(solarNetworkClientProvider), target));
@@ -233,6 +261,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         todayResult: todayResult,
         instantResults: instant,
         checkingInDays: _checkingInDays,
+        freshDays: _freshDays,
         onCheckIn: _checkIn,
         onCheckInBackdated: _checkInBackdated,
         debugResults: debugOptions == null
@@ -256,6 +285,9 @@ class _CheckInDatePage extends ConsumerStatefulWidget {
   /// Days with a draw in flight.
   final Set<DateTime> checkingInDays;
 
+  /// Days whose draw just landed: their stamp is pasted onto the tile.
+  final Set<DateTime> freshDays;
+
   final VoidCallback onCheckIn;
 
   /// Fills in a past day, which the server only allows for subscribers and up
@@ -270,6 +302,7 @@ class _CheckInDatePage extends ConsumerStatefulWidget {
     required this.todayResult,
     required this.instantResults,
     required this.checkingInDays,
+    required this.freshDays,
     required this.onCheckIn,
     required this.onCheckInBackdated,
     this.debugResults,
@@ -334,6 +367,7 @@ class _CheckInDatePageState extends ConsumerState<_CheckInDatePage> {
                     child: _CheckInDateRail(
                       dates: dates,
                       results: results,
+                      freshDays: widget.freshDays,
                       selected: selected,
                       today: today,
                       onSelected: (date) => setState(() => _selected = date),
@@ -480,6 +514,10 @@ class _CheckInDateRail extends StatefulWidget {
   /// The day the strip is showing, with its draw when there is one: a tile
   /// wears the stamp of the tier it landed on.
   final Map<DateTime, SnCheckInResult> results;
+
+  /// Days whose draw just landed, so their stamp is pasted on rather than
+  /// simply present.
+  final Set<DateTime> freshDays;
   final DateTime selected;
   final DateTime today;
   final ValueChanged<DateTime> onSelected;
@@ -491,6 +529,7 @@ class _CheckInDateRail extends StatefulWidget {
   const _CheckInDateRail({
     required this.dates,
     required this.results,
+    required this.freshDays,
     required this.selected,
     required this.today,
     required this.onSelected,
@@ -690,6 +729,7 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
                                   date: date,
                                   level: level,
                                   selected: active,
+                                  pasteIn: widget.freshDays.contains(date),
                                 ),
                             ],
                           ),
@@ -711,7 +751,10 @@ class _CheckInDateRailState extends State<_CheckInDateRail> {
 /// edge; on the day the visitor picked it grows over the whole tile and parks
 /// in the middle, hiding the date. Corner and tilt come off the date, so a tile
 /// keeps the same look on every rebuild while the next day's lands elsewhere.
-class _RailStamp extends StatelessWidget {
+///
+/// A day whose draw just landed has its stamp pasted on instead: it arrives
+/// cocked and oversized, slaps flat with a squash, and wobbles to rest.
+class _RailStamp extends StatefulWidget {
   static const _size = 64.0;
 
   /// Fills the tile, so a selected day reads as its stamp rather than a date
@@ -724,44 +767,146 @@ class _RailStamp extends StatelessWidget {
 
   static const _morph = Duration(milliseconds: 380);
 
+  /// The whole paste: down fast, then the settle.
+  static const _paste = Duration(milliseconds: 560);
+
   final DateTime date;
   final int level;
   final bool selected;
+
+  /// Set for the day a draw just landed on, which pastes its stamp on.
+  final bool pasteIn;
 
   const _RailStamp({
     required this.date,
     required this.level,
     required this.selected,
+    this.pasteIn = false,
   });
 
   @override
+  State<_RailStamp> createState() => _RailStampState();
+}
+
+class _RailStampState extends State<_RailStamp>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _RailStamp._paste,
+    // A stamp that was already on the tile is simply at rest.
+    value: widget.pasteIn ? 0 : 1,
+  );
+
+  /// Down fast, a little past the tile, then back to flat.
+  late final Animation<double> _press = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: 1.22,
+        end: .955,
+      ).chain(CurveTween(curve: Curves.easeOutCubic)),
+      weight: 30,
+    ),
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: .955,
+        end: 1.025,
+      ).chain(CurveTween(curve: Curves.easeOutCubic)),
+      weight: 34,
+    ),
+    TweenSequenceItem(tween: Tween<double>(begin: 1.025, end: 1), weight: 36),
+  ]).animate(_controller);
+
+  /// The squash of something pressed onto a surface, and its rebound.
+  late final Animation<double> _squash = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween<double>(begin: .13, end: -.03), weight: 34),
+    TweenSequenceItem(tween: Tween<double>(begin: -.03, end: 0), weight: 66),
+  ]).animate(_controller);
+
+  /// Extra tilt on top of where the stamp comes to rest: it lands crooked,
+  /// swings past, and settles.
+  late final Animation<double> _tilt = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: .18,
+        end: -.035,
+      ).chain(CurveTween(curve: Curves.easeOutCubic)),
+      weight: 35,
+    ),
+    TweenSequenceItem(
+      tween: Tween<double>(begin: -.035, end: .012),
+      weight: 32,
+    ),
+    TweenSequenceItem(tween: Tween<double>(begin: .012, end: 0), weight: 33),
+  ]).animate(_controller);
+
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0, .16, curve: Curves.easeOut),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.pasteIn) _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final random = checkInStampRandom(date);
+    final random = checkInStampRandom(widget.date);
     final corner = random.nextInt(4);
     final width = _CheckInDateRailState._cardWidth;
     final height = _CheckInDateRailState._cardHeight;
-    final size = selected ? _selectedSize : _size;
+    final size = widget.selected ? _RailStamp._selectedSize : _RailStamp._size;
     // Anchored by its top-left in both states, so the implicit animation can
     // tween straight from the corner it was dealt to the middle.
-    final left = selected
+    final left = widget.selected
         ? (width - size) / 2
-        : (corner.isEven ? _overhang : width - size - _overhang);
-    final top = selected
+        : (corner.isEven
+              ? _RailStamp._overhang
+              : width - size - _RailStamp._overhang);
+    final top = widget.selected
         ? (height - size) / 2
-        : (corner < 2 ? _overhang : height - size - _overhang);
+        : (corner < 2
+              ? _RailStamp._overhang
+              : height - size - _RailStamp._overhang);
 
     return AnimatedPositioned(
-      duration: _morph,
+      duration: _RailStamp._morph,
       curve: Curves.easeOutCubic,
       left: left,
       top: top,
       width: size,
       height: size,
       child: AnimatedRotation(
-        turns: selected ? 0 : (random.nextDouble() - 0.5) * 0.36 / (2 * pi),
-        duration: _morph,
+        turns: widget.selected
+            ? 0
+            : (random.nextDouble() - 0.5) * 0.36 / (2 * pi),
+        duration: _RailStamp._morph,
         curve: Curves.easeOutCubic,
-        child: Image.asset(checkInStampAsset(level), fit: BoxFit.contain),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) => Transform.rotate(
+            angle: _tilt.value,
+            child: Transform.scale(
+              scaleX: _press.value * (1 + _squash.value),
+              scaleY: _press.value * (1 - _squash.value),
+              child: child,
+            ),
+          ),
+          child: FadeTransition(
+            opacity: _fade,
+            child: Image.asset(
+              checkInStampAsset(widget.level),
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1661,71 +1806,87 @@ class FortuneLuckyGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 520 ? 2 : 1;
-        // One panel, no inner cards: the four omens are the same kind of fact,
-        // so they get one surface and a steady row height.
-        const panelPadding = 40.0;
-        const rowHeight = 58.0;
-        const columnGap = 20.0;
-        final tile =
-            (constraints.maxWidth - panelPadding - columnGap * (columns - 1)) /
-            columns;
+        // One panel, no inner cards, no fixed row heights: a lucky time that
+        // wraps to a second line simply makes its row taller.
+        final rows = [
+          for (var i = 0; i < items.length; i += columns)
+            items.sublist(i, min(i + columns, items.length)),
+        ];
         return _Panel(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-          child: GridView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: columnGap,
-              mainAxisSpacing: 0,
-              childAspectRatio: tile / rowHeight,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return Row(
-                children: [
-                  Icon(
-                    item.$1,
-                    size: 20,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.$2,
-                          style: checkInSerif(
-                            context,
-                            base: Theme.of(context).textTheme.bodySmall,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const Gap(4),
-                        Text(
-                          item.$3,
-                          style: checkInSerif(
-                            context,
-                            base: Theme.of(context).textTheme.bodyMedium,
-                            fontWeight: FontWeight.w600,
-                          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            children: [
+              for (final row in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var column = 0; column < columns; column++) ...[
+                        if (column > 0) const Gap(20),
+                        Expanded(
+                          child: column < row.length
+                              ? _Omen(
+                                  icon: row[column].$1,
+                                  label: row[column].$2,
+                                  value: row[column].$3,
+                                )
+                              : const SizedBox.shrink(),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                ],
-              );
-            },
+                ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+/// One of the four omens: an icon, the name it goes by, and what it points at.
+class _Omen extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _Omen({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: checkInSerif(
+                  context,
+                  base: theme.textTheme.bodySmall,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const Gap(4),
+              Text(
+                value,
+                style: checkInSerif(
+                  context,
+                  base: theme.textTheme.bodyMedium,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

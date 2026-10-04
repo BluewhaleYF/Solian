@@ -423,7 +423,8 @@ sealed class ExploreSettings with _$ExploreSettings {
   const factory ExploreSettings({
     @Default('personalized') String mode,
     @Default(true) bool aggressiveMode,
-    @Default(<String>[]) List<String> selectedPublisherNames,
+    // Selected explore section: null = Explore, 'subscriptions', 'friends'.
+    String? filter,
     @Default(<String>[]) List<String> selectedCategoryIds,
     @Default(<String>[]) List<String> selectedTagIds,
   }) = _ExploreSettings;

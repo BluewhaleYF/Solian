@@ -126,7 +126,17 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    // Yesterday carries no draw yet, so it offers the make-up.
+    // Yesterday picked in the strip. The strip shows a handful of days at a
+    // time, so it has to be scrolled back before the tap can land.
+    await tester.scrollUntilVisible(
+      find.text('${yesterday.day}'),
+      240,
+      scrollable: find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('${yesterday.day}'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

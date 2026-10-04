@@ -97,71 +97,79 @@ class CheckInWidget extends ConsumerWidget {
 
     return Card(
       margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
-        child: Row(
-          children: [
-            if (level != null) ...[
-              Padding(
-                padding: const .symmetric(vertical: 12, horizontal: 4),
-                child: Image.asset(
-                  checkInStampAsset(level),
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.contain,
+      child: Row(
+        children: [
+          Padding(
+            padding: const .symmetric(vertical: 12, horizontal: 4),
+            child: level == null
+                ? Image.asset(
+                    "assets/images/stickers/confuse.webp",
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.contain,
+                  )
+                : Image.asset(
+                    checkInStampAsset(level),
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.contain,
+                  ),
+          ),
+          const Gap(12),
+          Expanded(
+            // Keyed by state, so the three lines cross-fade as one block
+            // instead of each line swapping on its own.
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Align(
+                alignment: .centerLeft,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  child: Column(
+                    key: ValueKey(view.state),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        view.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Gap(2),
+                      Text(
+                        view.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const Gap(12),
-            ],
-            Expanded(
-              // Keyed by state, so the three lines cross-fade as one block
-              // instead of each line swapping on its own.
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: Column(
-                  key: ValueKey(view.state),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      view.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Gap(2),
-                    Text(
-                      view.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
-            const Gap(4),
-            IconButton.filledTonal(
-              onPressed: () => showCheckInSheet(context),
-              tooltip: 'checkIn'.tr(),
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: Icon(view.icon, key: ValueKey(view.icon)),
-              ),
+          ),
+          const Gap(4),
+          IconButton.filledTonal(
+            onPressed: () => showCheckInSheet(context),
+            tooltip: 'checkIn'.tr(),
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              child: Icon(view.icon, key: ValueKey(view.icon)),
             ),
-            IconButton(
-              onPressed: () => context.router.push(EventHubRoute(name: 'me')),
-              tooltip: 'eventCalendar'.tr(),
-              icon: const Icon(Symbols.event),
-            ),
-            const Gap(8),
-          ],
-        ),
+          ),
+          IconButton(
+            onPressed: () => context.router.push(EventHubRoute(name: 'me')),
+            tooltip: 'eventCalendar'.tr(),
+            icon: const Icon(Symbols.event),
+          ),
+          const Gap(12),
+        ],
       ),
     );
   }

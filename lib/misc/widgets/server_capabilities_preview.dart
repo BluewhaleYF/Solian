@@ -48,12 +48,14 @@ class ServerCapabilitiesPreview extends HookConsumerWidget {
     final compatibility = metadata == null
         ? null
         : ServerCompatibility.fromMetadata(metadata);
-    final services = _parseServices(health?['status']);
+    final services = _parseServices(health?['checks']);
     final downServices = services.values.where((service) => !service.isHealthy);
     final isLoading =
         metadataResponse.connectionState == ConnectionState.waiting ||
         healthResponse.connectionState == ConnectionState.waiting;
-    final isHealthy = health?['aggregated'] == true && health?['ready'] == true;
+    // draft-inadarei-api-health-check-06: "pass" is the only fully healthy
+    // status; "warn" still carries unhealthy services to list.
+    final isHealthy = health?['status'] == 'pass';
     final subtitle = isLoading
         ? 'settingsServerCapabilitiesLoading'.tr()
         : metadata == null && health == null
@@ -137,7 +139,7 @@ class _ServerCapabilitiesSheet extends StatelessWidget {
     final serverCapabilities = _parseCapabilities(metadata?['capabilities']);
     final apiRevision = metadata?['api_revision'];
     final minimumRevision = metadata?['minimum_revision'];
-    final services = _parseServices(health?['status']);
+    final services = _parseServices(health?['checks']);
     final downServices = Map<String, _ServiceHealth>.fromEntries(
       services.entries.where((entry) => !entry.value.isHealthy),
     );
@@ -175,8 +177,7 @@ class _ServerCapabilitiesSheet extends StatelessWidget {
             _ServicesSection(
               title: 'settingsServerServices'.tr(),
               services: services,
-              isHealthy:
-                  health!['aggregated'] == true && health!['ready'] == true,
+              isHealthy: health!['status'] == 'pass',
             ),
           if (downServices.isNotEmpty)
             _ServicesSection(
@@ -250,10 +251,14 @@ class _CapabilityInfo {
 }
 
 class _ServiceHealth {
-  final bool isHealthy;
+  final String? status;
   final String? lastChecked;
 
-  const _ServiceHealth({required this.isHealthy, this.lastChecked});
+  const _ServiceHealth({this.status, this.lastChecked});
+
+  /// A check is unhealthy only when it reports "fail"; "warn" is healthy with
+  /// concerns, per draft-inadarei-api-health-check-06 section 3.1.
+  bool get isHealthy => status != 'fail';
 }
 
 class _ServicesSection extends StatelessWidget {
@@ -317,14 +322,17 @@ Map<String, _CapabilityInfo> _parseCapabilities(Object? rawCapabilities) {
   };
 }
 
-Map<String, _ServiceHealth> _parseServices(Object? rawServices) {
-  if (rawServices is! Map) return const {};
+Map<String, _ServiceHealth> _parseServices(Object? rawChecks) {
+  if (rawChecks is! Map) return const {};
   return {
-    for (final entry in rawServices.entries)
-      if (entry.key is String && entry.value is Map)
+    for (final entry in rawChecks.entries)
+      if (entry.key is String &&
+          entry.value is List &&
+          (entry.value as List).isNotEmpty &&
+          (entry.value as List).first is Map)
         entry.key as String: _ServiceHealth(
-          isHealthy: (entry.value as Map)['is_healthy'] == true,
-          lastChecked: (entry.value as Map)['last_checked'] as String?,
+          status: ((entry.value as List).first as Map)['status'] as String?,
+          lastChecked: ((entry.value as List).first as Map)['time'] as String?,
         ),
   };
 }

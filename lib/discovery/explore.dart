@@ -45,12 +45,11 @@ class ExploreScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exploreSettings = ref.watch(appSettingsProvider).exploreSettings;
-    final currentFilter = useState<String?>(null);
+    final currentFilter = useState<String?>(exploreSettings.filter);
     final currentMode = useState(exploreSettings.mode);
     final currentAggressive = useState(exploreSettings.aggressiveMode);
-    final selectedPublisherNames = useState<List<String>>(
-      List<String>.from(exploreSettings.selectedPublisherNames),
-    );
+    // Publisher picks are session-scoped; only category/tag filters persist.
+    final selectedPublisherNames = useState<List<String>>(<String>[]);
     final selectedCategoryIds = useState<List<String>>(
       List<String>.from(exploreSettings.selectedCategoryIds),
     );
@@ -58,16 +57,18 @@ class ExploreScreen extends HookConsumerWidget {
       List<String>.from(exploreSettings.selectedTagIds),
     );
     final notifier = ref.watch(activityListProvider.notifier);
-    final filterTabController = useMaterialTabController(initialLength: 3);
+    final filterTabController = useMaterialTabController(
+      initialLength: 3,
+      initialIndex: _filterTabIndex(exploreSettings.filter),
+    );
     final sidebarPanel = useState<Widget?>(null);
     void handleFilterChange(String? filter) {
       currentFilter.value = filter;
       notifier.applyFilter(filter);
-      filterTabController.index = switch (filter) {
-        'subscriptions' => 1,
-        'friends' => 2,
-        _ => 0,
-      };
+      filterTabController.index = _filterTabIndex(filter);
+      ref
+          .read(appSettingsProvider.notifier)
+          .setExploreSettings(exploreSettings.copyWith(filter: filter));
     }
 
     void handleModeChange(String? mode) {
@@ -383,11 +384,6 @@ class ExploreScreen extends HookConsumerWidget {
                           initialSelectedTags: selectedTags.value,
                           onSelectedPublishersChanged: (names) {
                             selectedPublishers.value = names;
-                            appSettingsNotifier.setExploreSettings(
-                              exploreSettings.copyWith(
-                                selectedPublisherNames: names,
-                              ),
-                            );
                           },
                           onSelectedCategoriesChanged: (ids) {
                             selectedCategories.value = ids;
@@ -942,11 +938,6 @@ class ExploreScreen extends HookConsumerWidget {
             },
             onPublisherSelectionCleared: () {
               selectedPublishers.value = [];
-              appSettingsNotifier.setExploreSettings(
-                exploreSettings.copyWith(
-                  selectedPublisherNames: const <String>[],
-                ),
-              );
             },
           ).padding(top: 8)
         : null;
@@ -1614,6 +1605,14 @@ class _FilterToggleButton extends StatelessWidget {
 }
 
 enum _ExploreAction { categories, shuffle, footprints }
+
+/// Position of a persisted section in the explore filter tabs:
+/// Explore (0), Subscriptions (1), Friends (2).
+int _filterTabIndex(String? filter) => switch (filter) {
+  'subscriptions' => 1,
+  'friends' => 2,
+  _ => 0,
+};
 
 class _RankingToolbar extends StatelessWidget {
   final String currentMode;

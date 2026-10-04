@@ -59,7 +59,9 @@ class FortuneGraphWidget extends HookConsumerWidget {
     final titleRow = Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('fortuneGraph').tr().fontSize(18).bold(),
+            // Flexible, not fixed: the title shares this row with the calendar
+            // button, and a longer translation would otherwise push past it.
+            Flexible(child: Text('fortuneGraph').tr().fontSize(18).bold()),
             if (eventCalandarUser != null)
               IconButton(
                 icon: const Icon(Icons.calendar_month, size: 20),

@@ -92,11 +92,7 @@ _ExploreSettings _$ExploreSettingsFromJson(Map<String, dynamic> json) =>
     _ExploreSettings(
       mode: json['mode'] as String? ?? 'personalized',
       aggressiveMode: json['aggressive_mode'] as bool? ?? true,
-      selectedPublisherNames:
-          (json['selected_publisher_names'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const <String>[],
+      filter: json['filter'] as String?,
       selectedCategoryIds:
           (json['selected_category_ids'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -113,7 +109,7 @@ Map<String, dynamic> _$ExploreSettingsToJson(_ExploreSettings instance) =>
     <String, dynamic>{
       'mode': instance.mode,
       'aggressive_mode': instance.aggressiveMode,
-      'selected_publisher_names': instance.selectedPublisherNames,
+      'filter': instance.filter,
       'selected_category_ids': instance.selectedCategoryIds,
       'selected_tag_ids': instance.selectedTagIds,
     };

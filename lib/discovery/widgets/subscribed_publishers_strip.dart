@@ -411,8 +411,11 @@ class SliverSubscribedPublishersStrip extends HookConsumerWidget {
   }
 }
 
-/// Helper to persist publisher selection into explore settings and clear
-/// category/tag filters (matches subscription filter sheet behavior).
+/// Applies a publisher-strip selection to the explore filters.
+///
+/// The publisher pick is session-scoped and never persisted; picking
+/// publishers clears the persisted category/tag filters (matches the
+/// subscription filter sheet behavior).
 void applyPublisherStripSelection({
   required List<String> names,
   required ValueNotifier<List<String>> selectedPublishers,
@@ -422,19 +425,13 @@ void applyPublisherStripSelection({
   required AppSettingsNotifier appSettingsNotifier,
 }) {
   selectedPublishers.value = names;
-  if (names.isNotEmpty) {
-    selectedCategories.value = [];
-    selectedTags.value = [];
-  }
+  if (names.isEmpty) return;
+  selectedCategories.value = [];
+  selectedTags.value = [];
   appSettingsNotifier.setExploreSettings(
     exploreSettings.copyWith(
-      selectedPublisherNames: names,
-      selectedCategoryIds: names.isNotEmpty
-          ? const <String>[]
-          : exploreSettings.selectedCategoryIds,
-      selectedTagIds: names.isNotEmpty
-          ? const <String>[]
-          : exploreSettings.selectedTagIds,
+      selectedCategoryIds: const <String>[],
+      selectedTagIds: const <String>[],
     ),
   );
 }

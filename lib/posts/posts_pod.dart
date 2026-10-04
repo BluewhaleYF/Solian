@@ -30,6 +30,9 @@ class ActivityListNotifier
     final exploreSettings = ref.read(appSettingsProvider).exploreSettings;
     isAggressiveMode = exploreSettings.aggressiveMode;
     currentMode = exploreSettings.mode;
+    // Restore the last explore section (Explore / Subscriptions / Friends) so
+    // the first page is fetched for it instead of the default feed.
+    currentFilter = exploreSettings.filter;
 
     // Listen to real-time post created events
     _postCreatedSubscription = eventBus.on<PostCreatedEvent>().listen((event) {

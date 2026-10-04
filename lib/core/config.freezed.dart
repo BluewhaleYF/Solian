@@ -1202,7 +1202,7 @@ as bool,
 /// @nodoc
 mixin _$ExploreSettings implements DiagnosticableTreeMixin {
 
- String get mode; bool get aggressiveMode; List<String> get selectedPublisherNames; List<String> get selectedCategoryIds; List<String> get selectedTagIds;
+ String get mode; bool get aggressiveMode; String? get filter; List<String> get selectedCategoryIds; List<String> get selectedTagIds;
 /// Create a copy of ExploreSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1217,26 +1217,26 @@ void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   final _this = this as ExploreSettings;
   properties
     ..add(DiagnosticsProperty('type', 'ExploreSettings'))
-    ..add(DiagnosticsProperty('mode', _this.mode))..add(DiagnosticsProperty('aggressiveMode', _this.aggressiveMode))..add(DiagnosticsProperty('selectedPublisherNames', _this.selectedPublisherNames))..add(DiagnosticsProperty('selectedCategoryIds', _this.selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', _this.selectedTagIds));
+    ..add(DiagnosticsProperty('mode', _this.mode))..add(DiagnosticsProperty('aggressiveMode', _this.aggressiveMode))..add(DiagnosticsProperty('filter', _this.filter))..add(DiagnosticsProperty('selectedCategoryIds', _this.selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', _this.selectedTagIds));
 }
 
 @override
 bool operator ==(Object other) {
   final _this = this as ExploreSettings;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExploreSettings&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.aggressiveMode, _this.aggressiveMode) || other.aggressiveMode == _this.aggressiveMode)&&const DeepCollectionEquality().equals(other.selectedPublisherNames, _this.selectedPublisherNames)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _this.selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _this.selectedTagIds));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExploreSettings&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.aggressiveMode, _this.aggressiveMode) || other.aggressiveMode == _this.aggressiveMode)&&(identical(other.filter, _this.filter) || other.filter == _this.filter)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _this.selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _this.selectedTagIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as ExploreSettings;
-  return Object.hash(runtimeType,_this.mode,_this.aggressiveMode,const DeepCollectionEquality().hash(_this.selectedPublisherNames),const DeepCollectionEquality().hash(_this.selectedCategoryIds),const DeepCollectionEquality().hash(_this.selectedTagIds));
+  return Object.hash(runtimeType,_this.mode,_this.aggressiveMode,_this.filter,const DeepCollectionEquality().hash(_this.selectedCategoryIds),const DeepCollectionEquality().hash(_this.selectedTagIds));
 }
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   final _this = this as ExploreSettings;
-  return 'ExploreSettings(mode: ${_this.mode}, aggressiveMode: ${_this.aggressiveMode}, selectedPublisherNames: ${_this.selectedPublisherNames}, selectedCategoryIds: ${_this.selectedCategoryIds}, selectedTagIds: ${_this.selectedTagIds})';
+  return 'ExploreSettings(mode: ${_this.mode}, aggressiveMode: ${_this.aggressiveMode}, filter: ${_this.filter}, selectedCategoryIds: ${_this.selectedCategoryIds}, selectedTagIds: ${_this.selectedTagIds})';
 }
 
 
@@ -1247,7 +1247,7 @@ abstract mixin class $ExploreSettingsCopyWith<$Res>  {
   factory $ExploreSettingsCopyWith(ExploreSettings value, $Res Function(ExploreSettings) _then) = _$ExploreSettingsCopyWithImpl;
 @useResult
 $Res call({
- String mode, bool aggressiveMode, List<String> selectedPublisherNames, List<String> selectedCategoryIds, List<String> selectedTagIds
+ String mode, bool aggressiveMode, String? filter, List<String> selectedCategoryIds, List<String> selectedTagIds
 });
 
 
@@ -1264,12 +1264,12 @@ class _$ExploreSettingsCopyWithImpl<$Res>
 
 /// Create a copy of ExploreSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? mode = null,Object? aggressiveMode = null,Object? selectedPublisherNames = null,Object? selectedCategoryIds = null,Object? selectedTagIds = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? mode = null,Object? aggressiveMode = null,Object? filter = freezed,Object? selectedCategoryIds = null,Object? selectedTagIds = null,}) {
   return _then(ExploreSettings(
 mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as String,aggressiveMode: null == aggressiveMode ? _self.aggressiveMode : aggressiveMode // ignore: cast_nullable_to_non_nullable
-as bool,selectedPublisherNames: null == selectedPublisherNames ? _self.selectedPublisherNames : selectedPublisherNames // ignore: cast_nullable_to_non_nullable
-as List<String>,selectedCategoryIds: null == selectedCategoryIds ? _self.selectedCategoryIds : selectedCategoryIds // ignore: cast_nullable_to_non_nullable
+as bool,filter: freezed == filter ? _self.filter : filter // ignore: cast_nullable_to_non_nullable
+as String?,selectedCategoryIds: null == selectedCategoryIds ? _self.selectedCategoryIds : selectedCategoryIds // ignore: cast_nullable_to_non_nullable
 as List<String>,selectedTagIds: null == selectedTagIds ? _self.selectedTagIds : selectedTagIds // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -1353,10 +1353,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String mode,  bool aggressiveMode,  List<String> selectedPublisherNames,  List<String> selectedCategoryIds,  List<String> selectedTagIds)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String mode,  bool aggressiveMode,  String? filter,  List<String> selectedCategoryIds,  List<String> selectedTagIds)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ExploreSettings() when $default != null:
-return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_that.selectedCategoryIds,_that.selectedTagIds);case _:
+return $default(_that.mode,_that.aggressiveMode,_that.filter,_that.selectedCategoryIds,_that.selectedTagIds);case _:
   return orElse();
 
 }
@@ -1374,10 +1374,10 @@ return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String mode,  bool aggressiveMode,  List<String> selectedPublisherNames,  List<String> selectedCategoryIds,  List<String> selectedTagIds)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String mode,  bool aggressiveMode,  String? filter,  List<String> selectedCategoryIds,  List<String> selectedTagIds)  $default,) {final _that = this;
 switch (_that) {
 case _ExploreSettings():
-return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_that.selectedCategoryIds,_that.selectedTagIds);}
+return $default(_that.mode,_that.aggressiveMode,_that.filter,_that.selectedCategoryIds,_that.selectedTagIds);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1391,10 +1391,10 @@ return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String mode,  bool aggressiveMode,  List<String> selectedPublisherNames,  List<String> selectedCategoryIds,  List<String> selectedTagIds)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String mode,  bool aggressiveMode,  String? filter,  List<String> selectedCategoryIds,  List<String> selectedTagIds)?  $default,) {final _that = this;
 switch (_that) {
 case _ExploreSettings() when $default != null:
-return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_that.selectedCategoryIds,_that.selectedTagIds);case _:
+return $default(_that.mode,_that.aggressiveMode,_that.filter,_that.selectedCategoryIds,_that.selectedTagIds);case _:
   return null;
 
 }
@@ -1406,18 +1406,12 @@ return $default(_that.mode,_that.aggressiveMode,_that.selectedPublisherNames,_th
 @JsonSerializable()
 
 class _ExploreSettings with DiagnosticableTreeMixin implements ExploreSettings {
-  const _ExploreSettings({this.mode = 'personalized', this.aggressiveMode = true,  List<String> selectedPublisherNames = const <String>[],  List<String> selectedCategoryIds = const <String>[],  List<String> selectedTagIds = const <String>[]}): _selectedPublisherNames = selectedPublisherNames,_selectedCategoryIds = selectedCategoryIds,_selectedTagIds = selectedTagIds;
+  const _ExploreSettings({this.mode = 'personalized', this.aggressiveMode = true, this.filter,  List<String> selectedCategoryIds = const <String>[],  List<String> selectedTagIds = const <String>[]}): _selectedCategoryIds = selectedCategoryIds,_selectedTagIds = selectedTagIds;
   factory _ExploreSettings.fromJson(Map<String, dynamic> json) => _$ExploreSettingsFromJson(json);
 
 @override@JsonKey() final  String mode;
 @override@JsonKey() final  bool aggressiveMode;
- final  List<String> _selectedPublisherNames;
-@override@JsonKey() List<String> get selectedPublisherNames {
-  if (_selectedPublisherNames is EqualUnmodifiableListView) return _selectedPublisherNames;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_selectedPublisherNames);
-}
-
+@override final  String? filter;
  final  List<String> _selectedCategoryIds;
 @override@JsonKey() List<String> get selectedCategoryIds {
   if (_selectedCategoryIds is EqualUnmodifiableListView) return _selectedCategoryIds;
@@ -1447,23 +1441,23 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     properties
     ..add(DiagnosticsProperty('type', 'ExploreSettings'))
-    ..add(DiagnosticsProperty('mode', mode))..add(DiagnosticsProperty('aggressiveMode', aggressiveMode))..add(DiagnosticsProperty('selectedPublisherNames', selectedPublisherNames))..add(DiagnosticsProperty('selectedCategoryIds', selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', selectedTagIds));
+    ..add(DiagnosticsProperty('mode', mode))..add(DiagnosticsProperty('aggressiveMode', aggressiveMode))..add(DiagnosticsProperty('filter', filter))..add(DiagnosticsProperty('selectedCategoryIds', selectedCategoryIds))..add(DiagnosticsProperty('selectedTagIds', selectedTagIds));
 }
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExploreSettings&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.aggressiveMode, aggressiveMode) || other.aggressiveMode == aggressiveMode)&&const DeepCollectionEquality().equals(other.selectedPublisherNames, _selectedPublisherNames)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _selectedTagIds));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExploreSettings&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.aggressiveMode, aggressiveMode) || other.aggressiveMode == aggressiveMode)&&(identical(other.filter, filter) || other.filter == filter)&&const DeepCollectionEquality().equals(other.selectedCategoryIds, _selectedCategoryIds)&&const DeepCollectionEquality().equals(other.selectedTagIds, _selectedTagIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,mode,aggressiveMode,const DeepCollectionEquality().hash(_selectedPublisherNames),const DeepCollectionEquality().hash(_selectedCategoryIds),const DeepCollectionEquality().hash(_selectedTagIds));
+    return Object.hash(runtimeType,mode,aggressiveMode,filter,const DeepCollectionEquality().hash(_selectedCategoryIds),const DeepCollectionEquality().hash(_selectedTagIds));
 }
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-    return 'ExploreSettings(mode: $mode, aggressiveMode: $aggressiveMode, selectedPublisherNames: $selectedPublisherNames, selectedCategoryIds: $selectedCategoryIds, selectedTagIds: $selectedTagIds)';
+    return 'ExploreSettings(mode: $mode, aggressiveMode: $aggressiveMode, filter: $filter, selectedCategoryIds: $selectedCategoryIds, selectedTagIds: $selectedTagIds)';
 }
 
 
@@ -1474,7 +1468,7 @@ abstract mixin class _$ExploreSettingsCopyWith<$Res> implements $ExploreSettings
   factory _$ExploreSettingsCopyWith(_ExploreSettings value, $Res Function(_ExploreSettings) _then) = __$ExploreSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- String mode, bool aggressiveMode, List<String> selectedPublisherNames, List<String> selectedCategoryIds, List<String> selectedTagIds
+ String mode, bool aggressiveMode, String? filter, List<String> selectedCategoryIds, List<String> selectedTagIds
 });
 
 
@@ -1491,12 +1485,12 @@ class __$ExploreSettingsCopyWithImpl<$Res>
 
 /// Create a copy of ExploreSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? mode = null,Object? aggressiveMode = null,Object? selectedPublisherNames = null,Object? selectedCategoryIds = null,Object? selectedTagIds = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? mode = null,Object? aggressiveMode = null,Object? filter = freezed,Object? selectedCategoryIds = null,Object? selectedTagIds = null,}) {
   return _then(_ExploreSettings(
 mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as String,aggressiveMode: null == aggressiveMode ? _self.aggressiveMode : aggressiveMode // ignore: cast_nullable_to_non_nullable
-as bool,selectedPublisherNames: null == selectedPublisherNames ? _self._selectedPublisherNames : selectedPublisherNames // ignore: cast_nullable_to_non_nullable
-as List<String>,selectedCategoryIds: null == selectedCategoryIds ? _self._selectedCategoryIds : selectedCategoryIds // ignore: cast_nullable_to_non_nullable
+as bool,filter: freezed == filter ? _self.filter : filter // ignore: cast_nullable_to_non_nullable
+as String?,selectedCategoryIds: null == selectedCategoryIds ? _self._selectedCategoryIds : selectedCategoryIds // ignore: cast_nullable_to_non_nullable
 as List<String>,selectedTagIds: null == selectedTagIds ? _self._selectedTagIds : selectedTagIds // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
