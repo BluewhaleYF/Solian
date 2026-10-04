@@ -1085,6 +1085,7 @@ class _CheckInContent extends ConsumerWidget {
                 const Gap(_panelGap),
                 _Panel(
                   child: FortuneGraphWidget(
+                    noPadding: true,
                     events: debugResults == null
                         ? ref.watch(
                             eventCalendarProvider(
