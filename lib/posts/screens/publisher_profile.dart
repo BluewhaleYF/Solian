@@ -1072,7 +1072,17 @@ class _PublisherTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
 class _PublisherPostsTab extends HookWidget {
   final String pubName;
 
-  const _PublisherPostsTab({required this.pubName});
+  /// Gutter between the post list and its host edge.
+  ///
+  /// Narrow layouts inset the list from the page edge. The wide layout renders
+  /// it inside the publication card, where the rows stay flush with the card
+  /// edge to match the realm feed.
+  final double horizontalPadding;
+
+  const _PublisherPostsTab({
+    required this.pubName,
+    this.horizontalPadding = 12,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1119,7 +1129,7 @@ class _PublisherPostsTab extends HookWidget {
         ),
         const SliverGap(12),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           sliver: SliverPostList(
             key: ValueKey('publisher-$pubName-$queryId'),
             query: queryState.value,
@@ -1608,7 +1618,10 @@ class PublisherProfileContent extends HookConsumerWidget {
                   availableWidth >= _wideLayoutMinWidth;
 
               final publicationViews = [
-                _PublisherPostsTab(pubName: name),
+                _PublisherPostsTab(
+                  pubName: name,
+                  horizontalPadding: useWideLayout ? 0 : 12,
+                ),
                 _PublisherCollectionsTab(pubName: name),
                 _PublisherStickerPacksTab(pubName: name),
                 _PublisherSurveysTab(pubName: name),
@@ -1823,7 +1836,10 @@ class PublisherProfileContent extends HookConsumerWidget {
               ],
             ),
           ),
-          FediverseActorPostsWidget(actorId: actorId),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            sliver: FediverseActorPostsWidget(actorId: actorId),
+          ),
           SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
         ],
       );

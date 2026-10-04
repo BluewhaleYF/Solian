@@ -17,6 +17,7 @@ import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
 import 'package:island/core/services/responsive.dart';
+import 'package:island/core/utils/text.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/realms/widgets/realm_list.dart';
 import 'package:island/route.gr.dart';
@@ -715,8 +716,9 @@ class _AccountSearchTab extends HookConsumerWidget {
                               ),
                               subtitle: Text(
                                 publisher.bio,
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                               trailing: const Icon(
                                 Symbols.chevron_right,
@@ -726,6 +728,9 @@ class _AccountSearchTab extends HookConsumerWidget {
                         );
                       } else if (result['type'] == 'fediverse') {
                         final actor = result['data'] as SnPublisher;
+                        // Remote actors summarise themselves in HTML; the row
+                        // shows the plain-text excerpt.
+                        final actorBio = actor.bio.htmlToPlainText();
                         return Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 560),
@@ -783,15 +788,11 @@ class _AccountSearchTab extends HookConsumerWidget {
                               title: Row(
                                 children: [
                                   Flexible(
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          actor.effectiveName,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
-                                        ),
-                                      ],
+                                    child: Text(
+                                      actor.effectiveName,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -818,9 +819,9 @@ class _AccountSearchTab extends HookConsumerWidget {
                                   ),
                                 ],
                               ),
-                              subtitle: actor.bio.isNotEmpty
+                              subtitle: actorBio.isNotEmpty
                                   ? Text(
-                                      actor.bio,
+                                      actorBio,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(

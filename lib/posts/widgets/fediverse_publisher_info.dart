@@ -10,6 +10,7 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import 'package:island/core/network.dart';
+import 'package:island/core/utils/text.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 
@@ -80,6 +81,8 @@ class FediverseActorPostsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = fediverseActorPostsProvider(actorId);
 
+    // Same presentation as the local publisher timeline: flat rows split by a
+    // divider, so the hosts may render either list flush inside their card.
     return PaginationList(
       provider: provider,
       notifier: provider.notifier,
@@ -89,16 +92,14 @@ class FediverseActorPostsWidget extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: PostItemSkeleton(maxWidth: double.infinity),
       ),
+      seperatorBuilder: (context, index, post) => const Divider(height: 1),
       itemBuilder: (context, index, post) {
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: PostActionableItem(
-            item: post,
-            borderRadius: 8,
-            onTap: !post.isCached && post.fediverseUri != null
-                ? () => launchUrlString(post.fediverseUri!)
-                : null,
-          ),
+        return PostActionableItem(
+          item: post,
+          borderRadius: 8,
+          onTap: !post.isCached && post.fediverseUri != null
+              ? () => launchUrlString(post.fediverseUri!)
+              : null,
         );
       },
     );
@@ -314,7 +315,7 @@ class _PropertyValueRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final plainText = _stripHtml(html);
+    final plainText = html.htmlToPlainText();
     final uri = _extractFirstLink(html);
 
     final child = Text(
@@ -332,17 +333,6 @@ class _PropertyValueRenderer extends StatelessWidget {
       );
     }
     return child;
-  }
-
-  String _stripHtml(String input) {
-    return input
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .replaceAll('&nbsp;', ' ');
   }
 
   String? _extractFirstLink(String input) {
