@@ -1550,19 +1550,9 @@ class PublisherProfileContent extends HookConsumerWidget {
               final tabBar = const _PublisherTabBar();
 
               if (!useWideLayout) {
-                final isHeaderCollapsed = collapsed.value;
                 final headerColors = profileHeaderColors(
                   Theme.of(context),
                   headerTint.value,
-                );
-                final tabBar = _PublisherTabBar(
-                  labelColor: isHeaderCollapsed ? headerColors.onPrimary : null,
-                  unselectedLabelColor: isHeaderCollapsed
-                      ? headerColors.onPrimary.withOpacity(0.7)
-                      : null,
-                  indicatorColor: isHeaderCollapsed
-                      ? headerColors.onPrimary.withOpacity(0.22)
-                      : null,
                 );
                 // NestedScrollView lets the tall profile header scroll away on
                 // short/narrow viewports instead of overflowing the Column.
@@ -1617,9 +1607,23 @@ class PublisherProfileContent extends HookConsumerWidget {
                     ),
                     SliverPersistentHeader(
                       pinned: true,
+                      // The tab bar takes the header color only once the header
+                      // is fully scrolled and the bar is snapped under the app
+                      // bar (`innerBoxIsScrolled`) — not while it is still
+                      // travelling up through the profile content.
                       delegate: _PublisherTabBarHeaderDelegate(
-                        child: tabBar,
-                        backgroundColor: isHeaderCollapsed
+                        child: _PublisherTabBar(
+                          labelColor: innerBoxIsScrolled
+                              ? headerColors.onPrimary
+                              : null,
+                          unselectedLabelColor: innerBoxIsScrolled
+                              ? headerColors.onPrimary.withOpacity(0.7)
+                              : null,
+                          indicatorColor: innerBoxIsScrolled
+                              ? headerColors.onPrimary.withOpacity(0.22)
+                              : null,
+                        ),
+                        backgroundColor: innerBoxIsScrolled
                             ? headerColors.primary
                             : Theme.of(context).colorScheme.surface,
                       ),
