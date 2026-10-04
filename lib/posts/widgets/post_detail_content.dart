@@ -614,18 +614,18 @@ class PostDetailContent extends HookConsumerWidget {
                     ),
                   ),
                 ),
-              SliverToBoxAdapter(
-                child: wrapContent(actionBuilder(context, translatePost)),
-              ),
               if (user.value != null)
                 SliverToBoxAdapter(
                   child: wrapContent(
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                       child: PostWatchIndicator(post: post),
                     ),
                   ),
                 ),
+              SliverToBoxAdapter(
+                child: wrapContent(actionBuilder(context, translatePost)),
+              ),
               interactionsSection,
               SliverGap(MediaQuery.of(context).padding.bottom + 80),
             ],

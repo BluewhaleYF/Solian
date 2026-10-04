@@ -30,7 +30,7 @@ class PostWatchIndicator extends ConsumerWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: () => showPostWatchSheet(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
@@ -42,7 +42,7 @@ class PostWatchIndicator extends ConsumerWidget {
               size: 18,
               color: theme.colorScheme.primary,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(child: Text('postWatchHint').tr().fontSize(12)),
             Icon(
               Symbols.chevron_right,

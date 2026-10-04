@@ -325,16 +325,7 @@ String _truncateRegularPostBody(String content) {
 /// — no media, chain, embed or collection, and a body short enough that the
 /// feed does not clamp it.
 bool postFitsAttentionModal(SnPost post) {
-  if (post.type != 0 || post.isTruncated) return false;
-  if (post.attachments.isNotEmpty ||
-      post.chainedPosts.isNotEmpty ||
-      post.chainedCount > 0 ||
-      post.embedView != null ||
-      post.publisherCollections.isNotEmpty) {
-    return false;
-  }
-  final content = post.content;
-  if (content == null || content.trim().isEmpty) return false;
+  if (post.type != 0) return false;
   return !_shouldClampRegularPostBody(resolvePostMarkdown(post));
 }
 

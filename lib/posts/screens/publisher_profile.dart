@@ -906,6 +906,12 @@ Future<SnPublisherSubscriptionStatus?> publisherSubscriptionStatus(
   Ref ref,
   String pubName,
 ) async {
+  // Subscription state only exists for local publishers. The screen reaches
+  // this provider by name before a remote actor payload resolves, so the actor
+  // check has to happen here rather than at the call site: otherwise opening an
+  // actor profile fires a request that can only 404.
+  final pub = await ref.watch(publisherProvider(pubName).future);
+  if (pub.isFediverse) return null;
   final client = ref.watch(solarNetworkClientProvider);
   try {
     final resp = await client.dio.get(
@@ -947,6 +953,10 @@ Future<Map<String, bool>> publisherFeatures(Ref ref, String? uname) async {
 
 @riverpod
 Future<SnHeatmap?> publisherHeatmap(Ref ref, String uname) async {
+  // Heatmaps are accumulated from local publishing activity; a remote actor
+  // has none, so the request is skipped instead of 404ing.
+  final pub = await ref.watch(publisherProvider(uname).future);
+  if (pub.isFediverse) return null;
   final client = ref.watch(solarNetworkClientProvider);
   return await client.sphere.getPublisherHeatmap(uname);
 }
@@ -956,6 +966,10 @@ Future<SnPublisherRatingOverview?> publisherRatingOverview(
   Ref ref,
   String pubName,
 ) async {
+  // Ratings are a local-publisher concept and remote actors expose no rating
+  // endpoints, so the actor check gates the request itself.
+  final pub = await ref.watch(publisherProvider(pubName).future);
+  if (pub.isFediverse) return null;
   final client = ref.watch(solarNetworkClientProvider);
   try {
     return await client.sphere.getPublisherRatingOverview(pubName);
@@ -1520,12 +1534,13 @@ class PublisherProfileContent extends HookConsumerWidget {
           )
         : ref.watch(publisherSubscriptionStatusProvider(name));
     final badges = ref.watch(publisherBadgesProvider(name));
-    final heatmap = isFediverse
-        ? const AsyncValue<SnHeatmap?>.data(null)
-        : ref.watch(publisherHeatmapProvider(name));
-    final ratingOverview = isFediverse
-        ? const AsyncValue<SnPublisherRatingOverview?>.data(null)
-        : ref.watch(publisherRatingOverviewProvider(name));
+    // Rating, heatmap and subscription status are local-publisher endpoints:
+    // each provider resolves the publisher first and resolves to `null` for a
+    // remote actor without a round trip. Guarding this watch with `isFediverse`
+    // would be too late — while the actor payload is still loading the name is
+    // all this screen has, and the request would already be gone.
+    final heatmap = ref.watch(publisherHeatmapProvider(name));
+    final ratingOverview = ref.watch(publisherRatingOverviewProvider(name));
     final serverUrl = ref.watch(serverUrlProvider);
 
     final subscribing = useState(false);

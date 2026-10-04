@@ -243,10 +243,6 @@ class RoomMessageList extends HookConsumerWidget {
     final useColumnDisplay = displayStyle == 'column';
     final useBubbleDisplay = displayStyle != 'compact' && !useColumnDisplay;
     final useStickyGroupedDisplay = useBubbleDisplay || useColumnDisplay;
-    // The group stack already lives after MessageItemWrapper's selection
-    // gutter. Keep the overlay aligned with the message bubble itself; adding
-    // the gutter here would shift the avatar twice in selection mode.
-    const stickyAvatarLeft = 12.0;
 
     final messageIndexes = useMemoized(() {
       final byKey = <String, int>{};
@@ -386,8 +382,6 @@ class RoomMessageList extends HookConsumerWidget {
                 roomId: roomId,
                 sender: message.toRemoteMessage().sender,
                 avatarSize: useColumnDisplay ? 24 : 32,
-                avatarLeft: stickyAvatarLeft,
-                avatarTop: useColumnDisplay ? 4 : 9,
                 avatarAnchorKey: groupAvatarAnchorKey,
                 stickyEnabled: !disableAnimationSetting,
                 children: [
@@ -525,8 +519,6 @@ class _StickyBubbleMessageGroup extends StatefulWidget {
   final String roomId;
   final SnChatMember sender;
   final double avatarSize;
-  final double avatarLeft;
-  final double avatarTop;
   final GlobalKey<State<StatefulWidget>>? avatarAnchorKey;
   final bool stickyEnabled;
   final List<Widget> children;
@@ -536,8 +528,6 @@ class _StickyBubbleMessageGroup extends StatefulWidget {
     required this.roomId,
     required this.sender,
     required this.avatarSize,
-    required this.avatarLeft,
-    required this.avatarTop,
     required this.avatarAnchorKey,
     required this.stickyEnabled,
     required this.children,
@@ -569,7 +559,7 @@ class _StickyBubbleMessageGroupState extends State<_StickyBubbleMessageGroup> {
               children: widget.children,
             ),
             Positioned(
-              left: widget.avatarLeft,
+              left: 0,
               top: 0,
               child: _StickyGroupAvatar(
                 key: _avatarKey,
@@ -578,7 +568,6 @@ class _StickyBubbleMessageGroupState extends State<_StickyBubbleMessageGroup> {
                 roomId: widget.roomId,
                 sender: widget.sender,
                 avatarSize: widget.avatarSize,
-                avatarTop: widget.avatarTop,
                 avatarAnchorKey: widget.avatarAnchorKey,
                 stickyEnabled: widget.stickyEnabled,
               ),
@@ -595,7 +584,6 @@ class _StickyGroupAvatar extends StatefulWidget {
   final String roomId;
   final SnChatMember sender;
   final double avatarSize;
-  final double avatarTop;
   final int childCount;
   final GlobalKey<State<StatefulWidget>>? avatarAnchorKey;
   final bool stickyEnabled;
@@ -606,7 +594,6 @@ class _StickyGroupAvatar extends StatefulWidget {
     required this.roomId,
     required this.sender,
     required this.avatarSize,
-    required this.avatarTop,
     required this.childCount,
     required this.avatarAnchorKey,
     required this.stickyEnabled,
@@ -620,6 +607,7 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
   ScrollPosition? _position;
   bool _framePending = false;
   double? _resolvedBaseTop;
+  double? _resolvedBaseLeft;
 
   @override
   void didChangeDependencies() {
@@ -636,8 +624,7 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
     // Message heights and the anchor can change when a message is sent,
     // edited, or replaced by its server version. Recompute after that layout
     // without rebuilding the whole message group.
-    if (oldWidget.avatarTop != widget.avatarTop ||
-        oldWidget.childCount != widget.childCount ||
+    if (oldWidget.childCount != widget.childCount ||
         oldWidget.stickyEnabled != widget.stickyEnabled ||
         oldWidget.avatarAnchorKey != widget.avatarAnchorKey) {
       _scheduleLayoutRefresh();
@@ -683,7 +670,12 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
     });
   }
 
-  double? _baseAvatarTop(RenderBox? groupBox) {
+  /// Top-left corner of the anchor row — the group's oldest message, the one
+  /// that draws its own avatar when it is not grouped — expressed in the
+  /// group's coordinate space. Both the horizontal and the vertical placement
+  /// of the overlay come from here, so a grouped avatar lands exactly where a
+  /// single message's avatar does, and it follows the selection gutter.
+  Offset? _anchorOrigin(RenderBox? groupBox) {
     if (groupBox == null || !groupBox.hasSize) return null;
 
     final anchorBox =
@@ -692,18 +684,20 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
     if (anchorBox == null || !anchorBox.hasSize) return null;
 
     try {
-      return anchorBox.localToGlobal(Offset.zero, ancestor: groupBox).dy;
+      return anchorBox.localToGlobal(Offset.zero, ancestor: groupBox);
     } catch (_) {
       return null;
     }
   }
 
-  double? _avatarOffset() {
-    final groupBox =
-        widget.groupKey.currentContext?.findRenderObject() as RenderBox?;
-    final measuredBaseTop = _baseAvatarTop(groupBox);
-    if (measuredBaseTop != null) {
-      _resolvedBaseTop = measuredBaseTop;
+  double? _avatarLeft(Offset? origin) {
+    if (origin != null) _resolvedBaseLeft = origin.dx;
+    return _resolvedBaseLeft;
+  }
+
+  double? _avatarOffset(RenderBox? groupBox, Offset? origin) {
+    if (origin != null) {
+      _resolvedBaseTop = origin.dy;
     }
     final baseTop = _resolvedBaseTop;
     if (baseTop == null) return null;
@@ -736,13 +730,13 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
     return (baseTop + stickyDelta).clamp(baseTop, maxOffset);
   }
 
-  Widget _buildAvatar(double offset) {
+  Widget _buildAvatar(double left, double offset) {
     // Keep the hit-test box at the same position as the painted avatar. A
     // Transform can paint the avatar outside the positioned child's original
     // bounds, which makes the member-card gesture intermittently miss while
     // the avatar is sticky or a message is expanding.
     return Padding(
-      padding: EdgeInsets.only(top: offset),
+      padding: EdgeInsets.only(left: left, top: offset),
       child: RepaintBoundary(
         child: ChatRoomMemberRegion(
           roomId: widget.roomId,
@@ -763,8 +757,12 @@ class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final offset = _avatarOffset();
-    if (offset == null) return const SizedBox.shrink();
-    return _buildAvatar(offset);
+    final groupBox =
+        widget.groupKey.currentContext?.findRenderObject() as RenderBox?;
+    final origin = _anchorOrigin(groupBox);
+    final left = _avatarLeft(origin);
+    final offset = _avatarOffset(groupBox, origin);
+    if (left == null || offset == null) return const SizedBox.shrink();
+    return _buildAvatar(left, offset);
   }
 }

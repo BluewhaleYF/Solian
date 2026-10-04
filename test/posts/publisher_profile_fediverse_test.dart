@@ -53,6 +53,31 @@ class _EmptyActorPosts extends FediverseActorPostsNotifier {
   }
 }
 
+/// Records every request and answers 404: the endpoints under test must never
+/// be reached for a remote actor.
+class _RecordingHttpAdapter implements HttpClientAdapter {
+  final List<String> requestedPaths = [];
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requestedPaths.add(options.path);
+    return ResponseBody.fromString(
+      '{"message":"Not Found"}',
+      404,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -205,5 +230,47 @@ void main() {
     // Let the copy snackbar dismiss before the tree is torn down.
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
+  });
+
+  test('a remote actor fires no publisher-name requests', () async {
+    final adapter = _RecordingHttpAdapter();
+    final container = ProviderContainer(
+      retry: (_, _) => null,
+      overrides: [
+        apiClientProvider.overrideWithValue(Dio()..httpClientAdapter = adapter),
+        publisherProvider(_actorId).overrideWith((ref) async => _remoteActor()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // The profile opens by name before the actor payload resolves, so the
+    // local-publisher endpoints have to drop a remote actor on their own.
+    expect(
+      await container.read(publisherRatingOverviewProvider(_actorId).future),
+      isNull,
+    );
+    expect(
+      adapter.requestedPaths,
+      isEmpty,
+      reason: 'rating overview requested for a remote actor',
+    );
+
+    expect(
+      await container.read(publisherHeatmapProvider(_actorId).future),
+      isNull,
+    );
+    expect(
+      adapter.requestedPaths,
+      isEmpty,
+      reason: 'heatmap requested for a remote actor',
+    );
+
+    expect(
+      await container.read(
+        publisherSubscriptionStatusProvider(_actorId).future,
+      ),
+      isNull,
+    );
+    expect(adapter.requestedPaths, isEmpty);
   });
 }
