@@ -21,6 +21,23 @@ class SearchTabNotifier extends Notifier<SearchTab> {
   void select(SearchTab tab) => state = tab;
 }
 
+/// One-shot query handed to the universal search page by an outside entry
+/// point (the command palette) so the search runs on arrival. The page applies
+/// it to its field and clears it.
+final searchQuerySeedProvider =
+    NotifierProvider<SearchQuerySeedNotifier, String?>(
+      SearchQuerySeedNotifier.new,
+    );
+
+class SearchQuerySeedNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void seed(String query) => state = query;
+
+  void clear() => state = null;
+}
+
 /// Switches the tab shell to the universal search tab, optionally focusing
 /// [tab].
 void openUniversalSearch(BuildContext context, {SearchTab? tab}) {

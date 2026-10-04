@@ -23,6 +23,7 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/core/services/deeplink_service.dart';
 import 'package:island/core/widgets/draggable_log_overlay.dart';
+import 'package:island/discovery/search_navigation.dart';
 import 'package:island/core/debug_sheet.dart';
 import 'package:island/plugins/icons/plugin_icon_font_registry.dart';
 import 'package:island/plugins/widgets/plugin_pane_host.dart';
@@ -565,6 +566,20 @@ class CommandPaletteWidget extends HookConsumerWidget {
         ),
       );
     }
+
+    // Search inside the app first: the universal search page covers posts,
+    // people, realms and messages, so it outranks the web fallback below.
+    actions.add(
+      FallbackAction(
+        name: 'Search Solar Network',
+        description: 'Search "$query" in posts, people, realms and messages',
+        icon: Symbols.manage_search,
+        action: () {
+          ref.read(searchQuerySeedProvider.notifier).seed(query);
+          ref.read(routerProvider).navigatePath(kUniversalSearchPath);
+        },
+      ),
+    );
 
     // Search the web
     actions.add(

@@ -100,7 +100,7 @@ class CheckInWidget extends ConsumerWidget {
       child: Row(
         children: [
           Padding(
-            padding: const .symmetric(vertical: 12, horizontal: 4),
+            padding: const .symmetric(vertical: 12, horizontal: 12),
             child: level == null
                 ? Image.asset(
                     "assets/images/stickers/confuse.webp",
@@ -115,7 +115,6 @@ class CheckInWidget extends ConsumerWidget {
                     fit: BoxFit.contain,
                   ),
           ),
-          const Gap(12),
           Expanded(
             // Keyed by state, so the three lines cross-fade as one block
             // instead of each line swapping on its own.

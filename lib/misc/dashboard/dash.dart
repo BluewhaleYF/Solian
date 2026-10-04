@@ -39,6 +39,20 @@ import 'package:island/plugins/widgets/plugin_ui_bridge.dart';
 import 'package:island_plugin_foundation/island_plugin_foundation.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
+// Dashboard rhythm. One spacing scale for both breakpoints: roomy page
+// gutters, `_kCardGap` between cards, and a generous top band so the overview
+// reads as a calm glance instead of a dense wall of cards.
+const _kCardGap = 20.0;
+const _kBlockGap = 32.0;
+const _kCardPadding = 20.0;
+const _kCardHeaderPadding = 16.0;
+const _kGutterCompact = 20.0;
+const _kGutterExpanded = 32.0;
+// Top band, as a fraction of viewport height, that rests the clock/search row
+// (and everything under it) lower in the viewport. It lives inside the scroll
+// view, so it scrolls away instead of permanently eating the viewport.
+const _kTopBand = 0.2;
+
 @RoutePage()
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
@@ -93,105 +107,83 @@ class DashboardGrid extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isWide = isWideScreen(context);
     final devicePadding = MediaQuery.paddingOf(context);
+    // Only the safe area stays fixed; the breathing band scrolls with the
+    // content, so it never permanently eats the viewport.
+    final topBand = MediaQuery.sizeOf(context).height * _kTopBand;
 
     final userInfo = ref.watch(userInfoProvider);
-    final appSettings = ref.watch(appSettingsProvider);
 
     // Check if user is authenticated
     final isAuthenticated = userInfo.value != null;
 
-    return Stack(
-      children: [
-        Container(
-          padding: isAuthenticated
-              ? EdgeInsets.only(top: devicePadding.top + (isWide ? 16 : 24))
-              : EdgeInsets.zero,
-          child: isAuthenticated
-              ? (isWide
-                    // Desktop: one scroll so a half-viewport spacer can
-                    // rest the search bar near vertical center by default.
-                    ? const _DashboardGridWide()
-                    : Column(
-                        spacing: 16,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Gap(8),
-                              if (appSettings
-                                      .dashboardConfig
-                                      ?.showClockAndCountdown ??
-                                  true)
-                                Expanded(child: ClockCard(compact: true)),
-                              if (appSettings.dashboardConfig?.showSearchBar ??
-                                  true)
-                                IconButton(
-                                  onPressed: () {
-                                    eventBus.fire(CommandPaletteTriggerEvent());
-                                  },
-                                  icon: const Icon(Symbols.search),
-                                  tooltip: 'searchAnything'.tr(),
-                                ),
-                            ],
-                          ).padding(horizontal: 24),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              scrollDirection: Axis.vertical,
-                              child: _DashboardGridNarrow(),
-                            ).clipRRect(topLeft: 12, topRight: 12),
-                          ),
-                        ],
-                      ))
-              : Center(child: _UnauthorizedCard(isWide: isWide)),
-        ),
-        // Customize button (positioned for wide screens only)
-        if (isWide && isAuthenticated)
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: TextButton.icon(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  useRootNavigator: true,
-                  builder: (context) => const DashboardCustomizationSheet(),
-                );
-              },
-              icon: Icon(
-                Symbols.tune,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              label: Text(
-                'customize',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+    return Theme(
+      // Flat cards everywhere on the dashboard: the container tint alone
+      // separates a card from the backdrop, no shadow or surface overlay.
+      data: Theme.of(
+        context,
+      ).copyWith(cardTheme: Theme.of(context).cardTheme.copyWith(elevation: 0)),
+      child: Stack(
+        children: [
+          Container(
+            padding: isAuthenticated
+                ? EdgeInsets.only(top: devicePadding.top)
+                : EdgeInsets.zero,
+            child: isAuthenticated
+                ? (isWide
+                      // Desktop: one scroll, so the band can rest the
+                      // search bar near vertical center by default.
+                      ? _DashboardGridWide(topBand: topBand)
+                      : _DashboardGridNarrowScroll(topBand: topBand))
+                : Center(child: _UnauthorizedCard(isWide: isWide)),
+          ),
+          // Customize button (positioned for wide screens only)
+          if (isWide && isAuthenticated)
+            Positioned(
+              bottom: _kGutterExpanded - 8,
+              right: _kGutterExpanded - 8,
+              child: TextButton.icon(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    useRootNavigator: true,
+                    builder: (context) => const DashboardCustomizationSheet(),
+                  );
+                },
+                icon: Icon(
+                  Symbols.tune,
+                  size: 16,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              ).tr(),
-              style: TextButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                label: Text(
+                  'customize',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ).tr(),
+                style: TextButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 class _DashboardGridWide extends HookConsumerWidget {
-  const _DashboardGridWide();
+  const _DashboardGridWide({required this.topBand});
+
+  /// Breathing room above the clock/search row; scrolls away with the content.
+  final double topBand;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -220,9 +212,9 @@ class _DashboardGridWide extends HookConsumerWidget {
       cards.add(DashboardRenderer.buildCard(cardId, ref));
     }
 
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    // One-fifth viewport so the search/clock block sits slightly lower by default.
-    final topSpacerHeight = screenHeight * 0.2;
+    // The band arrives above the clock/search row and repeats at the end, so
+    // the last row can settle with the same room.
+    final bottomSpacerHeight = MediaQuery.sizeOf(context).height * _kTopBand;
 
     void updateScrollHint() {
       if (!scrollController.hasClients) {
@@ -258,36 +250,28 @@ class _DashboardGridWide extends HookConsumerWidget {
             primary: false,
             slivers: [
               // Push clock + search lower in the viewport by default.
-              SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
+              SliverToBoxAdapter(child: SizedBox(height: topBand)),
               if (showClock)
                 SliverToBoxAdapter(
-                  child: ClockCard().padding(horizontal: 24, bottom: 16),
+                  child: ClockCard().padding(
+                    horizontal: _kGutterExpanded,
+                    bottom: _kCardGap,
+                  ),
                 ),
               if (showSearch)
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SearchBar(
-                      hintText: 'searchAnything'.tr(),
-                      constraints: const BoxConstraints(minHeight: 56),
-                      leading: const Icon(
-                        Symbols.search,
-                      ).padding(horizontal: 24),
-                      readOnly: true,
-                      onTap: () {
-                        eventBus.fire(CommandPaletteTriggerEvent());
-                      },
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: _kGutterExpanded),
+                    child: _DashboardSearchBar(),
                   ),
                 ),
               if (showClock || showSearch)
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: SizedBox(height: _kBlockGap)),
               // Waterfall of section cards, centered on ultra-wide monitors.
               if (cards.isNotEmpty)
                 SliverLayoutBuilder(
                   builder: (context, constraints) {
                     const maxContentWidth = 1400.0;
-                    const horizontalPadding = 24.0;
                     final available = constraints.crossAxisExtent;
                     final sideInset = available > maxContentWidth
                         ? (available - maxContentWidth) / 2
@@ -295,18 +279,20 @@ class _DashboardGridWide extends HookConsumerWidget {
 
                     return SliverPadding(
                       padding: EdgeInsets.fromLTRB(
-                        horizontalPadding + sideInset,
+                        _kGutterExpanded + sideInset,
                         0,
-                        horizontalPadding + sideInset,
+                        _kGutterExpanded + sideInset,
                         0,
                       ),
                       sliver: SliverMasonryGrid(
+                        // Three wide columns on a full-width display instead of
+                        // four narrow ones: fewer, calmer cards per row.
                         gridDelegate:
                             const SliverSimpleGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 400,
+                              maxCrossAxisExtent: 480,
                             ),
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
+                        mainAxisSpacing: _kCardGap,
+                        crossAxisSpacing: _kCardGap,
                         delegate: SliverChildBuilderDelegate(
                           (context, index) => cards[index],
                           childCount: cards.length,
@@ -315,8 +301,8 @@ class _DashboardGridWide extends HookConsumerWidget {
                     );
                   },
                 ),
-              // Match the top spacer so content can settle with the same breathing room.
-              SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
+              // Match the top band so content can settle with the same breathing room.
+              SliverToBoxAdapter(child: SizedBox(height: bottomSpacerHeight)),
             ],
           ),
         ),
@@ -349,6 +335,68 @@ class _DashboardGridWide extends HookConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Narrow dashboard: the band, the clock/search row and the card column share
+/// one scroll, so the whole sheet moves together — nothing is pinned.
+class _DashboardGridNarrowScroll extends HookConsumerWidget {
+  const _DashboardGridNarrowScroll({required this.topBand});
+
+  /// Breathing room above the clock/search row; scrolls away with the content.
+  final double topBand;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appSettings = ref.watch(appSettingsProvider);
+    final showClock =
+        appSettings.dashboardConfig?.showClockAndCountdown ?? true;
+    final showSearch = appSettings.dashboardConfig?.showSearchBar ?? true;
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(child: SizedBox(height: topBand)),
+        if (showClock)
+          SliverToBoxAdapter(
+            child: ClockCard(
+              compact: true,
+            ).padding(horizontal: _kGutterCompact, bottom: _kCardGap),
+          ),
+        if (showSearch)
+          SliverToBoxAdapter(
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _DashboardSearchBar(),
+            ),
+          ),
+        if (showClock || showSearch)
+          const SliverToBoxAdapter(child: SizedBox(height: _kGutterCompact)),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: _kGutterCompact),
+          sliver: SliverToBoxAdapter(child: _DashboardGridNarrow()),
+        ),
+      ],
+    );
+  }
+}
+
+/// The single search affordance both breakpoints share: a flat bar that opens
+/// the command palette.
+class _DashboardSearchBar extends StatelessWidget {
+  const _DashboardSearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SearchBar(
+      hintText: 'searchAnything'.tr(),
+      constraints: const BoxConstraints(minHeight: 56),
+      elevation: const WidgetStatePropertyAll(0),
+      leading: const Icon(Symbols.search).padding(horizontal: _kCardPadding),
+      readOnly: true,
+      onTap: () {
+        eventBus.fire(CommandPaletteTriggerEvent());
+      },
     );
   }
 }
@@ -407,13 +455,13 @@ class _DashboardGridNarrow extends HookConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-        ).padding(bottom: MediaQuery.paddingOf(context).bottom + 16),
+        ).padding(bottom: MediaQuery.paddingOf(context).bottom + _kBlockGap),
       ),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 16,
+      spacing: _kCardGap,
       children: children,
     );
   }
@@ -500,32 +548,84 @@ class ClockCard extends HookConsumerWidget {
       return () => timer.value?.cancel();
     }, []);
 
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      color: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
-      child: InkWell(
-        onTap: () {
-          context.router.push(EventHubRoute(name: 'me'));
-        },
-        child: Padding(
-          padding: compact
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return InkWell(
+      onTap: () {
+        context.router.push(EventHubRoute(name: 'me'));
+      },
+      child: Padding(
+        padding: compact
+            ? EdgeInsets.zero
+            : const EdgeInsets.symmetric(horizontal: _kCardPadding),
+        child: compact
+            ? Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .center,
                 children: [
                   Icon(
                     timeIcon,
                     size: 32,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  const SizedBox(width: 16),
+                  const Gap(8),
+                  Row(
+                    textBaseline: .alphabetic,
+                    crossAxisAlignment: .baseline,
+                    mainAxisAlignment: .center,
+                    spacing: 8,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${time.value.hour.toString().padLeft(2, '0')}:${time.value.minute.toString().padLeft(2, '0')}:${time.value.second.toString().padLeft(2, '0')}',
+                          style: GoogleFonts.robotoMono(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Flexible(
+                        child: Text(
+                          '${time.value.month.toString().padLeft(2, '0')}/${time.value.day.toString().padLeft(2, '0')}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isAuthenticated && countdowns != null)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        spacing: 5,
+                        children: [
+                          countdowns.when(
+                            data: (state) => state.items.isEmpty
+                                ? Text('countdownEmpty').tr().fontSize(12)
+                                : _buildCountdownText(
+                                    context,
+                                    state.items.first,
+                                  ),
+                            error: (err, _) =>
+                                Text(err.toString()).fontSize(12),
+                            loading: () =>
+                                const Text('loading').tr().fontSize(12),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            : Row(
+                children: [
+                  Icon(
+                    timeIcon,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const Gap(16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,9 +684,6 @@ class ClockCard extends HookConsumerWidget {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -698,7 +795,7 @@ class NotificationsCard extends HookConsumerWidget {
                   isLabelVisible: (notificationsUnreadCount.value ?? 0) > 0,
                 ),
               ],
-            ).padding(horizontal: 16, vertical: 12),
+            ).padding(horizontal: _kCardPadding, vertical: _kCardHeaderPadding),
             notifications.when(
               loading: () => Skeletonizer(
                 enabled: true,
@@ -720,12 +817,14 @@ class NotificationsCard extends HookConsumerWidget {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                    ).padding(horizontal: 16),
+                    ).padding(horizontal: _kCardPadding),
                     const SizedBox(height: 8),
                     NotificationTile(
                       notification: recentNotification,
                       compact: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: _kCardPadding,
+                      ),
                       avatarRadius: 16.0,
                     ),
                   ],
@@ -737,7 +836,7 @@ class NotificationsCard extends HookConsumerWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ).padding(horizontal: 16, vertical: 8),
+            ).padding(horizontal: _kCardPadding, vertical: 8),
           ],
         ),
       ),
@@ -785,7 +884,7 @@ class ChatListCard extends HookConsumerWidget {
                   isLabelVisible: (chatUnreadCount.value ?? 0) > 0,
                 ),
               ],
-            ).padding(horizontal: 16, vertical: 16),
+            ).padding(horizontal: _kCardPadding, vertical: _kCardHeaderPadding),
             chatRooms.when(
               loading: () => Center(
                 child: ConfuseSpinner(
@@ -871,7 +970,10 @@ class FortuneCard extends HookConsumerWidget {
               ),
               Text('—— ${fortune.source}').bold(),
             ],
-          ).padding(horizontal: 16, vertical: unlimited ? 12 : 0);
+          ).padding(
+            horizontal: _kCardPadding,
+            vertical: unlimited ? _kCardHeaderPadding : 0,
+          );
         },
       ),
     );
@@ -942,14 +1044,17 @@ class TodayOracleCard extends ConsumerWidget {
                     },
                   ),
                 ],
-              ).padding(horizontal: 16, vertical: 12),
+              ).padding(
+                horizontal: _kCardPadding,
+                vertical: _kCardHeaderPadding,
+              ),
               if (result == null)
                 Text(
                   'checkInViewTemple'.tr(),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ).padding(horizontal: 16, bottom: 16)
+                ).padding(horizontal: _kCardPadding, bottom: _kCardPadding)
               else ...[
                 Text(
                   'checkInResultLevel${result.level}'.tr(),
@@ -957,7 +1062,7 @@ class TodayOracleCard extends ConsumerWidget {
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
-                ).padding(horizontal: 16),
+                ).padding(horizontal: _kCardPadding),
                 if (report != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
@@ -981,7 +1086,9 @@ class TodayOracleCard extends ConsumerWidget {
                   if (result.tips.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: _kCardPadding,
+                      ),
                       child: Row(
                         children: [
                           if (result.tips.any((t) => t.isPositive)) ...[
@@ -1009,7 +1116,7 @@ class TodayOracleCard extends ConsumerWidget {
                     if (result.tips.any((t) => !t.isPositive))
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
+                          horizontal: _kCardPadding,
                           vertical: 4,
                         ),
                         child: Row(
@@ -1040,13 +1147,13 @@ class TodayOracleCard extends ConsumerWidget {
                     icon: Symbols.task_alt,
                     text: report.luckyAction,
                     color: theme.colorScheme.primary,
-                  ).padding(horizontal: 16),
+                  ).padding(horizontal: _kCardPadding),
                   const SizedBox(height: 8),
                   _OracleActionRow(
                     icon: Symbols.block,
                     text: report.avoidAction,
                     color: theme.colorScheme.error,
-                  ).padding(horizontal: 16),
+                  ).padding(horizontal: _kCardPadding),
                 ],
                 const SizedBox(height: 16),
               ],

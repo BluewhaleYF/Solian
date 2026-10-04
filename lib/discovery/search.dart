@@ -51,6 +51,21 @@ class UniversalSearchScreen extends HookConsumerWidget {
     final debounceTimer = useRef<Timer?>(null);
     const debounce = Duration(milliseconds: 450);
 
+    // A query handed over by an outside entry point (the command palette) lands
+    // in the field and runs straight away.
+    final querySeed = ref.watch(searchQuerySeedProvider);
+    useEffect(() {
+      if (querySeed == null || querySeed.trim().isEmpty) return null;
+      searchController.text = querySeed;
+      searchQuery.value = querySeed;
+      debouncedSearchQuery.value = querySeed;
+      // Consuming the seed writes to a provider, which is not allowed while the
+      // tree is building — the hook effect runs mid-build, so defer it.
+      final seeds = ref.read(searchQuerySeedProvider.notifier);
+      WidgetsBinding.instance.addPostFrameCallback((_) => seeds.clear());
+      return null;
+    }, [querySeed]);
+
     useEffect(() {
       if (searchQuery.value.isEmpty) {
         debounceTimer.value?.cancel();

@@ -16,6 +16,10 @@ sealed class RouteItem with _$RouteItem {
   }) = _RouteItem;
 }
 
+/// Path of the universal search tab; shared with the command palette's
+/// "search the app" fallback.
+const kUniversalSearchPath = '/search';
+
 final List<RouteItem> kAvailableRoutes = [
   RouteItem(
     name: 'dashboard'.tr(),
@@ -33,7 +37,7 @@ final List<RouteItem> kAvailableRoutes = [
   ),
   RouteItem(
     name: 'universalSearch'.tr(),
-    path: '/search',
+    path: kUniversalSearchPath,
     description: 'universalSearchDescription'.tr(),
     searchableAliases: ['search', 'universal', 'fediverse'],
     icon: Symbols.search,
