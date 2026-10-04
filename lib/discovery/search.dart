@@ -217,8 +217,6 @@ class _PostsSearchTab extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showFilters = useState(false);
-    final pubNameController = useTextEditingController();
-    final realmController = useTextEditingController();
 
     final categoryTabController = useMaterialTabController(initialLength: 3);
     final queryState = useState(const PostListQuery(includeReplies: false));
@@ -226,13 +224,6 @@ class _PostsSearchTab extends HookConsumerWidget {
     final noti = ref.read(
       postListProvider(PostListQueryConfig(id: kSearchPostListId)).notifier,
     );
-
-    useEffect(() {
-      return () {
-        pubNameController.dispose();
-        realmController.dispose();
-      };
-    }, []);
 
     void onSearchChanged(String query) {
       queryState.value = queryState.value.copyWith(queryTerm: query);
@@ -272,50 +263,60 @@ class _PostsSearchTab extends HookConsumerWidget {
                 children: [
                   Flexible(
                     flex: 4,
-                    child: ExtendedRefreshIndicator(
-                      onRefresh: noti.refresh,
-                      child: CustomScrollView(
-                        slivers: [
-                          SliverGap(4),
-                          PaginationList(
-                            provider: postListProvider(
-                              PostListQueryConfig(id: kSearchPostListId),
-                            ),
-                            notifier: postListProvider(
-                              PostListQueryConfig(id: kSearchPostListId),
-                            ).notifier,
-                            isSliver: true,
-                            isRefreshable: false,
-                            footerSkeletonChild: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                    child: Card(
+                      margin: const EdgeInsets.fromLTRB(12, 12, 0, 0),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: ExtendedRefreshIndicator(
+                        onRefresh: noti.refresh,
+                        child: CustomScrollView(
+                          slivers: [
+                            const SliverGap(4),
+                            PaginationList(
+                              provider: postListProvider(
+                                PostListQueryConfig(id: kSearchPostListId),
                               ),
-                              child: const PostItemSkeleton(
-                                maxWidth: double.infinity,
-                              ),
-                            ),
-                            itemBuilder: (context, index, post) {
-                              return Card(
-                                margin: EdgeInsets.symmetric(
+                              notifier: postListProvider(
+                                PostListQueryConfig(id: kSearchPostListId),
+                              ).notifier,
+                              isSliver: true,
+                              isRefreshable: false,
+                              seperatorBuilder: (context, index, post) =>
+                                  const Divider(height: 1),
+                              footerSkeletonChild: Padding(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
-                                  vertical: 4,
                                 ),
-                                child: PostActionableItem(
+                                child: const PostItemSkeleton(
+                                  maxWidth: double.infinity,
+                                ),
+                              ),
+                              itemBuilder: (context, index, post) {
+                                return PostActionableItem(
                                   item: post,
                                   borderRadius: 8,
-                                ),
-                              );
-                            },
-                          ),
-                          if (searchState.value?.items.isEmpty == true &&
-                              searchQuery.value.isNotEmpty &&
-                              !searchState.isLoading)
-                            SliverFillRemaining(
-                              child: Center(child: Text('noResultsFound'.tr())),
+                                );
+                              },
                             ),
-                          SliverGap(MediaQuery.of(context).padding.bottom + 16),
-                        ],
-                      ).padding(left: 16),
+                            if (searchState.value?.items.isEmpty == true &&
+                                searchQuery.value.isNotEmpty &&
+                                !searchState.isLoading)
+                              SliverFillRemaining(
+                                child: Center(
+                                  child: Text('noResultsFound'.tr()),
+                                ),
+                              ),
+                            SliverGap(
+                              MediaQuery.of(context).padding.bottom + 16,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   Flexible(
@@ -430,7 +431,9 @@ class _PostsSearchTab extends HookConsumerWidget {
                         notifier: postListProvider(
                           PostListQueryConfig(id: kSearchPostListId),
                         ).notifier,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: EdgeInsets.zero,
+                        seperatorBuilder: (context, index, post) =>
+                            const Divider(height: 1),
                         footerSkeletonChild: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: const PostItemSkeleton(
@@ -438,15 +441,9 @@ class _PostsSearchTab extends HookConsumerWidget {
                           ),
                         ),
                         itemBuilder: (context, index, post) {
-                          return Card(
-                            margin: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            child: PostActionableItem(
-                              item: post,
-                              borderRadius: 8,
-                            ),
+                          return PostActionableItem(
+                            item: post,
+                            borderRadius: 8,
                           );
                         },
                       ),
