@@ -34,6 +34,23 @@ class ActivityListNotifier
     // the first page is fetched for it instead of the default feed.
     currentFilter = exploreSettings.filter;
 
+    // The explore algorithm (section, ranking, aggressive mode) is configured
+    // in the app settings screen; reload the timeline when any of it changes.
+    ref.listen(appSettingsProvider, (previous, next) {
+      if (previous == null) return;
+      final before = previous.exploreSettings;
+      final after = next.exploreSettings;
+      if (before.filter != after.filter) {
+        applyFilter(after.filter);
+      }
+      if (before.mode != after.mode) {
+        applyMode(after.mode);
+      }
+      if (before.aggressiveMode != after.aggressiveMode) {
+        applyAggressiveMode(after.aggressiveMode);
+      }
+    });
+
     // Listen to real-time post created events
     _postCreatedSubscription = eventBus.on<PostCreatedEvent>().listen((event) {
       _handlePostCreated(event.post);

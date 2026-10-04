@@ -28,6 +28,13 @@ class HandleChip extends StatelessWidget {
   /// Whether to show a copy button
   final bool allowCopy;
 
+  /// Text copied by the copy button.
+  ///
+  /// Defaults to the rendered handle (`@handle`, or `@handle@domain` when a
+  /// [domain] is set). Set this when the chip shows less than what should
+  /// reach the clipboard, e.g. a username-only chip copying a full handle.
+  final String? copyText;
+
   /// Custom padding
   final EdgeInsetsGeometry? padding;
 
@@ -57,6 +64,7 @@ class HandleChip extends StatelessWidget {
     required this.handle,
     this.domain,
     this.allowCopy = false,
+    this.copyText,
     this.padding,
     this.borderRadius,
     this.isRemote = false,
@@ -74,12 +82,14 @@ class HandleChip extends StatelessWidget {
     return '@$handle';
   }
 
+  String get _copyValue => copyText ?? _fullHandle;
+
   Future<void> _copyToClipboard(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: _fullHandle));
+    await Clipboard.setData(ClipboardData(text: _copyValue));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Copied $_fullHandle'),
+          content: Text('Copied $_copyValue'),
           duration: const Duration(seconds: 2),
         ),
       );

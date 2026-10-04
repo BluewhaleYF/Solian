@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
 import 'package:logging/logging.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
@@ -28,12 +29,18 @@ class PostFeaturedList extends HookConsumerWidget {
   final double? maxHeight;
   final bool emphasizeHeader;
   final double borderRadius;
+
+  /// Hosts that already own the surface (the wide explore timeline) drop the
+  /// card chrome and lay the posts out as a snapping horizontal list of cards
+  /// with their own fixed width, instead of one full-width page per post.
+  final bool flush;
   const PostFeaturedList({
     super.key,
     this.collapsable = true,
     this.maxHeight,
     this.emphasizeHeader = true,
     this.borderRadius = 8,
+    this.flush = false,
   });
 
   @override
@@ -101,6 +108,137 @@ class PostFeaturedList extends HookConsumerWidget {
 
     final appSettings = ref.watch(appSettingsProvider);
 
+    final header = SizedBox(
+      height: 48,
+      child: Row(
+        spacing: 8,
+        children: [
+          Icon(
+            Symbols.highlight,
+            size: 20,
+            color: emphasizeHeader
+                ? Theme.of(context).colorScheme.primary
+                : null,
+          ),
+          Expanded(
+            child: Text(
+              'highlightPost'.tr(),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: emphasizeHeader
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            ),
+          ),
+          // The arrows page the carded layout; the flush strip scrolls and
+          // snaps on its own.
+          if (!flush) ...[
+            IconButton(
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                pageViewController.animateToPage(
+                  pageViewCurrent.value - 1,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                );
+              },
+              icon: const Icon(Symbols.arrow_left),
+            ),
+            IconButton(
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                pageViewController.animateToPage(
+                  pageViewCurrent.value + 1,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                );
+              },
+              icon: const Icon(Symbols.arrow_right),
+            ),
+          ],
+          if (collapsable)
+            IconButton(
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                isCollapsed.value = !isCollapsed.value;
+                Logger.root.info(
+                  'Manual toggle. isCollapsed set to ${isCollapsed.value}',
+                );
+                if (isCollapsed.value &&
+                    featuredPostsAsync.hasValue &&
+                    featuredPostsAsync.value!.isNotEmpty) {
+                  prefs.setString(
+                    kFeaturedPostsCollapsedId,
+                    featuredPostsAsync.value!.first.id,
+                  );
+                  Logger.root.info(
+                    'Stored collapsed ID: ${featuredPostsAsync.value!.first.id}',
+                  );
+                } else {
+                  prefs.remove(kFeaturedPostsCollapsedId);
+                  Logger.root.info('Removed stored collapsed ID.');
+                }
+              },
+              icon: Icon(
+                isCollapsed.value
+                    ? Symbols.expand_more
+                    : Symbols.expand_less,
+              ),
+            ),
+        ],
+      ).padding(
+        // The flush strip sits in the host's own surface, so it keeps a
+        // tighter gutter than the carded variant.
+        horizontal: flush ? _FlushFeaturedStrip.itemPadding : 16,
+        vertical: 8,
+      ),
+    );
+
+    final body = AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: Visibility(
+        visible: collapsable ? !isCollapsed.value : true,
+        child: featuredPostsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+          data: (posts) {
+            return SizedBox(
+              height: maxHeight == null ? 344 : (maxHeight! - 48),
+              child: flush
+                  ? _FlushFeaturedStrip(posts: posts)
+                  : PageView.builder(
+                      controller: pageViewController,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        return SingleChildScrollView(
+                          child: PostActionableItem(
+                            item: posts[index],
+                            borderRadius: 8,
+                          ),
+                        );
+                      },
+                    ),
+            );
+          },
+        ),
+      ),
+    );
+
+    if (flush) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [header, body],
+      );
+    }
+
     return Card(
       color: Theme.of(context).colorScheme.surfaceContainerHigh.withOpacity(
         appSettings.cardTransparency,
@@ -114,119 +252,58 @@ class PostFeaturedList extends HookConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 48,
-            child: Row(
-              spacing: 8,
-              children: [
-                Icon(
-                  Symbols.highlight,
-                  size: 20,
-                  color: emphasizeHeader
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                Expanded(
-                  child: Text(
-                    'highlightPost'.tr(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: emphasizeHeader
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(),
-                  onPressed: () {
-                    pageViewController.animateToPage(
-                      pageViewCurrent.value - 1,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  icon: const Icon(Symbols.arrow_left),
-                ),
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(),
-                  onPressed: () {
-                    pageViewController.animateToPage(
-                      pageViewCurrent.value + 1,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  icon: const Icon(Symbols.arrow_right),
-                ),
-                if (collapsable)
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      isCollapsed.value = !isCollapsed.value;
-                      Logger.root.info(
-                        'Manual toggle. isCollapsed set to ${isCollapsed.value}',
-                      );
-                      if (isCollapsed.value &&
-                          featuredPostsAsync.hasValue &&
-                          featuredPostsAsync.value!.isNotEmpty) {
-                        prefs.setString(
-                          kFeaturedPostsCollapsedId,
-                          featuredPostsAsync.value!.first.id,
-                        );
-                        Logger.root.info(
-                          'Stored collapsed ID: ${featuredPostsAsync.value!.first.id}',
-                        );
-                      } else {
-                        prefs.remove(kFeaturedPostsCollapsedId);
-                        Logger.root.info('Removed stored collapsed ID.');
-                      }
-                    },
-                    icon: Icon(
-                      isCollapsed.value
-                          ? Symbols.expand_more
-                          : Symbols.expand_less,
-                    ),
-                  ),
-              ],
-            ).padding(horizontal: 16, vertical: 8),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: Visibility(
-              visible: collapsable ? !isCollapsed.value : true,
-              child: featuredPostsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(child: Text('Error: $error')),
-                data: (posts) {
-                  return SizedBox(
-                    height: maxHeight == null ? 344 : (maxHeight! - 48),
-                    child: PageView.builder(
-                      controller: pageViewController,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: posts.length,
-                      itemBuilder: (context, index) {
-                        return SingleChildScrollView(
-                          child: PostActionableItem(
-                            item: posts[index],
-                            borderRadius: 8,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
+        children: [header, body],
+      ),
+    );
+  }
+}
+
+/// Fixed-width, snapping list of featured posts for hosts that own the surface
+/// (see [PostFeaturedList.flush]). Cards keep their intrinsic height and stay
+/// narrower than the pane, so the next post peeks in.
+class _FlushFeaturedStrip extends StatelessWidget {
+  /// Width of one featured post card, and the gutter kept on each side of it.
+  static const double itemWidth = 320;
+  static const double itemPadding = 8;
+
+  /// Distance between two cards; the strip snaps on multiples of it.
+  static const double itemStride = itemWidth + itemPadding * 2;
+
+  final List<SnPost> posts;
+
+  const _FlushFeaturedStrip({required this.posts});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return HoverHorizontalScrollList(
+      itemCount: posts.length,
+      snapExtent: itemStride,
+      padding: const EdgeInsets.symmetric(horizontal: itemPadding),
+      separatorWidth: itemPadding * 2,
+      itemBuilder: (context, index) => Align(
+        alignment: Alignment.topCenter,
+        // Cards keep their own width so a card entering the viewport can never
+        // be squeezed into the space left over by the previous one.
+        child: SizedBox(
+          width: itemWidth,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                width: 1 / MediaQuery.devicePixelRatioOf(context),
+                color: theme.dividerColor.withOpacity(0.5),
+              ),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+            ),
+            child: SingleChildScrollView(
+              child: PostActionableItem(
+                item: posts[index],
+                isCompact: true,
+                borderRadius: 8,
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

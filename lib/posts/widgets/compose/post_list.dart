@@ -30,6 +30,11 @@ class SliverPostList extends HookConsumerWidget {
   final String? queryKey;
   final void Function(String)? onPostTap;
 
+  /// Receives the tapped post itself, so a host can pick how to open it (e.g.
+  /// a modal for short posts). Takes precedence over [onPostTap], which stays
+  /// wired to taps on posts embedded in the row.
+  final void Function(SnPost)? onOpenPost;
+
   const SliverPostList({
     super.key,
     this.query,
@@ -43,6 +48,7 @@ class SliverPostList extends HookConsumerWidget {
     this.maxWidth,
     this.queryKey,
     this.onPostTap,
+    this.onOpenPost,
   });
 
   @override
@@ -90,6 +96,11 @@ class SliverPostList extends HookConsumerWidget {
   }
 
   Widget _buildPostItem(SnPost post, EdgeInsets? padding) {
+    final onTap = onOpenPost != null
+        ? () => onOpenPost!(post)
+        : onPostTap != null
+        ? () => onPostTap!(post.id)
+        : null;
     switch (itemType) {
       case PostItemType.creator:
         return PostItemCreator(
@@ -99,14 +110,14 @@ class SliverPostList extends HookConsumerWidget {
           isOpenable: isOpenable,
           onRefresh: onRefresh,
           onUpdate: onUpdate,
-          onTap: onPostTap != null ? () => onPostTap!(post.id) : null,
+          onTap: onTap,
           onPostTap: onPostTap,
         );
       case PostItemType.regular:
         return PostActionableItem(
           item: post,
           borderRadius: 8,
-          onTap: onPostTap != null ? () => onPostTap!(post.id) : null,
+          onTap: onTap,
           onPostTap: onPostTap,
         );
     }

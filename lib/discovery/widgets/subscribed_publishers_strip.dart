@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:island/core/config.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/route.gr.dart';
@@ -409,29 +408,4 @@ class SliverSubscribedPublishersStrip extends HookConsumerWidget {
       ),
     );
   }
-}
-
-/// Applies a publisher-strip selection to the explore filters.
-///
-/// The publisher pick is session-scoped and never persisted; picking
-/// publishers clears the persisted category/tag filters (matches the
-/// subscription filter sheet behavior).
-void applyPublisherStripSelection({
-  required List<String> names,
-  required ValueNotifier<List<String>> selectedPublishers,
-  required ValueNotifier<List<String>> selectedCategories,
-  required ValueNotifier<List<String>> selectedTags,
-  required ExploreSettings exploreSettings,
-  required AppSettingsNotifier appSettingsNotifier,
-}) {
-  selectedPublishers.value = names;
-  if (names.isEmpty) return;
-  selectedCategories.value = [];
-  selectedTags.value = [];
-  appSettingsNotifier.setExploreSettings(
-    exploreSettings.copyWith(
-      selectedCategoryIds: const <String>[],
-      selectedTagIds: const <String>[],
-    ),
-  );
 }

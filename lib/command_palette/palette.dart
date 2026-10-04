@@ -157,10 +157,15 @@ class CommandPaletteWidget extends HookConsumerWidget {
       orElse: () => <SnChatRoom>[],
     );
 
+    final dashboardEnabled = ref.watch(
+      appSettingsProvider.select((settings) => settings.dashboardEnabled),
+    );
+
     final filteredRoutes = searchQuery.value.isEmpty
         ? <RouteItem>[]
         : kAvailableRoutes
               .where((route) {
+                if (!dashboardEnabled && route.path == '/') return false;
                 final query = searchQuery.value.toLowerCase();
                 return route.name.toLowerCase().contains(query) ||
                     route.description.toLowerCase().contains(query) ||

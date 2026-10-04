@@ -19,6 +19,7 @@ import 'package:island/core/services/event_bus.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/notifications/notification.dart';
 import 'package:island/posts/widgets/compose/post_featured.dart';
+import 'package:island/route.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
@@ -59,10 +60,37 @@ class DashboardScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardEnabled = ref.watch(
+      appSettingsProvider.select((settings) => settings.dashboardEnabled),
+    );
+    if (!dashboardEnabled) return const _DisabledDashboardRedirect();
+
     return AppScaffold(
       isNoBackground: false,
       body: Center(child: DashboardGrid()),
     );
+  }
+}
+
+/// Stands in for the dashboard when it is turned off in settings. Explore
+/// becomes the landing surface, so anything that lands on `/` — launch, the
+/// back-to-home button, a `/dashboard` deep link — is sent there instead.
+class _DisabledDashboardRedirect extends HookConsumerWidget {
+  const _DisabledDashboardRedirect();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        // The root router resolves `/explore` through the tab shell; the
+        // router scoped to this tab cannot.
+        ref.read(routerProvider).navigatePath('/explore');
+      });
+      return null;
+    }, []);
+
+    return const AppScaffold(isNoBackground: false, body: SizedBox.shrink());
   }
 }
 

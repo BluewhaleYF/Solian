@@ -1292,18 +1292,26 @@ class SearchMessagesScreen extends HookConsumerWidget {
 class ChatMessageSearchView extends HookConsumerWidget {
   final ValueNotifier<String> searchQuery;
 
-  const ChatMessageSearchView({super.key, required this.searchQuery});
+  /// Filter panel visibility, owned by the host page's app bar action so all
+  /// sections share a single trigger.
+  final ValueNotifier<bool> filtersVisible;
+
+  const ChatMessageSearchView({
+    super.key,
+    required this.searchQuery,
+    required this.filtersVisible,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final query = useValueListenable(searchQuery);
+    final filterVisible = useValueListenable(filtersVisible);
     final withLinks = useState(false);
     final withAttachments = useState(false);
     final cloudSearch = useState(true);
     final sender = useState<SnAccount?>(null);
     final after = useState<DateTime?>(null);
     final before = useState<DateTime?>(null);
-    final isFilterVisible = useState(true);
     final groups = useState<List<_SearchRoomGroup>>([]);
     final totalMatches = useState(0);
     final isSearching = useState(false);
@@ -1454,38 +1462,8 @@ class ChatMessageSearchView extends HookConsumerWidget {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Row(
-            children: [
-              Icon(
-                Symbols.tune,
-                size: 18,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const Gap(6),
-              Text(
-                'filters'.tr(),
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const Spacer(),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                onPressed: () => isFilterVisible.value = !isFilterVisible.value,
-                icon: Icon(
-                  isFilterVisible.value
-                      ? Symbols.filter_list_off
-                      : Symbols.filter_list,
-                ),
-                tooltip: isFilterVisible.value
-                    ? 'hideFilters'.tr()
-                    : 'showFilters'.tr(),
-              ),
-            ],
-          ),
-        ),
         _CollapsibleFilterHeader(
-          visible: isFilterVisible.value,
+          visible: filterVisible,
           child: _ChatSearchFilterBar(
             cloudSearch: cloudSearch.value,
             onCloudSearchChanged: (value) => cloudSearch.value = value,
@@ -1503,46 +1481,40 @@ class ChatMessageSearchView extends HookConsumerWidget {
           ),
         ),
         Expanded(
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (notification) => _updateFilterVisibilityFromScroll(
-              notification,
-              isFilterVisible,
-            ),
-            child: !hasSearched.value
-                ? _SearchEmptyState(
-                    icon: Symbols.search,
-                    title: 'searchMessages'.tr(),
-                  )
-                : error.value != null && displayGroups.isEmpty
-                ? _SearchEmptyState(
-                    icon: Symbols.error_outline,
-                    title: 'searchError'.tr(),
-                  )
-                : displayGroups.isEmpty && !isSearching.value
-                ? _SearchEmptyState(
-                    icon: Symbols.search_off,
-                    title: 'noMessagesFound'.tr(),
-                  )
-                : SuperListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: displayGroups.length,
-                    itemBuilder: (context, index) {
-                      final group = displayGroups[index];
-                      return _SearchRoomSection(
-                        group: group,
-                        onOpenRoom: () => context.router.navigate(
-                          ChatRoomRoute(id: group.roomId),
+          child: !hasSearched.value
+              ? _SearchEmptyState(
+                  icon: Symbols.search,
+                  title: 'searchMessages'.tr(),
+                )
+              : error.value != null && displayGroups.isEmpty
+              ? _SearchEmptyState(
+                  icon: Symbols.error_outline,
+                  title: 'searchError'.tr(),
+                )
+              : displayGroups.isEmpty && !isSearching.value
+              ? _SearchEmptyState(
+                  icon: Symbols.search_off,
+                  title: 'noMessagesFound'.tr(),
+                )
+              : SuperListView.builder(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  itemCount: displayGroups.length,
+                  itemBuilder: (context, index) {
+                    final group = displayGroups[index];
+                    return _SearchRoomSection(
+                      group: group,
+                      onOpenRoom: () => context.router.navigate(
+                        ChatRoomRoute(id: group.roomId),
+                      ),
+                      onJumpMessage: (messageId) => context.router.navigate(
+                        ChatRoomRoute(
+                          id: group.roomId,
+                          initialMessageId: messageId,
                         ),
-                        onJumpMessage: (messageId) => context.router.navigate(
-                          ChatRoomRoute(
-                            id: group.roomId,
-                            initialMessageId: messageId,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+                      ),
+                    );
+                  },
+                ),
         ),
         if (hasSearched.value)
           _SearchStatusBar(

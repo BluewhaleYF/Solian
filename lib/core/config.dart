@@ -87,6 +87,7 @@ const kChatEventMessageModeVerbose = 'verbose';
 const kChatEventMessageModeImportant = 'important';
 const kChatEventMessageModeNone = 'none';
 const kAppDashboardConfig = 'app_dashboard_config';
+const kAppDashboardEnabled = 'app_dashboard_enabled';
 const kRealmDisplayModeList = 'list';
 const kRealmDisplayModeCard = 'card';
 const kAppExploreSettings = 'app_explore_settings';
@@ -468,6 +469,8 @@ sealed class AppSettings with _$AppSettings {
     required String chatEventMessageMode,
     required bool showChatSystemMessages,
     required DashboardConfig? dashboardConfig,
+    // The dashboard tab is the app's landing surface; it can be turned off.
+    required bool dashboardEnabled,
     required ExploreSettings exploreSettings,
     required bool mediaProxyEnabled,
     required bool imageCompressionEnabled,
@@ -530,6 +533,7 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       chatEventMessageMode: chatEventMessageMode,
       showChatSystemMessages: chatEventMessageMode != kChatEventMessageModeNone,
       dashboardConfig: _getDashboardConfigFromPrefs(prefs),
+      dashboardEnabled: prefs.getBool(kAppDashboardEnabled) ?? true,
       exploreSettings: _getExploreSettingsFromPrefs(prefs),
       mediaProxyEnabled: prefs.getBool(kAppMediaProxyEnabled) ?? true,
       imageCompressionEnabled:
@@ -881,6 +885,19 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       prefs.remove(kAppDashboardConfig);
     }
     state = state.copyWith(dashboardConfig: value);
+  }
+
+  void setDashboardEnabled(bool value) {
+    final prefs = ref.read(sharedPreferencesProvider);
+    prefs.setBool(kAppDashboardEnabled, value);
+    // A stored landing screen may not point at a page that no longer exists.
+    final defaultScreen = state.defaultScreen;
+    if (!value && (defaultScreen == null || defaultScreen == 'dashboard')) {
+      prefs.setString(kAppDefaultScreen, 'explore');
+      state = state.copyWith(dashboardEnabled: false, defaultScreen: 'explore');
+      return;
+    }
+    state = state.copyWith(dashboardEnabled: value);
   }
 
   void resetDashboardConfig() {

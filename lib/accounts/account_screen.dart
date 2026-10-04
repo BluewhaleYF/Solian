@@ -326,6 +326,13 @@ class AccountFeatureWidget extends HookConsumerWidget {
                           context.router.push(const StickerMarketplaceRoute());
                         },
                       },
+                      {
+                        'icon': Symbols.footprint,
+                        'title': 'browseFootprints',
+                        'onTap': () {
+                          context.router.push(const BookmarksRoute());
+                        },
+                      },
                     ];
                     return Column(
                       children: menuItems.map((item) {
@@ -353,67 +360,83 @@ class AccountFeatureWidget extends HookConsumerWidget {
                   },
                 ),
                 const Divider(height: 1).padding(vertical: 8),
-                ListTile(
-                  leading: const Icon(Symbols.report),
-                  trailing: const Icon(Symbols.chevron_right),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                  dense: true,
-                  title: Text('tickets').tr(),
-                  onTap: () {
-                    context.router.push(const TicketListRoute());
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Symbols.settings),
-                  trailing: const Icon(Symbols.chevron_right),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                  dense: true,
-                  title: Text('appSettings').tr(),
-                  onTap: () {
-                    context.router.push(const SettingsRoute());
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Symbols.manage_accounts),
-                  trailing: const Icon(Symbols.chevron_right),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                  dense: true,
-                  title: Text('accountSettings').tr(),
-                  onTap: () {
-                    context.router.push(const AccountSettingsRoute());
-                  },
+                Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Symbols.report),
+                      trailing: const Icon(Symbols.chevron_right),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                      ),
+                      dense: true,
+                      title: Text('tickets').tr(),
+                      onTap: () {
+                        context.router.push(const TicketListRoute());
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Symbols.settings),
+                      trailing: const Icon(Symbols.chevron_right),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                      ),
+                      dense: true,
+                      title: Text('appSettings').tr(),
+                      onTap: () {
+                        context.router.push(const SettingsRoute());
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Symbols.manage_accounts),
+                      trailing: const Icon(Symbols.chevron_right),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                      ),
+                      dense: true,
+                      title: Text('accountSettings').tr(),
+                      onTap: () {
+                        context.router.push(const AccountSettingsRoute());
+                      },
+                    ),
+                  ],
                 ),
                 const Divider(height: 1).padding(vertical: 8),
-                if (isDeveloperMode)
-                  ListTile(
-                    leading: const Icon(Symbols.bug_report),
-                    trailing: const Icon(Symbols.chevron_right),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                    title: Text('debugOptions').tr(),
-                    dense: true,
-                    onTap: () {
-                      toggleDebugOverlay(ref);
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(Symbols.logout),
-                  trailing: const Icon(Symbols.chevron_right),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                  title: Text('logout').tr(),
-                  dense: true,
-                  onTap: () async {
-                    final ws = ref.watch(websocketStateProvider.notifier);
-                    final client = ref.watch(solarNetworkClientProvider);
-                    showLoadingModal(context);
-                    // Fire and forgot
-                    client.auth.revokeCurrentSession();
-                    await resetDatabase(ref);
-                    if (!context.mounted) return;
-                    hideLoadingModal(context);
-                    final userNotifier = ref.read(userInfoProvider.notifier);
-                    userNotifier.logOut();
-                    ws.close();
-                  },
+                Column(
+                  children: [
+                    if (isDeveloperMode)
+                      ListTile(
+                        leading: const Icon(Symbols.bug_report),
+                        trailing: const Icon(Symbols.chevron_right),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 24),
+                        title: Text('debugOptions').tr(),
+                        dense: true,
+                        onTap: () {
+                          toggleDebugOverlay(ref);
+                        },
+                      ),
+                    ListTile(
+                      leading: const Icon(Symbols.logout),
+                      trailing: const Icon(Symbols.chevron_right),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 24),
+                      title: Text('logout').tr(),
+                      dense: true,
+                      onTap: () async {
+                        final ws = ref.watch(websocketStateProvider.notifier);
+                        final client = ref.watch(solarNetworkClientProvider);
+                        showLoadingModal(context);
+                        // Fire and forgot
+                        client.auth.revokeCurrentSession();
+                        await resetDatabase(ref);
+                        if (!context.mounted) return;
+                        hideLoadingModal(context);
+                        final userNotifier = ref.read(
+                          userInfoProvider.notifier,
+                        );
+                        userNotifier.logOut();
+                        ws.close();
+                      },
+                    ),
+                  ],
                 ),
               ],
             ).padding(top: 8, bottom: MediaQuery.of(context).padding.bottom),

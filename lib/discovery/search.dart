@@ -3,7 +3,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -49,6 +48,9 @@ class UniversalSearchScreen extends HookConsumerWidget {
     final searchController = useTextEditingController();
     final searchFocusNode = useFocusNode();
     final debounceTimer = useRef<Timer?>(null);
+    // Filter panel visibility, driven solely by the app bar action so it can
+    // stay in sync across the sections that expose filters.
+    final filtersVisible = useState(false);
     const debounce = Duration(milliseconds: 450);
 
     // A query handed over by an outside entry point (the command palette) lands
@@ -155,6 +157,26 @@ class UniversalSearchScreen extends HookConsumerWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        actions: [
+          ValueListenableBuilder<bool>(
+            valueListenable: filtersVisible,
+            builder: (context, visible, _) {
+              final supported =
+                  selectedTab == SearchTab.posts ||
+                  selectedTab == SearchTab.messages;
+              return IconButton(
+                onPressed: supported
+                    ? () => filtersVisible.value = !filtersVisible.value
+                    : null,
+                icon: Icon(
+                  visible ? Symbols.filter_list_off : Symbols.filter_list,
+                ),
+                tooltip: visible ? 'hideFilters'.tr() : 'showFilters'.tr(),
+              );
+            },
+          ),
+          const Gap(8)
+        ],
         elevation: 0,
       ),
       body: Column(
@@ -172,10 +194,16 @@ class UniversalSearchScreen extends HookConsumerWidget {
             child: TabBarView(
               controller: tabController,
               children: [
-                _PostsSearchTab(searchQuery: debouncedSearchQuery),
+                _PostsSearchTab(
+                  searchQuery: debouncedSearchQuery,
+                  filtersVisible: filtersVisible,
+                ),
                 _AccountSearchTab(searchQuery: debouncedSearchQuery),
                 _RealmsSearchTab(searchQuery: debouncedSearchQuery),
-                ChatMessageSearchView(searchQuery: debouncedSearchQuery),
+                ChatMessageSearchView(
+                  searchQuery: debouncedSearchQuery,
+                  filtersVisible: filtersVisible,
+                ),
               ],
             ),
           ),
@@ -211,12 +239,16 @@ class _RealmsSearchTab extends HookConsumerWidget {
 
 class _PostsSearchTab extends HookConsumerWidget {
   final ValueNotifier<String> searchQuery;
+  final ValueNotifier<bool> filtersVisible;
 
-  const _PostsSearchTab({required this.searchQuery});
+  const _PostsSearchTab({
+    required this.searchQuery,
+    required this.filtersVisible,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showFilters = useState(false);
+    final showFilters = useValueListenable(filtersVisible);
 
     final categoryTabController = useMaterialTabController(initialLength: 3);
     final queryState = useState(const PostListQuery(includeReplies: false));
@@ -231,7 +263,7 @@ class _PostsSearchTab extends HookConsumerWidget {
     }
 
     void toggleFilterDisplay() {
-      showFilters.value = !showFilters.value;
+      filtersVisible.value = !filtersVisible.value;
     }
 
     Widget buildFilterPanel() {
@@ -352,7 +384,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                                     IconButton(
                                       icon: Icon(
                                         Symbols.filter_alt,
-                                        fill: showFilters.value ? 1 : null,
+                                        fill: showFilters ? 1 : null,
                                       ),
                                       onPressed: toggleFilterDisplay,
                                       tooltip: 'toggleFilters'.tr(),
@@ -362,7 +394,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                                 ),
                               ),
                             ),
-                            if (showFilters.value) ...[
+                            if (showFilters) ...[
                               const Gap(8),
                               buildFilterPanel().padding(horizontal: 8),
                             ],
@@ -378,7 +410,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                   AnimatedSlide(
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOutCubic,
-                    offset: showFilters.value
+                    offset: showFilters
                         ? Offset.zero
                         : const Offset(0, -0.08),
                     child: AnimatedSize(
@@ -389,7 +421,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                         duration: const Duration(milliseconds: 180),
                         switchInCurve: Curves.easeOutCubic,
                         switchOutCurve: Curves.easeInCubic,
-                        child: showFilters.value
+                        child: showFilters
                             ? Padding(
                                 key: const ValueKey('filters-visible'),
                                 padding: const EdgeInsets.fromLTRB(
@@ -407,46 +439,29 @@ class _PostsSearchTab extends HookConsumerWidget {
                     ),
                   ),
                   Expanded(
-                    child: NotificationListener<UserScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.depth != 0) return false;
-                        switch (notification.direction) {
-                          case ScrollDirection.reverse:
-                            if (showFilters.value) {
-                              showFilters.value = false;
-                            }
-                          case ScrollDirection.forward:
-                            if (!showFilters.value) {
-                              showFilters.value = true;
-                            }
-                          case ScrollDirection.idle:
-                            break;
-                        }
-                        return false;
-                      },
-                      child: PaginationList(
-                        provider: postListProvider(
-                          PostListQueryConfig(id: kSearchPostListId),
-                        ),
-                        notifier: postListProvider(
-                          PostListQueryConfig(id: kSearchPostListId),
-                        ).notifier,
-                        padding: EdgeInsets.zero,
-                        seperatorBuilder: (context, index, post) =>
-                            const Divider(height: 1),
-                        footerSkeletonChild: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: const PostItemSkeleton(
-                            maxWidth: double.infinity,
-                          ),
-                        ),
-                        itemBuilder: (context, index, post) {
-                          return PostActionableItem(
-                            item: post,
-                            borderRadius: 8,
-                          );
-                        },
+                    child: PaginationList(
+                      provider: postListProvider(
+                        PostListQueryConfig(id: kSearchPostListId),
                       ),
+                      notifier: postListProvider(
+                        PostListQueryConfig(id: kSearchPostListId),
+                      ).notifier,
+                      // Bottom-only padding: null would also pull the status
+                      // bar inset in as a top gap, and the tab shell's
+                      // extendBody leaves the last row under the bottom bar
+                      // without the hint.
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.paddingOf(context).bottom + 16,
+                      ),
+                      seperatorBuilder: (context, index, post) =>
+                          const Divider(height: 1),
+                      footerSkeletonChild: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: const PostItemSkeleton(maxWidth: double.infinity),
+                      ),
+                      itemBuilder: (context, index, post) {
+                        return PostActionableItem(item: post, borderRadius: 8);
+                      },
                     ),
                   ),
                 ],
@@ -609,7 +624,11 @@ class _AccountSearchTab extends HookConsumerWidget {
               : ExtendedRefreshIndicator(
                   onRefresh: () => performSearch(searchQuery.value),
                   child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    // Keep the last row clear of the tab shell's bottom bar.
+                    padding: EdgeInsets.only(
+                      top: 8,
+                      bottom: 8 + MediaQuery.paddingOf(context).bottom,
+                    ),
                     itemCount: allResults.length,
                     separatorBuilder: (context, index) => const Gap(8),
                     itemBuilder: (context, index) {

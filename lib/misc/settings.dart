@@ -25,6 +25,8 @@ import 'package:island/core/services/color_extraction.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:solsynth_express/solsynth_express.dart';
 import 'package:island/activity/activity_rpc.dart';
+import 'package:island/discovery/widgets/discovery_profile_sheet.dart';
+import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/misc/connectivity_self_check_screen.dart';
 import 'package:island/misc/about_content.dart';
 import 'package:island/misc/widgets/relay_route_sheet.dart';
@@ -122,6 +124,20 @@ class SettingsScreen extends HookConsumerWidget {
     final searchQuery = useState('');
     final searchController = useTextEditingController();
     final searchFocusNode = useFocusNode();
+
+    // A disabled dashboard is not a landing option: neither the picker nor a
+    // stale stored `dashboard` value may point at it.
+    final defaultScreenOptions = <String>[
+      if (settings.dashboardEnabled) 'dashboard',
+      'explore',
+      'chat',
+      'account',
+    ];
+    final defaultScreenValue =
+        settings.defaultScreen != null &&
+            defaultScreenOptions.contains(settings.defaultScreen)
+        ? settings.defaultScreen!
+        : defaultScreenOptions.first;
 
     final categories = <_SettingCategory>[];
 
@@ -1746,6 +1762,11 @@ class SettingsScreen extends HookConsumerWidget {
           'default screen',
           'home screen',
           'startup',
+          'dashboard',
+          'disable dashboard',
+          'hide dashboard',
+          'settingsDashboardEnabled',
+          'settingsDashboardEnabledHelper',
           'search engine',
           'web search',
           'weather',
@@ -1806,26 +1827,14 @@ class SettingsScreen extends HookConsumerWidget {
                 underline: const SizedBox.shrink(),
                 isExpanded: true,
                 items: [
-                  DropdownItem<String>(
-                    value: 'dashboard',
-                    child: Text('dashboard').tr().fontSize(14),
-                  ),
-                  DropdownItem<String>(
-                    value: 'explore',
-                    child: Text('explore').tr().fontSize(14),
-                  ),
-                  DropdownItem<String>(
-                    value: 'chat',
-                    child: Text('chat').tr().fontSize(14),
-                  ),
-                  DropdownItem<String>(
-                    value: 'account',
-                    child: Text('account').tr().fontSize(14),
+                  ...defaultScreenOptions.map(
+                    (screen) => DropdownItem<String>(
+                      value: screen,
+                      child: Text(screen).tr().fontSize(14),
+                    ),
                   ),
                 ],
-                valueListenable: ValueNotifier<String>(
-                  settings.defaultScreen ?? 'dashboard',
-                ),
+                valueListenable: ValueNotifier<String>(defaultScreenValue),
                 onChanged: (String? value) {
                   if (value != null) {
                     ref
@@ -1840,6 +1849,22 @@ class SettingsScreen extends HookConsumerWidget {
                   width: 140,
                 ),
               ),
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('settingsDashboardEnabled').tr(),
+            subtitle: Text('settingsDashboardEnabledHelper').tr().fontSize(12),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.dashboard_rounded),
+            trailing: Switch(
+              value: settings.dashboardEnabled,
+              onChanged: (value) {
+                ref
+                    .read(appSettingsProvider.notifier)
+                    .setDashboardEnabled(value);
+                showSnackBar('settingsApplied'.tr());
+              },
             ),
           ),
           ListTile(
@@ -1911,6 +1936,182 @@ class SettingsScreen extends HookConsumerWidget {
                 showSnackBar('settingsApplied'.tr());
               },
             ),
+          ),
+        ],
+      ),
+    );
+
+    final exploreSettings = settings.exploreSettings;
+
+    // The explore timeline algorithm (section, ranking, aggressive mode) and
+    // the persistent subscription filters used to live in a sheet on the
+    // explore screen; they are global preferences, so they belong here.
+    categories.add(
+      _SettingCategory(
+        icon: Symbols.explore,
+        title: 'Explore',
+        localizedTitleKey: 'settingsCategoryExplore',
+        searchTerms: [
+          'explore',
+          'timeline',
+          'feed',
+          'algorithm',
+          'ranking',
+          'preferred',
+          'personalized',
+          'top',
+          'latest',
+          'aggressive mode',
+          'discovery profile',
+          'subscription filters',
+          'categories',
+          'tags',
+          'settingsCategoryExplore',
+          'settingsExploreSection',
+          'settingsExploreSectionHelper',
+          'explorePreferred',
+          'exploreAggressiveMode',
+          'exploreAggressiveModeDescription',
+          'exploreDiscoveryProfile',
+          'exploreDiscoveryProfileDescription',
+          'exploreModePersonalized',
+          'exploreModeTop',
+          'exploreModeLatest',
+        ],
+        children: [
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('settingsExploreSection').tr(),
+            subtitle: Text('settingsExploreSectionHelper').tr().fontSize(12),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.segment),
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton2<String?>(
+                underline: const SizedBox.shrink(),
+                isExpanded: true,
+                items: [
+                  DropdownItem<String?>(
+                    value: null,
+                    child: Text('explore').tr().fontSize(14),
+                  ),
+                  DropdownItem<String?>(
+                    value: 'subscriptions',
+                    child: Text('exploreFilterSubscriptions').tr().fontSize(14),
+                  ),
+                  DropdownItem<String?>(
+                    value: 'friends',
+                    child: Text('exploreFilterFriends').tr().fontSize(14),
+                  ),
+                ],
+                valueListenable: ValueNotifier<String?>(exploreSettings.filter),
+                onChanged: (value) {
+                  ref
+                      .read(appSettingsProvider.notifier)
+                      .setExploreSettings(
+                        exploreSettings.copyWith(filter: value),
+                      );
+                  showSnackBar('settingsApplied'.tr());
+                },
+                buttonStyleData: const ButtonStyleData(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                  height: 40,
+                  width: 160,
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('explorePreferred').tr(),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.tune),
+            trailing: DropdownButtonHideUnderline(
+              child: DropdownButton2<String>(
+                underline: const SizedBox.shrink(),
+                isExpanded: true,
+                items: [
+                  DropdownItem<String>(
+                    value: 'personalized',
+                    child: Text('exploreModePersonalized').tr().fontSize(14),
+                  ),
+                  DropdownItem<String>(
+                    value: 'top',
+                    child: Text('exploreModeTop').tr().fontSize(14),
+                  ),
+                  DropdownItem<String>(
+                    value: 'latest',
+                    child: Text('exploreModeLatest').tr().fontSize(14),
+                  ),
+                ],
+                valueListenable: ValueNotifier<String>(exploreSettings.mode),
+                onChanged: (value) {
+                  if (value == null) return;
+                  ref
+                      .read(appSettingsProvider.notifier)
+                      .setExploreSettings(
+                        exploreSettings.copyWith(mode: value),
+                      );
+                  showSnackBar('settingsApplied'.tr());
+                },
+                buttonStyleData: const ButtonStyleData(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                  height: 40,
+                  width: 140,
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('exploreAggressiveMode').tr(),
+            subtitle: Text(
+              'exploreAggressiveModeDescription',
+            ).tr().fontSize(12),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.bolt),
+            trailing: Switch(
+              value: exploreSettings.aggressiveMode,
+              onChanged: (value) {
+                ref
+                    .read(appSettingsProvider.notifier)
+                    .setExploreSettings(
+                      exploreSettings.copyWith(aggressiveMode: value),
+                    );
+                showSnackBar('settingsApplied'.tr());
+              },
+            ),
+          ),
+          if (exploreSettings.mode == 'personalized')
+            ListTile(
+              minLeadingWidth: 48,
+              title: Text('exploreDiscoveryProfile').tr(),
+              subtitle: Text(
+                'exploreDiscoveryProfileDescription',
+              ).tr().fontSize(12),
+              contentPadding: _kSettingsTilePadding,
+              leading: const Icon(Symbols.mindfulness),
+              trailing: const Icon(Symbols.chevron_right),
+              onTap: () => showDiscoveryProfileSheet(context),
+            ),
+          const Divider(height: 24),
+          PostCategoryTagFilterSection(
+            initialSelectedCategories: exploreSettings.selectedCategoryIds,
+            initialSelectedTags: exploreSettings.selectedTagIds,
+            onSelectedCategoriesChanged: (ids) {
+              ref
+                  .read(appSettingsProvider.notifier)
+                  .setExploreSettings(
+                    exploreSettings.copyWith(selectedCategoryIds: ids),
+                  );
+            },
+            onSelectedTagsChanged: (ids) {
+              ref
+                  .read(appSettingsProvider.notifier)
+                  .setExploreSettings(
+                    exploreSettings.copyWith(selectedTagIds: ids),
+                  );
+            },
+            onPublisherSelectionCleared: () {},
           ),
         ],
       ),

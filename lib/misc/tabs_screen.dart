@@ -205,7 +205,15 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     ref.watch(chatUnreadCountProvider);
     final wideScreen = isWideScreen(context);
 
-    final allDestinations = _allDestinations;
+    final dashboardEnabled = ref.watch(
+      appSettingsProvider.select((settings) => settings.dashboardEnabled),
+    );
+    // A disabled dashboard is not reachable, so it is not a destination.
+    final allDestinations = _allDestinations
+        .where(
+          (destination) => dashboardEnabled || destination.id != 'dashboard',
+        )
+        .toList();
     final navCustomization = ref.watch(_navCustomizationProvider);
     final destinationById = {for (final d in allDestinations) d.id: d};
     final defaultBottomNavIds = ['dashboard', 'explore', 'chat', 'account'];
@@ -727,10 +735,11 @@ class _NavigationCustomizationSheetState
     super.initState();
     final allIds = widget.allDestinations.map((e) => e.id).toList();
     final defaultBottom = ['dashboard', 'explore', 'chat', 'account'];
-    final sanitizedBottom = widget.initialBottomIds
-        .where(allIds.contains)
-        .toList();
-    _bottomIds = widget.hasBottomOverride ? sanitizedBottom : defaultBottom;
+    // Defaults are sanitized too: a disabled dashboard is not a destination.
+    _bottomIds =
+        (widget.hasBottomOverride ? widget.initialBottomIds : defaultBottom)
+            .where(allIds.contains)
+            .toList();
 
     final sanitizedRail = widget.initialRailIds.where(allIds.contains).toList();
     _railIds = widget.hasRailOverride ? sanitizedRail : allIds;

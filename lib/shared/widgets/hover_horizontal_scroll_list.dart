@@ -17,12 +17,18 @@ class HoverHorizontalScrollList extends HookWidget {
   final EdgeInsetsGeometry padding;
   final double separatorWidth;
 
+  /// Distance between the leading edges of two items. When set, the strip
+  /// settles on a whole-item boundary once a scroll ends, and the hover
+  /// chevrons advance one item at a time.
+  final double? snapExtent;
+
   const HoverHorizontalScrollList({
     super.key,
     required this.itemCount,
     required this.itemBuilder,
     this.padding = EdgeInsets.zero,
     this.separatorWidth = 2,
+    this.snapExtent,
   });
 
   @override
@@ -53,7 +59,9 @@ class HoverHorizontalScrollList extends HookWidget {
     Future<void> scrollBy(double direction) async {
       if (!controller.hasClients) return;
       final position = controller.position;
-      final delta = math.max(position.viewportDimension * 0.75, 180.0);
+      final delta = snapExtent != null
+          ? snapExtent!
+          : math.max(position.viewportDimension * 0.75, 180.0);
       final target = (position.pixels + delta * direction).clamp(
         0.0,
         position.maxScrollExtent,
@@ -61,6 +69,24 @@ class HoverHorizontalScrollList extends HookWidget {
       await controller.animateTo(
         target,
         duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
+    }
+
+    /// Settles a partly scrolled card back onto its item boundary.
+    void snapToItemBoundary() {
+      final extent = snapExtent;
+      if (extent == null || !controller.hasClients) return;
+      final position = controller.position;
+      final target = (position.pixels / extent).round() * extent;
+      final clamped = target.clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if ((clamped - position.pixels).abs() < 0.5) return;
+      controller.animateTo(
+        clamped,
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
       );
     }
@@ -77,13 +103,19 @@ class HoverHorizontalScrollList extends HookWidget {
           Positioned.fill(
             child: ScrollConfiguration(
               behavior: scrollBehavior,
-              child: ListView.separated(
-                controller: controller,
-                scrollDirection: Axis.horizontal,
-                padding: padding,
-                itemCount: itemCount,
-                separatorBuilder: (_, _) => SizedBox(width: separatorWidth),
-                itemBuilder: itemBuilder,
+              child: NotificationListener<ScrollEndNotification>(
+                onNotification: (notification) {
+                  snapToItemBoundary();
+                  return false;
+                },
+                child: ListView.separated(
+                  controller: controller,
+                  scrollDirection: Axis.horizontal,
+                  padding: padding,
+                  itemCount: itemCount,
+                  separatorBuilder: (_, _) => SizedBox(width: separatorWidth),
+                  itemBuilder: itemBuilder,
+                ),
               ),
             ),
           ),

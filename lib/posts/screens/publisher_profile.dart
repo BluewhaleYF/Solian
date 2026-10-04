@@ -40,6 +40,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 part 'publisher_profile.g.dart';
 
@@ -229,6 +230,22 @@ String _publisherBio(SnPublisher data) {
   return bio;
 }
 
+/// Username shown inside the handle chip.
+///
+/// Mirrored remote actors may carry a fully qualified `user@domain` handle in
+/// `username`, so the local part is the only thing the chip renders.
+String _publisherUsername(SnPublisher data) {
+  final raw = data.username?.isNotEmpty == true ? data.username! : data.name;
+  return raw.split('@').first;
+}
+
+/// Handle copied by the handle chip: `@user` locally, `@user@domain` remotely.
+String _publisherFullHandle(SnPublisher data) {
+  final username = _publisherUsername(data);
+  final domain = data.isFediverse ? data.domain : null;
+  return domain == null ? '@$username' : '@$username@$domain';
+}
+
 class _PublisherBasisWidget extends HookWidget {
   final SnPublisher data;
   final AsyncValue<SnPublisherSubscriptionStatus?> subStatus;
@@ -266,6 +283,90 @@ class _PublisherBasisWidget extends HookWidget {
       return '${(rating / 1000).toStringAsFixed(1)}K';
     }
     return rating.toStringAsFixed(0);
+  }
+
+  /// Origin row of a remote actor: the instance mirroring it.
+  ///
+  /// Remote actors have no account on this server, so the account link a local
+  /// publisher shows would point at a name that never resolves.
+  Widget _instanceChip(BuildContext context, ThemeData theme) {
+    final domain = data.domain;
+    if (domain == null) return const SizedBox.shrink();
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            Icon(
+              Symbols.hub,
+              size: 18,
+              color: theme.colorScheme.onSecondaryContainer,
+              fill: 1,
+            ),
+            Flexible(
+              child: Text(
+                'publisherBelongsToInstance'.tr(args: [domain]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () => launchUrlString('https://$domain'),
+    );
+  }
+
+  /// Origin row of a local publisher: the account owning it.
+  Widget _accountChip(BuildContext context, ThemeData theme) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            Icon(
+              Symbols.person,
+              size: 18,
+              color: theme.colorScheme.onSecondaryContainer,
+              fill: 1,
+            ),
+            Flexible(
+              child: Text(
+                'publisherBelongsTo'.tr(args: ['@${data.name}']),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () {
+        context.router.push(AccountProfileRoute(name: data.name));
+      },
+    );
   }
 
   @override
@@ -385,12 +486,17 @@ class _PublisherBasisWidget extends HookWidget {
                                 data.verification!,
                               ),
                             ),
-                          HandleChip(
-                            handle: data.username ?? data.name,
-                            domain: data.isFediverse ? data.domain : null,
-                            isRemote: data.isFediverse,
-                            allowCopy: true,
-                            maxLines: 1,
+                          // Only the username: the instance is spelled out by
+                          // the origin chip below, and a full remote handle
+                          // overflows this row on narrow layouts.
+                          Flexible(
+                            child: HandleChip(
+                              handle: _publisherUsername(data),
+                              copyText: _publisherFullHandle(data),
+                              isRemote: data.isFediverse,
+                              allowCopy: true,
+                              maxLines: 1,
+                            ),
                           ),
                           // Rating grade indicator
                           ratingOverview.when(
@@ -493,56 +599,17 @@ class _PublisherBasisWidget extends HookWidget {
 
                       Padding(
                         padding: const .only(top: 8, bottom: 4),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.secondaryContainer
-                                  .withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              spacing: 8,
-                              children: [
-                                Icon(
-                                  Symbols.person,
-                                  size: 18,
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                  fill: 1,
-                                ),
-                                Flexible(
-                                  child: Text(
-                                    'publisherBelongsTo'.tr(
-                                      args: ['@${data.name}'],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          onTap: () {
-                            context.router.push(
-                              AccountProfileRoute(name: data.name),
-                            );
-                          },
+                        child: data.isFediverse
+                            ? _instanceChip(context, theme)
+                            : _accountChip(context, theme),
+                      ),
+                      if (!data.isFediverse) ...[
+                        const Gap(4),
+                        AccountStatusWidget(
+                          uname: data.name,
+                          padding: EdgeInsets.zero,
                         ),
-                      ),
-                      const Gap(4),
-                      AccountStatusWidget(
-                        uname: data.name,
-                        padding: EdgeInsets.zero,
-                      ),
+                      ],
                     ],
                   ),
                 ),
