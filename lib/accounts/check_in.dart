@@ -96,6 +96,7 @@ class CheckInWidget extends ConsumerWidget {
     final level = today.value?.level;
 
     return Card(
+      elevation: 0,
       margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [

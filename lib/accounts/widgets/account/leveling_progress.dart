@@ -55,6 +55,7 @@ class LevelingProgressCard extends StatelessWidget {
         : (levelFontSize: 18.0, stageFontSize: 14.0, expFontSize: 14.0);
 
     return Card(
+      elevation: 0,
       margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,

@@ -9,6 +9,7 @@ import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/accounts/widgets/account/activity_presence.dart';
 import 'package:island/accounts/widgets/account/leveling_progress.dart';
 import 'package:island/accounts/widgets/account/status.dart';
+import 'package:island/accounts/check_in.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
@@ -98,9 +99,10 @@ class AccountFeatureWidget extends HookConsumerWidget {
       appBar: AppBar(toolbarHeight: 0),
       body: SingleChildScrollView(
         child: Column(
-          spacing: 4,
+          spacing: 12,
           children: <Widget>[
             Card(
+              elevation: 0,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -210,6 +212,7 @@ class AccountFeatureWidget extends HookConsumerWidget {
             if (user.value?.activatedAt == null)
               AccountUnactivatedCard().padding(horizontal: 12, bottom: 4),
             Card(
+              elevation: 0,
               margin: EdgeInsets.zero,
               child: Column(
                 children: [
@@ -227,6 +230,10 @@ class AccountFeatureWidget extends HookConsumerWidget {
                 ],
               ),
             ).padding(horizontal: 12, bottom: 4),
+            CheckInWidget(margin: EdgeInsets.zero).padding(
+              horizontal: 12,
+              bottom: 4,
+            ),
             LevelingProgressCard(
               isCompact: true,
               level: user.value!.profile.level,
@@ -412,6 +419,7 @@ class _UnauthorizedAccountScreen extends HookConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Card(
+                elevation: 0,
                 child: InkWell(
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   onTap: () {
@@ -435,6 +443,7 @@ class _UnauthorizedAccountScreen extends HookConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Card(
+                elevation: 0,
                 child: InkWell(
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                   onTap: () {
