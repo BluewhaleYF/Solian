@@ -699,12 +699,25 @@ class AppWrapper extends HookConsumerWidget {
       ) {
         final ctx = ref.read(routerProvider).navigatorKey.currentContext;
         if (ctx != null && ctx.mounted) {
-          final challenge = SnAuthChallenge.fromJson(
-            Map<String, dynamic>.from(event.data),
-          );
-          _maybeShowChallenge(ctx, challenge, shownChallengeIds);
+          _maybeShowChallenge(ctx, event.challenge, shownChallengeIds);
         }
       });
+
+      // Catch-up fetch for challenges the WS push could not deliver: on cold
+      // start (the immediate fire re-checks the current socket state), on
+      // socket (re)connect, and on resume while the socket is down. Unlike the
+      // removed foreground poll this is event-driven, so a session that stays
+      // online with a healthy socket is never polled.
+      final challengeListener = ref.read(challengeWsListenerProvider);
+      final challengeWsStateSub = ref.listenManual(
+        websocketStateProvider,
+        (previous, next) => challengeListener.handleSocketState(next),
+        fireImmediately: true,
+      );
+      final challengeLifecycleSub = ref.listenManual(
+        appLifecycleStateProvider,
+        (previous, next) => challengeListener.handleLifecycle(next.value),
+      );
 
       return () {
         ref.read(rpcServerProvider).stop();
@@ -721,6 +734,8 @@ class AppWrapper extends HookConsumerWidget {
         notificationModalSubs.cancel();
         webAuthSubs.cancel();
         challengeSubs.cancel();
+        challengeWsStateSub.close();
+        challengeLifecycleSub.close();
       };
     }, []);
 
@@ -979,7 +994,7 @@ class AppWrapper extends HookConsumerWidget {
   }
 
   /// Shows the approval sheet for a pending challenge exactly once per id,
-  /// deduplicating repeated WS pushes for the same challenge.
+  /// deduplicating repeated WS pushes and catch-up fetches for the same id.
   void _maybeShowChallenge(
     BuildContext context,
     SnAuthChallenge challenge,

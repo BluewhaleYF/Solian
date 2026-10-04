@@ -105,11 +105,12 @@ class OidcAuthCallbackEvent {
   const OidcAuthCallbackEvent(this.challengeId);
 }
 
-/// Event fired when a cross-device login approval request is received
+/// Event fired when a cross-device login approval request is received, either
+/// as a WebSocket push or from the pending-challenge catch-up fetch.
 class ChallengePendingEvent {
-  final Map<String, dynamic> data;
+  final SnAuthChallenge challenge;
 
-  const ChallengePendingEvent(this.data);
+  const ChallengePendingEvent(this.challenge);
 }
 
 /// Event fired to trigger the command palette

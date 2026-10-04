@@ -2813,7 +2813,7 @@
   "publisherFollowAgain": "再次關注",
   "publisherFollowButton": "關注",
   "publisherFollowDescription": "關注此發佈者以接收更新並檢視其發佈的內容。",
-  "publisherFollowPendingHint": "您的關注請求正在等待批准。",
+  "publisherFollowPendingHint": "您的關注請求正在等待批准",
   "publisherFollowRejectedHint": "您的關注請求已被拒絕。",
   "publisherFollowRequestSubmitted": "關注請求已提交",
   "publisherFollowRequests": "關注請求",

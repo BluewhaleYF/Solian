@@ -2954,7 +2954,7 @@
   "publisherFollowAgain": "再次关注",
   "publisherFollowButton": "关注",
   "publisherFollowDescription": "关注此发布者以接收更新并查看其发布的内容。",
-  "publisherFollowPendingHint": "您的关注请求正在等待批准。",
+  "publisherFollowPendingHint": "您的关注请求正在等待批准",
   "publisherFollowRejectedHint": "您的关注请求已被拒绝。",
   "publisherFollowRequestSubmitted": "关注请求已提交",
   "publisherFollowRequests": "关注请求",
