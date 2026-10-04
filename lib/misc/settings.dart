@@ -26,7 +26,6 @@ import 'package:island/core/services/responsive.dart';
 import 'package:solsynth_express/solsynth_express.dart';
 import 'package:island/activity/activity_rpc.dart';
 import 'package:island/discovery/widgets/discovery_profile_sheet.dart';
-import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/misc/connectivity_self_check_screen.dart';
 import 'package:island/misc/about_content.dart';
 import 'package:island/misc/widgets/relay_route_sheet.dart';
@@ -2093,26 +2092,6 @@ class SettingsScreen extends HookConsumerWidget {
               trailing: const Icon(Symbols.chevron_right),
               onTap: () => showDiscoveryProfileSheet(context),
             ),
-          const Divider(height: 24),
-          PostCategoryTagFilterSection(
-            initialSelectedCategories: exploreSettings.selectedCategoryIds,
-            initialSelectedTags: exploreSettings.selectedTagIds,
-            onSelectedCategoriesChanged: (ids) {
-              ref
-                  .read(appSettingsProvider.notifier)
-                  .setExploreSettings(
-                    exploreSettings.copyWith(selectedCategoryIds: ids),
-                  );
-            },
-            onSelectedTagsChanged: (ids) {
-              ref
-                  .read(appSettingsProvider.notifier)
-                  .setExploreSettings(
-                    exploreSettings.copyWith(selectedTagIds: ids),
-                  );
-            },
-            onPublisherSelectionCleared: () {},
-          ),
         ],
       ),
     );
