@@ -108,95 +108,108 @@ class PostFeaturedList extends HookConsumerWidget {
 
     final appSettings = ref.watch(appSettingsProvider);
 
-    final header = SizedBox(
-      height: 48,
-      child: Row(
-        spacing: 8,
-        children: [
-          Icon(
-            Symbols.highlight,
-            size: 20,
-            color: emphasizeHeader
-                ? Theme.of(context).colorScheme.primary
-                : null,
-          ),
-          Expanded(
-            child: Text(
-              'highlightPost'.tr(),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: emphasizeHeader
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+    void toggleCollapse() {
+      isCollapsed.value = !isCollapsed.value;
+      Logger.root.info(
+        'Manual toggle. isCollapsed set to ${isCollapsed.value}',
+      );
+      if (isCollapsed.value &&
+          featuredPostsAsync.hasValue &&
+          featuredPostsAsync.value!.isNotEmpty) {
+        prefs.setString(
+          kFeaturedPostsCollapsedId,
+          featuredPostsAsync.value!.first.id,
+        );
+        Logger.root.info(
+          'Stored collapsed ID: ${featuredPostsAsync.value!.first.id}',
+        );
+      } else {
+        prefs.remove(kFeaturedPostsCollapsedId);
+        Logger.root.info('Removed stored collapsed ID.');
+      }
+    }
+
+    // The whole header band toggles the section, not just the chevron: when
+    // collapsed the band is all that stays on screen, so the tile itself is
+    // the natural hit target for expanding or hiding the posts again. In
+    // flush hosts (the explore timeline) the band spans the pane width.
+    final header = Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: collapsable ? toggleCollapse : null,
+        child: SizedBox(
+          height: 48,
+          child:
+              Row(
+                spacing: 8,
+                children: [
+                  Icon(
+                    Symbols.highlight,
+                    size: 20,
+                    color: emphasizeHeader
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  Expanded(
+                    child: Text(
+                      'highlightPost'.tr(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: emphasizeHeader
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  // The arrows page the carded layout; the flush strip scrolls and
+                  // snaps on its own.
+                  if (!flush) ...[
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        pageViewController.animateToPage(
+                          pageViewCurrent.value - 1,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      icon: const Icon(Symbols.arrow_left),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        pageViewController.animateToPage(
+                          pageViewCurrent.value + 1,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      icon: const Icon(Symbols.arrow_right),
+                    ),
+                  ],
+                  if (collapsable)
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(),
+                      onPressed: toggleCollapse,
+                      icon: Icon(
+                        isCollapsed.value
+                            ? Symbols.expand_more
+                            : Symbols.expand_less,
+                      ),
+                    ),
+                ],
+              ).padding(
+                // The flush strip sits in the host's own surface, so it keeps a
+                // tighter gutter than the carded variant.
+                horizontal: flush ? _FlushFeaturedStrip.itemPadding : 16,
+                vertical: 8,
               ),
-            ),
-          ),
-          // The arrows page the carded layout; the flush strip scrolls and
-          // snaps on its own.
-          if (!flush) ...[
-            IconButton(
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                pageViewController.animateToPage(
-                  pageViewCurrent.value - 1,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                );
-              },
-              icon: const Icon(Symbols.arrow_left),
-            ),
-            IconButton(
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                pageViewController.animateToPage(
-                  pageViewCurrent.value + 1,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                );
-              },
-              icon: const Icon(Symbols.arrow_right),
-            ),
-          ],
-          if (collapsable)
-            IconButton(
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                isCollapsed.value = !isCollapsed.value;
-                Logger.root.info(
-                  'Manual toggle. isCollapsed set to ${isCollapsed.value}',
-                );
-                if (isCollapsed.value &&
-                    featuredPostsAsync.hasValue &&
-                    featuredPostsAsync.value!.isNotEmpty) {
-                  prefs.setString(
-                    kFeaturedPostsCollapsedId,
-                    featuredPostsAsync.value!.first.id,
-                  );
-                  Logger.root.info(
-                    'Stored collapsed ID: ${featuredPostsAsync.value!.first.id}',
-                  );
-                } else {
-                  prefs.remove(kFeaturedPostsCollapsedId);
-                  Logger.root.info('Removed stored collapsed ID.');
-                }
-              },
-              icon: Icon(
-                isCollapsed.value
-                    ? Symbols.expand_more
-                    : Symbols.expand_less,
-              ),
-            ),
-        ],
-      ).padding(
-        // The flush strip sits in the host's own surface, so it keeps a
-        // tighter gutter than the carded variant.
-        horizontal: flush ? _FlushFeaturedStrip.itemPadding : 16,
-        vertical: 8,
+        ),
       ),
     );
 
@@ -233,10 +246,7 @@ class PostFeaturedList extends HookConsumerWidget {
     );
 
     if (flush) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [header, body],
-      );
+      return Column(mainAxisSize: MainAxisSize.min, children: [header, body]);
     }
 
     return Card(
@@ -250,10 +260,7 @@ class PostFeaturedList extends HookConsumerWidget {
         borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [header, body],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [header, body]),
     );
   }
 }
