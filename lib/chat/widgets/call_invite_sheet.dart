@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/chat/widgets/chat_member_list_tile.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -57,7 +58,11 @@ class CallInviteSheet extends HookConsumerWidget {
           ),
           Expanded(
             child: filtered.isEmpty
-                ? Center(child: Text('noResultsFound'.tr()))
+                ? EmptyState(
+                    icon: Symbols.search_off,
+                    title: 'noResultsFound'.tr(),
+                    compact: true,
+                  )
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {

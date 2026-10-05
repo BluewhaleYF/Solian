@@ -7,13 +7,15 @@ import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-class AuthorizedAppsNotifier extends AsyncNotifier<PaginationState<AuthorizedApp>>
+class AuthorizedAppsNotifier
+    extends AsyncNotifier<PaginationState<AuthorizedApp>>
     with AsyncPaginationController<AuthorizedApp> {
   static const int pageSize = 20;
 
@@ -287,24 +289,10 @@ class AccountAuthorizedAppsSheet extends HookConsumerWidget {
       child: apps.when(
         data: (data) {
           if (data.items.isEmpty && !data.isLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.app_settings_alt,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  Gap(16),
-                  Text(
-                    'dataEmpty'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyState(
+              icon: Icons.app_settings_alt,
+              title: 'dataEmpty'.tr(),
+              compact: true,
             );
           }
           final isLoadingMore = data.isLoading && data.items.isNotEmpty;
@@ -342,8 +330,7 @@ class AccountAuthorizedAppsSheet extends HookConsumerWidget {
                     final result = await showModalBottomSheet<List<String>>(
                       context: context,
                       useSafeArea: true,
-                      builder: (_) =>
-                          _ScopesEditor(initialScopes: app.scopes),
+                      builder: (_) => _ScopesEditor(initialScopes: app.scopes),
                     );
                     if (result == null || !context.mounted) return;
                     showLoadingModal(context);

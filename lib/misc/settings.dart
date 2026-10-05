@@ -32,6 +32,7 @@ import 'package:island/misc/widgets/relay_route_sheet.dart';
 import 'package:island/misc/widgets/server_capabilities_preview.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
@@ -2493,26 +2494,9 @@ class SettingsScreen extends HookConsumerWidget {
               .toList();
 
           if (filteredCategories.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Symbols.search_off,
-                      size: 56,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'searchSettingsNoResults'.tr(),
-                      style: Theme.of(context).textTheme.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+            return EmptyState(
+              icon: Symbols.search_off,
+              title: 'searchSettingsNoResults'.tr(),
             );
           }
 

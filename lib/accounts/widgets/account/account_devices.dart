@@ -9,6 +9,7 @@ import 'package:island/core/services/responsive.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/core/services/udid.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:island/shared/widgets/info_row.dart';
@@ -21,7 +22,8 @@ import 'package:styled_widget/styled_widget.dart';
 
 part 'account_devices.g.dart';
 
-class AuthDevicesNotifier extends AsyncNotifier<PaginationState<SnAuthDeviceWithSession>>
+class AuthDevicesNotifier
+    extends AsyncNotifier<PaginationState<SnAuthDeviceWithSession>>
     with AsyncPaginationController<SnAuthDeviceWithSession> {
   static const int pageSize = 50;
 
@@ -1270,7 +1272,8 @@ class _SessionTreeTile extends HookConsumerWidget {
                                       Text(
                                         'authTrusted'.tr(),
                                         style: TextStyle(
-                                          color: colorScheme.onTertiaryContainer,
+                                          color:
+                                              colorScheme.onTertiaryContainer,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -1596,7 +1599,10 @@ class _DevicesTab extends StatefulWidget {
 class _DevicesTabState extends State<_DevicesTab> {
   bool _webExpanded = false;
 
-  Widget _buildDeviceItem(BuildContext context, SnAuthDeviceWithSession device) {
+  Widget _buildDeviceItem(
+    BuildContext context,
+    SnAuthDeviceWithSession device,
+  ) {
     if (!widget.wideScreen) {
       return Dismissible(
         key: Key('device-${device.id}'),
@@ -1634,8 +1640,9 @@ class _DevicesTabState extends State<_DevicesTab> {
             if (confirm && context.mounted) {
               try {
                 showLoadingModal(context);
-                final stargateApi =
-                    widget.ref.read(solarNetworkClientProvider).stargate;
+                final stargateApi = widget.ref
+                    .read(solarNetworkClientProvider)
+                    .stargate;
                 await stargateApi.revokeDevice(device.deviceId);
                 widget.ref.invalidate(authDevicesProvider);
               } catch (err) {
@@ -1655,10 +1662,7 @@ class _DevicesTabState extends State<_DevicesTab> {
         ),
       );
     }
-    return _DeviceCard(
-      device: device,
-      onTap: () => widget.onDeviceTap(device),
-    );
+    return _DeviceCard(device: device, onTap: () => widget.onDeviceTap(device));
   }
 
   @override
@@ -1671,32 +1675,16 @@ class _DevicesTabState extends State<_DevicesTab> {
           return ExtendedRefreshIndicator(
             onRefresh: () =>
                 Future.sync(() => widget.ref.invalidate(authDevicesProvider)),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.devices_other,
-                    size: 64,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  Gap(16),
-                  Text(
-                    'dataEmpty'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+            child: EmptyState(
+              icon: Icons.devices_other,
+              title: 'dataEmpty'.tr(),
+              compact: true,
             ),
           );
         }
 
-        final nativeDevices =
-            data.items.where((d) => d.platform != 1).toList();
-        final webDevices =
-            data.items.where((d) => d.platform == 1).toList();
+        final nativeDevices = data.items.where((d) => d.platform != 1).toList();
+        final webDevices = data.items.where((d) => d.platform == 1).toList();
         final isLoadingMore = data.isLoading && data.items.isNotEmpty;
 
         return ExtendedRefreshIndicator(
@@ -1737,9 +1725,7 @@ class _DevicesTabState extends State<_DevicesTab> {
                         ),
                         Gap(4),
                         Icon(
-                          _webExpanded
-                              ? Icons.expand_less
-                              : Icons.expand_more,
+                          _webExpanded ? Icons.expand_less : Icons.expand_more,
                           color: colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
@@ -1862,29 +1848,10 @@ class _SessionsTab extends StatelessWidget {
               onRefresh: () =>
                   Future.sync(() => ref.invalidate(authSessionsProvider)),
               child: data.items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.key_off,
-                            size: 64,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          Gap(16),
-                          Text(
-                            'dataEmpty'.tr(),
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                      ),
+                  ? EmptyState(
+                      icon: Icons.key_off,
+                      title: 'dataEmpty'.tr(),
+                      compact: true,
                     )
                   : _buildGroupedSessionList(context, data.items),
             ),
@@ -1904,20 +1871,20 @@ class _SessionsTab extends StatelessWidget {
     List<SnAuthSession> sessions,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final browserSessions =
-        sessions.where((s) => s.category == 'browser').toList();
-    final deviceSessions =
-        sessions.where((s) => s.category != 'browser').toList();
+    final browserSessions = sessions
+        .where((s) => s.category == 'browser')
+        .toList();
+    final deviceSessions = sessions
+        .where((s) => s.category != 'browser')
+        .toList();
 
     return ListView(
       padding: EdgeInsets.only(bottom: 16),
       children: [
         // Device sessions
         ...deviceSessions.map(
-          (session) => _SessionTreeTile(
-            session: session,
-            logoutSession: logoutSession,
-          ),
+          (session) =>
+              _SessionTreeTile(session: session, logoutSession: logoutSession),
         ),
         // Browser sessions with header
         if (browserSessions.isNotEmpty) ...[
@@ -1925,11 +1892,7 @@ class _SessionsTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(
-                  Icons.web,
-                  size: 18,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                Icon(Icons.web, size: 18, color: colorScheme.onSurfaceVariant),
                 Gap(8),
                 Text(
                   'authWebBrowsers'.tr(),

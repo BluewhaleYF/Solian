@@ -16,6 +16,7 @@ import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/payments/order_detail.dart';
 import 'package:island/payments/payment_overlay.dart';
 import 'package:island/shared/widgets/response.dart';
@@ -1158,35 +1159,11 @@ class _CreateFundSheetState extends ConsumerState<CreateFundSheet> {
                             ),
                           ),
                         if (selectedRecipients.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  size: 40,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                const Gap(8),
-                                Text(
-                                  'noRecipientsSelected'.tr(),
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                                const Gap(4),
-                                Text(
-                                  'selectRecipientsToSendFund'.tr(),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
+                          EmptyState(
+                            icon: Icons.people_outline,
+                            title: 'noRecipientsSelected'.tr(),
+                            description: 'selectRecipientsToSendFund'.tr(),
+                            compact: true,
                           ),
                         OutlinedButton.icon(
                           onPressed: () async {
@@ -1666,35 +1643,11 @@ class _CreateTransferSheetState extends ConsumerState<CreateTransferSheet> {
                               ),
                             ),
                           if (selectedPayee == null)
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest
-                                    .withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.person_add_outlined,
-                                    size: 40,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  const Gap(8),
-                                  Text(
-                                    'noPayeeSelected'.tr(),
-                                    style: theme.textTheme.bodyMedium,
-                                  ),
-                                  const Gap(4),
-                                  Text(
-                                    'selectPayeeToTransfer'.tr(),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
+                            EmptyState(
+                              icon: Icons.person_add_outlined,
+                              title: 'noPayeeSelected'.tr(),
+                              description: 'selectPayeeToTransfer'.tr(),
+                              compact: true,
                             ),
                           OutlinedButton.icon(
                             onPressed: () async {
@@ -3148,7 +3101,7 @@ class WalletScreen extends HookConsumerWidget {
                               transactionId: selectedTransactionId.value!,
                               currentWalletId: selectedWalletId.value,
                             )
-                          : _buildEmptyDetailPlaceholder(context),
+                          : _buildEmptyDetailPlaceholder(),
                 ),
               ],
             )
@@ -3791,7 +3744,7 @@ class WalletScreen extends HookConsumerWidget {
         ),
         Expanded(
           child: isEmptyState
-              ? _buildEmptyTransactions(context, onCreateTransfer)
+              ? _buildEmptyTransactions(onCreateTransfer)
               : PaginationList(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.paddingOf(context).bottom,
@@ -3937,48 +3890,15 @@ class WalletScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildEmptyTransactions(
-    BuildContext context,
-    Future<void> Function() onCreateTransfer,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.receipt_long,
-              size: 48,
-              color: colorScheme.outline.withOpacity(0.6),
-            ),
-            const Gap(16),
-            Text(
-              'noTransactions'.tr(),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const Gap(6),
-            Text(
-              'noTransactionsHint'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const Gap(20),
-            FilledButton.tonalIcon(
-              onPressed: onCreateTransfer,
-              icon: const Icon(Symbols.arrow_outward, size: 18),
-              label: Text('createTransfer'.tr()),
-            ),
-          ],
-        ),
+  Widget _buildEmptyTransactions(Future<void> Function() onCreateTransfer) {
+    return EmptyState(
+      icon: Symbols.receipt_long,
+      title: 'noTransactions'.tr(),
+      description: 'noTransactionsHint'.tr(),
+      action: FilledButton.tonalIcon(
+        onPressed: onCreateTransfer,
+        icon: const Icon(Symbols.arrow_outward, size: 18),
+        label: Text('createTransfer'.tr()),
       ),
     );
   }
@@ -4077,35 +3997,11 @@ class WalletScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildEmptyDetailPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Symbols.receipt_long,
-            size: 64,
-            color: theme.colorScheme.outline.withOpacity(0.5),
-          ),
-          const Gap(16),
-          Text(
-            'selectTransaction'.tr(),
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Gap(8),
-          Text(
-            'selectTransactionHint'.tr(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.outline,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+  Widget _buildEmptyDetailPlaceholder() {
+    return EmptyState(
+      icon: Symbols.receipt_long,
+      title: 'selectTransaction'.tr(),
+      description: 'selectTransactionHint'.tr(),
     );
   }
 
@@ -4123,22 +4019,9 @@ class WalletScreen extends HookConsumerWidget {
         orders.hasValue &&
         orders.isLoading == false &&
         orders.hasError == false) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.receipt_long,
-              size: 48,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const Gap(16),
-            Text(
-              'noPurchasesToRestore'.tr(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Symbols.receipt_long,
+        title: 'noPurchasesToRestore'.tr(),
       );
     }
 
@@ -4246,30 +4129,10 @@ class WalletScreen extends HookConsumerWidget {
     return funds.when(
       data: (fundList) {
         if (fundList.items.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Symbols.money_bag,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                const Gap(16),
-                Text(
-                  'noFundsCreated'.tr(),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Gap(8),
-                Text(
-                  'createYourFirstFund'.tr(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+          return EmptyState(
+            icon: Symbols.money_bag,
+            title: 'noFundsCreated'.tr(),
+            description: 'createYourFirstFund'.tr(),
           );
         }
 

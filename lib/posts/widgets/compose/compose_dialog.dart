@@ -16,6 +16,7 @@ import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/posts/widgets/compose/compose_card.dart';
 import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
@@ -435,24 +436,10 @@ class _DialogPreviewPane extends HookWidget {
     final attachments = useValueListenable(state.attachments);
 
     if (content.text.isEmpty && attachments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Symbols.edit_note,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const Gap(12),
-            Text(
-              'previewEmpty'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Symbols.edit_note,
+        title: 'previewEmpty'.tr(),
+        compact: true,
       );
     }
 

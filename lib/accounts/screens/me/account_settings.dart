@@ -36,6 +36,7 @@ import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:island/route.gr.dart';
@@ -1560,24 +1561,10 @@ class NotificationSubscriptionsSheet extends ConsumerWidget {
       heightFactor: 0.8,
       child: subscriptions.when(
         data: (subs) => subs.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Symbols.cell_tower,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'notificationSubscriptionsEmpty'.tr(),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
+            ? EmptyState(
+                icon: Symbols.cell_tower,
+                title: 'notificationSubscriptionsEmpty'.tr(),
+                compact: true,
               )
             : ListView.builder(
                 padding: EdgeInsets.zero,
@@ -1903,9 +1890,21 @@ class PhysicalPassportScreen extends HookConsumerWidget {
         child: passportsAsync.when(
           data: (passports) {
             if (passports.isEmpty) {
-              return _PhysicalPassportsEmptyState(
-                onAddPassport: _supportsPhysicalPassportScan && isAdmin
-                    ? () => _showAddSheet(context, ref)
+              final canAdd = _supportsPhysicalPassportScan && isAdmin;
+              return EmptyState(
+                icon: Symbols.badge,
+                title: 'physicalPassportsEmpty'.tr(),
+                description:
+                    (canAdd
+                            ? 'physicalPassportsEmptyDescription'
+                            : 'physicalPassportsEmptyIssuedByAdmin')
+                        .tr(),
+                action: canAdd
+                    ? FilledButton.icon(
+                        onPressed: () => _showAddSheet(context, ref),
+                        icon: const Icon(Symbols.add),
+                        label: Text('addPhysicalPassport').tr(),
+                      )
                     : null,
               );
             }
@@ -1981,65 +1980,6 @@ class PhysicalPassportScreen extends HookConsumerWidget {
     ).then((_) {
       ref.invalidate(physicalPassportsProvider);
     });
-  }
-}
-
-class _PhysicalPassportsEmptyState extends StatelessWidget {
-  final VoidCallback? onAddPassport;
-
-  const _PhysicalPassportsEmptyState({required this.onAddPassport});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Card(
-              elevation: 0,
-              color: colorScheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Icon(
-                  Symbols.badge,
-                  size: 64,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
-            const Gap(24),
-            Text(
-              'physicalPassportsEmpty'.tr(),
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const Gap(8),
-            Text(
-              (onAddPassport != null
-                      ? 'physicalPassportsEmptyDescription'
-                      : 'physicalPassportsEmptyIssuedByAdmin')
-                  .tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (onAddPassport != null) ...[
-              const Gap(32),
-              FilledButton.icon(
-                onPressed: onAddPassport,
-                icon: const Icon(Symbols.add),
-                label: Text('addPhysicalPassport').tr(),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 }
 

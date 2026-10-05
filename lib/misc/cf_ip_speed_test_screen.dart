@@ -9,6 +9,7 @@ import 'package:island/core/config.dart';
 import 'package:island/core/network/cf_ip_speed_test.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
@@ -546,21 +547,11 @@ class _ResultsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Symbols.error,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text('retry'.tr())),
-          ],
-        ),
+      return EmptyState(
+        icon: Symbols.error,
+        iconColor: Theme.of(context).colorScheme.error,
+        title: errorMessage!,
+        action: FilledButton(onPressed: onRetry, child: Text('retry'.tr())),
       );
     }
 
@@ -587,27 +578,12 @@ class _ResultsView extends StatelessWidget {
         ? httpResults
         : tcpResults;
     if (displayResults.isEmpty && phase != 'tcp') {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Symbols.wifi_off,
-              size: 48,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text('No reachable IPs found', textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(
-              'Try disabling quick test mode or run again with a different network.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text('retry'.tr())),
-          ],
-        ),
+      return EmptyState(
+        icon: Symbols.wifi_off,
+        title: 'No reachable IPs found',
+        description:
+            'Try disabling quick test mode or run again with a different network.',
+        action: FilledButton(onPressed: onRetry, child: Text('retry'.tr())),
       );
     }
 

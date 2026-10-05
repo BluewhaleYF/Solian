@@ -101,6 +101,10 @@ On wide layouts, use a transparent `NavigationRail` beside an inset content surf
 - Avoid adding an app bar to every tab if the window frame and primary navigation already establish context.
 - Reserve overlays, drawers, sheets, and attention modals for real interactions; use the foundation widgets rather than inventing replacements.
 
+## Say "nothing here" once
+
+Every empty surface — a list with no rows, a search with no hits, a failed request — renders through `EmptyState` (`lib/shared/widgets/empty_state.dart`) rather than a local icon-and-text stack. One shape everywhere: a dimmed icon, a bold line, a quiet explanation, and an optional way out. Pass `compact: true` inside sheets, panels, and overlays, and `iconColor` when the placeholder is an error. Do not invent a second placeholder style next to it.
+
 ## Route generation and checks
 
 Use `@RoutePage()` and the generated AutoRoute configuration. Import the generated route library where route classes need to be instantiated; do not edit generated files.

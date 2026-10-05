@@ -39,6 +39,7 @@ import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:logging/logging.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -976,21 +977,10 @@ class ChatListBodyWidget extends HookConsumerWidget {
                                         for (final room in rooms)
                                           buildRoomTile(room),
                                         if (rooms.isEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                              52,
-                                              4,
-                                              16,
-                                              12,
-                                            ),
-                                            child: Text(
-                                              'No rooms assigned yet',
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                    color: colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                            ),
+                                          const EmptyState(
+                                            icon: Symbols.inbox,
+                                            title: 'No rooms assigned yet',
+                                            compact: true,
                                           ),
                                       ],
                                     ),

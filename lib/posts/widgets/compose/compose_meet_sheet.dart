@@ -2,15 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/meet_service.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-final composeMeetsProvider = FutureProvider.autoDispose<List<SnMeet>>(
-  (ref) async {
-    final service = ref.watch(meetServiceProvider);
-    return service.listMeets(hostOnly: false, offset: 0, take: 50);
-  },
-);
+final composeMeetsProvider = FutureProvider.autoDispose<List<SnMeet>>((
+  ref,
+) async {
+  final service = ref.watch(meetServiceProvider);
+  return service.listMeets(hostOnly: false, offset: 0, take: 50);
+});
 
 class ComposeMeetSheet extends ConsumerWidget {
   const ComposeMeetSheet({super.key});
@@ -25,24 +26,10 @@ class ComposeMeetSheet extends ConsumerWidget {
       child: meetsAsync.when(
         data: (meets) {
           if (meets.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Symbols.groups,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'noMeets'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyState(
+              icon: Symbols.groups,
+              title: 'noMeets'.tr(),
+              compact: true,
             );
           }
           return ListView.builder(
@@ -58,9 +45,8 @@ class ComposeMeetSheet extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('errorGeneric'.tr(args: [e.toString()])),
-        ),
+        error: (e, _) =>
+            Center(child: Text('errorGeneric'.tr(args: [e.toString()]))),
       ),
     );
   }
@@ -169,10 +155,7 @@ class _MeetListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Symbols.chevron_right,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              Icon(Symbols.chevron_right, color: colorScheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -191,11 +174,31 @@ class _MeetStatusBadge extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final (Color bg, Color fg, String label) = switch (status) {
-      SnMeetStatus.active => (Colors.green.withOpacity(0.15), Colors.green, 'active'.tr()),
-      SnMeetStatus.completed => (colorScheme.tertiaryContainer, colorScheme.onTertiaryContainer, 'completed'.tr()),
-      SnMeetStatus.expired => (colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant, 'expired'.tr()),
-      SnMeetStatus.cancelled => (colorScheme.errorContainer, colorScheme.onErrorContainer, 'cancelled'.tr()),
-      SnMeetStatus.unknown => (colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant, 'unknown'.tr()),
+      SnMeetStatus.active => (
+        Colors.green.withOpacity(0.15),
+        Colors.green,
+        'active'.tr(),
+      ),
+      SnMeetStatus.completed => (
+        colorScheme.tertiaryContainer,
+        colorScheme.onTertiaryContainer,
+        'completed'.tr(),
+      ),
+      SnMeetStatus.expired => (
+        colorScheme.surfaceContainerHighest,
+        colorScheme.onSurfaceVariant,
+        'expired'.tr(),
+      ),
+      SnMeetStatus.cancelled => (
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+        'cancelled'.tr(),
+      ),
+      SnMeetStatus.unknown => (
+        colorScheme.surfaceContainerHighest,
+        colorScheme.onSurfaceVariant,
+        'unknown'.tr(),
+      ),
     };
 
     return Container(

@@ -6,6 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/event_calendar.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:slide_countdown/slide_countdown.dart';
@@ -349,7 +350,7 @@ class _CountdownList extends HookConsumerWidget {
       data: (state) {
         final countdowns = _filterCountdowns(state.items);
         if (countdowns.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -360,25 +361,12 @@ class _CountdownList extends HookConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Symbols.error,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const Gap(16),
-            Text('error'.tr(), style: Theme.of(context).textTheme.titleMedium),
-            const Gap(8),
-            Text(
-              error.toString(),
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      error: (error, stack) => EmptyState(
+        icon: Symbols.error,
+        title: 'error'.tr(),
+        description: error.toString(),
+        iconColor: Theme.of(context).colorScheme.error,
+        compact: true,
       ),
     );
   }
@@ -398,33 +386,12 @@ class _CountdownList extends HookConsumerWidget {
     }
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Symbols.event_busy,
-            size: 64,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const Gap(16),
-          Text(
-            'countdownEmpty'.tr(),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Gap(8),
-          Text(
-            'countdownEmptyHint'.tr(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+  Widget _buildEmptyState() {
+    return EmptyState(
+      icon: Symbols.event_busy,
+      title: 'countdownEmpty'.tr(),
+      description: 'countdownEmptyHint'.tr(),
+      compact: true,
     );
   }
 }

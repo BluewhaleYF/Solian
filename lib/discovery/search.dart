@@ -23,6 +23,7 @@ import 'package:island/realms/widgets/realm_list.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -180,7 +181,7 @@ class UniversalSearchScreen extends HookConsumerWidget {
               );
             },
           ),
-          const Gap(8)
+          const Gap(8),
         ],
         elevation: 0,
       ),
@@ -345,8 +346,12 @@ class _PostsSearchTab extends HookConsumerWidget {
                                 searchQuery.value.isNotEmpty &&
                                 !searchState.isLoading)
                               SliverFillRemaining(
-                                child: Center(
-                                  child: Text('noResultsFound'.tr()),
+                                hasScrollBody: false,
+                                child: EmptyState(
+                                  key: const Key('postSearchEmpty'),
+                                  icon: Symbols.search_off,
+                                  title: 'noResultsFound'.tr(),
+                                  description: 'tryDifferentKeywords'.tr(),
                                 ),
                               ),
                             SliverGap(
@@ -368,7 +373,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                           children: [
                             Gap(_kWidePaneInset),
                             Card(
-                              margin: EdgeInsets.symmetric(horizontal: 8),
+                              margin: EdgeInsets.only(left: 16, right: 8),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -416,9 +421,7 @@ class _PostsSearchTab extends HookConsumerWidget {
                   AnimatedSlide(
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOutCubic,
-                    offset: showFilters
-                        ? Offset.zero
-                        : const Offset(0, -0.08),
+                    offset: showFilters ? Offset.zero : const Offset(0, -0.08),
                     child: AnimatedSize(
                       duration: const Duration(milliseconds: 220),
                       curve: Curves.easeOutCubic,
@@ -604,28 +607,17 @@ class _AccountSearchTab extends HookConsumerWidget {
           child: isSearching.value
               ? const Center(child: CircularProgressIndicator())
               : allResults.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Symbols.search,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const Gap(16),
-                      if (searchQuery.value.isEmpty)
-                        Text(
-                          'searchUsersEmpty'.tr(),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        )
-                      else
-                        Text(
-                          'searchUsersNoResults'.tr(),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                    ],
-                  ),
+              ? EmptyState(
+                  key: const Key('accountSearchEmpty'),
+                  icon: searchQuery.value.isEmpty
+                      ? Symbols.search
+                      : Symbols.search_off,
+                  title: searchQuery.value.isEmpty
+                      ? 'searchUsersEmpty'.tr()
+                      : 'searchUsersNoResults'.tr(),
+                  description: searchQuery.value.isEmpty
+                      ? 'searchAccountsHint'.tr()
+                      : 'tryDifferentKeywords'.tr(),
                 )
               : ExtendedRefreshIndicator(
                   onRefresh: () => performSearch(searchQuery.value),

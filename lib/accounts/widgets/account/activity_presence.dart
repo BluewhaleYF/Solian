@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/activity/activity_rpc.dart';
 import 'package:island/core/config.dart';
 import 'package:island/shared/widgets/content/image.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -440,18 +441,10 @@ class _ActivityPresenceWidgetState extends State<ActivityPresenceWidget>
               spacing: 8,
               children: [
                 if (activities.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      spacing: 4,
-                      children: [
-                        Icon(Symbols.inbox, size: 16),
-                        Text('dataEmpty', style: textTheme.bodySmall).tr(),
-                      ],
-                    ).opacity(0.75),
+                  EmptyState(
+                    icon: Symbols.inbox,
+                    title: 'dataEmpty'.tr(),
+                    compact: true,
                   ),
                 ...activities.map((activity) {
                   final images = _buildImages(ref, activity);

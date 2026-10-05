@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -206,11 +207,11 @@ class _WebdavTokensTab extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => Center(child: Text('error'.tr())),
           data: (tokens) => tokens.isEmpty
-              ? _buildEmptyState(
-                  context,
+              ? EmptyState(
                   icon: Symbols.key_off,
-                  title: 'webdavTokensEmpty',
-                  hint: 'webdavTokensEmptyHint',
+                  title: 'webdavTokensEmpty'.tr(),
+                  description: 'webdavTokensEmptyHint'.tr(),
+                  compact: true,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
@@ -289,11 +290,11 @@ class _S3TokensTab extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => Center(child: Text('error'.tr())),
           data: (tokens) => tokens.isEmpty
-              ? _buildEmptyState(
-                  context,
+              ? EmptyState(
                   icon: Symbols.cloud_off,
-                  title: 's3TokensEmpty',
-                  hint: 's3TokensEmptyHint',
+                  title: 's3TokensEmpty'.tr(),
+                  description: 's3TokensEmptyHint'.tr(),
+                  compact: true,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
@@ -372,11 +373,11 @@ class _PoolsTab extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => Center(child: Text('error'.tr())),
           data: (pools) => pools.isEmpty
-              ? _buildEmptyState(
-                  context,
+              ? EmptyState(
                   icon: Symbols.folder_off,
-                  title: 'poolsEmpty',
-                  hint: 'poolsEmptyHint',
+                  title: 'poolsEmpty'.tr(),
+                  description: 'poolsEmptyHint'.tr(),
+                  compact: true,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
@@ -456,37 +457,6 @@ class _PoolsTab extends ConsumerWidget {
 }
 
 // --- Shared Widgets ---
-
-Widget _buildEmptyState(
-  BuildContext context, {
-  required IconData icon,
-  required String title,
-  required String hint,
-}) {
-  return Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 48, color: Theme.of(context).colorScheme.outline),
-        const SizedBox(height: 16),
-        Text(
-          title.tr(),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          hint.tr(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          textAlign: TextAlign.center,
-        ).padding(horizontal: 32),
-      ],
-    ),
-  );
-}
 
 class _WebdavTokenTile extends StatelessWidget {
   final WebdavToken token;

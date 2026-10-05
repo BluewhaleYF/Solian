@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter/services.dart';
-import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
@@ -12,6 +11,7 @@ import 'package:island/shared/widgets/content/audio.dart';
 import 'package:island/shared/widgets/content/video.native.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/core/widgets/content/exif_info_overlay.dart';
 import 'package:island/core/widgets/content/file_info_sheet.dart';
 import 'package:island/core/widgets/content/image_control_overlay.dart';
@@ -285,68 +285,42 @@ class GenericFileContent extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return EmptyState(
+      icon: Symbols.insert_drive_file,
+      title: item.name,
+      description: formatFileSize(item.size),
+      action: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
         children: [
-          Icon(
-            Symbols.insert_drive_file,
-            size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          FilledButton.icon(
+            onPressed: () => ref
+                .read(driveFileDownloaderProvider)
+                .downloadFile(
+                  item,
+                  useDownloadsFolder:
+                      HardwareKeyboard.instance.isShiftPressed,
+                ),
+            icon: const Icon(Symbols.download),
+            label: Text('download').tr(),
           ),
-          const Gap(16),
-          Text(
-            item.name,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            textAlign: TextAlign.center,
+          FilledButton.tonalIcon(
+            onPressed: () => _openWebPreview(context),
+            icon: const Icon(Symbols.open_in_browser),
+            label: Text('previewInWeb'.tr()),
           ),
-          const Gap(8),
-          Text(
-            formatFileSize(item.size),
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Gap(24),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton.icon(
-                onPressed: () => ref
-                    .read(driveFileDownloaderProvider)
-                    .downloadFile(
-                      item,
-                      useDownloadsFolder:
-                          HardwareKeyboard.instance.isShiftPressed,
-                    ),
-                icon: const Icon(Symbols.download),
-                label: Text('download').tr(),
-              ),
-              const Gap(12),
-              FilledButton.tonalIcon(
-                onPressed: () => _openWebPreview(context),
-                icon: const Icon(Symbols.open_in_browser),
-                label: Text('previewInWeb'.tr()),
-              ),
-              const Gap(12),
-              OutlinedButton.icon(
-                onPressed: () {
-                  showModalBottomSheet(
-                    useRootNavigator: true,
-                    context: context,
-                    isScrollControlled: true,
-                    builder: (context) => FileInfoSheet(item: item),
-                  );
-                },
-                icon: const Icon(Symbols.info),
-                label: Text('info').tr(),
-              ),
-            ],
+          OutlinedButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                useRootNavigator: true,
+                context: context,
+                isScrollControlled: true,
+                builder: (context) => FileInfoSheet(item: item),
+              );
+            },
+            icon: const Icon(Symbols.info),
+            label: Text('info').tr(),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/route.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/tasks/app_task.dart';
 import 'package:island/tasks/tasks_notifier.dart';
@@ -545,21 +546,10 @@ class _TasksSheet extends ConsumerWidget {
 class _EmptyTasksState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Symbols.inbox, size: 32, color: scheme.onSurfaceVariant),
-          const SizedBox(height: 10),
-          Text(
-            'taskNoTasks'.tr(),
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: Symbols.inbox,
+      title: 'taskNoTasks'.tr(),
+      compact: true,
     );
   }
 }

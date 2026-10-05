@@ -9,6 +9,7 @@ import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -82,19 +83,13 @@ class AffiliationDetailScreen extends HookConsumerWidget {
       ),
       body: spellAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Symbols.error, size: 48, color: colorScheme.error),
-              const SizedBox(height: 16),
-              Text('error').tr(),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => ref.invalidate(affiliationSpellProvider(id)),
-                child: Text('retry').tr(),
-              ),
-            ],
+        error: (error, stack) => EmptyState(
+          icon: Symbols.error,
+          title: 'error'.tr(),
+          iconColor: colorScheme.error,
+          action: OutlinedButton(
+            onPressed: () => ref.invalidate(affiliationSpellProvider(id)),
+            child: Text('retry').tr(),
           ),
         ),
         data: (spell) => Column(
@@ -316,43 +311,25 @@ class _ResultsListState extends State<_ResultsList> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.error, size: 32, color: colorScheme.error),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  _error = null;
-                  _isInitialLoading = true;
-                });
-                _fetchMore();
-              },
-              child: Text('retry').tr(),
-            ),
-          ],
+      return EmptyState(
+        icon: Symbols.error,
+        title: 'error'.tr(),
+        iconColor: colorScheme.error,
+        action: OutlinedButton(
+          onPressed: () {
+            setState(() {
+              _error = null;
+              _isInitialLoading = true;
+            });
+            _fetchMore();
+          },
+          child: Text('retry').tr(),
         ),
       );
     }
 
     if (_items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.inbox, size: 48, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 8),
-            Text(
-              'affiliationEmpty',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ).tr(),
-          ],
-        ),
-      );
+      return EmptyState(icon: Symbols.inbox, title: 'affiliationEmpty'.tr());
     }
 
     return ListView.builder(

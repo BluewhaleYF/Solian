@@ -17,6 +17,7 @@ import 'package:island/data/database.dart';
 import 'package:island/data/message.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -294,24 +295,9 @@ class _RoomStorageListState extends ConsumerState<_RoomStorageList> {
         const Divider(height: 1),
         Expanded(
           child: roomStats.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Symbols.chat_bubble,
-                        size: 64,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'settingsNoChatMessages'.tr(),
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+              ? EmptyState(
+                  icon: Symbols.chat_bubble,
+                  title: 'settingsNoChatMessages'.tr(),
                 )
               : ListView.builder(
                   padding: EdgeInsets.zero,

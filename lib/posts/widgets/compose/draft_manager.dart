@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/compose_storage_db.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -15,8 +16,6 @@ class DraftManagerSheet extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final searchController = useTextEditingController();
     final searchQuery = useState('');
     final uploadingDraftId = useState<String?>(null);
@@ -71,26 +70,12 @@ class DraftManagerSheet extends HookConsumerWidget {
           // Drafts list
           if (filteredDrafts.isEmpty)
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Symbols.draft,
-                      size: 64,
-                      color: colorScheme.onSurface.withOpacity(0.3),
-                    ),
-                    const Gap(16),
-                    Text(
-                      searchQuery.value.isEmpty
-                          ? 'noDrafts'.tr()
-                          : 'noSearchResults'.tr(),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
+              child: EmptyState(
+                icon: Symbols.draft,
+                title: searchQuery.value.isEmpty
+                    ? 'noDrafts'.tr()
+                    : 'noSearchResults'.tr(),
+                compact: true,
               ),
             )
           else

@@ -11,6 +11,7 @@ import 'package:island/core/services/time.dart';
 import 'package:island/core/utils/text.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -191,7 +192,7 @@ class _BadgesTab extends ConsumerWidget {
     return badgesAsync.when(
       data: (badges) {
         if (badges.isEmpty) {
-          return _EmptyState(icon: Symbols.stars, message: 'noBadges'.tr());
+          return EmptyState(icon: Symbols.stars, title: 'noBadges'.tr());
         }
 
         return CustomScrollView(
@@ -472,9 +473,9 @@ class _AchievementsTabState extends ConsumerState<_AchievementsTab> {
     return achievementsAsync.when(
       data: (achievements) {
         if (achievements.isEmpty) {
-          return _EmptyState(
+          return EmptyState(
             icon: Symbols.military_tech,
-            message: 'noAchievements'.tr(),
+            title: 'noAchievements'.tr(),
           );
         }
 
@@ -518,9 +519,9 @@ class _AchievementsTabState extends ConsumerState<_AchievementsTab> {
                 )
               else if (_searchResults == null || _searchResults!.isEmpty)
                 SliverFillRemaining(
-                  child: _EmptyState(
+                  child: EmptyState(
                     icon: Symbols.search_off,
-                    message: 'noSearchResults'.tr(),
+                    title: 'noSearchResults'.tr(),
                   ),
                 )
               else
@@ -563,10 +564,7 @@ class _QuestsTab extends ConsumerWidget {
     return questsAsync.when(
       data: (quests) {
         if (quests.isEmpty) {
-          return _EmptyState(
-            icon: Symbols.assignment,
-            message: 'noQuests'.tr(),
-          );
+          return EmptyState(icon: Symbols.assignment, title: 'noQuests'.tr());
         }
 
         final completedCount = quests.where((q) => q.isCompleted).length;
@@ -1832,36 +1830,6 @@ class _SeriesStagesList extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String message;
-
-  const _EmptyState({required this.icon, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const Gap(16),
-          Text(
-            message,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

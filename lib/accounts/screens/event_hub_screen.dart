@@ -16,6 +16,7 @@ import 'package:island/core/network.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -447,34 +448,10 @@ class EventHubScreen extends HookConsumerWidget {
     final searchResultsWidget = searchResultsAsync.when(
       data: (results) {
         if (results.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Symbols.search_off,
-                    size: 48,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                  ),
-                  const Gap(16),
-                  Text(
-                    'noSearchResults'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Gap(8),
-                  Text(
-                    'eventHubNoResultsHint'.tr(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return EmptyState(
+            icon: Symbols.search_off,
+            title: 'noSearchResults'.tr(),
+            description: 'eventHubNoResultsHint'.tr(),
           );
         }
         return _SearchResultsList(
@@ -487,27 +464,11 @@ class EventHubScreen extends HookConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Symbols.error, size: 48, color: colorScheme.error),
-              const Gap(16),
-              Text(
-                'eventHubSearchFailed'.tr(),
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              Text(
-                error.toString(),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
+      error: (error, _) => EmptyState(
+        icon: Symbols.error,
+        title: 'eventHubSearchFailed'.tr(),
+        description: error.toString(),
+        iconColor: colorScheme.error,
       ),
     );
 
@@ -2774,23 +2735,12 @@ class _NotableDayDetailDialog extends HookConsumerWidget {
   }
 
   Widget _buildErrorContent(BuildContext context, Object error) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Symbols.error, size: 48, color: colorScheme.error),
-        const Gap(16),
-        Text(
-          'eventHubFailedToLoadNotableDay'.tr(),
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        Text(
-          error.toString(),
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-        ),
-      ],
+    return EmptyState(
+      icon: Symbols.error,
+      title: 'eventHubFailedToLoadNotableDay'.tr(),
+      description: error.toString(),
+      iconColor: Theme.of(context).colorScheme.error,
+      compact: true,
     );
   }
 

@@ -14,6 +14,7 @@ import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/compose_link_attachments.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:mime/mime.dart';
@@ -529,10 +530,7 @@ class ImagePickerEditor extends HookConsumerWidget {
           final xfile = XFile.fromData(
             bytes,
             name: uploadName,
-            mimeType: _imageMimeType(
-              uploadName,
-              isEdited: image.isEdited,
-            ),
+            mimeType: _imageMimeType(uploadName, isEdited: image.isEdited),
           );
 
           final cloudFile = await ref
@@ -1003,33 +1001,13 @@ class ImagePickerEditor extends HookConsumerWidget {
 
             // Empty state
             if (totalCount == 0)
-              Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Symbols.photo_library,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const Gap(16),
-                    Text(
-                      'noImagesSelected'.tr(),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).hintColor,
-                      ),
-                    ),
-                    const Gap(8),
-                    Text(
-                      config.allowMultiple
-                          ? 'selectImagesHint'.tr()
-                          : 'selectImageHint'.tr(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).hintColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+              EmptyState(
+                icon: Symbols.photo_library,
+                title: 'noImagesSelected'.tr(),
+                description: config.allowMultiple
+                    ? 'selectImagesHint'.tr()
+                    : 'selectImageHint'.tr(),
+                compact: true,
               ).padding(vertical: 48),
 
             // Action buttons
