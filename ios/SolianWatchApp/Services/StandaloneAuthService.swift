@@ -7,7 +7,8 @@
 //  Lets the watch sign in on its own (no iPhone required) using the OAuth
 //  2.0 device authorization flow against Stargate:
 //
-//    POST {server}/stargate/auth/open/device/code     (form: client_id, scope)
+//    POST {server}/stargate/auth/open/device/code
+//      form: client_id, scope, device_id, device_name
 //      -> { device_code, user_code, verification_uri, expires_in, interval }
 //    POST {server}/stargate/auth/open/token           (poll)
 //      grant_type=urn:ietf:params:oauth:grant-type:device_code
@@ -24,6 +25,7 @@
 import Foundation
 import Security
 import Combine
+import WatchKit
 
 enum StandaloneAuthError: LocalizedError {
     case invalidServerUrl
@@ -105,13 +107,13 @@ final class StandaloneAuthService: ObservableObject, SessionCredentials {
     @Published private(set) var accountNick: String?
 
     /// The OIDC client this app authenticates as. Registered server-side with
-    /// slug `solian-on-watch`, `isPublicClient = true` (no secret needed —
-    /// the device code itself is the credential) and `allowedScopes = ["*"]`
-    /// (server does exact-match validation, so `*` is requested verbatim).
+    /// slug `solian`, `isPublicClient = true` (no secret needed — the device
+    /// code itself is the credential) and `allowedScopes` covering `*` (server
+    /// does exact-match validation, so `*` is requested verbatim).
     /// Overridable via the `SOLIAN_WATCH_CLIENT_ID` Info.plist key.
     static let clientId: String = {
         Bundle.main.object(forInfoDictionaryKey: "SOLIAN_WATCH_CLIENT_ID") as? String
-            ?? "solian-on-watch"
+            ?? "solian"
     }()
 
     private nonisolated static let serverKey = "solian.watch.serverUrl"
@@ -202,7 +204,49 @@ final class StandaloneAuthService: ObservableObject, SessionCredentials {
         let interval: Int
     }
 
+    /// The device identity declared on the device authorization request. Both
+    /// values are untrusted client input, so they only label the granted
+    /// session's device — authorization still comes from the user approving the
+    /// `user_code`. Stargate namespaces the id per client, so a declared id can
+    /// never attach this session to another client's device row.
+    private struct DeviceIdentity {
+        let id: String
+        let name: String
+    }
+
+    /// No `platform` is declared: watchOS is not one of Stargate's
+    /// `ClientPlatform` values, and `oauth-session-devices.md` treats an
+    /// unlisted platform as unidentified. Declaring the closest value (iOS)
+    /// would assert a platform the device is not.
+    private static func currentDeviceIdentity() -> DeviceIdentity {
+        let device = WKInterfaceDevice.current()
+        return DeviceIdentity(
+            id: deviceIdentifier(vendor: device.identifierForVendor),
+            name: device.name.isEmpty ? device.localizedModel : device.name
+        )
+    }
+
+    /// `identifierForVendor` is stable per app vendor but can be nil before the
+    /// watch is first unlocked. Fall back to an id generated once and persisted
+    /// in `UserDefaults` so the session still binds to a single device row.
+    private static func deviceIdentifier(vendor: UUID?) -> String {
+        if let vendor { return vendor.uuidString }
+        let key = "solian.watch.deviceId"
+        if let stored = defaults.string(forKey: key) { return stored }
+        let generated = UUID().uuidString
+        defaults.set(generated, forKey: key)
+        return generated
+    }
+
     /// POST /stargate/auth/open/device/code
+    ///
+    /// Declares this watch as the device on the request so the granted session
+    /// is labelled with it and revocable as one device. Without the declaration
+    /// Stargate falls back to the request's user agent and IP; this app's UA
+    /// matches no platform, so the session would show up unnamed. The token
+    /// request deliberately carries none of this: `device_code` already binds
+    /// the original request, and RFC 8628 fixes the token request to
+    /// `grant_type`, `device_code` and `client_id`.
     func startDeviceFlow(serverUrl: String, scope: String = "*") async throws -> DeviceCode {
         guard let baseURL = URL(string: serverUrl) else {
             throw StandaloneAuthError.invalidServerUrl
@@ -212,10 +256,13 @@ final class StandaloneAuthService: ObservableObject, SessionCredentials {
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("SolianWatch/1.0 (standalone)", forHTTPHeaderField: "User-Agent")
+        let device = Self.currentDeviceIdentity()
         var body = URLComponents()
         body.queryItems = [
             URLQueryItem(name: "client_id", value: Self.clientId),
             URLQueryItem(name: "scope", value: scope),
+            URLQueryItem(name: "device_id", value: device.id),
+            URLQueryItem(name: "device_name", value: device.name),
         ]
         request.httpBody = body.query?.data(using: .utf8)
 

@@ -842,7 +842,7 @@ class NetworkService {
     ///
     /// Used on sign-out so the logged-out watch doesn't linger in the account's
     /// session list. Only this device's session is affected: the watch
-    /// authenticates as its own `solian-on-watch` client.
+    /// authenticates as its own `solian` client.
     func revokeCurrentSession(token: String, serverUrl: String) async throws {
         try await deleteChecked(path: "/stargate/sessions/current", token: token, serverUrl: serverUrl)
     }
