@@ -330,13 +330,9 @@ class _PostsSearchTab extends HookConsumerWidget {
                               isRefreshable: false,
                               seperatorBuilder: (context, index, post) =>
                                   const Divider(height: 1),
-                              footerSkeletonChild: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: const PostItemSkeleton(
-                                  maxWidth: double.infinity,
-                                ),
+                              footerSkeletonChild: const PostItemSkeleton(
+                                maxWidth: double.infinity,
+                                showCard: false,
                               ),
                               itemBuilder: (context, index, post) {
                                 return PostActionableItem(
@@ -465,9 +461,9 @@ class _PostsSearchTab extends HookConsumerWidget {
                       ),
                       seperatorBuilder: (context, index, post) =>
                           const Divider(height: 1),
-                      footerSkeletonChild: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: const PostItemSkeleton(maxWidth: double.infinity),
+                      footerSkeletonChild: const PostItemSkeleton(
+                        maxWidth: double.infinity,
+                        showCard: false,
                       ),
                       itemBuilder: (context, index, post) {
                         return PostActionableItem(item: post, borderRadius: 8);

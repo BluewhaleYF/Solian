@@ -12,6 +12,12 @@ class PostItemSkeleton extends StatelessWidget {
   final double? borderRadius;
   final double maxWidth;
 
+  /// Whether the placeholder row draws its own [Card] surface. Hosts that
+  /// render the real rows as cards (bookmarks) keep it; hosts that lay rows
+  /// straight on the background pass false so the placeholder carries the same
+  /// full-bleed extent and insets as the rows it stands in for.
+  final bool showCard;
+
   const PostItemSkeleton({
     super.key,
     this.padding,
@@ -21,6 +27,7 @@ class PostItemSkeleton extends StatelessWidget {
     this.isCompact = false,
     this.borderRadius,
     this.maxWidth = 640,
+    this.showCard = true,
   });
 
   @override
@@ -28,37 +35,36 @@ class PostItemSkeleton extends StatelessWidget {
     final renderingPadding =
         padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
 
+    final row = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Gap(renderingPadding.vertical),
+        _PostHeaderSkeleton(
+          isFullPost: isFullPost,
+          isCompact: isCompact,
+          renderingPadding: renderingPadding,
+        ),
+        _PostBodySkeleton(
+          isFullPost: isFullPost,
+          renderingPadding: renderingPadding,
+        ),
+        if (isShowReference)
+          _ReferencedPostWidgetSkeleton(renderingPadding: renderingPadding),
+        if (isEmbedReply)
+          _PostReplyPreviewSkeleton(
+            renderingPadding: renderingPadding,
+          ).padding(horizontal: renderingPadding.horizontal, top: 8),
+        Gap(renderingPadding.vertical),
+      ],
+    );
+
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Card(
-          margin: EdgeInsets.only(bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Gap(renderingPadding.vertical),
-              _PostHeaderSkeleton(
-                isFullPost: isFullPost,
-                isCompact: isCompact,
-                renderingPadding: renderingPadding,
-              ),
-              _PostBodySkeleton(
-                isFullPost: isFullPost,
-                renderingPadding: renderingPadding,
-              ),
-              if (isShowReference)
-                _ReferencedPostWidgetSkeleton(
-                  renderingPadding: renderingPadding,
-                ),
-              if (isEmbedReply)
-                _PostReplyPreviewSkeleton(
-                  renderingPadding: renderingPadding,
-                ).padding(horizontal: renderingPadding.horizontal, top: 8),
-              Gap(renderingPadding.vertical),
-            ],
-          ),
-        ),
+        child: showCard
+            ? Card(margin: const EdgeInsets.only(bottom: 8), child: row)
+            : row,
       ),
     );
   }

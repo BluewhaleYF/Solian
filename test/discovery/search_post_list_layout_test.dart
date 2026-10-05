@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -10,8 +11,10 @@ import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/data/database.dart';
 import 'package:island/discovery/search.dart';
+import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
@@ -19,7 +22,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// Serves a canned posts page so the search tab renders real rows.
+///
+/// [until] gates the posts page, which keeps the section on its loading
+/// placeholders for as long as the caller wants.
 class _ScriptedAdapter implements HttpClientAdapter {
+  _ScriptedAdapter({this.until});
+
+  final Future<void>? until;
+
   @override
   void close({bool force = false}) {}
 
@@ -38,6 +48,7 @@ class _ScriptedAdapter implements HttpClientAdapter {
         headers: {Headers.contentTypeHeader: ['application/json']},
       );
     }
+    await until;
     return ResponseBody.fromString(
       jsonEncode([_postJson('p1'), _postJson('p2'), _postJson('p3')]),
       200,
@@ -69,10 +80,20 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  /// Pumps the shimmering loading state in bounded steps until the rows land.
+  Future<void> pumpUntilRows(WidgetTester tester) async {
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(PostActionableItem).evaluate().isNotEmpty) break;
+    }
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
   Future<void> pumpSearch(
     WidgetTester tester,
     Size size, {
     AppDatabase? database,
+    Future<void>? until,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     tester.view.devicePixelRatio = 1.0;
@@ -80,7 +101,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test'))
-      ..httpClientAdapter = _ScriptedAdapter();
+      ..httpClientAdapter = _ScriptedAdapter(until: until);
 
     await tester.runAsync(() async {
       await tester.pumpWidget(
@@ -112,11 +133,7 @@ void main() {
 
     // The skeleton shimmer animates indefinitely, so settle with bounded
     // pumps instead of pumpAndSettle and stop once the rows are up.
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-      if (find.byType(PostActionableItem).evaluate().isNotEmpty) break;
-    }
-    await tester.pump(const Duration(milliseconds: 300));
+    await pumpUntilRows(tester);
   }
 
   /// Unmounts inside the test body: VisibilityDetector reschedules a 500ms
@@ -198,6 +215,85 @@ void main() {
     expect(tester.getTopLeft(items.first).dy, lessThan(220));
     expect(find.byType(Divider), findsAtLeastNWidgets(2));
     await disposeTree(tester);
+  });
+
+  /// While the first page loads the section shows [PostItemSkeleton]
+  /// placeholders in place of the rows. They must carry the rows' own extent
+  /// and content inset, or the list jumps the moment the page lands.
+  Future<void> expectPlaceholderMatchesRows(
+    WidgetTester tester,
+    Size size, {
+    required int cardAncestors,
+  }) async {
+    final page = Completer<void>();
+    addTearDown(() {
+      if (!page.isCompleted) page.complete();
+    });
+
+    await pumpSearch(tester, size, until: page.future);
+
+    final placeholder = find.byType(PostItemSkeleton).first;
+    expect(placeholder, findsOneWidget);
+    expect(find.byType(PostActionableItem), findsNothing);
+    // Placeholders never bring a card surface of their own: the only card they
+    // may sit in is the pane wrapper their rows share.
+    expect(
+      find.ancestor(of: placeholder, matching: find.byType(Card)),
+      findsNWidgets(cardAncestors),
+    );
+    expect(
+      find.descendant(of: placeholder, matching: find.byType(Card)),
+      findsNothing,
+      reason: 'the rows render straight on the background',
+    );
+
+    final placeholderBox = tester.getRect(placeholder);
+    final placeholderAvatar = tester.getRect(
+      find.descendant(of: placeholder, matching: find.byType(Container)).first,
+    );
+
+    page.complete();
+    await pumpUntilRows(tester);
+
+    final row = find.byType(PostActionableItem).first;
+    expect(row, findsOneWidget);
+    expect(
+      find.ancestor(of: row, matching: find.byType(Card)),
+      findsNWidgets(cardAncestors),
+    );
+    final rowBox = tester.getRect(row);
+    final rowAvatar = tester.getRect(
+      find
+          .descendant(of: row, matching: find.byType(ProfilePictureWidget))
+          .first,
+    );
+
+    expect(placeholderBox.left, rowBox.left);
+    expect(placeholderBox.right, rowBox.right);
+    expect(placeholderAvatar.left, rowAvatar.left);
+    expect(placeholderAvatar.size, rowAvatar.size);
+
+    await disposeTree(tester);
+  }
+
+  testWidgets('narrow: the loading placeholder matches the row layout', (
+    tester,
+  ) async {
+    await expectPlaceholderMatchesRows(
+      tester,
+      const Size(400, 800),
+      cardAncestors: 0,
+    );
+  });
+
+  testWidgets('wide: the loading placeholder matches the row layout', (
+    tester,
+  ) async {
+    await expectPlaceholderMatchesRows(
+      tester,
+      const Size(1400, 900),
+      cardAncestors: 1,
+    );
   });
 
   /// The single app bar filter action (icon-only [IconButton]).
