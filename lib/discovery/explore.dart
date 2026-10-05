@@ -276,7 +276,7 @@ class ExploreScreen extends HookConsumerWidget {
           tooltip: 'postShuffle'.tr(),
           onPressed: () => context.router.push(const PostShuffleRoute()),
         ),
-        const Gap(8)
+        const Gap(8),
       ],
       title: SvgPicture.asset(
         'assets/icons/icon-outline.svg',
@@ -597,13 +597,15 @@ class ExploreScreen extends HookConsumerWidget {
             // Explore only, and only once the carousel has something to show:
             // the card would otherwise draw an empty header band above the
             // feed.
-            if (isExploreTab && hasFeaturedPosts)
+            if (isExploreTab && hasFeaturedPosts) ...[
               const SliverPadding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
                 sliver: SliverToBoxAdapter(
                   child: PostFeaturedList(flush: true),
                 ),
               ),
+              const SliverToBoxAdapter(child: Divider(height: 1)),
+            ],
             if (usePostList)
               _buildPostList(
                 context,
@@ -653,10 +655,6 @@ class ExploreScreen extends HookConsumerWidget {
   }
 }
 
-
-
-
-
 /// Position of a persisted section in the explore filter tabs:
 /// Explore (0), Subscriptions (1), Friends (2).
 int _filterTabIndex(String? filter) => switch (filter) {
@@ -668,10 +666,6 @@ int _filterTabIndex(String? filter) => switch (filter) {
 /// Reading measure of the wide explore timeline. A single column spanning the
 /// whole window reads as a stretched feed, so the pane is centred instead.
 const _kWideTimelineMaxWidth = 720.0;
-
-
-
-
 
 class _DiscoveryActivityItem extends ConsumerWidget {
   final Map<String, dynamic> data;

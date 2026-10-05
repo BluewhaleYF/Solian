@@ -125,7 +125,10 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       color: colorScheme.surfaceContainer.withOpacity(
         settings.cardTransparency,
       ),
-      elevation: settings.cardTransparency < 1 ? 0 : null,
+      // Every card is flat by default: separation comes from the container
+      // tint, not from a shadow. A call site that really wants depth must
+      // set `elevation` on the widget itself.
+      elevation: 0,
     ),
     inputDecorationTheme: InputDecorationThemeData(
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

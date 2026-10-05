@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:island/core/services/time.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -1386,6 +1387,7 @@ class FortuneCard extends StatelessWidget {
           if (showSealHeader) ...[
             FortuneSealHeader(
               level: level,
+              date: createdAt ?? DateTime.now(),
               lunarDate: lunarDate,
               levelColor: levelColor,
             ),
@@ -1412,7 +1414,6 @@ class FortuneCard extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-          if (hasPoem && hasSummary) const Gap(18),
           if (hasSummary)
             Text(
               summary!,
@@ -1658,12 +1659,14 @@ class _ActionItem extends StatelessWidget {
 
 class FortuneSealHeader extends StatelessWidget {
   final int level;
+  final DateTime? date;
   final Lunar? lunarDate;
   final Color levelColor;
 
   const FortuneSealHeader({
     super.key,
     required this.level,
+    required this.date,
     required this.lunarDate,
     required this.levelColor,
   });
@@ -1710,9 +1713,9 @@ class FortuneSealHeader extends StatelessWidget {
           // 农历 mark stacked in the margin the way a slip is annotated.
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
             children: [
-              Text('农\n历', style: noteStyle.copyWith(height: 1.05)),
-              const Gap(10),
+              if (date != null) Text(date!.formatCustom("yyyy-MM-dd")),
               Text(
                 '${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}',
                 style: noteStyle,

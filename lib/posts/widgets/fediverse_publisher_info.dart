@@ -23,20 +23,20 @@ import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
 /// ActivityPub level follow state that a local subscription cannot express.
 final fediverseActorRelationshipProvider = FutureProvider.autoDispose
     .family<FediverseActorRelationship?, String>((ref, actorId) async {
-  final client = ref.watch(solarNetworkClientProvider);
-  try {
-    return await client.sphere.getActorRelationship(actorId);
-  } catch (err) {
-    if (err is DioException && err.response?.statusCode == 404) return null;
-    rethrow;
-  }
-});
+      final client = ref.watch(solarNetworkClientProvider);
+      try {
+        return await client.sphere.getActorRelationship(actorId);
+      } catch (err) {
+        if (err is DioException && err.response?.statusCode == 404) return null;
+        rethrow;
+      }
+    });
 
 /// Posts of a remote actor, including its boosts and cached remote posts.
 final fediverseActorPostsProvider = AsyncNotifierProvider.autoDispose
     .family<FediverseActorPostsNotifier, PaginationState<SnPost>, String>(
-  FediverseActorPostsNotifier.new,
-);
+      FediverseActorPostsNotifier.new,
+    );
 
 class FediverseActorPostsNotifier extends AsyncNotifier<PaginationState<SnPost>>
     with AsyncPaginationController<SnPost> {
@@ -190,7 +190,7 @@ class FediverseActorTagsCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -210,10 +210,14 @@ class FediverseActorTagsCard extends StatelessWidget {
                             width: 24,
                             height: 24,
                             fit: BoxFit.contain,
-                            placeholder: (context, url) =>
-                                Text(name, style: const TextStyle(fontSize: 16)),
-                            errorWidget: (context, url, error) =>
-                                Text(name, style: const TextStyle(fontSize: 16)),
+                            placeholder: (context, url) => Text(
+                              name,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            errorWidget: (context, url, error) => Text(
+                              name,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                           )
                         : Text(name, style: const TextStyle(fontSize: 16)),
                   );
@@ -350,7 +354,7 @@ class FediverseFollowedMessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = data.metadata?['_misskey_followedMessage'] as String?;
-    if (message == null || message.isEmpty) return const SizedBox.shrink();
+    if (message?.isEmpty ?? true) return const SizedBox.shrink();
 
     return Card(
       margin: EdgeInsets.zero,
@@ -368,7 +372,7 @@ class FediverseFollowedMessageCard extends StatelessWidget {
             const Gap(8),
             Expanded(
               child: MarkdownTextContent(
-                content: message,
+                content: message!,
                 textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSecondaryContainer,
                 ),
@@ -443,7 +447,9 @@ class FediversePublisherInfoCards extends StatelessWidget {
       spacing: 12,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FediverseFollowedMessageCard(data: data),
+        if ((data.metadata?['_misskey_followedMessage'] as String?)?.isNotEmpty ??
+            false)
+          FediverseFollowedMessageCard(data: data),
         FediverseOriginHintCard(data: data),
         FediverseActorTagsCard(data: data),
         FediverseActorFieldsCard(data: data),

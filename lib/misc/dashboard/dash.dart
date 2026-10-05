@@ -144,65 +144,58 @@ class DashboardGrid extends HookConsumerWidget {
     // Check if user is authenticated
     final isAuthenticated = userInfo.value != null;
 
-    return Theme(
-      // Flat cards everywhere on the dashboard: the container tint alone
-      // separates a card from the backdrop, no shadow or surface overlay.
-      data: Theme.of(
-        context,
-      ).copyWith(cardTheme: Theme.of(context).cardTheme.copyWith(elevation: 0)),
-      child: Stack(
-        children: [
-          Container(
-            padding: isAuthenticated
-                ? EdgeInsets.only(top: devicePadding.top)
-                : EdgeInsets.zero,
-            child: isAuthenticated
-                ? (isWide
-                      // Desktop: one scroll, so the band can rest the
-                      // search bar near vertical center by default.
-                      ? _DashboardGridWide(topBand: topBand)
-                      : _DashboardGridNarrowScroll(topBand: topBand))
-                : Center(child: _UnauthorizedCard(isWide: isWide)),
-          ),
-          // Customize button (positioned for wide screens only)
-          if (isWide && isAuthenticated)
-            Positioned(
-              bottom: _kGutterExpanded - 8,
-              right: _kGutterExpanded - 8,
-              child: TextButton.icon(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    useRootNavigator: true,
-                    builder: (context) => const DashboardCustomizationSheet(),
-                  );
-                },
-                icon: Icon(
-                  Symbols.tune,
-                  size: 16,
+    return Stack(
+      children: [
+        Container(
+          padding: isAuthenticated
+              ? EdgeInsets.only(top: devicePadding.top)
+              : EdgeInsets.zero,
+          child: isAuthenticated
+              ? (isWide
+                    // Desktop: one scroll, so the band can rest the
+                    // search bar near vertical center by default.
+                    ? _DashboardGridWide(topBand: topBand)
+                    : _DashboardGridNarrowScroll(topBand: topBand))
+              : Center(child: _UnauthorizedCard(isWide: isWide)),
+        ),
+        // Customize button (positioned for wide screens only)
+        if (isWide && isAuthenticated)
+          Positioned(
+            bottom: _kGutterExpanded - 8,
+            right: _kGutterExpanded - 8,
+            child: TextButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  useRootNavigator: true,
+                  builder: (context) => const DashboardCustomizationSheet(),
+                );
+              },
+              icon: Icon(
+                Symbols.tune,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              label: Text(
+                'customize',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                label: Text(
-                  'customize',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ).tr(),
-                style: TextButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              ).tr(),
+              style: TextButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
