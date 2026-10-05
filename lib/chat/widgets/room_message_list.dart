@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:gap/gap.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:island/chat/widgets/chat_room_member_card.dart';
 import 'package:island/chat/pods/chat_room_state.dart';
 import 'package:island/chat/widgets/message_item_wrapper.dart';
 import 'package:island/chat/widgets/online_avatar_badge.dart';
+import 'package:island/chat/widgets/sticky_avatar_box.dart';
 import 'package:island/core/config.dart';
 import 'package:island/data/message.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -211,6 +213,12 @@ class RoomMessageList extends HookConsumerWidget {
     final messageLoadGap = ref.watch(
       chatRoomStateProvider(roomId).select((state) => state.messageLoadGap),
     );
+    // Messages that carry a timeline marker directly above them. Each one also
+    // ends the sender run it sits in.
+    final markerBoundaryIds = useMemoized(
+      () => <String>{?messageLoadGap?.newerMessageId, ?lastReadAnchorMessageId},
+      [messageLoadGap, lastReadAnchorMessageId],
+    );
     final chatStateNotifier = ref.read(chatRoomStateProvider(roomId).notifier);
     final skipInitialLoadMessageAnimations = useState(true);
     final previousMessageCount = useRef<int?>(null);
@@ -302,6 +310,12 @@ class RoomMessageList extends HookConsumerWidget {
             ? displayMessages[index + 1]
             : null;
         final previousMessage = index > 0 ? displayMessages[index - 1] : null;
+        // A timeline marker sits directly above the message it precedes, so it
+        // also ends the run of bubbles it lands in: the reader gets a fresh
+        // sender header and free corners on the far side of the seam instead of
+        // one connected block with a rule punched through it.
+        bool hasMarkerAbove(LocalChatMessage item) =>
+            markerBoundaryIds.contains(item.id);
         bool isSameSenderGroup(LocalChatMessage? other) {
           return other != null &&
               other.senderId == message.senderId &&
@@ -309,8 +323,11 @@ class RoomMessageList extends HookConsumerWidget {
                   3;
         }
 
-        final isLastInGroup = !isSameSenderGroup(nextMessage);
-        final isFirstInGroup = !isSameSenderGroup(previousMessage);
+        final isLastInGroup =
+            !isSameSenderGroup(nextMessage) || hasMarkerAbove(message);
+        final isFirstInGroup =
+            !isSameSenderGroup(previousMessage) ||
+            (previousMessage != null && hasMarkerAbove(previousMessage));
         if (useStickyGroupedDisplay && !isFirstInGroup) {
           return const SizedBox.shrink();
         }
@@ -320,6 +337,7 @@ class RoomMessageList extends HookConsumerWidget {
           for (var i = index + 1; i < displayMessages.length; i++) {
             final groupedMessage = displayMessages[i];
             if (groupedMessage.senderId != message.senderId ||
+                hasMarkerAbove(groupedMessages.last) ||
                 groupedMessage.createdAt
                         .difference(groupedMessages.last.createdAt)
                         .inMinutes
@@ -334,9 +352,34 @@ class RoomMessageList extends HookConsumerWidget {
         final key = Key(
           '$messageKeyPrefix${message.clientMessageId ?? message.id}',
         );
-        final showLastReadMarker =
-            lastReadAnchorMessageId != null &&
-            message.id == lastReadAnchorMessageId;
+
+        /// The "messages skipped" seam and the "new messages" rule belong to
+        /// the message they precede. A group renders every bubble of its
+        /// sender from one item, so the markers have to be offered to each of
+        /// those bubbles — attaching them to the item alone would drop them
+        /// whenever the boundary falls inside a group.
+        Widget? markersBefore(LocalChatMessage item) {
+          final gap = messageLoadGap;
+          final showGap = gap != null && gap.newerMessageId == item.id;
+          final showRead =
+              lastReadAnchorMessageId != null &&
+              item.id == lastReadAnchorMessageId;
+          if (!showGap && !showRead) return null;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (showGap)
+                _MessageLoadGapMarker(
+                  key: ValueKey(
+                    'message-gap-${gap.newerMessageId}-${gap.olderMessageId}',
+                  ),
+                  onLoad: () => onLoadMessageGap(gap),
+                ),
+              if (showRead) const _LastReadMarker(),
+            ],
+          );
+        }
 
         Widget buildMessage(
           LocalChatMessage item,
@@ -373,31 +416,43 @@ class RoomMessageList extends HookConsumerWidget {
           'group-avatar-$roomId-${message.clientMessageId ?? message.id}',
         );
 
-        final messageContent =
-            useStickyGroupedDisplay && groupedMessages.length > 1
+        final grouped = useStickyGroupedDisplay && groupedMessages.length > 1;
+        final groupChildren = <Widget>[];
+        if (grouped) {
+          // Oldest first: the group reads top to bottom in the order it was
+          // written, and each marker lands directly above its own bubble.
+          for (var i = groupedMessages.length - 1; i >= 0; i--) {
+            final groupedMessage = groupedMessages[i];
+            final markers = markersBefore(groupedMessage);
+            if (markers != null) groupChildren.add(markers);
+            groupChildren.add(
+              buildMessage(
+                groupedMessage,
+                index + i,
+                isFirstInGroup: i == 0,
+                isLastInGroup: i == groupedMessages.length - 1,
+                drawBubbleAvatar: false,
+                drawColumnAvatar: false,
+                avatarAnchorKey: i == groupedMessages.length - 1
+                    ? groupAvatarAnchorKey
+                    : null,
+              ),
+            );
+          }
+        }
+
+        final rowMarkers = markersBefore(message);
+        final messageContent = grouped
             ? _StickyBubbleMessageGroup(
                 key: ValueKey(
                   'sticky-group-${message.clientMessageId ?? message.id}',
                 ),
                 roomId: roomId,
                 sender: message.toRemoteMessage().sender,
-                avatarSize: useColumnDisplay ? 24 : 32,
+                avatarRadius: useColumnDisplay ? 12 : 16,
                 avatarAnchorKey: groupAvatarAnchorKey,
                 stickyEnabled: !disableAnimationSetting,
-                children: [
-                  for (var i = groupedMessages.length - 1; i >= 0; i--)
-                    buildMessage(
-                      groupedMessages[i],
-                      index + i,
-                      isFirstInGroup: i == 0,
-                      isLastInGroup: i == groupedMessages.length - 1,
-                      drawBubbleAvatar: false,
-                      drawColumnAvatar: false,
-                      avatarAnchorKey: i == groupedMessages.length - 1
-                          ? groupAvatarAnchorKey
-                          : null,
-                    ),
-                ],
+                children: groupChildren,
               )
             : buildMessage(
                 message,
@@ -412,16 +467,7 @@ class RoomMessageList extends HookConsumerWidget {
           key: key,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (messageLoadGap?.newerMessageId == message.id)
-              _MessageLoadGapMarker(
-                key: ValueKey(
-                  'message-gap-${messageLoadGap!.newerMessageId}-${messageLoadGap.olderMessageId}',
-                ),
-                onLoad: () => onLoadMessageGap(messageLoadGap),
-              ),
-            // Only one row can own the marker. Avoid placing an AnimatedSize
-            // (and its hidden child) in every visible message during a fling.
-            if (showLastReadMarker) const _LastReadMarker(),
+            if (!grouped && rowMarkers != null) rowMarkers,
             messageContent,
           ],
         );
@@ -462,19 +508,60 @@ class _MessageLoadGapMarkerState extends State<_MessageLoadGapMarker> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: TextButton.icon(
-        onPressed: _isLoading ? null : _load,
-        icon: _isLoading
-            ? const SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.unfold_more, size: 18),
-        label: Text(
-          _isLoading ? 'Loading messages…' : 'Messages skipped — tap to load',
-        ),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final muted = colorScheme.onSurfaceVariant;
+
+    return Padding(
+      // The seam reads as a break in the timeline: a hairline on each side and
+      // the way to close the gap in the middle. The label stays on one line and
+      // ellipsizes rather than overflowing on narrow screens or long
+      // translations.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Divider(height: 1, color: colorScheme.outlineVariant),
+          ),
+          const Gap(8),
+          Flexible(
+            child: TextButton.icon(
+              onPressed: _isLoading ? null : _load,
+              style: TextButton.styleFrom(
+                foregroundColor: muted,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: theme.textTheme.labelMedium,
+              ),
+              icon: _isLoading
+                  ? SizedBox.square(
+                      dimension: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: muted,
+                      ),
+                    )
+                  : const Icon(Icons.unfold_more_rounded, size: 16),
+              label: Text(
+                (_isLoading
+                        ? 'chatLoadingEarlierMessages'
+                        : 'chatLoadEarlierMessages')
+                    .tr(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          const Gap(8),
+          Expanded(
+            child: Divider(height: 1, color: colorScheme.outlineVariant),
+          ),
+        ],
       ),
     );
   }
@@ -485,26 +572,34 @@ class _LastReadMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: colorScheme.primaryContainer),
+    return Padding(
+      // A rule rather than a banner: the reader needs the boundary, not a
+      // second announcement of it.
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: [
           Icon(
-            Icons.bookmark_added,
-            size: 20,
-            color: colorScheme.onPrimaryContainer,
+            Icons.bookmark_added_rounded,
+            size: 16,
+            color: colorScheme.primary,
           ),
-          const SizedBox(width: 12),
+          const Gap(6),
+          Text(
+            'newMessageBelow'.tr(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const Gap(12),
           Expanded(
-            child: Text(
-              'newMessageBelow'.tr(),
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-              ),
+            child: Divider(
+              height: 1,
+              color: colorScheme.primary.withValues(alpha: 0.4),
             ),
           ),
         ],
@@ -513,13 +608,13 @@ class _LastReadMarker extends StatelessWidget {
   }
 }
 
-class _StickyBubbleMessageGroup extends StatefulWidget {
+class _StickyBubbleMessageGroup extends StatelessWidget {
   static const double _viewportTopMargin = 12;
 
   final String roomId;
   final SnChatMember sender;
-  final double avatarSize;
-  final GlobalKey<State<StatefulWidget>>? avatarAnchorKey;
+  final double avatarRadius;
+  final GlobalKey? avatarAnchorKey;
   final bool stickyEnabled;
   final List<Widget> children;
 
@@ -527,242 +622,49 @@ class _StickyBubbleMessageGroup extends StatefulWidget {
     super.key,
     required this.roomId,
     required this.sender,
-    required this.avatarSize,
+    required this.avatarRadius,
     required this.avatarAnchorKey,
     required this.stickyEnabled,
     required this.children,
   });
 
   @override
-  State<_StickyBubbleMessageGroup> createState() =>
-      _StickyBubbleMessageGroupState();
-}
-
-class _StickyBubbleMessageGroupState extends State<_StickyBubbleMessageGroup> {
-  final _groupKey = GlobalKey();
-  final _avatarKey = GlobalKey<_StickyGroupAvatarState>();
-
-  @override
   Widget build(BuildContext context) {
-    return NotificationListener<SizeChangedLayoutNotification>(
-      onNotification: (_) {
-        _avatarKey.currentState?._scheduleLayoutRefresh();
-        return false;
-      },
-      child: SizeChangedLayoutNotifier(
-        child: Stack(
-          key: _groupKey,
-          clipBehavior: Clip.none,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: widget.children,
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              child: _StickyGroupAvatar(
-                key: _avatarKey,
-                childCount: widget.children.length,
-                groupKey: _groupKey,
-                roomId: widget.roomId,
-                sender: widget.sender,
-                avatarSize: widget.avatarSize,
-                avatarAnchorKey: widget.avatarAnchorKey,
-                stickyEnabled: widget.stickyEnabled,
-              ),
-            ),
-          ],
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
         ),
-      ),
-    );
-  }
-}
-
-class _StickyGroupAvatar extends StatefulWidget {
-  final GlobalKey groupKey;
-  final String roomId;
-  final SnChatMember sender;
-  final double avatarSize;
-  final int childCount;
-  final GlobalKey<State<StatefulWidget>>? avatarAnchorKey;
-  final bool stickyEnabled;
-
-  const _StickyGroupAvatar({
-    super.key,
-    required this.groupKey,
-    required this.roomId,
-    required this.sender,
-    required this.avatarSize,
-    required this.childCount,
-    required this.avatarAnchorKey,
-    required this.stickyEnabled,
-  });
-
-  @override
-  State<_StickyGroupAvatar> createState() => _StickyGroupAvatarState();
-}
-
-class _StickyGroupAvatarState extends State<_StickyGroupAvatar> {
-  ScrollPosition? _position;
-  bool _framePending = false;
-  double? _resolvedBaseTop;
-  double? _resolvedBaseLeft;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateScrollPosition();
-    _scheduleLayoutRefresh();
-  }
-
-  @override
-  void didUpdateWidget(covariant _StickyGroupAvatar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _updateScrollPosition();
-
-    // Message heights and the anchor can change when a message is sent,
-    // edited, or replaced by its server version. Recompute after that layout
-    // without rebuilding the whole message group.
-    if (oldWidget.childCount != widget.childCount ||
-        oldWidget.stickyEnabled != widget.stickyEnabled ||
-        oldWidget.avatarAnchorKey != widget.avatarAnchorKey) {
-      _scheduleLayoutRefresh();
-    }
-  }
-
-  @override
-  void dispose() {
-    _position?.removeListener(_handleScroll);
-    super.dispose();
-  }
-
-  void _updateScrollPosition() {
-    final nextPosition = widget.stickyEnabled ? _readScrollPosition() : null;
-    if (identical(_position, nextPosition)) return;
-
-    _position?.removeListener(_handleScroll);
-    _position = nextPosition;
-    _position?.addListener(_handleScroll);
-  }
-
-  ScrollPosition? _readScrollPosition() {
-    final scrollable = Scrollable.maybeOf(context);
-    if (scrollable == null) return null;
-
-    try {
-      return scrollable.position;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _handleScroll() {
-    if (mounted) setState(() {});
-  }
-
-  void _scheduleLayoutRefresh() {
-    if (_framePending || !mounted) return;
-    _framePending = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _framePending = false;
-      if (mounted) setState(() {});
-    });
-  }
-
-  /// Top-left corner of the anchor row — the group's oldest message, the one
-  /// that draws its own avatar when it is not grouped — expressed in the
-  /// group's coordinate space. Both the horizontal and the vertical placement
-  /// of the overlay come from here, so a grouped avatar lands exactly where a
-  /// single message's avatar does, and it follows the selection gutter.
-  Offset? _anchorOrigin(RenderBox? groupBox) {
-    if (groupBox == null || !groupBox.hasSize) return null;
-
-    final anchorBox =
-        widget.avatarAnchorKey?.currentContext?.findRenderObject()
-            as RenderBox?;
-    if (anchorBox == null || !anchorBox.hasSize) return null;
-
-    try {
-      return anchorBox.localToGlobal(Offset.zero, ancestor: groupBox);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  double? _avatarLeft(Offset? origin) {
-    if (origin != null) _resolvedBaseLeft = origin.dx;
-    return _resolvedBaseLeft;
-  }
-
-  double? _avatarOffset(RenderBox? groupBox, Offset? origin) {
-    if (origin != null) {
-      _resolvedBaseTop = origin.dy;
-    }
-    final baseTop = _resolvedBaseTop;
-    if (baseTop == null) return null;
-    if (groupBox == null || !groupBox.hasSize || !widget.stickyEnabled) {
-      return baseTop;
-    }
-
-    final scrollable = Scrollable.maybeOf(context);
-    if (scrollable == null) return baseTop;
-
-    final viewportBox = scrollable.context.findRenderObject() as RenderBox?;
-    if (viewportBox == null || !viewportBox.hasSize) return baseTop;
-
-    final double groupTop;
-    try {
-      groupTop =
-          groupBox.localToGlobal(Offset.zero).dy -
-          viewportBox.localToGlobal(Offset.zero).dy;
-    } catch (_) {
-      return baseTop;
-    }
-
-    final maxOffset = (groupBox.size.height - widget.avatarSize).clamp(
-      0.0,
-      double.infinity,
-    );
-    if (maxOffset <= baseTop) return baseTop;
-
-    final stickyDelta = _StickyBubbleMessageGroup._viewportTopMargin - groupTop;
-    return (baseTop + stickyDelta).clamp(baseTop, maxOffset);
-  }
-
-  Widget _buildAvatar(double left, double offset) {
-    // Keep the hit-test box at the same position as the painted avatar. A
-    // Transform can paint the avatar outside the positioned child's original
-    // bounds, which makes the member-card gesture intermittently miss while
-    // the avatar is sticky or a message is expanding.
-    return Padding(
-      padding: EdgeInsets.only(left: left, top: offset),
-      child: RepaintBoundary(
-        child: ChatRoomMemberRegion(
-          roomId: widget.roomId,
-          member: widget.sender,
-          child: OnlineAvatarBadge(
-            roomId: widget.roomId,
-            accountId: widget.sender.accountId,
-            child: ProfilePictureWidget(
-              file: widget.sender.account.profile.picture,
-              fallbackName: widget.sender.account.nick,
-              radius: widget.avatarSize / 2,
+        // The whole group draws a single avatar, anchored on the row that owns
+        // the avatar slot — its oldest message. StickyAvatarBox keeps it
+        // pinned to the viewport while the group scrolls beneath it.
+        Positioned(
+          left: 0,
+          top: 0,
+          child: StickyAvatarBox(
+            anchorKey: avatarAnchorKey,
+            topMargin: _viewportTopMargin,
+            enabled: stickyEnabled,
+            child: RepaintBoundary(
+              child: ChatRoomMemberRegion(
+                roomId: roomId,
+                member: sender,
+                child: OnlineAvatarBadge(
+                  roomId: roomId,
+                  accountId: sender.accountId,
+                  child: ProfilePictureWidget(
+                    file: sender.account.profile.picture,
+                    fallbackName: sender.account.nick,
+                    radius: avatarRadius,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final groupBox =
-        widget.groupKey.currentContext?.findRenderObject() as RenderBox?;
-    final origin = _anchorOrigin(groupBox);
-    final left = _avatarLeft(origin);
-    final offset = _avatarOffset(groupBox, origin);
-    if (left == null || offset == null) return const SizedBox.shrink();
-    return _buildAvatar(left, offset);
   }
 }

@@ -18,6 +18,7 @@ import 'package:island/chat/pods/chat_share_payload.dart';
 import 'package:island/chat/pods/chat_room_state.dart';
 import 'package:island/chat/pods/chat_subscribe.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/content/media_playback.dart';
 import 'package:island/chat/widgets/call_button.dart';
 import 'package:island/chat/widgets/call_overlay.dart';
@@ -839,14 +840,15 @@ class ChatRoomScreen extends HookConsumerWidget {
       }
       final destinationName = destinationRoom?.name?.trim().isNotEmpty == true
           ? destinationRoom!.name!
-          : 'this room';
+          : 'chatRedirectUnknownRoom'.tr();
+      final countPhrase = 'chatRedirectMessagesCount'.plural(
+        selectedMessages.length,
+      );
 
       if (!context.mounted) return;
 
       final shouldProceed = await showConfirmAlert(
-        'chatRedirectConfirmBody'.tr(
-          args: [selectedMessages.length.toString(), destinationName],
-        ),
+        'chatRedirectConfirmBody'.tr(args: [countPhrase, destinationName]),
         'chatRedirectConfirmTitle'.tr(),
       );
 
@@ -862,9 +864,7 @@ class ChatRoomScreen extends HookConsumerWidget {
 
         if (!context.mounted) return;
         chatStateNotifier.exitSelectionMode();
-        showSnackBar(
-          'chatRedirectSuccess'.tr(args: [selectedMessages.length.toString()]),
-        );
+        showSnackBar('chatRedirectSuccess'.tr(args: [countPhrase]));
       } catch (err) {
         showErrorAlert(err);
       } finally {
@@ -1024,7 +1024,7 @@ class ChatRoomScreen extends HookConsumerWidget {
                     data: (room) => room == null
                         ? const SizedBox.shrink()
                         : _RoomAppBarTitle(roomId: id, room: room),
-                    loading: () => const Text('Loading...'),
+                    loading: () => Text('loading'.tr()),
                     error: (err, _) => ResponseErrorWidget(
                       error: err,
                       onRetry: () => messagesNotifier.loadInitial(),
@@ -1567,11 +1567,10 @@ class _RedirectRoomSelectorSheet extends HookConsumerWidget {
               .toList();
 
           if (rooms.where((room) => room.encryptionMode == 0).isEmpty) {
-            return Center(
-              child: Text(
-                'noChatRoomsAvailable'.tr(),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            return EmptyState(
+              compact: true,
+              icon: Icons.forum_outlined,
+              title: 'noChatRoomsAvailable'.tr(),
             );
           }
 
@@ -1585,9 +1584,10 @@ class _RedirectRoomSelectorSheet extends HookConsumerWidget {
                 onSelected: (value) => filter.value = value,
               ),
               if (filteredRooms.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Center(child: Text('noChatRoomsAvailable'.tr())),
+                EmptyState(
+                  compact: true,
+                  icon: Icons.search_off_rounded,
+                  title: 'noResultsFound'.tr(),
                 )
               else
                 _RedirectRoomGroup(
@@ -1633,13 +1633,17 @@ class _RedirectRoomGroup extends StatelessWidget {
             selected: room.id == currentRoomId,
             subtitle: room.id == currentRoomId
                 ? Text(
-                    'Current room',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontStyle: FontStyle.italic,
+                    'chatRedirectCurrentRoom'.tr(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   )
                 : null,
-            onTap: () => Navigator.of(context).pop(room.id),
+            // The room being read is not a destination: leave the row inert
+            // instead of bouncing the reader back to where they started.
+            onTap: room.id == currentRoomId
+                ? null
+                : () => Navigator.of(context).pop(room.id),
           ),
       ],
     );

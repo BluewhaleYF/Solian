@@ -28,9 +28,10 @@ class RoomSelectionMode extends StatelessWidget {
     final hasSelection = selectedCount > 0;
 
     return Material(
+      // The bar sits above the composer as a quiet strip: surface contrast and
+      // its own hairline instead of a floating shadow.
       color: colorScheme.surfaceContainerHigh,
-      elevation: 6,
-      shadowColor: colorScheme.shadow.withValues(alpha: 0.18),
+      elevation: 0,
       child: SafeArea(
         top: false,
         child: Column(
@@ -68,22 +69,26 @@ class RoomSelectionMode extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      _SelectionActionButton(
-                        icon: Symbols.send,
-                        label: 'redirect'.tr(),
-                        enabled: hasSelection,
-                        onPressed: onRedirect,
-                        filled: false,
-                        compact: compact,
+                      Flexible(
+                        child: _SelectionActionButton(
+                          icon: Symbols.send,
+                          label: 'redirect'.tr(),
+                          enabled: hasSelection,
+                          onPressed: onRedirect,
+                          filled: false,
+                          compact: compact,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      _SelectionActionButton(
-                        icon: Symbols.login,
-                        label: 'chatRedirectToCurrentChat'.tr(),
-                        enabled: hasSelection,
-                        onPressed: onRedirectToCurrentChat,
-                        filled: true,
-                        compact: compact,
+                      Flexible(
+                        child: _SelectionActionButton(
+                          icon: Symbols.move_to_inbox,
+                          label: 'chatRedirectToCurrentChat'.tr(),
+                          enabled: hasSelection,
+                          onPressed: onRedirectToCurrentChat,
+                          filled: true,
+                          compact: compact,
+                        ),
                       ),
                       const SizedBox(width: 8),
                     ],
@@ -155,6 +160,8 @@ class _SelectionActionButton extends StatelessWidget {
         label: Text(
           label,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

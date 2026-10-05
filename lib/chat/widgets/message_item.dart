@@ -18,6 +18,7 @@ import 'package:island/chat/widgets/chat_room_member_card.dart';
 import 'package:island/chat/widgets/message_indicators.dart';
 import 'package:island/chat/widgets/message_sender_info.dart';
 import 'package:island/chat/widgets/online_avatar_badge.dart';
+import 'package:island/chat/widgets/sticky_avatar_box.dart';
 import 'package:island/chat/messages_notifier.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/accounts/widgets/account/account_name.dart';
@@ -1824,7 +1825,10 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
   }
 }
 
-class _StickyAvatarMessageRow extends StatefulWidget {
+/// A bubble row with its sender avatar drawn in the gutter beside it. The
+/// avatar pins to the top of the viewport while the row is taller than the
+/// avatar, so a long message keeps a visible sender.
+class _StickyAvatarMessageRow extends StatelessWidget {
   static const double _size = MessageItemDisplayBubble._avatarSize;
   static const double _contentOffset = MessageItemDisplayBubble._contentOffset;
   static const double _viewportTopMargin = 12;
@@ -1841,108 +1845,30 @@ class _StickyAvatarMessageRow extends StatefulWidget {
   });
 
   @override
-  State<_StickyAvatarMessageRow> createState() =>
-      _StickyAvatarMessageRowState();
-}
-
-class _StickyAvatarMessageRowState extends State<_StickyAvatarMessageRow> {
-  final _key = GlobalKey();
-  ScrollPosition? _position;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateScrollPosition();
-  }
-
-  @override
-  void dispose() {
-    _position?.removeListener(_handleScroll);
-    super.dispose();
-  }
-
-  void _updateScrollPosition() {
-    final nextPosition = _readScrollPosition();
-    if (identical(_position, nextPosition)) return;
-
-    _position?.removeListener(_handleScroll);
-    _position = nextPosition;
-    _position?.addListener(_handleScroll);
-  }
-
-  ScrollPosition? _readScrollPosition() {
-    final scrollable = Scrollable.maybeOf(context);
-    if (scrollable == null) return null;
-
-    try {
-      return scrollable.position;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _handleScroll() {
-    if (!mounted || !widget.showAvatar) return;
-    setState(() {});
-  }
-
-  double _avatarOffset() {
-    final scrollable = Scrollable.maybeOf(context);
-    if (scrollable == null) return 0;
-
-    final box = _key.currentContext?.findRenderObject() as RenderBox?;
-    final viewportBox = scrollable.context.findRenderObject() as RenderBox?;
-    if (box == null ||
-        viewportBox == null ||
-        !box.hasSize ||
-        !viewportBox.hasSize) {
-      return 0;
-    }
-
-    final double rowTop;
-    try {
-      rowTop =
-          box.localToGlobal(Offset.zero).dy -
-          viewportBox.localToGlobal(Offset.zero).dy;
-    } catch (_) {
-      return 0;
-    }
-    final maxOffset = (box.size.height - _StickyAvatarMessageRow._size).clamp(
-      0.0,
-      double.infinity,
-    );
-    return (_StickyAvatarMessageRow._viewportTopMargin - rowTop).clamp(
-      0.0,
-      maxOffset,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    _updateScrollPosition();
-    final offset = widget.showAvatar ? _avatarOffset() : 0.0;
     return SizedBox(
-      key: _key,
       width: double.infinity,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Padding(
-            padding: const EdgeInsets.only(
-              left: _StickyAvatarMessageRow._contentOffset,
-            ),
-            child: widget.child,
+            padding: const EdgeInsets.only(left: _contentOffset),
+            child: child,
           ),
-          if (widget.showAvatar)
+          if (showAvatar)
             Positioned(
               left: 0,
-              top: offset,
-              child: SizedBox(
-                width: _StickyAvatarMessageRow._size,
-                height: _StickyAvatarMessageRow._size,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: widget.avatar,
+              top: 0,
+              child: StickyAvatarBox(
+                topMargin: _viewportTopMargin,
+                // The avatar is re-composited on every scroll frame while it is
+                // pinned; keep its own layer so that costs no re-rasterizing.
+                child: RepaintBoundary(
+                  child: SizedBox(
+                    width: _size,
+                    height: _size,
+                    child: Align(alignment: Alignment.topCenter, child: avatar),
+                  ),
                 ),
               ),
             ),
