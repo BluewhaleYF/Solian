@@ -1768,11 +1768,15 @@ class _PublisherFediverseSheet extends HookConsumerWidget {
     final isDiscoverable = useState<bool?>(null);
 
     useEffect(() {
-      actorType.value = actor?.actorType ?? 'Person';
-      isLocked.value = actor?.isLocked ?? false;
-      isDiscoverable.value = actor?.isDiscoverable ?? true;
+      actorType.value = actor?.activitypub?.actorType ?? 'Person';
+      isLocked.value = actor?.activitypub?.isLocked ?? false;
+      isDiscoverable.value = actor?.activitypub?.isDiscoverable ?? true;
       return null;
-    }, [actor?.actorType, actor?.isLocked, actor?.isDiscoverable]);
+    }, [
+      actor?.activitypub?.actorType,
+      actor?.activitypub?.isLocked,
+      actor?.activitypub?.isDiscoverable,
+    ]);
 
     Future<void> saveActorSettings({
       String? nextActorType,
@@ -1795,9 +1799,9 @@ class _PublisherFediverseSheet extends HookConsumerWidget {
       } catch (err) {
         showErrorAlert(err);
         // Roll the optimistic update back to the last known server state.
-        actorType.value = actor?.actorType ?? 'Person';
-        isLocked.value = actor?.isLocked ?? false;
-        isDiscoverable.value = actor?.isDiscoverable ?? true;
+        actorType.value = actor?.activitypub?.actorType ?? 'Person';
+        isLocked.value = actor?.activitypub?.isLocked ?? false;
+        isDiscoverable.value = actor?.activitypub?.isDiscoverable ?? true;
       }
     }
 
@@ -2020,8 +2024,8 @@ class _PublisherSubscriberSheet extends HookConsumerWidget {
     // the section when either is on, otherwise locked actors would queue
     // requests nobody can see or approve.
     final actorStatus = ref.watch(publisherActorStatusProvider(publisherUname));
-    final requiresApproval =
-        followRequiresApproval || (actorStatus.value?.actor?.isLocked ?? false);
+    final requiresApproval = followRequiresApproval ||
+        (actorStatus.value?.actor?.activitypub?.isLocked ?? false);
     final subscriberListProvider = publisherSubscriberListNotifierProvider(
       publisherUname,
     );

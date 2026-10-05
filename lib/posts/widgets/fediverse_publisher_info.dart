@@ -115,7 +115,7 @@ class FediverseOriginHintCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final webUrl = data.webUrl;
+    final webUrl = data.activitypub?.webUrl;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -453,8 +453,10 @@ class FediversePublisherInfoCards extends StatelessWidget {
         FediverseOriginHintCard(data: data),
         FediverseActorTagsCard(data: data),
         FediverseActorFieldsCard(data: data),
-        if (data.lastActivityAt != null)
-          FediverseLastActiveCard(lastActivityAt: data.lastActivityAt!),
+        if (data.activitypub?.lastActivityAt != null)
+          FediverseLastActiveCard(
+            lastActivityAt: data.activitypub!.lastActivityAt!,
+          ),
       ],
     );
   }

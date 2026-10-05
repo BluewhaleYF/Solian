@@ -23,7 +23,7 @@ class PostAwardSheet extends HookConsumerWidget {
   Widget _buildProfilePicture(BuildContext context, {double radius = 16}) {
     final publisher = post.publisher;
     // Remote actors keep their avatar on the home instance as a plain URL.
-    final actorAvatar = publisher?.avatarUrlOrPicture;
+    final actorAvatar = publisher?.picture?.storageUrl;
     if (publisher?.isFediverse == true &&
         actorAvatar != null &&
         actorAvatar.isNotEmpty) {

@@ -163,7 +163,7 @@ class CompactReferencePost extends StatelessWidget {
     }
     // Remote actors keep their avatar on the home instance as a plain URL.
     final publisher = post.publisher;
-    final actorAvatar = publisher?.avatarUrlOrPicture;
+    final actorAvatar = publisher?.picture?.storageUrl;
     if (publisher?.isFediverse == true &&
         actorAvatar != null &&
         actorAvatar.isNotEmpty) {

@@ -381,10 +381,11 @@ class BoostListItem extends HookConsumerWidget {
     final account = boost.account;
     final displayName =
         publisher?.effectiveName ?? account?.nick ?? 'unknown';
-    final username =
-        publisher?.username ?? publisher?.name ?? (account?.name ?? '');
+    final username = publisher?.activitypub?.username ??
+        publisher?.name ??
+        (account?.name ?? '');
     final avatarUrl =
-        publisher?.avatarUrlOrPicture ?? account?.profile.picture?.storageUrl;
+        publisher?.picture?.storageUrl ?? account?.profile.picture?.storageUrl;
 
     return ListTile(
       leading: avatarUrl != null

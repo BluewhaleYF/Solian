@@ -113,17 +113,19 @@ void main() {
           'id': 'actor-1',
           'name': 'alice',
           'nick': 'Alice',
-          'actor_type': 'Service',
-          'is_locked': true,
-          'is_discoverable': false,
+          'activitypub': {
+            'actor_type': 'Service',
+            'is_locked': true,
+            'is_discoverable': false,
+          },
           'created_at': '2026-01-01T00:00:00Z',
           'updated_at': '2026-01-01T00:00:00Z',
         },
       });
 
-      expect(status.actor?.actorType, 'Service');
-      expect(status.actor?.isLocked, isTrue);
-      expect(status.actor?.isDiscoverable, isFalse);
+      expect(status.actor?.activitypub?.actorType, 'Service');
+      expect(status.actor?.activitypub?.isLocked, isTrue);
+      expect(status.actor?.activitypub?.isDiscoverable, isFalse);
     });
 
     test('defaults locked to false and discoverable to true when absent', () {
@@ -137,8 +139,9 @@ void main() {
         },
       });
 
-      expect(status.actor?.isLocked, isFalse);
-      expect(status.actor?.isDiscoverable, isTrue);
+      expect(status.actor?.activitypub, isNull);
+      expect(status.actor?.activitypub?.isLocked ?? false, isFalse);
+      expect(status.actor?.activitypub?.isDiscoverable ?? true, isTrue);
     });
   });
 

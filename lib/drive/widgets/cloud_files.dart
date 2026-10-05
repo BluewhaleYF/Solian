@@ -807,7 +807,11 @@ class ProfilePictureWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final serverUrl = ref.watch(serverUrlProvider);
-    final String? id = file?.id ?? fileId;
+    final uri = cloudFileReferenceUrl(
+      serverUrl: serverUrl,
+      id: file?.id ?? fileId,
+      storageUrl: file?.storageUrl,
+    );
 
     final blurHash = file?.blurhash;
 
@@ -832,13 +836,13 @@ class ProfilePictureWidget extends ConsumerWidget {
                 Theme.of(context).colorScheme.onPrimaryContainer,
           ).center();
 
-    final image = id == null
+    final image = uri == null
         ? fallback
         : DataSavingGate(
             bypass: true,
             placeholder: fallback,
             content: () => UniversalImage(
-              uri: '$serverUrl/drive/files/$id',
+              uri: uri,
               blurHash: blurHash,
               fit: BoxFit.cover,
               loadingIndicatorBuilder: _buildCloudAvatarLoadingIndicator,

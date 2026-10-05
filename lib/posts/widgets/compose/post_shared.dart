@@ -1729,7 +1729,7 @@ class PostHeader extends HookConsumerWidget {
     if (publisher == null) return const SizedBox.shrink();
 
     return HandleChip(
-      handle: publisher.username ?? publisher.name,
+      handle: publisher.activitypub?.username ?? publisher.name,
       domain: publisher.isFediverse ? publisher.domain : null,
       isRemote: publisher.isFediverse,
       allowCopy: false,

@@ -5,8 +5,9 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// Avatar of a publisher, including remote fediverse actors.
 ///
-/// Remote actors carry a plain [SnPublisher.avatarUrl] while local
-/// publishers store a cloud file, so both are handled here.
+/// Remote actors keep the image on their home instance, addressed by the
+/// [SnCloudFileReference.storageUrl] of [SnPublisher.picture], while local
+/// publishers store a cloud file.
 class ActorPictureWidget extends StatelessWidget {
   final SnPublisher actor;
   final double radius;
@@ -15,7 +16,7 @@ class ActorPictureWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = actor.avatarUrlOrPicture;
+    final avatarUrl = actor.picture?.storageUrl;
     final instanceIconUrl = actor.instance?.iconUrl;
     if (avatarUrl == null || avatarUrl.isEmpty) {
       return CircleAvatar(

@@ -53,7 +53,7 @@ void openPublisherProfile(BuildContext context, SnPublisher publisher) {
     context.router.push(
       FediverseActorProfileRoute(
         id: publisher.id,
-        fullHandle: publisher.fullHandle,
+        fullHandle: publisher.activitypub?.fullHandle,
       ),
     );
     return;
@@ -180,9 +180,10 @@ class _PinnedPostsPageView extends HookConsumerWidget {
   }
 }
 
-/// Remote actors carry their header as a plain URL instead of a cloud file.
+/// Remote actors keep their header on the home instance, addressed by the
+/// file reference url; local publishers store a cloud file.
 Widget _publisherHeaderImage(BuildContext context, SnPublisher data) {
-  final headerUrl = data.headerUrl;
+  final headerUrl = data.background?.storageUrl;
   if (data.isFediverse && headerUrl != null && headerUrl.isNotEmpty) {
     final placeholder = Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -197,14 +198,15 @@ Widget _publisherHeaderImage(BuildContext context, SnPublisher data) {
   return CloudImageWidget(file: data.background, fit: BoxFit.cover);
 }
 
-/// Remote actors carry their avatar as a plain URL instead of a cloud file.
+/// Remote actors keep their avatar on the home instance, addressed by the file
+/// reference url; local publishers store a cloud file.
 Widget _publisherAvatarImage(
   BuildContext context,
   SnPublisher data, {
   double radius = 32,
   double? borderRadius,
 }) {
-  final avatarUrl = data.avatarUrl;
+  final avatarUrl = data.picture?.storageUrl;
   if (data.isFediverse && avatarUrl != null && avatarUrl.isNotEmpty) {
     return CircleAvatar(
       radius: radius,
@@ -235,7 +237,9 @@ String _publisherBio(SnPublisher data) {
 /// Mirrored remote actors may carry a fully qualified `user@domain` handle in
 /// `username`, so the local part is the only thing the chip renders.
 String _publisherUsername(SnPublisher data) {
-  final raw = data.username?.isNotEmpty == true ? data.username! : data.name;
+  final actorUsername = data.activitypub?.username;
+  final raw =
+      actorUsername?.isNotEmpty == true ? actorUsername! : data.name;
   return raw.split('@').first;
 }
 
@@ -459,7 +463,7 @@ class _PublisherBasisWidget extends HookWidget {
                                     ),
                                   ),
                           ),
-                          if (data.isBot)
+                          if (data.activitypub?.isBot ?? false)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -1835,8 +1839,8 @@ class PublisherProfileContent extends HookConsumerWidget {
       final headerAppBar = ProfileHeaderAppBar(
         title: data.effectiveName,
         background: _publisherHeaderImage(context, data),
-        samplingProvider: (data.headerUrl != null && data.headerUrl!.isNotEmpty)
-            ? CachedNetworkImageProvider(data.headerUrl!)
+        samplingProvider: (data.background?.storageUrl?.isNotEmpty ?? false)
+            ? CachedNetworkImageProvider(data.background!.storageUrl!)
             : null,
         leading: const AutoLeadingButton(),
         collapsed: collapsed,

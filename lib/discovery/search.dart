@@ -719,6 +719,7 @@ class _AccountSearchTab extends HookConsumerWidget {
                         // Remote actors summarise themselves in HTML; the row
                         // shows the plain-text excerpt.
                         final actorBio = actor.bio.htmlToPlainText();
+                        final actorAvatar = actor.picture?.storageUrl;
                         return Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 560),
@@ -731,23 +732,23 @@ class _AccountSearchTab extends HookConsumerWidget {
                                 context.router.push(
                                   FediverseActorProfileRoute(
                                     id: actor.id,
-                                    fullHandle: actor.fullHandle,
+                                    fullHandle: actor.activitypub?.fullHandle,
                                   ),
                                 );
                               },
                               leading: Stack(
                                 children: [
                                   CircleAvatar(
-                                    backgroundImage: actor.avatarUrl != null
+                                    backgroundImage: actorAvatar != null
                                         ? CachedNetworkImageProvider(
-                                            actor.avatarUrl!,
+                                            actorAvatar,
                                           )
                                         : null,
                                     radius: 24,
                                     backgroundColor: Theme.of(
                                       context,
                                     ).colorScheme.surfaceContainer,
-                                    child: actor.avatarUrl == null
+                                    child: actorAvatar == null
                                         ? Icon(Symbols.person)
                                         : null,
                                   ),
