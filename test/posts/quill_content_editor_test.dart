@@ -688,6 +688,34 @@ void main() {
 
     expect(state.contentController.text.trim(), 'make me =!hi!=dden');
   });
+
+  testWidgets('empty content field collapses until it is focused', (
+    tester,
+  ) async {
+    final state = ComposeLogic.createState();
+    await pumpEditor(tester, state, _FakeAutocompleteService(const []));
+
+    final editor = find.byType(QuillEditor);
+    final collapsedHeight = tester.getSize(editor).height;
+    // One placeholder line plus the editor's text padding, not a blank
+    // editing area.
+    expect(collapsedHeight, lessThan(60));
+
+    await tester.tap(editor);
+    await tester.pumpAndSettle();
+    final focusedHeight = tester.getSize(editor).height;
+    expect(focusedHeight, greaterThan(collapsedHeight));
+  });
+
+  testWidgets('content field keeps its editing area for restored text', (
+    tester,
+  ) async {
+    final state = ComposeLogic.createState();
+    state.contentController.text = 'draft';
+    await pumpEditor(tester, state, _FakeAutocompleteService(const []));
+
+    expect(tester.getSize(find.byType(QuillEditor)).height, greaterThan(60));
+  });
 }
 
 /// Returns the style applied to [text] anywhere in the rendered editor.

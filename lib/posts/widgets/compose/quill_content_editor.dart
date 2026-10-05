@@ -412,6 +412,9 @@ class QuillContentEditor extends HookConsumerWidget {
 
     final focusNode = useMemoized(() => FocusNode(), []);
     final scrollController = useMemoized(() => ScrollController(), []);
+    // Tracks whether the editor owns focus, so the empty field can collapse to
+    // a single line while idle and still open a full editing area on tap.
+    final focused = useState(false);
 
     final overlayEntry = useRef<OverlayEntry?>(null);
     final suggestions = useRef<List<AutocompleteSuggestion>>(const []);
@@ -646,6 +649,7 @@ class QuillContentEditor extends HookConsumerWidget {
     // changes. Pointer activity is handled separately by the editor listener.
     useEffect(() {
       void onFocusChanged() {
+        focused.value = focusNode.hasFocus;
         if (!focusNode.hasFocus) closeOverlay();
         updateFloatingToolbar();
       }
@@ -678,6 +682,12 @@ class QuillContentEditor extends HookConsumerWidget {
       };
     }, []);
 
+    // An empty field that is not being edited collapses to a single line: the
+    // editing floor would otherwise leave a large blank box in an untouched
+    // composer. Focus or any content restores it.
+    final collapsedEmpty =
+        !expands && !focused.value && quill.document.isEmpty();
+
     return MouseRegion(
       onHover: onToolbarPointerMove,
       child: LayoutBuilder(
@@ -695,7 +705,9 @@ class QuillContentEditor extends HookConsumerWidget {
                   placeholder: 'postContent'.tr(),
                   customStyles: editorStyles,
                   expands: expands,
-                  minHeight: expands ? minHeight : (minHeight ?? 120),
+                  minHeight: expands
+                      ? minHeight
+                      : (minHeight ?? (collapsedEmpty ? null : 120)),
                   padding: padding,
                   autoFocus: false,
                   enableInteractiveSelection: true,
