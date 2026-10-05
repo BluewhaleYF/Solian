@@ -460,7 +460,15 @@ class ExploreScreen extends HookConsumerWidget {
       leadingEdgeInset: sliverRefreshInset,
       hoverRefreshLabel: 'refresh'.tr(),
       onRefresh: () async {
-        await ref.read(publishersSubscriptionsLiveProvider.notifier).refresh();
+        // The publisher live list only exists while its quick pick is on
+        // screen (the Subscriptions tab). Reading its notifier on any other
+        // tab would refresh a throwaway instance that is already disposed by
+        // the time the request resolves.
+        if (currentFilter == 'subscriptions') {
+          await ref
+              .read(publishersSubscriptionsLiveProvider.notifier)
+              .refresh();
+        }
         if (!usePostList) {
           await notifier.refresh();
         }
@@ -558,7 +566,13 @@ class ExploreScreen extends HookConsumerWidget {
     }
 
     Future<void> refreshTimeline() async {
-      await ref.read(publishersSubscriptionsLiveProvider.notifier).refresh();
+      // The publisher live list only exists while its quick pick is on screen
+      // (the Subscriptions tab). Reading its notifier on any other tab would
+      // refresh a throwaway instance that is already disposed by the time the
+      // request resolves.
+      if (isSubscriptionsTab) {
+        await ref.read(publishersSubscriptionsLiveProvider.notifier).refresh();
+      }
       if (notifier != null) await notifier.refresh();
     }
 
