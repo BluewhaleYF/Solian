@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:auto_route/auto_route.dart';
 import 'package:dio/dio.dart';
@@ -6,24 +7,36 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/accounts/relationship_pod.dart';
 import 'package:island/accounts/widgets/account/account_picker.dart';
+import 'package:island/chat/e2ee_message_display.dart';
 import 'package:island/chat/messages_notifier.dart';
 import 'package:island/chat/pods/chat_room.dart';
+import 'package:island/chat/utils/message_search.dart';
 import 'package:island/chat/widgets/chat_room_widgets.dart';
-import 'package:island/chat/widgets/message_list_tile.dart';
+import 'package:island/chat/widgets/message_content.dart';
+import 'package:island/chat/widgets/message_sender_info.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/utils/mapping.dart';
+import 'package:island/core/widgets/content/cloud_file_collection.dart';
+import 'package:island/core/widgets/embeds/link.dart';
 import 'package:island/data/message.dart';
 import 'package:island/discovery/search_navigation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
+
+/// Width the results keep on a wide window: the list reads as one column of
+/// matches, so the bands and rows stop widening once the line length would.
+const kChatSearchLedgerWidth = 860.0;
 
 class SearchMessagesResult {
   final String messageId;
@@ -163,6 +176,7 @@ class _FilterChipButton extends StatelessWidget {
   final String label;
   final IconData? stateIcon;
   final bool emphasized;
+  final int? badge;
   final VoidCallback? onTap;
 
   const _FilterChipButton({
@@ -170,31 +184,38 @@ class _FilterChipButton extends StatelessWidget {
     required this.label,
     this.stateIcon,
     required this.emphasized,
+    this.badge,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final enabled = onTap != null;
-    final foreground = !enabled
-        ? colorScheme.onSurface.withOpacity(0.38)
-        : emphasized
+    // Outlined when idle, filled when on: the ribbon stays quiet until a
+    // filter actually narrows the search.
+    final selected = emphasized && enabled;
+    final foreground = selected
         ? colorScheme.onSecondaryContainer
         : colorScheme.onSurfaceVariant;
+    final outline = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(
+        color: selected ? Colors.transparent : colorScheme.outlineVariant,
+      ),
+    );
 
     return Opacity(
-      opacity: enabled ? 1 : 0.55,
+      opacity: enabled ? 1 : 0.5,
       child: Material(
-        color: emphasized && enabled
-            ? colorScheme.secondaryContainer
-            : colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        color: selected ? colorScheme.secondaryContainer : Colors.transparent,
+        shape: outline,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -202,18 +223,36 @@ class _FilterChipButton extends StatelessWidget {
                 const Gap(6),
                 Text(
                   label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: !enabled
-                        ? colorScheme.onSurface.withOpacity(0.38)
-                        : emphasized
-                        ? colorScheme.onSecondaryContainer
-                        : colorScheme.onSurface,
-                    fontSize: 12,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: foreground,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (stateIcon != null) ...[
+                if (badge != null && badge! > 0) ...[
                   const Gap(6),
-                  Icon(stateIcon, size: 16, color: foreground),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '$badge',
+                      style: GoogleFonts.robotoMono(
+                        fontSize: 10.5,
+                        height: 1.2,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+                if (stateIcon != null) ...[
+                  const Gap(4),
+                  Icon(stateIcon, size: 14, color: foreground),
                 ],
               ],
             ),
@@ -321,244 +360,149 @@ class _ChatSearchFilterBar extends HookWidget {
       onFiltersChanged();
     }
 
-    return Card.outlined(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _FilterChipButton(
-                  icon: cloudSearch ? Symbols.cloud : Symbols.cloud_off,
-                  label: cloudSearch
-                      ? 'chatSearchCloud'.tr()
-                      : 'chatSearchLocal'.tr(),
-                  stateIcon: cloudSearch
-                      ? Symbols.check_circle
-                      : Symbols.radio_button_unchecked,
-                  emphasized: cloudSearch,
-                  onTap: () {
-                    final next = !cloudSearch;
-                    onCloudSearchChanged(next);
-                    // Cloud index has no links/attachments filters.
-                    if (next) {
-                      if (withLinks) onLinksChanged(false);
-                      if (withAttachments) onAttachmentsChanged(false);
-                    }
-                    onFiltersChanged();
-                  },
-                ),
-                _FilterChipButton(
-                  icon: Symbols.link,
-                  label: 'searchLinks'.tr(),
-                  stateIcon: withLinks
-                      ? Symbols.check_circle
-                      : Symbols.radio_button_unchecked,
-                  emphasized: withLinks && localFiltersEnabled,
-                  onTap: localFiltersEnabled
-                      ? () {
-                          onLinksChanged(!withLinks);
-                          onFiltersChanged();
-                        }
-                      : null,
-                ),
-                _FilterChipButton(
-                  icon: Symbols.file_copy,
-                  label: 'searchAttachments'.tr(),
-                  stateIcon: withAttachments
-                      ? Symbols.check_circle
-                      : Symbols.radio_button_unchecked,
-                  emphasized: withAttachments && localFiltersEnabled,
-                  onTap: localFiltersEnabled
-                      ? () {
-                          onAttachmentsChanged(!withAttachments);
-                          onFiltersChanged();
-                        }
-                      : null,
-                ),
-                if (_activeCount > 0)
-                  _FilterChipButton(
-                    icon: Symbols.restart_alt,
-                    label: 'clear'.tr(),
-                    emphasized: false,
-                    onTap: clearAll,
-                  ),
-              ],
+            _FilterChipButton(
+              icon: cloudSearch ? Symbols.cloud : Symbols.cloud_off,
+              label: cloudSearch
+                  ? 'chatSearchCloud'.tr()
+                  : 'chatSearchLocal'.tr(),
+              stateIcon: cloudSearch
+                  ? Symbols.check_circle
+                  : Symbols.radio_button_unchecked,
+              emphasized: cloudSearch,
+              onTap: () {
+                final next = !cloudSearch;
+                onCloudSearchChanged(next);
+                // Cloud index has no links/attachments filters.
+                if (next) {
+                  if (withLinks) onLinksChanged(false);
+                  if (withAttachments) onAttachmentsChanged(false);
+                }
+                onFiltersChanged();
+              },
             ),
-            const Gap(8),
-            Material(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => showAdvanced.value = !showAdvanced.value,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
+            _FilterChipButton(
+              icon: Symbols.link,
+              label: 'searchLinks'.tr(),
+              stateIcon: withLinks
+                  ? Symbols.check_circle
+                  : Symbols.radio_button_unchecked,
+              emphasized: withLinks && localFiltersEnabled,
+              onTap: localFiltersEnabled
+                  ? () {
+                      onLinksChanged(!withLinks);
+                      onFiltersChanged();
+                    }
+                  : null,
+            ),
+            _FilterChipButton(
+              icon: Symbols.file_copy,
+              label: 'searchAttachments'.tr(),
+              stateIcon: withAttachments
+                  ? Symbols.check_circle
+                  : Symbols.radio_button_unchecked,
+              emphasized: withAttachments && localFiltersEnabled,
+              onTap: localFiltersEnabled
+                  ? () {
+                      onAttachmentsChanged(!withAttachments);
+                      onFiltersChanged();
+                    }
+                  : null,
+            ),
+            _FilterChipButton(
+              icon: Symbols.tune,
+              label: 'advancedFilters'.tr(),
+              badge: _advancedCount,
+              stateIcon: showAdvanced.value
+                  ? Symbols.expand_less
+                  : Symbols.expand_more,
+              emphasized: showAdvanced.value,
+              onTap: () => showAdvanced.value = !showAdvanced.value,
+            ),
+            if (_activeCount > 0)
+              _FilterChipButton(
+                icon: Symbols.restart_alt,
+                label: 'clear'.tr(),
+                emphasized: false,
+                onTap: clearAll,
+              ),
+          ],
+        ),
+        const Gap(8),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SenderAccountField(
+                    account: sender,
+                    onPick: pickSender,
+                    onClear: sender == null
+                        ? null
+                        : () {
+                            onSenderChanged(null);
+                            onFiltersChanged();
+                          },
                   ),
-                  child: Row(
+                  const Gap(8),
+                  Row(
                     children: [
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Symbols.tune,
-                          size: 18,
-                          color: colorScheme.onSecondaryContainer,
+                      Expanded(
+                        child: _DateFieldButton(
+                          label: 'fromDate'.tr(),
+                          value: after,
+                          enabled: true,
+                          onTap: () => pickDate(isStart: true),
+                          onClear: after == null
+                              ? null
+                              : () {
+                                  onAfterChanged(null);
+                                  onFiltersChanged();
+                                },
                         ),
                       ),
                       const Gap(8),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'advancedFilters'.tr(),
-                              style: theme.textTheme.labelLarge,
-                            ),
-                            Text(
-                              '${'account'.tr()} · ${'fromDate'.tr()} · ${'toDate'.tr()}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontSize: 11,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: _DateFieldButton(
+                          label: 'toDate'.tr(),
+                          value: before,
+                          enabled: true,
+                          onTap: () => pickDate(isStart: false),
+                          onClear: before == null
+                              ? null
+                              : () {
+                                  onBeforeChanged(null);
+                                  onFiltersChanged();
+                                },
                         ),
-                      ),
-                      if (_advancedCount > 0) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            '$_advancedCount',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        const Gap(6),
-                      ],
-                      Icon(
-                        showAdvanced.value
-                            ? Symbols.expand_less
-                            : Symbols.expand_more,
-                        size: 20,
-                        color: colorScheme.onSurfaceVariant,
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLow,
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withOpacity(0.5),
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _SenderAccountField(
-                        account: sender,
-                        onPick: pickSender,
-                        onClear: sender == null
-                            ? null
-                            : () {
-                                onSenderChanged(null);
-                                onFiltersChanged();
-                              },
-                      ),
-                      const Gap(8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DateFieldButton(
-                              label: 'fromDate'.tr(),
-                              value: after,
-                              enabled: true,
-                              onTap: () => pickDate(isStart: true),
-                              onClear: after == null
-                                  ? null
-                                  : () {
-                                      onAfterChanged(null);
-                                      onFiltersChanged();
-                                    },
-                            ),
-                          ),
-                          const Gap(8),
-                          Expanded(
-                            child: _DateFieldButton(
-                              label: 'toDate'.tr(),
-                              value: before,
-                              enabled: true,
-                              onTap: () => pickDate(isStart: false),
-                              onClear: before == null
-                                  ? null
-                                  : () {
-                                      onBeforeChanged(null);
-                                      onFiltersChanged();
-                                    },
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_advancedCount > 0) ...[
-                        const Gap(6),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              onSenderChanged(null);
-                              onAfterChanged(null);
-                              onBeforeChanged(null);
-                              onFiltersChanged();
-                            },
-                            icon: const Icon(Symbols.restart_alt),
-                            label: Text('clear'.tr()),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              crossFadeState: showAdvanced.value
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 180),
-            ),
-          ],
+          ),
+          crossFadeState: showAdvanced.value
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 180),
         ),
-      ),
+      ],
     );
   }
 }
@@ -755,10 +699,17 @@ class _DateFieldButton extends StatelessWidget {
   }
 }
 
-/// Bottom status bar showing total search match count.
+/// Footer readout under the results: how many matches, across how many rooms.
+///
+/// The counts are set in the app's data face (the same monospace used for
+/// literals elsewhere), so the footer reads as the index's voice rather than
+/// another line of prose.
 class _SearchStatusBar extends StatelessWidget implements PreferredSizeWidget {
   final int totalMatches;
   final bool isSearching;
+
+  /// Rooms the matches belong to. Omitted when the search is confined to one.
+  final int? roomCount;
 
   /// Optional info tooltip (e.g. global search limitations).
   final String? infoTooltip;
@@ -766,6 +717,7 @@ class _SearchStatusBar extends StatelessWidget implements PreferredSizeWidget {
   const _SearchStatusBar({
     required this.totalMatches,
     this.isSearching = false,
+    this.roomCount,
     this.infoTooltip,
   });
 
@@ -774,59 +726,30 @@ class _SearchStatusBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final readout = [
+      'matches'.plural(totalMatches),
+      if ((roomCount ?? 0) > 1) 'chatSearchRoomCount'.plural(roomCount!),
+    ].join('  ·  ');
 
     return Material(
       color: colorScheme.surfaceContainer,
-      elevation: 2,
       child: SafeArea(
         top: false,
         child: Container(
           height: preferredSize.height,
           width: double.infinity,
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
-                color: colorScheme.outlineVariant.withOpacity(0.5),
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
             ),
           ),
           child: Row(
             children: [
-              // Keep the match count centered even when an info icon is present.
-              SizedBox(width: infoTooltip != null ? 36 : 0),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isSearching) ...[
-                      SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      const Gap(10),
-                    ],
-                    Flexible(
-                      child: Text(
-                        'matches'.plural(totalMatches),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               if (infoTooltip != null)
                 Tooltip(
                   message: infoTooltip!,
@@ -836,65 +759,45 @@ class _SearchStatusBar extends StatelessWidget implements PreferredSizeWidget {
                   triggerMode: TooltipTriggerMode.tap,
                   child: Icon(
                     Symbols.info,
-                    size: 18,
+                    size: 16,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 )
               else
-                const SizedBox(width: 0),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchEmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? action;
-
-  const _SearchEmptyState({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.action,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final muted = colorScheme.onSurfaceVariant;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 56, color: muted.withValues(alpha: 0.6)),
-            const Gap(16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: muted),
-            ),
-            if (subtitle != null) ...[
-              const Gap(8),
-              Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: muted),
+                const SizedBox.shrink(),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (isSearching) ...[
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.6,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const Gap(10),
+                    ],
+                    Flexible(
+                      child: Text(
+                        readout,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.robotoMono(
+                          fontSize: 11.5,
+                          height: 1.2,
+                          letterSpacing: 0.1,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-            if (action != null) ...[const Gap(16), action!],
-          ],
+          ),
         ),
       ),
     );
@@ -1219,32 +1122,36 @@ class SearchMessagesScreen extends HookConsumerWidget {
                     data: (messageList) {
                       switch (searchState.value) {
                         case SearchState.idle:
-                          return _SearchEmptyState(
+                          return EmptyState(
+                            key: const Key('chatSearchIdle'),
                             icon: Symbols.search,
-                            title: 'searchMessagesHint'.tr(),
+                            title: 'searchMessages'.tr(),
+                            description: 'chatSearchIdleBody'.tr(),
                           );
 
                         case SearchState.noResults:
-                          return _SearchEmptyState(
+                          return EmptyState(
+                            key: const Key('chatSearchNoResults'),
                             icon: Symbols.search_off,
                             title: 'noMessagesFound'.tr(),
-                            subtitle: 'tryDifferentKeywords'.tr(),
+                            description: 'chatSearchNoResultsBody'.tr(),
                           );
 
                         case SearchState.results:
                           return SuperListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.only(bottom: 16),
                             reverse: false,
                             itemCount: messageList.length,
-                            itemBuilder: (context, index) {
-                              final message = messageList[index];
-                              return MessageListTile(
-                                message: message,
-                                onJump: (messageId) {
-                                  context.pop(SearchMessagesResult(messageId));
-                                },
-                              );
-                            },
+                            itemBuilder: (context, index) =>
+                                _ChatSearchMatchTile(
+                                  message: messageList[index],
+                                  query: searchController.text,
+                                  onJump: (messageId) {
+                                    context.pop(
+                                      SearchMessagesResult(messageId),
+                                    );
+                                  },
+                                ),
                           );
 
                         default:
@@ -1261,8 +1168,9 @@ class SearchMessagesScreen extends HookConsumerWidget {
                         ],
                       ),
                     ),
-                    error: (error, _) => _SearchEmptyState(
+                    error: (error, _) => EmptyState(
                       icon: Symbols.error_outline,
+                      iconColor: Theme.of(context).colorScheme.error,
                       title: 'searchError'.tr(),
                       action: FilledButton.tonalIcon(
                         onPressed: () => performSearch(searchController.text),
@@ -1462,63 +1370,83 @@ class ChatMessageSearchView extends HookConsumerWidget {
 
     return Column(
       children: [
-        _CollapsibleFilterHeader(
-          visible: filterVisible,
-          child: _ChatSearchFilterBar(
-            cloudSearch: cloudSearch.value,
-            onCloudSearchChanged: (value) => cloudSearch.value = value,
-            withLinks: withLinks.value,
-            withAttachments: withAttachments.value,
-            onLinksChanged: (value) => withLinks.value = value,
-            onAttachmentsChanged: (value) => withAttachments.value = value,
-            sender: sender.value,
-            onSenderChanged: (value) => sender.value = value,
-            after: after.value,
-            before: before.value,
-            onAfterChanged: (value) => after.value = value,
-            onBeforeChanged: (value) => before.value = value,
-            onFiltersChanged: () => search(query),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kChatSearchLedgerWidth),
+            child: _CollapsibleFilterHeader(
+              visible: filterVisible,
+              child: _ChatSearchFilterBar(
+                cloudSearch: cloudSearch.value,
+                onCloudSearchChanged: (value) => cloudSearch.value = value,
+                withLinks: withLinks.value,
+                withAttachments: withAttachments.value,
+                onLinksChanged: (value) => withLinks.value = value,
+                onAttachmentsChanged: (value) => withAttachments.value = value,
+                sender: sender.value,
+                onSenderChanged: (value) => sender.value = value,
+                after: after.value,
+                before: before.value,
+                onAfterChanged: (value) => after.value = value,
+                onBeforeChanged: (value) => before.value = value,
+                onFiltersChanged: () => search(query),
+              ),
+            ),
           ),
         ),
         Expanded(
-          child: !hasSearched.value
-              ? _SearchEmptyState(
-                  icon: Symbols.search,
-                  title: 'searchMessages'.tr(),
-                )
-              : error.value != null && displayGroups.isEmpty
-              ? _SearchEmptyState(
-                  icon: Symbols.error_outline,
-                  title: 'searchError'.tr(),
-                )
-              : displayGroups.isEmpty && !isSearching.value
-              ? _SearchEmptyState(
-                  icon: Symbols.search_off,
-                  title: 'noMessagesFound'.tr(),
-                )
-              : SuperListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: displayGroups.length,
-                  itemBuilder: (context, index) {
-                    final group = displayGroups[index];
-                    return _SearchRoomSection(
-                      group: group,
-                      onOpenRoom: () => context.router.navigate(
-                        ChatRoomRoute(id: group.roomId),
-                      ),
-                      onJumpMessage: (messageId) => context.router.navigate(
-                        ChatRoomRoute(
-                          id: group.roomId,
-                          initialMessageId: messageId,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: kChatSearchLedgerWidth,
+              ),
+              child: !hasSearched.value
+                  ? EmptyState(
+                      key: const Key('chatSearchIdle'),
+                      icon: Symbols.search,
+                      title: 'chatSearchIdleTitle'.tr(),
+                      description: 'chatSearchIdleBody'.tr(),
+                    )
+                  : error.value != null && displayGroups.isEmpty
+                  ? EmptyState(
+                      key: const Key('chatSearchError'),
+                      icon: Symbols.error_outline,
+                      iconColor: Theme.of(context).colorScheme.error,
+                      title: 'searchError'.tr(),
+                    )
+                  : displayGroups.isEmpty && !isSearching.value
+                  ? EmptyState(
+                      key: const Key('chatSearchNoResults'),
+                      icon: Symbols.search_off,
+                      title: 'noMessagesFound'.tr(),
+                      description: 'chatSearchNoResultsBody'.tr(),
+                    )
+                  : SuperListView.builder(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      itemCount: displayGroups.length,
+                      itemBuilder: (context, index) {
+                        final group = displayGroups[index];
+                        return _SearchRoomSection(
+                          group: group,
+                          query: query,
+                          onOpenRoom: () => context.router.navigate(
+                            ChatRoomRoute(id: group.roomId),
+                          ),
+                          onJumpMessage: (messageId) => context.router.navigate(
+                            ChatRoomRoute(
+                              id: group.roomId,
+                              initialMessageId: messageId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
         ),
         if (hasSearched.value)
           _SearchStatusBar(
             totalMatches: totalMatches.value,
+            roomCount: displayGroups.length,
             isSearching: isSearching.value,
             infoTooltip: 'chatGlobalSearchHint'.tr(),
           ),
@@ -1604,46 +1532,200 @@ List<_SearchRoomGroup> _groupMessagesByRoom(
   ];
 }
 
+/// One room's matches: the band that names it, then its hits down a hairline
+/// spine that runs from the band to the last row, so a group reads as that
+/// room's transcript rather than another block of list.
 class _SearchRoomSection extends StatelessWidget {
   final _SearchRoomGroup group;
+  final String query;
   final VoidCallback onOpenRoom;
   final void Function(String messageId) onJumpMessage;
 
   const _SearchRoomSection({
     required this.group,
+    required this.query,
     required this.onOpenRoom,
     required this.onJumpMessage,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _SearchRoomHeader(
-          roomId: group.roomId,
-          room: group.room,
-          matchCount: group.messages.length,
-          onTap: onOpenRoom,
+    final colorScheme = Theme.of(context).colorScheme;
+    // The spine is a painted edge, not a stretched child: a sliver hands its
+    // items an unbounded height, which a stretched Row would try to fill.
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            width: 2,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
         ),
-        for (final message in group.messages)
-          MessageListTile(message: message, onJump: onJumpMessage),
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SearchRoomHeader(
+            roomId: group.roomId,
+            room: group.room,
+            messages: group.messages,
+            onTap: onOpenRoom,
+          ),
+          for (final message in group.messages)
+            _ChatSearchMatchTile(
+              message: message,
+              query: query,
+              onJump: onJumpMessage,
+            ),
+          const SizedBox(height: 10),
+        ],
+      ),
     );
   }
 }
 
-/// Room header styled after [ChatRoomListTile]: avatar + DM-aware title.
+/// One hit: who said it and when, then the body with the query marked.
+///
+/// Text bodies draw an excerpt built by [buildMessageSearchExcerpt] so the hit
+/// is visible in the row itself. Everything the excerpt cannot stand in for —
+/// stickers, events, calls, bodies that never decrypted — keeps the rich
+/// renderer, which is the only thing that can draw it.
+class _ChatSearchMatchTile extends StatelessWidget {
+  final LocalChatMessage message;
+  final String query;
+  final void Function(String messageId) onJump;
+
+  const _ChatSearchMatchTile({
+    required this.message,
+    required this.query,
+    required this.onJump,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final remoteMessage = message.toRemoteMessage();
+    final excerpt = message.type == 'text'
+        ? buildMessageSearchExcerpt(
+            content:
+                resolveE2eeDisplayContentForMessage(remoteMessage).content ??
+                '',
+            query: query,
+          )
+        : null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onJump(message.id),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 9, 16, 9),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ProfilePictureWidget(
+                file: remoteMessage.sender.account.profile.picture,
+                fallbackName: remoteMessage.sender.account.nick,
+                radius: 16,
+              ),
+              const Gap(10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    MessageSenderInfo(
+                      roomId: message.roomId,
+                      sender: remoteMessage.sender,
+                      createdAt: message.createdAt,
+                      textColor: colorScheme.onSurfaceVariant,
+                      showAvatar: false,
+                      isCompact: true,
+                    ),
+                    const Gap(3),
+                    if (excerpt != null)
+                      _MessageExcerptText(excerpt: excerpt)
+                    else
+                      MessageContent(item: remoteMessage, isSelectable: false),
+                    if (remoteMessage.attachments.isNotEmpty)
+                      LayoutBuilder(
+                        builder: (context, constraints) => CloudFileList(
+                          files: remoteMessage.attachments,
+                          maxWidth: constraints.maxWidth,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                        ),
+                      ),
+                    ..._linkEmbeds(remoteMessage, context),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The link cards a message carries, held to a column width a result row can
+/// afford instead of the reading width a chat bubble gets.
+List<Widget> _linkEmbeds(SnChatMessage message, BuildContext context) {
+  final embeds = message.meta['embeds'];
+  if (embeds is! List) return const [];
+  return [
+    for (final embed in embeds)
+      if (embed is Map)
+        LayoutBuilder(
+          builder: (context, constraints) => EmbedLinkWidget(
+            link: SnScrappedLink.fromJson(
+              convertMapKeysToSnakeCase(Map<String, dynamic>.from(embed)),
+            ),
+            maxWidth: math.min(constraints.maxWidth, 320),
+            margin: const EdgeInsets.symmetric(vertical: 4),
+          ),
+        ),
+  ];
+}
+
+/// The body of a result row: one window of the message, its hit drawn with
+/// the same ink the composer gives `==highlight==`.
+class _MessageExcerptText extends StatelessWidget {
+  final MessageSearchExcerpt excerpt;
+
+  const _MessageExcerptText({required this.excerpt});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final base =
+        Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.35) ??
+        const TextStyle(fontSize: 14, height: 1.35);
+    final marked = base.copyWith(backgroundColor: colorScheme.primaryContainer);
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          for (final run in excerpt.runs)
+            TextSpan(text: run.text, style: run.marked ? marked : base),
+        ],
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+/// Room band: avatar, DM-aware title and the reach of this room's matches
+/// (how many, and the days they fall on).
 class _SearchRoomHeader extends ConsumerWidget {
   final String roomId;
   final SnChatRoom? room;
-  final int matchCount;
+  final List<LocalChatMessage> messages;
   final VoidCallback onTap;
 
   const _SearchRoomHeader({
     required this.roomId,
     required this.room,
-    required this.matchCount,
+    required this.messages,
     required this.onTap,
   });
 
@@ -1671,11 +1753,26 @@ class _SearchRoomHeader extends ConsumerWidget {
       validMembers: validMembers,
     );
 
+    // Newest-first ordering is what both search paths return, but the reach of
+    // a room's matches is worth stating exactly rather than inferring.
+    var newest = messages.first.createdAt;
+    var oldest = newest;
+    for (final message in messages.skip(1)) {
+      if (message.createdAt.isAfter(newest)) newest = message.createdAt;
+      if (message.createdAt.isBefore(oldest)) oldest = message.createdAt;
+    }
+
     final titleStyle = theme.textTheme.titleSmall?.copyWith(
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
       color: colorScheme.onSurface,
-      letterSpacing: -0.1,
+      letterSpacing: -0.2,
       height: 1.2,
+    );
+    final reachStyle = GoogleFonts.robotoMono(
+      fontSize: 11,
+      height: 1.2,
+      letterSpacing: 0.1,
+      color: colorScheme.onSurfaceVariant,
     );
 
     return Material(
@@ -1683,7 +1780,7 @@ class _SearchRoomHeader extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          padding: const EdgeInsets.fromLTRB(14, 9, 16, 9),
           child: Row(
             children: [
               if (room != null)
@@ -1712,7 +1809,7 @@ class _SearchRoomHeader extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Expanded(
+                        Flexible(
                           child: Text(
                             titleText,
                             maxLines: 1,
@@ -1730,19 +1827,20 @@ class _SearchRoomHeader extends ConsumerWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      'matches'.plural(matchCount),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      '${'matches'.plural(messages.length)}  ·  '
+                      '${formatMatchDateSpan(newest, oldest)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: reachStyle,
                     ),
                   ],
                 ),
               ),
               Icon(
                 Symbols.chevron_right,
-                size: 20,
+                size: 18,
                 color: colorScheme.onSurfaceVariant,
               ),
             ],
