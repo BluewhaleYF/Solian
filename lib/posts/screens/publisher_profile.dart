@@ -597,8 +597,14 @@ class _PublisherBasisWidget extends HookWidget {
                         ],
                       ),
 
+                      // A remote actor has no account-status row under the
+                      // chip, so the local rhythm (8/4 around the chip, then a
+                      // Gap) would leave the follow button drifting away from
+                      // the name.
                       Padding(
-                        padding: const .only(top: 8, bottom: 4),
+                        padding: data.isFediverse
+                            ? const .only(top: 6)
+                            : const .only(top: 8, bottom: 4),
                         child: data.isFediverse
                             ? _instanceChip(context, theme)
                             : _accountChip(context, theme),
@@ -667,7 +673,7 @@ class _PublisherBasisWidget extends HookWidget {
                 ],
               ),
             ],
-            const Gap(4),
+            if (!data.isFediverse) const Gap(4),
             subStatus
                 .when(
                   data: (status) {
@@ -768,7 +774,7 @@ class _PublisherBasisWidget extends HookWidget {
                     ),
                   ),
                 )
-                .padding(vertical: 12),
+                .padding(vertical: data.isFediverse ? 6 : 12),
             // Bio section
             if (_publisherBio(data).isNotEmpty) ...[
               Column(

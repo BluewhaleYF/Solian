@@ -94,9 +94,8 @@ void main() {
     // directory through path_provider — a plugin widget tests do not have.
     const channel = MethodChannel('plugins.flutter.io/path_provider');
     final cacheDir = Directory.systemTemp.createTempSync('solar_cache_test');
-    final messenger = TestDefaultBinaryMessengerBinding
-        .instance
-        .defaultBinaryMessenger;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(channel, (call) async => cacheDir.path);
     addTearDown(() {
       messenger.setMockMethodCallHandler(channel, null);
@@ -168,6 +167,12 @@ void main() {
     // The instance takes the place of the account link.
     expect(find.text('Belongs to instance $_actorDomain'), findsOneWidget);
     expect(find.textContaining('Belongs to @'), findsNothing);
+    // An actor has no account-status row, so the follow button must sit right
+    // under the identity block instead of carrying the local paddings (which
+    // leave ~74px between the two).
+    final nameBottom = tester.getRect(find.text('LittleSheep')).bottom;
+    final followTop = tester.getRect(find.text('Follow')).top;
+    expect(followTop - nameBottom, lessThan(64));
     expect(tester.takeException(), isNull);
 
     // The pagination visibility debounce re-arms on every paint, so it has to
