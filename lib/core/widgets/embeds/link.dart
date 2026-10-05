@@ -125,6 +125,8 @@ class _EmbedLinkWidgetState extends ConsumerState<EmbedLinkWidget> {
       margin: widget.margin ?? const EdgeInsets.symmetric(vertical: 8),
       child: Card(
         margin: EdgeInsets.zero,
+        elevation: 0,
+        color: colorScheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: _launchUrl,
@@ -209,6 +211,8 @@ class _EmbedLinkWidgetState extends ConsumerState<EmbedLinkWidget> {
       margin: widget.margin ?? const EdgeInsets.symmetric(vertical: 8),
       child: Card(
         margin: EdgeInsets.zero,
+        elevation: 0,
+        color: colorScheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: _launchUrl,

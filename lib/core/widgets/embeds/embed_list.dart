@@ -65,7 +65,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
         .toList();
     final theme = Theme.of(context);
 
-    return Column(
+    final content = Column(
       children: [
         if (linkEmbeds.isNotEmpty)
           Container(
@@ -193,6 +193,14 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
         ),
       ],
     );
+
+    final maxWidth = widget.maxWidth;
+    if (maxWidth == null) return content;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: content,
+    );
   }
 
   Widget _buildExpandedContent(List<dynamic> linkEmbeds) {
@@ -257,6 +265,8 @@ class _LocationEmbedCard extends ConsumerWidget {
 
     return Card(
       margin: margin,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -755,6 +765,8 @@ class _SurveyEmbedCard extends ConsumerWidget {
     if (surveyId == null) {
       return Card(
         margin: margin,
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: const Padding(
           padding: EdgeInsets.all(16),
           child: Text('Survey was unavailable...'),
@@ -766,6 +778,8 @@ class _SurveyEmbedCard extends ConsumerWidget {
 
     return Card(
       margin: margin,
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       clipBehavior: Clip.antiAlias,
       child: surveyAsync.when(
         loading: () => const Padding(
@@ -861,6 +875,8 @@ class _MeetEmbedCard extends ConsumerWidget {
 
     return Card(
       margin: margin,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _showMeetDetailSheet(context, ref, meetId),
@@ -1376,6 +1392,8 @@ class _CalendarEventEmbedCard extends ConsumerWidget {
 
     return Card(
       margin: margin,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
@@ -1541,6 +1559,8 @@ class _NotableDayEmbedCard extends StatelessWidget {
     // The notable day data should come from the embed itself
     return Card(
       margin: margin,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
