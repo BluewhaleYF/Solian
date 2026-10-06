@@ -72,6 +72,7 @@
   "accountConnectionProviderGithub": "GitHub",
   "accountConnectionProviderGoogle": "谷歌",
   "accountConnectionProviderHint": "請輸入供應者名號",
+  "accountConnectionProviderLastfm": "Last.fm",
   "accountConnectionProviderMicrosoft": "微軟",
   "accountConnectionProviderSpotify": "Spotify",
   "accountConnectionProviderSteam": "Steam",

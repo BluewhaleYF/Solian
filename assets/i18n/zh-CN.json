@@ -130,6 +130,7 @@
   "accountConnectionProviderGithub": "GitHub",
   "accountConnectionProviderGoogle": "Google",
   "accountConnectionProviderHint": "输入平台名称",
+  "accountConnectionProviderLastfm": "Last.fm",
   "accountConnectionProviderMicrosoft": "Microsoft",
   "accountConnectionProviderSpotify": "Spotify",
   "accountConnectionProviderSteam": "Steam",

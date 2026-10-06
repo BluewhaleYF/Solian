@@ -2568,47 +2568,53 @@ class _ArticleDetailLayout extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      clipBehavior: Clip.antiAlias,
-                      color: theme.colorScheme.surfaceContainerLow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-                            child: TabBar(
-                              dividerColor: Colors.transparent,
-                              indicatorSize: TabBarIndicatorSize.tab,
-                              splashBorderRadius: BorderRadius.circular(20),
-                              indicator: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              labelColor: theme.colorScheme.onPrimary,
-                              unselectedLabelColor:
-                                  theme.colorScheme.onSurfaceVariant,
-                              tabs: [
-                                Tab(text: 'articleContents'.tr()),
-                                Tab(text: 'replies'.tr()),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: TabBarView(
-                              children: [
-                                ArticleTocList(
-                                  sections: sections,
-                                  activeIndex: activeSection.value,
-                                  onSelect: scrollToSection,
+                    // Keeps the contents/replies card off the screen edge when
+                    // the quick-reply strip is not shown on this tab; the strip
+                    // owns its own bottom safe-area inset.
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: _articlePaneInset),
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        clipBehavior: Clip.antiAlias,
+                        color: theme.colorScheme.surfaceContainerLow,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+                              child: TabBar(
+                                dividerColor: Colors.transparent,
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                splashBorderRadius: BorderRadius.circular(20),
+                                indicator: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                                PostRepliesListNonSliver(postId: postId),
-                              ],
+                                labelColor: theme.colorScheme.onPrimary,
+                                unselectedLabelColor:
+                                    theme.colorScheme.onSurfaceVariant,
+                                tabs: [
+                                  Tab(text: 'articleContents'.tr()),
+                                  Tab(text: 'replies'.tr()),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            Expanded(
+                              child: TabBarView(
+                                children: [
+                                  ArticleTocList(
+                                    sections: sections,
+                                    activeIndex: activeSection.value,
+                                    onSelect: scrollToSection,
+                                  ),
+                                  PostRepliesListNonSliver(postId: postId),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

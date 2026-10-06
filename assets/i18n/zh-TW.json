@@ -128,6 +128,7 @@
   "accountConnectionProviderGithub": "GitHub",
   "accountConnectionProviderGoogle": "Google",
   "accountConnectionProviderHint": "輸入平臺名稱",
+  "accountConnectionProviderLastfm": "Last.fm",
   "accountConnectionProviderMicrosoft": "Microsoft",
   "accountConnectionProviderSpotify": "Spotify",
   "accountConnectionProviderSteam": "Steam",

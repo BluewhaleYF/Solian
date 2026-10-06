@@ -72,6 +72,7 @@
   "accountConnectionProviderGithub": "GitHub",
   "accountConnectionProviderGoogle": "Google",
   "accountConnectionProviderHint": "제공업체 이름을 입력하세요",
+  "accountConnectionProviderLastfm": "Last.fm",
   "accountConnectionProviderMicrosoft": "Microsoft",
   "accountConnectionProviderSpotify": "Spotify",
   "accountConnectionProviderSteam": "Steam",

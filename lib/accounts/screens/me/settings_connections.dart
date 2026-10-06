@@ -31,6 +31,7 @@ Widget getProviderIcon(String provider, {double size = 24, Color? color}) {
     case 'discord':
     case 'afdian':
     case 'steam':
+    case 'lastfm':
       return SvgPicture.asset(
         'assets/images/oidc/$providerLower.svg',
         width: size,
@@ -67,6 +68,8 @@ String getLocalizedProviderName(String provider) {
       return 'accountConnectionProviderSpotify'.tr();
     case 'steam':
       return 'accountConnectionProviderSteam'.tr();
+    case 'lastfm':
+      return 'accountConnectionProviderLastfm'.tr();
     default:
       return provider;
   }
@@ -228,6 +231,7 @@ class AccountConnectionNewSheet extends HookConsumerWidget {
       'discord',
       'afdian',
       'steam',
+      'lastfm',
     ];
 
     Future<void> addConnection() async {
