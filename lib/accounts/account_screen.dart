@@ -142,8 +142,9 @@ class AccountFeatureWidget extends HookConsumerWidget {
       return () => scrollController.removeListener(update);
     }, [scrollController, collapseThreshold]);
 
-    // Derive a "primary" color from the header image so the collapsed bar and
-    // its title read as an extension of the backdrop.
+    // Derive the collapsed chrome color from the header image's average tint so
+    // the toolbar keeps the backdrop's character; without an image the title
+    // falls back to the theme's primary color.
     final hasHeaderImage = headerBackground != null;
     final headerScheme = headerTint.value == null
         ? null
@@ -157,6 +158,8 @@ class AccountFeatureWidget extends HookConsumerWidget {
         : hasHeaderImage
         ? Colors.white.withOpacity(0.9)
         : theme.colorScheme.onSurface;
+    // FlexibleSpaceBar ignores AppBarTheme.centerTitle, so mirror it here.
+    final centerTitle = theme.appBarTheme.centerTitle ?? true;
 
     return AppScaffold(
       isNoBackground: isWide,
@@ -166,63 +169,81 @@ class AccountFeatureWidget extends HookConsumerWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
+            centerTitle: centerTitle,
             expandedHeight: 220,
             automaticallyImplyLeading: false,
             backgroundColor: headerCollapsed.value
                 ? primary
                 : theme.colorScheme.surface,
             foregroundColor: headerTitleColor,
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.parallax,
-              title: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  color: headerTitleColor,
-                  fontWeight: FontWeight.w600,
-                ),
-                child: Text('account').tr(),
-              ),
-              background: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: headerCollapsed.value
-                    ? ColoredBox(
-                        key: const ValueKey('header-collapsed'),
-                        color: primary,
-                      )
-                    : hasHeaderImage
-                    ? Stack(
-                        key: const ValueKey('header-image'),
-                        fit: StackFit.expand,
-                        children: [
-                          CloudImageWidget(
-                            file: account.profile.background,
-                            fit: BoxFit.cover,
-                            imageOnly: true,
-                          ),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  (headerTint.value ?? Colors.black)
-                                      .withOpacity(0.45),
-                                  (headerTint.value ?? Colors.black)
-                                      .withOpacity(0),
-                                  (headerTint.value ?? Colors.black)
-                                      .withOpacity(0.5),
-                                ],
-                                stops: const [0.0, 0.5, 1.0],
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : ColoredBox(
-                        key: const ValueKey('header-plain'),
-                        color: theme.colorScheme.surfaceContainerHighest,
+            // The image is drawn behind the FlexibleSpaceBar instead of as its
+            // own `background`, because FlexibleSpaceBar fades its background
+            // out as the bar collapses. Keeping it here lets the image shrink
+            // with the header and stay visible in the pinned toolbar.
+            flexibleSpace: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (hasHeaderImage)
+                  Stack(
+                    key: const ValueKey('header-image'),
+                    fit: StackFit.expand,
+                    children: [
+                      CloudImageWidget(
+                        file: account.profile.background,
+                        fit: BoxFit.cover,
+                        imageOnly: true,
                       ),
-              ),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              (headerTint.value ?? Colors.black)
+                                  .withOpacity(0.45),
+                              (headerTint.value ?? Colors.black)
+                                  .withOpacity(0),
+                              (headerTint.value ?? Colors.black)
+                                  .withOpacity(0.5),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: headerCollapsed.value
+                        ? ColoredBox(
+                            key: const ValueKey('header-collapsed'),
+                            color: primary,
+                          )
+                        : ColoredBox(
+                            key: const ValueKey('header-plain'),
+                            color: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                  ),
+                FlexibleSpaceBar(
+                  collapseMode: CollapseMode.parallax,
+                  centerTitle: centerTitle,
+                  // The title only appears once the header has collapsed into
+                  // the pinned toolbar, so it does not cover the backdrop.
+                  title: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: headerCollapsed.value ? 1 : 0,
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        color: headerTitleColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      child: Text('account').tr(),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           SliverToBoxAdapter(
