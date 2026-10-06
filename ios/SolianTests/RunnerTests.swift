@@ -1,8 +1,8 @@
-import Cocoa
-import FlutterMacOS
+import Flutter
+import UIKit
 import XCTest
 
-class RunnerTests: XCTestCase {
+class SolianTests: XCTestCase {
 
   func testExample() {
     // If you add code to the Runner application, consider adding tests here.
