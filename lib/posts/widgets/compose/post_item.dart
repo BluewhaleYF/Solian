@@ -51,6 +51,11 @@ class PostActionableItem extends HookConsumerWidget {
   final bool isCompact;
   final bool hideAvatar;
   final bool hideAttachments;
+
+  /// Inset attachments like the body text (with side padding and rounded
+  /// corners) instead of letting them bleed to the post's edges. Featured
+  /// carousels use this so an image never touches the card border.
+  final bool containAttachments;
   final double? borderRadius;
   final VoidCallback? onRefresh;
   final Function(SnPost)? onUpdate;
@@ -68,6 +73,7 @@ class PostActionableItem extends HookConsumerWidget {
     this.isCompact = false,
     this.hideAvatar = false,
     this.hideAttachments = false,
+    this.containAttachments = false,
     this.borderRadius,
     this.onRefresh,
     this.onUpdate,
@@ -497,6 +503,7 @@ class PostActionableItem extends HookConsumerWidget {
           isCompact: isCompact,
           hideAvatar: hideAvatar,
           hideAttachments: hideAttachments,
+          containAttachments: containAttachments,
           onRefresh: onRefresh,
           onUpdate: onUpdate,
           onOpen: onOpen,
@@ -536,6 +543,10 @@ class PostItem extends HookConsumerWidget {
   final bool isCompact;
   final double? textScale;
 
+  /// Inset attachments like the body text (side padding and rounded corners)
+  /// instead of letting them bleed to the post's edges.
+  final bool containAttachments;
+
   /// Whether the chain continues above this post, so its avatar joins the rail
   /// the hosting screen renders over it instead of leaving a gap at the top.
   final bool connectChainAbove;
@@ -568,6 +579,7 @@ class PostItem extends HookConsumerWidget {
     this.isCompact = false,
     this.hideAvatar = false,
     this.hideAttachments = false,
+    this.containAttachments = false,
     this.connectChainAbove = false,
     this.connectChainBelow = false,
     this.textScale,
@@ -890,7 +902,8 @@ class PostItem extends HookConsumerWidget {
       renderingPadding: renderingPadding,
       hideAttachments: hideAttachments,
       headingAnchors: headingAnchors,
-      useContainedAttachments: hideAvatar || item.chainedPosts.isNotEmpty,
+      useContainedAttachments:
+          containAttachments || hideAvatar || item.chainedPosts.isNotEmpty,
       forwardedCard:
           (isShowReference &&
               (item.forwardedPost != null || item.forwardedGone))
