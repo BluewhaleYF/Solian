@@ -8,7 +8,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/post_featured.dart';
-import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,7 +28,9 @@ class _EmptyAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       jsonEncode(const <dynamic>[]),
       200,
-      headers: {Headers.contentTypeHeader: ['application/json']},
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
     );
   }
 }
@@ -106,28 +107,28 @@ void main() {
     while (tester.takeException() != null) {}
   }
 
-  testWidgets('default variant keeps its card chrome and pager', (
+  testWidgets('default variant keeps its card chrome and header pager', (
     tester,
   ) async {
     await pumpFeatured(tester);
 
     expect(find.byType(Card), findsOneWidget);
-    expect(find.byType(PageView), findsOneWidget);
-    expect(find.byType(HoverHorizontalScrollList), findsNothing);
+    expect(find.byType(CarouselView), findsOneWidget);
+    expect(find.byType(PageView), findsNothing);
     expect(find.byIcon(Symbols.arrow_left), findsOneWidget);
     expect(find.byIcon(Symbols.arrow_right), findsOneWidget);
 
     await disposeTree(tester);
   });
 
-  testWidgets('flush variant drops the card chrome for a snapping list', (
+  testWidgets('flush variant drops the card chrome for a snapping carousel', (
     tester,
   ) async {
     await pumpFeatured(tester, flush: true);
 
     expect(find.byType(Card), findsNothing);
+    expect(find.byType(CarouselView), findsOneWidget);
     expect(find.byType(PageView), findsNothing);
-    expect(find.byType(HoverHorizontalScrollList), findsOneWidget);
     expect(find.byIcon(Symbols.arrow_left), findsNothing);
     expect(find.byIcon(Symbols.arrow_right), findsNothing);
 

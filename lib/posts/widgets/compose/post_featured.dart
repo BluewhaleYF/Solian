@@ -1,10 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
-import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
+import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:logging/logging.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
@@ -47,21 +49,14 @@ class PostFeaturedList extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final featuredPostsAsync = ref.watch(featuredPostsProvider);
 
-    final pageViewController = usePageController();
+    final carouselController = useMaterialCarouselController();
     final prefs = ref.watch(sharedPreferencesProvider);
-    final pageViewCurrent = useState(0);
+    final carouselIndex = useState(0);
     final previousFirstPostId = useState<String?>(null);
     final storedCollapsedId = useState<String?>(
       prefs.getString(kFeaturedPostsCollapsedId),
     );
     final isCollapsed = useState(false);
-
-    useEffect(() {
-      pageViewController.addListener(() {
-        pageViewCurrent.value = pageViewController.page?.round() ?? 0;
-      });
-      return null;
-    }, [pageViewController]);
 
     // Log isCollapsed state changes
     useEffect(() {
@@ -160,7 +155,7 @@ class PostFeaturedList extends HookConsumerWidget {
                       ),
                     ),
                   ),
-                  // The arrows page the carded layout; the flush strip scrolls and
+                  // The arrows page the carousel; the flush strip scrolls and
                   // snaps on its own.
                   if (!flush) ...[
                     IconButton(
@@ -168,8 +163,8 @@ class PostFeaturedList extends HookConsumerWidget {
                       visualDensity: VisualDensity.compact,
                       constraints: const BoxConstraints(),
                       onPressed: () {
-                        pageViewController.animateToPage(
-                          pageViewCurrent.value - 1,
+                        carouselController.animateToItem(
+                          carouselIndex.value - 1,
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeInOut,
                         );
@@ -181,8 +176,8 @@ class PostFeaturedList extends HookConsumerWidget {
                       visualDensity: VisualDensity.compact,
                       constraints: const BoxConstraints(),
                       onPressed: () {
-                        pageViewController.animateToPage(
-                          pageViewCurrent.value + 1,
+                        carouselController.animateToItem(
+                          carouselIndex.value + 1,
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeInOut,
                         );
@@ -206,7 +201,7 @@ class PostFeaturedList extends HookConsumerWidget {
               ).padding(
                 // The flush strip sits in the host's own surface, so it keeps a
                 // tighter gutter than the carded variant.
-                horizontal: flush ? _FlushFeaturedStrip.itemPadding : 16,
+                horizontal: flush ? _kFeaturedCarouselGap : 16,
                 vertical: 8,
               ),
         ),
@@ -222,23 +217,18 @@ class PostFeaturedList extends HookConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
           data: (posts) {
+            if (posts.isEmpty) return const SizedBox.shrink();
             return SizedBox(
               height: maxHeight == null ? 344 : (maxHeight! - 48),
-              child: flush
-                  ? _FlushFeaturedStrip(posts: posts)
-                  : PageView.builder(
-                      controller: pageViewController,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: posts.length,
-                      itemBuilder: (context, index) {
-                        return SingleChildScrollView(
-                          child: PostActionableItem(
-                            item: posts[index],
-                            borderRadius: 8,
-                          ),
-                        );
-                      },
-                    ),
+              child: _FeaturedPostCarousel(
+                posts: posts,
+                controller: carouselController,
+                compact: flush,
+                showHoverArrows: flush,
+                itemWidth: flush ? _FeaturedPostCarousel.stripItemWidth : null,
+                sideGap: flush ? _kFeaturedCarouselGap : 16,
+                onIndexChanged: (index) => carouselIndex.value = index,
+              ),
             );
           },
         ),
@@ -265,50 +255,226 @@ class PostFeaturedList extends HookConsumerWidget {
   }
 }
 
-/// Fixed-width, snapping list of featured posts for hosts that own the surface
-/// (see [PostFeaturedList.flush]). Cards keep their intrinsic height and stay
-/// narrower than the pane, so the next post peeks in.
-class _FlushFeaturedStrip extends StatelessWidget {
-  /// Width of one featured post card, and the gutter kept on each side of it.
-  static const double itemWidth = 320;
-  static const double itemPadding = 8;
+/// Gutter kept on each side of a featured post card, and between two cards.
+const double _kFeaturedCarouselGap = 8;
 
-  /// Distance between two cards; the strip snaps on multiples of it.
-  static const double itemStride = itemWidth + itemPadding * 2;
+/// Snapping carousel of featured posts, built on Material's [CarouselView].
+///
+/// In the flush strip ([itemWidth] set) cards keep a fixed width so several are
+/// visible at once; otherwise each post fills the viewport. Either way the card
+/// is inset from the container edges, and its attachments are inset too (see
+/// [PostActionableItem.containAttachments]), so an image never touches an edge.
+class _FeaturedPostCarousel extends HookWidget {
+  /// Width of a card in the flush strip layout.
+  static const double stripItemWidth = 320;
 
   final List<SnPost> posts;
+  final CarouselController controller;
+  final bool compact;
+  final bool showHoverArrows;
 
-  const _FlushFeaturedStrip({required this.posts});
+  /// Fixed card width for the multi-card strip; null makes each post fill the
+  /// viewport with [sideGap] on both sides.
+  final double? itemWidth;
+  final double sideGap;
+  final ValueChanged<int>? onIndexChanged;
+
+  const _FeaturedPostCarousel({
+    required this.posts,
+    required this.controller,
+    this.compact = false,
+    this.showHoverArrows = false,
+    this.itemWidth,
+    this.sideGap = 16,
+    this.onIndexChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isHovered = useState(false);
+    final canScrollLeft = useState(false);
+    final canScrollRight = useState(false);
+
+    void updateScrollState() {
+      if (!controller.hasClients) {
+        canScrollLeft.value = false;
+        canScrollRight.value = false;
+        return;
+      }
+      final position = controller.position;
+      canScrollLeft.value = position.pixels > 0.5;
+      canScrollRight.value = position.pixels < position.maxScrollExtent - 0.5;
+    }
+
+    useEffect(() {
+      void listener() => updateScrollState();
+      controller.addListener(listener);
+      WidgetsBinding.instance.addPostFrameCallback((_) => updateScrollState());
+      return () => controller.removeListener(listener);
+    }, [controller, posts.length]);
+
+    void step(int direction, double itemExtent) {
+      final current = itemExtent <= 0
+          ? 0
+          : (controller.offset / itemExtent).round();
+      controller.animateToItem(
+        current + direction,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = constraints.maxWidth;
+        if (viewport <= 0) return const SizedBox.shrink();
+
+        final double itemExtent;
+        final EdgeInsets itemPadding;
+        final fixedWidth = itemWidth;
+        if (fixedWidth != null) {
+          // Fixed-width cards: [sideGap] at each edge of the strip and twice
+          // that between two cards.
+          final cardWidth = math.min(
+            fixedWidth,
+            math.max(0.0, viewport - sideGap * 2),
+          );
+          itemExtent = cardWidth + sideGap * 2;
+          itemPadding = EdgeInsets.symmetric(horizontal: sideGap);
+        } else {
+          // One post per viewport, inset on both sides.
+          itemExtent = viewport;
+          itemPadding = EdgeInsets.symmetric(horizontal: sideGap);
+        }
+
+        return MouseRegion(
+          onEnter: (_) => isHovered.value = true,
+          onExit: (_) => isHovered.value = false,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CarouselView(
+                  controller: controller,
+                  itemSnapping: true,
+                  itemExtent: itemExtent,
+                  padding: itemPadding,
+                  backgroundColor: Colors.transparent,
+                  enableSplash: false,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  onIndexChanged: onIndexChanged,
+                  children: [
+                    for (final post in posts)
+                      _FeaturedPostCard(post: post, compact: compact),
+                  ],
+                ),
+              ),
+              if (showHoverArrows) ...[
+                Positioned(
+                  left: 6,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _CarouselArrowButton(
+                      icon: Symbols.chevron_left,
+                      isVisible: isHovered.value && canScrollLeft.value,
+                      onTap: () => step(-1, itemExtent),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 6,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _CarouselArrowButton(
+                      icon: Symbols.chevron_right,
+                      isVisible: isHovered.value && canScrollRight.value,
+                      onTap: () => step(1, itemExtent),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Bordered, rounded card wrapping one featured post.
+class _FeaturedPostCard extends StatelessWidget {
+  static const double _radius = 12;
+
+  final SnPost post;
+  final bool compact;
+
+  const _FeaturedPostCard({required this.post, required this.compact});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return HoverHorizontalScrollList(
-      itemCount: posts.length,
-      snapExtent: itemStride,
-      padding: const EdgeInsets.symmetric(horizontal: itemPadding),
-      separatorWidth: itemPadding * 2,
-      itemBuilder: (context, index) => Align(
-        alignment: Alignment.topCenter,
-        // Cards keep their own width so a card entering the viewport can never
-        // be squeezed into the space left over by the previous one.
-        child: Container(
-          width: itemWidth,
-          margin: const .only(bottom: 12),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(
-                width: 1 / MediaQuery.devicePixelRatioOf(context),
-                color: theme.dividerColor.withOpacity(0.5),
-              ),
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(
+            width: 1 / MediaQuery.devicePixelRatioOf(context),
+            color: theme.dividerColor.withOpacity(0.5),
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(_radius)),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(_radius)),
+          child: SingleChildScrollView(
+            child: PostActionableItem(
+              item: post,
+              isCompact: compact,
+              borderRadius: _radius,
+              containAttachments: true,
             ),
-            child: SingleChildScrollView(
-              child: PostActionableItem(
-                item: posts[index],
-                isCompact: true,
-                borderRadius: 8,
-              ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarouselArrowButton extends StatelessWidget {
+  final IconData icon;
+  final bool isVisible;
+  final VoidCallback onTap;
+
+  const _CarouselArrowButton({
+    required this.icon,
+    required this.isVisible,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IgnorePointer(
+      ignoring: !isVisible,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        opacity: isVisible ? 1 : 0,
+        child: Material(
+          color: colorScheme.surface.withOpacity(0.92),
+          elevation: 2,
+          shadowColor: Colors.black26,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: Icon(icon, size: 20, color: colorScheme.onSurface),
             ),
           ),
         ),

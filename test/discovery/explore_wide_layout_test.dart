@@ -18,7 +18,6 @@ import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
-import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
 import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:island/shared/widgets/layouts/sidebar_panel_host.dart';
 import 'package:material_ui/material_ui.dart';
@@ -174,8 +173,9 @@ class _OnePostFeed extends ActivityListNotifier {
   );
 
   @override
-  Future<List<SnTimelineEvent>> fetch({int retryCount = 0}) async =>
-      [_postEvent(post)];
+  Future<List<SnTimelineEvent>> fetch({int retryCount = 0}) async => [
+    _postEvent(post),
+  ];
 }
 
 /// Answers every request with an empty JSON list so the sidebar cards settle
@@ -193,7 +193,9 @@ class _EmptyAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       jsonEncode(const <dynamic>[]),
       200,
-      headers: {Headers.contentTypeHeader: ['application/json']},
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
     );
   }
 }
@@ -340,7 +342,7 @@ void main() {
     // The online strip uses the same list, so scope to the featured one.
     final featuredStrip = find.descendant(
       of: featured,
-      matching: find.byType(HoverHorizontalScrollList),
+      matching: find.byType(CarouselView),
     );
     expect(featuredStrip, findsOneWidget);
     expect(
@@ -349,7 +351,10 @@ void main() {
       reason: 'a snapped strip replaces the full-width pager',
     );
     final featuredItem = find
-        .descendant(of: featuredStrip, matching: find.byType(PostActionableItem))
+        .descendant(
+          of: featuredStrip,
+          matching: find.byType(PostActionableItem),
+        )
         .first;
     expect(
       tester.getSize(featuredItem).width,
@@ -359,7 +364,10 @@ void main() {
     final scrollView = tester.widget<CustomScrollView>(
       find.ancestor(of: featured, matching: find.byType(CustomScrollView)),
     );
-    expect(scrollView.slivers.indexWhere((s) => s is SliverFriendPresenceStrip), 2);
+    expect(
+      scrollView.slivers.indexWhere((s) => s is SliverFriendPresenceStrip),
+      2,
+    );
     expect(scrollView.slivers.indexWhere((s) => s is SliverPadding), 3);
     expect(
       tester.getTopLeft(featured).dy,
@@ -401,7 +409,7 @@ void main() {
 
     final carousel = find.descendant(
       of: find.byType(PostFeaturedList),
-      matching: find.byType(HoverHorizontalScrollList),
+      matching: find.byType(CarouselView),
     );
     final items = find.descendant(
       of: carousel,
@@ -542,7 +550,9 @@ void main() {
     await pumpExplore(tester, const Size(1400, 900));
 
     await tester.tap(
-      find.descendant(of: find.byType(TabBar), matching: find.byType(Tab)).at(1),
+      find
+          .descendant(of: find.byType(TabBar), matching: find.byType(Tab))
+          .at(1),
     );
     await tester.pump();
     for (var i = 0; i < 5; i++) {
