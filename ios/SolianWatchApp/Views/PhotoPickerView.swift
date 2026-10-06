@@ -1,6 +1,6 @@
 //
 //  PhotoPickerView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Watch photo picker for sending an image as a chat message. Wraps SwiftUI's
 //  `.photosPicker(isPresented:selection:)` modifier, which auto-presents the

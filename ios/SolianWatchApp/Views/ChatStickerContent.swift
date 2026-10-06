@@ -1,6 +1,6 @@
 //
 //  ChatStickerContent.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Sticker rendering for chat messages. Message bodies carry stickers as
 //  `:prefix+slug:` placeholders (the main app's sticker syntax). This splits

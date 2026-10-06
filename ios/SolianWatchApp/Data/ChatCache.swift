@@ -1,6 +1,6 @@
 //
 //  ChatCache.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  SwiftData-backed cache for chat rooms, messages, and per-room summaries.
 //  Used to launch the room list instantly (offline) and to surface a chat

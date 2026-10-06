@@ -1,6 +1,6 @@
 //
 //  AppInfoHeader.swift
-//  Runner
+//  Solian
 //
 //  Created by LittleSheep on 2025/10/30.
 //

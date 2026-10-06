@@ -1,6 +1,6 @@
 //
 //  ChatStickerPicker.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Dedicated sticker-send surface. Presented from the chat's "Stickers"
 //  button (below the compose button); owned sticker packs are browsed by

@@ -1,6 +1,6 @@
 //
 //  SolianNotificationWidget.swift
-//  Runner
+//  Solian
 //
 //  Created by LittleSheep on 2026/1/4.
 //

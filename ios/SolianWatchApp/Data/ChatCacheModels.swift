@@ -1,6 +1,6 @@
 //
 //  ChatCacheModels.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  SwiftData models that persist chat rooms, messages, and summaries so the
 //  watch can launch instantly (offline) and show a chat summary (last message

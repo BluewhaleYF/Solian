@@ -1,6 +1,6 @@
 //
 //  SignInView.swift
-//  Watch Runner Watch App
+//  Solian Watch App
 //
 //  Created by LittleSheep on 2025/10/29.
 //

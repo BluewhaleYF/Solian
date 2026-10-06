@@ -1,6 +1,6 @@
 //
 //  CloudImageLinkerView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  "Link a cloud image" sheet: a grid of the user's Drive image files; tapping
 //  one sends it as a chat message attachment without re-uploading. Mirrors

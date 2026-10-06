@@ -1,6 +1,6 @@
 //
 //  StickerImage.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Auth'd image loading for sticker images and pack icons. The drive file
 //  endpoints need a bearer token; this wraps the shared ImageLoader pattern

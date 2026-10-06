@@ -1,6 +1,6 @@
 //
 //  ExternalLinkView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  A tappable external-link row. Two actions:
 //   1. "Open here" — presents the URL in an in-app web sheet on the watch via

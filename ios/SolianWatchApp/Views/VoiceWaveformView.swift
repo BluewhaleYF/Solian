@@ -1,6 +1,6 @@
 //
 //  VoiceWaveformView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Shared decorative waveform used by every audio surface — the in-bubble
 //  voice message player and post/attachment audio players. Models a voice

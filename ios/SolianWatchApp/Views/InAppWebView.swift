@@ -1,6 +1,6 @@
 //
 //  InAppWebView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Presents a web page on watchOS using `ASWebAuthenticationSession` — the one
 //  sanctioned in-app web presenter on watch (the watchOS SDK ships

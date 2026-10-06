@@ -1,6 +1,6 @@
 //
 //  VoiceMessageView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  In-bubble voice message player. A `voice` message carries its media URL in
 //  `meta.voice_url` (absolute, or relative to the server) and its length in

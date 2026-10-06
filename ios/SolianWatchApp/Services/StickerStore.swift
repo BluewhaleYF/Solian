@@ -1,6 +1,6 @@
 //
 //  StickerStore.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Shared sticker state: the current user's owned packs (fetched on demand),
 //  plus a small placeholder→resolved-sticker cache so message bubbles can

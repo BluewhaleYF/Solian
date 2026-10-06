@@ -1,6 +1,6 @@
 //
 //  ChatComposerActions.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  The watch's "more" compose menu, styled after Apple Messages' "+"
 //  attachment picker: a stack of circular tinted actions on a dark surface.

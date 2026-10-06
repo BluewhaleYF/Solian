@@ -1,6 +1,6 @@
 //
 //  VoiceRecorderView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Voice message recording sheet, walked-style: tap the mic to start, tap to
 //  stop, then confirm Send or Cancel (or re-record). Records to a temp .m4a

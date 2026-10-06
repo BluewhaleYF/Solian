@@ -1,6 +1,6 @@
 //
 //  AccountView.swift
-//  WatchRunner Watch App
+//  Solian Watch App
 //
 //  Created by LittleSheep on 2025/10/30.
 //
