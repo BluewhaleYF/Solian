@@ -50,18 +50,18 @@ dependencies:
     path: socommon/packages/solsynth_express
 
   flutter_hooks: ^0.21.3+1
-  hooks_riverpod: ^3.3.2
+  hooks_riverpod: ^3.4.3
   quick_actions: ^1.1.1
   styled_widget: ^0.4.1
-  shared_preferences: ^2.5.5
-  flutter_riverpod: ^3.3.2
+  shared_preferences: ^2.5.6
+  flutter_riverpod: ^3.4.3
   path_provider: ^2.1.6
   dio: ^5.11.1
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
   markdown: ^7.3.1
   uuid: ^4.6.0
-  url_launcher: ^6.3.2
+  url_launcher: ^6.3.3
   google_fonts: ^9.0.0
   gap: ^3.0.1
   cached_network_image: ^4.0.4
@@ -75,29 +75,29 @@ dependencies:
   easy_localization: ^3.0.8
   flutter_inappwebview: ^6.1.5
   animations: ^3.0.0
-  package_info_plus: ^10.2.1
-  device_info_plus: ^13.2.0
+  package_info_plus: ^10.2.2
+  device_info_plus: ^13.3.0
   protocol_handler: ^0.2.0
   cross_file: ^0.3.5+5
-  image_picker: ^1.2.3
+  image_picker: ^1.2.4
   file_picker: ^13.1.0
   disk_space_2: ^1.0.13
-  riverpod_annotation: ^4.0.3
-  image_picker_platform_interface: ^2.11.1
-  image_picker_android: ^0.8.13+23
+  riverpod_annotation: ^4.0.7
+  image_picker_platform_interface: ^2.11.2
+  image_picker_android: ^0.8.13+25
   super_context_menu: ^0.9.1
   # firebase_messaging 16.4.x refers to a removed FirebasePlugin API.
   firebase_messaging: ^16.7.0
   firebase_core: ^4.15.0
   web_socket_channel: ^3.0.3
   material_symbols_icons: ^4.2960.0
-  drift: ^2.35.0
+  drift: ^2.35.1
   drift_flutter: ^0.3.1
   path: ^1.9.1
   open_file: ^4.0.0
   collection: ^1.19.1
   crop_image: ^1.0.17
-  table_calendar: ^3.2.1
+  table_calendar: ^3.3.0
   relative_time: ^5.0.0
   lunar: ^1.7.8
   dropdown_button2: ^3.1.0
@@ -119,7 +119,7 @@ dependencies:
   flutter_staggered_grid_view: ^0.7.0
   flutter_popup_card: ^0.1.2
   timezone: ^0.11.1
-  flutter_timezone: ^5.1.0
+  flutter_timezone: ^5.1.1
   fl_chart: ^1.2.0
   sign_in_with_apple: ^8.2.0
   flutter_svg: ^2.3.0
@@ -133,7 +133,7 @@ dependencies:
     path: socommon/packages/flutter_math_fork
   flutter_nfc_kit: ^3.6.2
   ndef: ^0.4.0
-  share_plus: ^13.3.0
+  share_plus: ^13.3.1
   flutter_sharing_intent: ^2.0.4
   mime: ^2.1.0
   html2md: ^1.3.2
@@ -143,11 +143,11 @@ dependencies:
   firebase_analytics: ^12.6.0
   material_color_utilities: ^0.13.0
   screenshot: ^3.0.0
-  file_saver: ^0.6.0
+  file_saver: ^0.7.0
   tray_manager: ^0.7.0
   flutter_webrtc: ^1.6.2+hotfix.3
   flutter_local_notifications: ^22.3.1
-  wakelock_plus: ^1.5.2
+  wakelock_plus: ^1.8.0
   slide_countdown: ^2.0.2
   shelf: ^1.4.2
   shelf_web_socket: ^3.0.0
@@ -165,7 +165,7 @@ dependencies:
   pointycastle: ^4.0.0
   desktop_drop: ^0.8.4
   flutter_map: ^8.3.2
-  geolocator: ^14.0.2
+  geolocator: ^14.1.1
   geocoding: ^5.0.0
   nominatim_flutter: ^0.0.8
   http_parser: ^4.1.2
@@ -182,7 +182,7 @@ dependencies:
   auto_route: ^11.2.0
   in_app_purchase: ^3.3.1
   in_app_purchase_storekit: ^0.4.13
-  pinput: ^6.0.2
+  pinput: ^7.0.0
   passkeys: ^2.23.1
   logging: ^1.3.0
   connectivity_plus: ^7.3.1
@@ -207,10 +207,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  build_runner: ^2.15.1
+  build_runner: ^2.16.1
   freezed: ^4.0.1
   json_serializable: ^6.14.1
-  riverpod_generator: ^4.0.4
+  riverpod_generator: ^4.0.9
   flutter_launcher_icons: ^0.14.4
   auto_route_generator: ^10.6.0
   msix: ^3.18.0
