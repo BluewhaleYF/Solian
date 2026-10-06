@@ -924,6 +924,17 @@ final tokenProvider = Provider<AppToken?>((ref) {
 Future<String?> getValidAuthToken(Ref ref) async {
   final prefs = ref.read(sharedPreferencesProvider);
   var tokenPair = _readTokenPairFromPrefs(prefs);
+  if (tokenPair != null && !_isNotExpired(tokenPair.expiresAt)) {
+    // At/near expiry another engine that shares this store may already have
+    // rotated the pair (the iOS native token refresh, the desktop call-window
+    // engine). SharedPreferences caches its values in memory and never
+    // re-reads them, so re-read the store here — otherwise we would rotate a
+    // credential that was just replaced, and because rotation bumps the
+    // server's session epoch the token we then send is rejected outright (not
+    // as TOKEN_EXPIRED), surfacing to the user as a bogus session expiry.
+    await prefs.reload();
+    tokenPair = _readTokenPairFromPrefs(prefs);
+  }
   if (tokenPair != null && _shouldRefreshToken(tokenPair)) {
     tokenPair = await _refreshTokenPair(
       ref: ref,
@@ -944,8 +955,18 @@ Future<void> forceRefreshToken({
   }
 
   _forceTokenRefreshInFlight = () async {
-    final tokenPair = _readTokenPairFromPrefs(prefs);
-    if (tokenPair == null) return;
+    final cached = _readTokenPairFromPrefs(prefs);
+    if (cached == null) return;
+    // Another engine sharing this store may have already rotated the pair
+    // while we were reacting to the 401 (see getValidAuthToken). Re-read first;
+    // if a different pair landed on disk, use it as-is instead of rotating the
+    // credential again — a second rotation would revoke the pair just stored.
+    await prefs.reload();
+    final tokenPair = _readTokenPairFromPrefs(prefs) ?? cached;
+    if (tokenPair.token != cached.token &&
+        _isNotExpired(tokenPair.expiresAt)) {
+      return;
+    }
     if (tokenPair.refreshToken == null || tokenPair.refreshToken!.isEmpty) {
       throw RefreshTokenExpiredException();
     }
