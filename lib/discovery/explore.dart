@@ -48,13 +48,20 @@ class ExploreScreen extends HookConsumerWidget {
     final exploreSettings = ref.watch(appSettingsProvider).exploreSettings;
     // Publisher picks are session-scoped; only category/tag filters persist.
     final selectedPublisherNames = useState<List<String>>(<String>[]);
-    // Recreating the controller on an external section change keeps the tab
-    // indicator on the section the settings screen selected.
+    // Keep a single controller so tapping a tab animates the indicator. The
+    // listener below syncs external section changes (e.g. the settings screen)
+    // without recreating (and thus resetting) the controller.
     final filterTabController = useMaterialTabController(
       initialLength: 3,
       initialIndex: _filterTabIndex(exploreSettings.filter),
-      keys: [exploreSettings.filter],
     );
+
+    ref.listen(appSettingsProvider, (previous, next) {
+      final target = _filterTabIndex(next.exploreSettings.filter);
+      if (filterTabController.index != target) {
+        filterTabController.animateTo(target);
+      }
+    });
 
     void handleFilterChange(String? filter) {
       ref
