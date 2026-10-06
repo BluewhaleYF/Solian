@@ -23,6 +23,7 @@ import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/core/debug_sheet.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/notifications/notification.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -157,6 +158,9 @@ class AccountFeatureWidget extends HookConsumerWidget {
         : hasHeaderImage
         ? Colors.white.withOpacity(0.9)
         : theme.colorScheme.onSurface;
+    // `FlexibleSpaceBar` ignores the theme's `centerTitle` (see
+    // [appBarCenterTitle]), so the title needs it passed in explicitly.
+    final centerTitle = appBarCenterTitle(theme);
 
     return AppScaffold(
       isNoBackground: isWide,
@@ -166,6 +170,7 @@ class AccountFeatureWidget extends HookConsumerWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
+            centerTitle: centerTitle,
             expandedHeight: 220,
             automaticallyImplyLeading: false,
             backgroundColor: headerCollapsed.value
@@ -174,6 +179,7 @@ class AccountFeatureWidget extends HookConsumerWidget {
             foregroundColor: headerTitleColor,
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.parallax,
+              centerTitle: centerTitle,
               title: AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(

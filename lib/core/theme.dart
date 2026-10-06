@@ -165,3 +165,15 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     ),
   );
 }
+
+/// Horizontal title alignment a collapsing header must be told explicitly.
+///
+/// A plain `AppBar` resolves `centerTitle` as
+/// `centerTitle ?? AppBarTheme.centerTitle ?? platformDefault`. `FlexibleSpaceBar`
+/// does not: it resolves `centerTitle ?? platformDefault`, and `AppBarTheme`
+/// never reaches it (nor is it forwarded through `FlexibleSpaceBar.createSettings`).
+/// The platform default is left-aligned on Android/Windows/Linux and centered
+/// only on iOS/macOS, so a `SliverAppBar` whose title lives in a
+/// `FlexibleSpaceBar` must thread this value into *both* widgets itself.
+bool appBarCenterTitle(ThemeData theme) =>
+    theme.appBarTheme.centerTitle ?? true;

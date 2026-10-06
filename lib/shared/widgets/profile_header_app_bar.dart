@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:island/core/theme.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The height below which a pinned profile header counts as collapsed:
@@ -184,7 +185,7 @@ class ProfileHeaderAppBar extends HookWidget {
                 const TextStyle())
             .copyWith(color: titleColor, fontWeight: FontWeight.w600);
     // FlexibleSpaceBar ignores AppBarTheme.centerTitle, so mirror it here.
-    final centerTitle = theme.appBarTheme.centerTitle ?? true;
+    final centerTitle = appBarCenterTitle(theme);
 
     return SliverAppBar(
       pinned: true,
