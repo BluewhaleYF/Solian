@@ -165,14 +165,20 @@ void showCallOverlay(SnChatRoom room) {
   _callOverlayRetryTimer?.cancel();
   _callOverlayRetryTimer = null;
 
+  // A single entry owns the floating call UI for the whole app. Never use
+  // `OverlayEntry.mounted` to detect whether it is already shown: `mounted`
+  // stays false between `Overlay.insert` and the next build, so checking it
+  // here used to drop a reference to an already inserted entry and insert a
+  // second, orphaned panel (duplicates that `hideCallOverlay` could no longer
+  // remove). The reference itself is the source of truth; only
+  // `hideCallOverlay` clears it, and it always removes the entry first.
   final existingEntry = _callOverlayEntry;
-  if (existingEntry != null && existingEntry.mounted) {
+  if (existingEntry != null) {
     _pendingCallOverlayRoom = null;
     _overlayContainer.read(_callOverlayStateProvider.notifier).setRoom(room);
     existingEntry.markNeedsBuild();
     return;
   }
-  _callOverlayEntry = null;
 
   _pendingCallOverlayRoom = room;
   if (_callOverlayInsertionScheduled) return;
@@ -190,15 +196,16 @@ void showCallOverlay(SnChatRoom room) {
       return;
     }
 
+    // If an entry appeared while this insertion was scheduled (for example
+    // through the retry timer), reuse it rather than inserting a second one.
     final existingEntry = _callOverlayEntry;
-    if (existingEntry != null && existingEntry.mounted) {
+    if (existingEntry != null) {
       _overlayContainer
           .read(_callOverlayStateProvider.notifier)
           .setRoom(pendingRoom);
       existingEntry.markNeedsBuild();
       return;
     }
-    _callOverlayEntry = null;
 
     final state = _overlayContainer.read(_callOverlayStateProvider);
     _overlayContainer
@@ -226,10 +233,9 @@ void hideCallOverlay() {
 }
 
 void toggleCallOverlay(SnChatRoom room) {
-  if (_callOverlayEntry?.mounted == true) {
+  if (_callOverlayEntry != null) {
     hideCallOverlay();
   } else {
-    _callOverlayEntry = null;
     showCallOverlay(room);
   }
 }
@@ -946,7 +952,7 @@ class _CallOverlayBarState extends ConsumerState<CallOverlayBar> {
 
     if (!_isCallScreenActive && shouldShowOverlay) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_callOverlayEntry?.mounted != true) {
+        if (_callOverlayEntry == null) {
           showCallOverlay(widget.room);
         }
       });
