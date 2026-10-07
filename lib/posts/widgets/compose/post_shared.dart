@@ -2074,6 +2074,15 @@ class PostBody extends ConsumerWidget {
       fontSize:
           Theme.of(context).textTheme.bodyMedium!.fontSize! * (textScale ?? 1),
     );
+    // The attachment carousel is a `CarouselView`, whose padding is applied to
+    // every item — so passing the body gutter verbatim also made it the gap
+    // between two images (an 8px gutter became a 16px gap). Halve it for the
+    // horizontal carousel so images sit 8px apart while the edge still roughly
+    // matches the body text; the column layout keeps the full gutter because
+    // its spacing comes from the column itself.
+    final containedAttachmentInset = isInteractive
+        ? renderingPadding.horizontal / 2
+        : renderingPadding.horizontal;
 
     if (item.debugRank != null && kDebugMode) {
       metadataChildren.add(
@@ -2398,9 +2407,9 @@ class PostBody extends ConsumerWidget {
                   isColumn: !isInteractive,
                   isFullBleed: !useContainedAttachments,
                   padding: EdgeInsets.fromLTRB(
-                    useContainedAttachments ? renderingPadding.horizontal : 0,
+                    useContainedAttachments ? containedAttachmentInset : 0,
                     4,
-                    useContainedAttachments ? renderingPadding.horizontal : 0,
+                    useContainedAttachments ? containedAttachmentInset : 0,
                     4,
                   ),
                   borderRadius: useContainedAttachments ? 12 : 8,
