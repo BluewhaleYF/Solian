@@ -2467,6 +2467,11 @@ class SettingsScreen extends HookConsumerWidget {
           controller: searchController,
           focusNode: searchFocusNode,
           constraints: const BoxConstraints(maxWidth: 420, minHeight: 36),
+          // Flat, shadowless search field so it blends into the app bar instead
+          // of floating above it with the default M3 elevation (6dp + shadow).
+          elevation: const WidgetStatePropertyAll(0),
+          shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
           hintText: 'searchSettings'.tr(),
           hintStyle: WidgetStatePropertyAll(
             TextStyle(
