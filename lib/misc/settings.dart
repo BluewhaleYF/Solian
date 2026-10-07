@@ -81,6 +81,11 @@ class SettingsScreen extends HookConsumerWidget {
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
     final isIos = !kIsWeb && Platform.isIOS;
     final isWide = isWideScreen(context);
+    // Shared tone for the whole top area (app bar + category tab strip) so the
+    // gray tab strip doesn't sit under a lighter/white app bar.
+    final topBarColor = Theme.of(
+      context,
+    ).colorScheme.surfaceContainerHighest.withOpacity(0.55);
     final pools = ref.watch(poolsProvider);
     final user = ref.watch(userInfoProvider);
     final docBasepath = useState<String?>(null);
@@ -2400,7 +2405,6 @@ class SettingsScreen extends HookConsumerWidget {
       }
 
       // Narrow layout with category tabs
-      final colorScheme = Theme.of(context).colorScheme;
       final selectedIndex = visibleCategories.indexOf(selectedCategory);
       // Key only on the set of visible categories, not on the current selection.
       // Tapping a tab changes `selectedCategory`, so including it here used to
@@ -2412,7 +2416,7 @@ class SettingsScreen extends HookConsumerWidget {
       return Column(
         children: [
           Material(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.55),
+            color: topBarColor,
             child: DefaultTabController(
               key: tabBarKey,
               length: visibleCategories.length,
@@ -2472,6 +2476,11 @@ class SettingsScreen extends HookConsumerWidget {
           elevation: const WidgetStatePropertyAll(0),
           shadowColor: const WidgetStatePropertyAll(Colors.transparent),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          // One tone deeper than the surrounding top bar so the field still
+          // reads clearly against the unified gray background.
+          backgroundColor: WidgetStatePropertyAll(
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
           hintText: 'searchSettings'.tr(),
           hintStyle: WidgetStatePropertyAll(
             TextStyle(
@@ -2507,6 +2516,10 @@ class SettingsScreen extends HookConsumerWidget {
         ),
         leading: const AutoLeadingButton(),
         elevation: 0,
+        // Match the category tab strip so the entire top reads as one surface.
+        backgroundColor: topBarColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
