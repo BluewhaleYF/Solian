@@ -172,7 +172,7 @@ class AccountSettingsScreen extends HookConsumerWidget {
         // Note: Password reset is not yet in the typed API, using raw Dio
         final dio = ref.read(apiClientProvider);
         await dio.post(
-          '/passport/accounts/recovery/password',
+          '/stargate/accounts/recovery/password',
           data: {'account': userInfo.value!.name, 'captcha_token': captchaTk},
         );
         if (context.mounted) {

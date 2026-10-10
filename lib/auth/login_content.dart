@@ -1005,7 +1005,7 @@ class _LoginLookupScreen extends HookConsumerWidget {
       try {
         final client = ref.watch(solarNetworkClientProvider);
         await client.dio.post(
-          '/passport/accounts/recovery/password',
+          '/stargate/accounts/recovery/password',
           data: {'account': uname, 'captcha_token': captchaTk},
         );
         showInfoAlert('loginResetPasswordSent'.tr(), 'done'.tr());
