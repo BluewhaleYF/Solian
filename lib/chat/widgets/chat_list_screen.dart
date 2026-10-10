@@ -1289,12 +1289,14 @@ class _ChatListAppBar extends HookConsumerWidget {
   final List<SnChatGroup> chatGroups;
   final Future<void> Function() onChatGroupsChanged;
   final String? accountId;
+  final Color foreground;
 
   const _ChatListAppBar({
     required this.tabController,
     required this.chatGroups,
     required this.onChatGroupsChanged,
     required this.accountId,
+    required this.foreground,
   });
 
   @override
@@ -1314,6 +1316,7 @@ class _ChatListAppBar extends HookConsumerWidget {
     Widget buildInviteButton() {
       return IconButton(
         tooltip: 'Chat Invites',
+        color: foreground,
         onPressed: openInvites,
         icon: Badge(
           label: Text(
@@ -1354,6 +1357,7 @@ class _ChatListAppBar extends HookConsumerWidget {
                       Symbols.inbox,
                       fill: tabController.index == 0 ? 1 : 0,
                     ),
+                    color: foreground,
                     onPressed: () => tabController.animateTo(0),
                     tooltip: 'chatTabAll'.tr(),
                   ),
@@ -1362,6 +1366,7 @@ class _ChatListAppBar extends HookConsumerWidget {
                       Symbols.person,
                       fill: tabController.index == 1 ? 1 : 0,
                     ),
+                    color: foreground,
                     onPressed: () => tabController.animateTo(1),
                     tooltip: 'chatTabDirect'.tr(),
                   ),
@@ -1370,6 +1375,7 @@ class _ChatListAppBar extends HookConsumerWidget {
                       Symbols.group,
                       fill: tabController.index == 2 ? 1 : 0,
                     ),
+                    color: foreground,
                     onPressed: () => tabController.animateTo(2),
                     tooltip: 'chatTabGroup'.tr(),
                   ),
@@ -1387,13 +1393,11 @@ class _ChatListAppBar extends HookConsumerWidget {
                     size: 24,
                     speed: 7,
                     fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withOpacity(0.65),
+                    color: foreground.withOpacity(0.65),
                   ),
                 ),
               ),
-            const _MarkAllReadButton(),
+            _MarkAllReadButton(color: foreground),
             buildInviteButton(),
           ],
         ),
@@ -1403,7 +1407,9 @@ class _ChatListAppBar extends HookConsumerWidget {
 }
 
 class _MarkAllReadButton extends ConsumerWidget {
-  const _MarkAllReadButton();
+  final Color? color;
+
+  const _MarkAllReadButton({this.color});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1415,17 +1421,14 @@ class _MarkAllReadButton extends ConsumerWidget {
     }
 
     return IconButton(
+      color: color,
       icon: readSyncState.isLoading
           ? SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
             )
-          : Icon(
-              Symbols.done_all,
-            ),
+          : Icon(Symbols.done_all),
       tooltip: 'Mark all as read',
       onPressed: readSyncState.isLoading
           ? null
@@ -2125,6 +2128,20 @@ class ChatListWidget extends HookConsumerWidget {
       );
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final appBarTransparent = ref.watch(
+      appSettingsProvider.select((s) => s.appBarTransparent),
+    );
+    // With the transparent app bar setting off the header is a solid primary
+    // band, matching the explore page; with it on it defers to the theme's
+    // transparent treatment. The foreground has to be threaded into every
+    // child because `flexibleSpace` is not covered by the AppBar's own
+    // foreground `IconTheme`.
+    final appBarForeground = appBarTransparent
+        ? (Theme.of(context).appBarTheme.foregroundColor ??
+              colorScheme.onSurface)
+        : colorScheme.onPrimary;
+
     return AppScaffold(
       extendBody: false,
       floatingActionButton: const ChatFabWidget().padding(
@@ -2133,6 +2150,11 @@ class ChatListWidget extends HookConsumerWidget {
       appBar: AppBar(
         leading: null,
         automaticallyImplyLeading: false,
+        // Null keeps the theme background (transparent when the setting is on).
+        backgroundColor: appBarTransparent ? null : colorScheme.primary,
+        foregroundColor: appBarForeground,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         flexibleSpace: Stack(
           children: [
             _ChatListAppBar(
@@ -2140,6 +2162,7 @@ class ChatListWidget extends HookConsumerWidget {
               chatGroups: chatGroups,
               onChatGroupsChanged: refreshChatGroups,
               accountId: accountId,
+              foreground: appBarForeground,
             ),
           ],
         ),

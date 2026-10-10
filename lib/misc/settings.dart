@@ -81,6 +81,11 @@ class SettingsScreen extends HookConsumerWidget {
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
     final isIos = !kIsWeb && Platform.isIOS;
     final isWide = isWideScreen(context);
+    // Shared tone for the whole top area (app bar + category tab strip) so the
+    // gray tab strip doesn't sit under a lighter/white app bar.
+    final topBarColor = Theme.of(
+      context,
+    ).colorScheme.surfaceContainerHighest.withOpacity(0.55);
     final pools = ref.watch(poolsProvider);
     final user = ref.watch(userInfoProvider);
     final docBasepath = useState<String?>(null);
@@ -2400,15 +2405,18 @@ class SettingsScreen extends HookConsumerWidget {
       }
 
       // Narrow layout with category tabs
-      final colorScheme = Theme.of(context).colorScheme;
       final selectedIndex = visibleCategories.indexOf(selectedCategory);
+      // Key only on the set of visible categories, not on the current selection.
+      // Tapping a tab changes `selectedCategory`, so including it here used to
+      // recreate the DefaultTabController on every tap, resetting its animation
+      // to the end value and making the tab indicator jump instead of slide.
       final tabBarKey = ValueKey(
-        '${selectedCategory.title}:${visibleCategories.map((category) => category.title).join('|')}',
+        visibleCategories.map((category) => category.title).join('|'),
       );
       return Column(
         children: [
           Material(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.55),
+            color: topBarColor,
             child: DefaultTabController(
               key: tabBarKey,
               length: visibleCategories.length,
@@ -2429,16 +2437,28 @@ class SettingsScreen extends HookConsumerWidget {
             ),
           ),
           Expanded(
-            child: selectedCategory.wideContent != null
-                ? selectedCategory.wideContent!(context)
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: _SettingsSection(
-                      title: selectedCategory.title,
-                      localizedTitleKey: selectedCategory.localizedTitleKey,
-                      children: selectedCategory.children,
-                    ),
-                  ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                fit: StackFit.expand,
+                children: [...previousChildren, ?currentChild],
+              ),
+              child: KeyedSubtree(
+                key: ValueKey(selectedCategory.title),
+                child: selectedCategory.wideContent != null
+                    ? selectedCategory.wideContent!(context)
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: _SettingsSection(
+                          title: selectedCategory.title,
+                          localizedTitleKey: selectedCategory.localizedTitleKey,
+                          children: selectedCategory.children,
+                        ),
+                      ),
+              ),
+            ),
           ),
         ],
       );
@@ -2451,6 +2471,16 @@ class SettingsScreen extends HookConsumerWidget {
           controller: searchController,
           focusNode: searchFocusNode,
           constraints: const BoxConstraints(maxWidth: 420, minHeight: 36),
+          // Flat, shadowless search field so it blends into the app bar instead
+          // of floating above it with the default M3 elevation (6dp + shadow).
+          elevation: const WidgetStatePropertyAll(0),
+          shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          // One tone deeper than the surrounding top bar so the field still
+          // reads clearly against the unified gray background.
+          backgroundColor: WidgetStatePropertyAll(
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
           hintText: 'searchSettings'.tr(),
           hintStyle: WidgetStatePropertyAll(
             TextStyle(
@@ -2486,6 +2516,10 @@ class SettingsScreen extends HookConsumerWidget {
         ),
         leading: const AutoLeadingButton(),
         elevation: 0,
+        // Match the category tab strip so the entire top reads as one surface.
+        backgroundColor: topBarColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
