@@ -1026,12 +1026,12 @@ class CreatorHubContentWidget extends HookConsumerWidget {
                         stats: stats,
                         heatmap: publisherHeatmap.value,
                       ).padding(horizontal: 16),
-                    buildNavigationWidget(),
                     if (publisherRatingOverview.value != null)
                       _buildRatingCardStatic(
                         context,
                         publisherRatingOverview.value!,
                       ).padding(horizontal: 16),
+                    buildNavigationWidget(),
                   ],
                 ),
         ),
