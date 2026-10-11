@@ -888,8 +888,7 @@ class _CreateFundSheetState extends ConsumerState<CreateFundSheet> {
                       return DropdownItem(
                         value: currency,
                         child: Text(
-                          'walletCurrency${currency[0].toUpperCase()}${currency.substring(1).toLowerCase()}'
-                              .tr(),
+                          walletCurrencyShort(currency),
                         ).padding(left: 16, right: 8),
                       );
                     }).toList(),
@@ -901,8 +900,7 @@ class _CreateFundSheetState extends ConsumerState<CreateFundSheet> {
                     selectedItemBuilder: (context) {
                       return kCurrencyIconData.keys.map((currency) {
                         return Text(
-                          'walletCurrency${currency[0].toUpperCase()}${currency.substring(1).toLowerCase()}'
-                              .tr(),
+                          walletCurrencyShort(currency),
                         );
                       }).toList();
                     },
@@ -1559,8 +1557,7 @@ class _CreateTransferSheetState extends ConsumerState<CreateTransferSheet> {
                       return DropdownItem(
                         value: currency,
                         child: Text(
-                          'walletCurrency${currency[0].toUpperCase()}${currency.substring(1).toLowerCase()}'
-                              .tr(),
+                          walletCurrencyShort(currency),
                         ).padding(left: 16, right: 8),
                       );
                     }).toList(),
@@ -1572,8 +1569,7 @@ class _CreateTransferSheetState extends ConsumerState<CreateTransferSheet> {
                     selectedItemBuilder: (context) {
                       return kCurrencyIconData.keys.map((currency) {
                         return Text(
-                          'walletCurrency${currency[0].toUpperCase()}${currency.substring(1).toLowerCase()}'
-                              .tr(),
+                          walletCurrencyShort(currency),
                         );
                       }).toList();
                     },
@@ -3252,8 +3248,7 @@ class WalletScreen extends HookConsumerWidget {
               ),
               const Gap(4),
               Text(
-                'walletCurrency${selectedCurrency.value[0].toUpperCase()}${selectedCurrency.value.substring(1).toLowerCase()}'
-                    .tr(),
+                walletCurrencyShort(selectedCurrency.value),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.w500,
@@ -3291,8 +3286,7 @@ class WalletScreen extends HookConsumerWidget {
                 const Gap(8),
                 Expanded(
                   child: Text(
-                    'walletCurrency${pocket.currency[0].toUpperCase()}${pocket.currency.substring(1).toLowerCase()}'
-                        .tr(),
+                    walletCurrencyShort(pocket.currency),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

@@ -1006,8 +1006,7 @@ class _TransferRequestSheetState extends State<_TransferRequestSheet> {
                       return DropdownItem(
                         value: currency,
                         child: Text(
-                          'walletCurrency${currency[0].toUpperCase()}${currency.substring(1).toLowerCase()}'
-                              .tr(),
+                          walletCurrencyShort(currency),
                         ).padding(right: 8),
                       );
                     }).toList(),

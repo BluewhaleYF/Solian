@@ -4164,8 +4164,6 @@
   "walletCreateHint": "You don't have a wallet yet. Create one to start using the Solar Network eWallet.",
   "walletCreateNew": "Create New Wallet",
   "currency": "Currency",
-  "walletCurrencyGolds": "Golden Solar Points",
-  "walletCurrencyPoints": "Data Bits",
   "walletCurrencyShortGolds": "Golds",
   "walletCurrencyShortPoints": "Bits",
   "walletBillingProviderGdp": "Golden Solar Points",

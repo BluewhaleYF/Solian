@@ -2598,8 +2598,6 @@
   "wallet": "지갑",
   "walletCreate": "지갑 생성",
   "walletCreateHint": "아직 지갑이 없습니다. Solar Network eWallet을 사용하려면 지갑을 생성하세요.",
-  "walletCurrencyGolds": "골든 솔라 포인트",
-  "walletCurrencyPoints": "데이터 비트",
   "walletCurrencyShortGolds": "골드",
   "walletCurrencyShortPoints": "비트",
   "walletDescription": "내 소스 포인트 지갑입니다.",

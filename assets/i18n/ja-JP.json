@@ -2308,8 +2308,6 @@
   "wallet": "ウォレット",
   "walletCreate": "ウォレットを作成",
   "walletCreateHint": "まだウォレットがありません。 Solar Network 電子ウォレットの使用を開始するには、ウォレットを作成してください。",
-  "walletCurrencyGolds": "太陽幣",
-  "walletCurrencyPoints": "新太陽点",
   "walletCurrencyShortGolds": "TSD",
   "walletCurrencyShortPoints": "Bits",
   "walletDescription": "あなたのソースポイントウォレット。",

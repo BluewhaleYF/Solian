@@ -4138,8 +4138,6 @@
   "walletCreateHint": "您尚未有钱包。创建一个以开始使用 Solar Network 电子钱包。",
   "walletCreateNew": "创建新钱包",
   "currency": "货币",
-  "walletCurrencyGolds": "金太阳点",
-  "walletCurrencyPoints": "数据位元",
   "walletCurrencyShortGolds": "Golds",
   "walletCurrencyShortPoints": "Bits",
   "walletBillingProviderGdp": "金太阳点",
