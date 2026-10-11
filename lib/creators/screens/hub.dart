@@ -399,7 +399,7 @@ class PublisherSelector extends StatelessWidget {
               ),
               Flexible(
                 child: Text(
-                  isValueValid ? currentValue.nick : 'Select Publisher',
+                  isValueValid ? currentValue.nick : 'selectPublisher'.tr(),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -980,6 +980,24 @@ class CreatorHubContentWidget extends HookConsumerWidget {
     return AppScaffold(
       isNoBackground: true,
       appBar: AppBar(
+        // The narrow (portrait) layout follows the app's themed top bars and
+        // uses the theme colour; the wide split view keeps a plain surface bar.
+        // Either way the surface tint and scrolled-under elevation stay off so
+        // no coloured scrim appears over the title while scrolling.
+        backgroundColor: isWideScreen(context)
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.primary,
+        foregroundColor: isWideScreen(context)
+            ? Theme.of(context).colorScheme.onSurface
+            : Theme.of(context).colorScheme.onPrimary,
+        // The theme pins the title to onSurface, so re-tint it to match the bar.
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
+          color: isWideScreen(context)
+              ? Theme.of(context).colorScheme.onSurface
+              : Theme.of(context).colorScheme.onPrimary,
+        ),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Symbols.menu),
           onPressed: () {
@@ -1026,12 +1044,12 @@ class CreatorHubContentWidget extends HookConsumerWidget {
                         stats: stats,
                         heatmap: publisherHeatmap.value,
                       ).padding(horizontal: 16),
-                    buildNavigationWidget(),
                     if (publisherRatingOverview.value != null)
                       _buildRatingCardStatic(
                         context,
                         publisherRatingOverview.value!,
                       ).padding(horizontal: 16),
+                    buildNavigationWidget(),
                   ],
                 ),
         ),
