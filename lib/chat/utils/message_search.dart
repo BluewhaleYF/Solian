@@ -1,5 +1,6 @@
 // Re-exports intl's DateFormat, as the rest of the app uses it.
 import 'package:easy_localization/easy_localization.dart';
+import 'package:island/core/utils/text.dart';
 
 /// Presentation rules for chat search results: the excerpt a result row
 /// draws and the date span a room band summarises.
@@ -12,29 +13,6 @@ import 'package:easy_localization/easy_localization.dart';
 /// parses (`:pack+slug:`); keep the two in step.
 final _stickerOnly = RegExp(r'^(?::[-\w]*\+[-\w]*:\s*)+$');
 
-/// Spoiler bodies stay concealed in a result row: the index may hold the
-/// text, the list must not print it.
-final _spoiler = RegExp(r'=!([\s\S]*?)!=');
-final _fencedCode = RegExp(r'```[\s\S]*?```');
-final _inlineCode = RegExp(r'`([^`]*)`');
-final _image = RegExp(r'!\[([^\]]*)\]\([^)]*\)');
-final _link = RegExp(r'\[([^\]]*)\]\(\s*[^)]*\)');
-final _highlight = RegExp(r'==([\s\S]*?)==');
-
-/// Unwrap paired emphasis markers but leave single underscores alone: `_` is
-/// far more common inside identifiers (`snake_case`) than as emphasis in chat.
-final _emphasis = <RegExp>[
-  RegExp(r'\*\*(?=\S)([\s\S]*?\S)\*\*'),
-  RegExp(r'(?<![\w*])\*(?=\S)([^*\n]*?\S)\*(?![\w*])'),
-  RegExp(r'__(?=\S)([\s\S]*?\S)__'),
-  RegExp(r'~~(?=\S)([\s\S]*?\S)~~'),
-];
-
-final _linePrefix = RegExp(
-  r'^ {0,3}(?:#{1,6}\s+|>\s?|[-*+]\s+|\d+[.)]\s+)',
-  multiLine: true,
-);
-final _lineBreak = RegExp(r'<br\s*/?>', caseSensitive: false);
 final _whitespace = RegExp(r'\s+');
 
 /// One run of excerpt text: [marked] runs matched the query and are drawn
@@ -87,29 +65,8 @@ String? _plainBody(String content) {
   if (trimmed.isEmpty) return null;
   if (_stickerOnly.hasMatch(trimmed)) return null;
 
-  var text = trimmed.replaceAllMapped(_spoiler, (_) => '•••');
-  text = text.replaceAllMapped(_fencedCode, (m) => _unfence(m.group(0)!));
-  text = text.replaceAllMapped(_inlineCode, (m) => m.group(1)!);
-  text = text.replaceAllMapped(_image, (m) => m.group(1)!);
-  text = text.replaceAllMapped(_link, (m) => m.group(1)!);
-  text = text.replaceAllMapped(_highlight, (m) => m.group(1)!);
-  for (final marker in _emphasis) {
-    text = text.replaceAllMapped(marker, (m) => m.group(1)!);
-  }
-  text = text
-      .replaceAll(_linePrefix, '')
-      .replaceAll(_lineBreak, ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
-
+  final text = trimmed.markdownToPlainLine();
   return text.isEmpty ? null : text;
-}
-
-String _unfence(String fence) {
-  final inner = fence.substring(3, fence.length - 3);
-  // Drop the opening info string (```dart) but keep the code itself.
-  final newline = inner.indexOf('\n');
-  return newline < 0 ? inner : inner.substring(newline + 1);
 }
 
 /// Substrings worth marking: the whole query, or — when it is absent — the

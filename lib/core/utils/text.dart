@@ -1,5 +1,40 @@
 import 'dart:ui';
 
+/// A fenced code block, including the info string on its opening fence.
+final _fencedCode = RegExp(r'```[\s\S]*?```');
+
+/// The code an inline span wraps.
+final _inlineCode = RegExp(r'`([^`]*)`');
+
+/// The alt text an image stands for.
+final _image = RegExp(r'!\[([^\]]*)\]\([^)]*\)');
+
+/// The label a link stands for — a URL shown as its own label survives.
+final _link = RegExp(r'\[([^\]]*)\]\(\s*[^)]*\)');
+
+/// The text a `==highlight==` wraps.
+final _highlight = RegExp(r'==([\s\S]*?)==');
+
+/// The text a `=!spoiler!=` conceals.
+final _spoiler = RegExp(r'=!([\s\S]*?)!=');
+
+/// Unwrap paired emphasis markers but leave single underscores alone: `_` is far
+/// more common inside identifiers (`snake_case`) than as emphasis in prose.
+final _emphasis = <RegExp>[
+  RegExp(r'\*\*(?=\S)([\s\S]*?\S)\*\*'),
+  RegExp(r'(?<![\w*])\*(?=\S)([^*\n]*?\S)\*(?![\w*])'),
+  RegExp(r'__(?=\S)([\s\S]*?\S)__'),
+  RegExp(r'~~(?=\S)([\s\S]*?\S)~~'),
+];
+
+/// Block markers a line can open with: headings, quotes and list bullets.
+final _linePrefix = RegExp(
+  r'^ {0,3}(?:#{1,6}\s+|>\s?|[-*+]\s+|\d+[.)]\s+)',
+  multiLine: true,
+);
+
+final _lineBreak = RegExp(r'<br\s*/?>', caseSensitive: false);
+
 extension StringExtension on String {
   String capitalizeEachWord() {
     if (isEmpty) return this;
@@ -69,4 +104,35 @@ extension StringExtension on String {
 
     return decoded.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
   }
+
+  /// Reduces markdown [content] to a single line of prose: block markers,
+  /// emphasis, links and code fences give way to the text they wrap, and every
+  /// run of whitespace collapses to one space. Spoilers become [spoilerMask]
+  /// because a one-line row must not print what the author concealed.
+  ///
+  /// Sticker tokens are left untouched: callers that care about them decide for
+  /// themselves what a body made of nothing but stickers means.
+  String markdownToPlainLine({String spoilerMask = '•••'}) {
+    var text = replaceAllMapped(_spoiler, (_) => spoilerMask);
+    text = text.replaceAllMapped(_fencedCode, (m) => _unfence(m.group(0)!));
+    text = text.replaceAllMapped(_inlineCode, (m) => m.group(1)!);
+    text = text.replaceAllMapped(_image, (m) => m.group(1)!);
+    text = text.replaceAllMapped(_link, (m) => m.group(1)!);
+    text = text.replaceAllMapped(_highlight, (m) => m.group(1)!);
+    for (final marker in _emphasis) {
+      text = text.replaceAllMapped(marker, (m) => m.group(1)!);
+    }
+    return text
+        .replaceAll(_linePrefix, '')
+        .replaceAll(_lineBreak, ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+}
+
+/// The code inside a fenced block, minus the info string on the opening fence.
+String _unfence(String fence) {
+  final inner = fence.substring(3, fence.length - 3);
+  final newline = inner.indexOf('\n');
+  return newline < 0 ? inner : inner.substring(newline + 1);
 }

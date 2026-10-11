@@ -376,6 +376,41 @@ class ChatRoomShareLink {
   const ChatRoomShareLink({required this.scope, required this.slug});
 }
 
+/// The path segments of a Solian link, however it arrives: the web app URL
+/// (`https://solian.app/...`, `www.solian.app`) or the `solian://host/...`
+/// custom scheme, whose authority becomes the first segment. Returns null when
+/// [uri] is not a Solian link at all.
+///
+/// Subdomains are deliberately left out: `api.`, `nt.` and `fs.solian.app`
+/// serve other apps, not the routes these segments are read for.
+List<String>? solianLinkPathSegments(Uri uri) {
+  if (uri.scheme == 'solian') {
+    // `solian://chat/room/slug` puts `chat` in the authority, so the path is
+    // the authority and the path glued together. `solian:///posts/<id>` (empty
+    // authority) yields `//posts/<id>`, which would parse as a *host* — collapse
+    // it the way [solianLinkToRoutePath] does.
+    var path = '/${uri.host}${uri.path}';
+    if (path.startsWith('//')) path = path.substring(1);
+    return Uri.parse(path).pathSegments.where((s) => s.isNotEmpty).toList();
+  }
+  if ((uri.scheme == 'http' || uri.scheme == 'https') &&
+      (uri.host == 'solian.app' || uri.host == 'www.solian.app')) {
+    return uri.pathSegments.where((s) => s.isNotEmpty).toList();
+  }
+  return null;
+}
+
+/// The post id in a Solian post link — `https://solian.app/posts/<id>` or
+/// `solian://posts/<id>`. Returns null for anything else, or for an empty id.
+String? parsePostLinkId(Uri uri) {
+  final segments = solianLinkPathSegments(uri);
+  if (segments == null || segments.length < 2 || segments.first != 'posts') {
+    return null;
+  }
+  final id = segments[1].trim();
+  return id.isEmpty ? null : id;
+}
+
 /// Parses a chat room share link produced by [buildChatRoomShareUrl].
 /// Accepts the web URL, the `solian://chat/...` custom scheme and bare
 /// `/chat/<scope>/<slug>` paths. Returns null for anything else.
@@ -386,21 +421,10 @@ ChatRoomShareLink? parseChatRoomShareLink(String rawValue) {
       : Uri.tryParse(value);
   if (uri == null) return null;
 
-  List<String> segments;
-  if (uri.scheme == 'https' || uri.scheme == 'http') {
-    if (uri.host != 'solian.app' && !uri.host.endsWith('.solian.app')) {
-      return null;
-    }
-    segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-  } else if (uri.scheme == 'solian') {
-    // `solian://chat/<scope>/<slug>` puts `chat` in the authority.
-    final full = Uri.parse('/${uri.host}${uri.path}');
-    segments = full.pathSegments.where((s) => s.isNotEmpty).toList();
-  } else {
+  final segments = solianLinkPathSegments(uri);
+  if (segments == null || segments.length != 3 || segments.first != 'chat') {
     return null;
   }
-
-  if (segments.length != 3 || segments.first != 'chat') return null;
   final scope = segments[1].trim();
   final slug = segments[2].trim();
   if (scope.isEmpty || slug.isEmpty) return null;

@@ -17,6 +17,7 @@ import 'package:island/core/widgets/content/cloud_file_lightbox.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/screens/publisher_profile.dart';
+import 'package:island/posts/widgets/post_link_embed.dart';
 import 'package:island/route.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -228,6 +229,15 @@ class MarkdownTextContent extends HookConsumerWidget {
   final bool noMentionChip;
   final MarkdownHeadingRegistry? headingAnchors;
 
+  /// Whether a paragraph that is nothing but a Solian post link
+  /// (`https://solian.app/posts/<id>`, `solian://posts/<id>`) renders as an
+  /// inline [PostLinkEmbed] preview.
+  ///
+  /// Off by default: surfaces that already draw a post card — a quoted reply, a
+  /// compact row, the preview pane inside a composer — would otherwise nest one
+  /// card inside another, and each of them can opt in where a preview fits.
+  final bool embedPostLinks;
+
   const MarkdownTextContent({
     super.key,
     required this.content,
@@ -242,6 +252,7 @@ class MarkdownTextContent extends HookConsumerWidget {
     this.extraBuilders = const {},
     this.noMentionChip = false,
     this.headingAnchors,
+    this.embedPostLinks = false,
   });
 
   @override
@@ -290,6 +301,7 @@ class MarkdownTextContent extends HookConsumerWidget {
         foregroundColor: scheme.onPrimary,
         content: content,
       ),
+      if (embedPostLinks) postLinkEmbedTag: PostLinkEmbedBuilder(),
       latexTag: LatexBuilder(isDark: isDark),
       ...extraBuilders,
     };
@@ -341,7 +353,10 @@ class MarkdownTextContent extends HookConsumerWidget {
         LatexSyntax(),
         ...extraInlineSyntaxList,
       ],
-      blockSyntaxes: extraBlockSyntaxList,
+      blockSyntaxes: [
+        if (embedPostLinks) const PostLinkEmbedSyntax(),
+        ...extraBlockSyntaxList,
+      ],
       builders: builders,
       onTapLink: (text, href, title) async {
         if (href == null) {

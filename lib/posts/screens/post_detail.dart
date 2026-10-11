@@ -21,6 +21,7 @@ import 'package:island/core/translate.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/posts/pods/bookmarks.dart';
 import 'package:island/posts/pods/post_chain.dart';
+import 'package:island/core/services/deeplink_service.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/posts/compose.dart';
 import 'package:island/core/services/responsive.dart';
@@ -165,20 +166,10 @@ String? _getBlogUrl(SnPost post) {
   return null;
 }
 
-String? extractInternalPostIdFromUri(Uri url) {
-  if (url.scheme == 'solian' &&
-      url.host == 'posts' &&
-      url.pathSegments.isNotEmpty) {
-    return url.pathSegments.first;
-  }
-  if ((url.scheme == 'http' || url.scheme == 'https') &&
-      url.host == 'solian.app' &&
-      url.pathSegments.length >= 2 &&
-      url.pathSegments.first == 'posts') {
-    return url.pathSegments[1];
-  }
-  return null;
-}
+/// The post id a Solian post link points at, in any of its shapes
+/// (`solian://posts/<id>`, `https://solian.app/posts/<id>`). Null when [url]
+/// is not a post link at all.
+String? extractInternalPostIdFromUri(Uri url) => parsePostLinkId(url);
 
 Future<void> showPostDetailAttentionModal(String id) async {
   showAttentionModal(

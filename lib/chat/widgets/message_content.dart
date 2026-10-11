@@ -287,6 +287,9 @@ class MessageContent extends StatelessWidget {
                   content: resolvedContent ?? '*${item.type} has no content*',
                   isSelectable: isSelectable,
                   linesMargin: EdgeInsets.zero,
+                  // A message that is only a post link carries the post itself:
+                  // pasting a link into chat is how it gets shared.
+                  embedPostLinks: true,
                 ),
               ),
             ),
