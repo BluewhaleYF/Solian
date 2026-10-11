@@ -9,6 +9,7 @@ import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/posts/widgets/post_link_embed.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
+import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:markdown/markdown.dart' as markdown;
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +54,8 @@ Future<void> _pump(
   required Widget child,
   bool hasPost = true,
   String? linkedContent,
+  GlobalKey<NavigatorState>? navigatorKey,
+  NavigatorObserver? observer,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -61,22 +64,26 @@ Future<void> _pump(
         path: 'assets/i18n',
         saveLocale: false,
         child: Builder(
-          builder: (context) => mui.MaterialApp(
-            locale: const Locale('en', 'US'),
-            supportedLocales: const [Locale('en', 'US')],
-            localizationsDelegates: context.localizationDelegates,
-            theme: mui.ThemeData(
-              colorScheme: mui.ColorScheme.fromSeed(seedColor: Colors.indigo),
-            ),
-            home: ProviderScope(
-              overrides: [
-                sharedPreferencesProvider.overrideWithValue(_prefs),
-                userInfoProvider.overrideWith(_UserInfoGuest.new),
-                postProvider(_id).overrideWith(
-                  (ref) async => hasPost ? _linkedPost(content: linkedContent) : null,
-                ),
-              ],
-              child: mui.Material(
+          builder: (context) => ProviderScope(
+            // Above the navigator, as `main` does it: the post detail modal is
+            // pushed as a route and reads its own providers from here.
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(_prefs),
+              userInfoProvider.overrideWith(_UserInfoGuest.new),
+              postProvider(_id).overrideWith(
+                (ref) async => hasPost ? _linkedPost(content: linkedContent) : null,
+              ),
+            ],
+            child: mui.MaterialApp(
+              navigatorKey: navigatorKey,
+              navigatorObservers: [?observer],
+              locale: const Locale('en', 'US'),
+              supportedLocales: const [Locale('en', 'US')],
+              localizationsDelegates: context.localizationDelegates,
+              theme: mui.ThemeData(
+                colorScheme: mui.ColorScheme.fromSeed(seedColor: Colors.indigo),
+              ),
+              home: mui.Material(
                 child: SingleChildScrollView(child: child),
               ),
             ),
@@ -95,10 +102,14 @@ Future<void> _pumpMarkdown(
   bool hasPost = true,
   bool embedPostLinks = true,
   String? linkedContent,
+  GlobalKey<NavigatorState>? navigatorKey,
+  NavigatorObserver? observer,
 }) => _pump(
   tester,
   hasPost: hasPost,
   linkedContent: linkedContent,
+  navigatorKey: navigatorKey,
+  observer: observer,
   child: MarkdownTextContent(
     content: content,
     embedPostLinks: embedPostLinks,
@@ -301,5 +312,41 @@ void main() {
       expect(excerpt.endsWith('…'), isTrue);
       expect(excerpt.length, lessThanOrEqualTo(PostLinkEmbed.maxExcerptLength));
     });
+
+    testWidgets('tapping the card opens the post the way a link does', (
+      tester,
+    ) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final pushed = <String?>[];
+      final observer = _RouteSpy(pushed);
+      // `showPostDetailAttentionModal` finds its navigator through the
+      // foundation, the way `main` wires it.
+      IslandUIFoundation.configureNavigator(navigatorKey);
+      addTearDown(dismissAllAttentionModals);
+
+      await _pumpMarkdown(
+        tester,
+        content: _webLink,
+        navigatorKey: navigatorKey,
+        observer: observer,
+      );
+      await tester.tap(find.byType(PostLinkEmbed));
+      await tester.pump();
+
+      expect(pushed, contains('attention-modal:post-detail:$_id'));
+    });
   });
+}
+
+/// Records the routes a tap pushes.
+class _RouteSpy extends NavigatorObserver {
+  final List<String?> pushed;
+
+  _RouteSpy(this.pushed);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushed.add(route.settings.name);
+    super.didPush(route, previousRoute);
+  }
 }

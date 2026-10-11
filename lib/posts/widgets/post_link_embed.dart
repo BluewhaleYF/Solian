@@ -1,4 +1,3 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,7 +8,6 @@ import 'package:island/core/utils/text.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_attachment_thumbnails.dart';
-import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:markdown/markdown.dart' as markdown;
 import 'package:material_symbols_icons/symbols.dart';
@@ -174,7 +172,9 @@ class PostLinkEmbed extends ConsumerWidget {
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          onTap: () => context.router.push(PostDetailRoute(id: post.id)),
+          // The modal keeps the reader where they were reading — the same view
+          // a tapped post link opens, one card closer.
+          onTap: () => showPostDetailAttentionModal(post.id),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
