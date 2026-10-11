@@ -980,10 +980,22 @@ class CreatorHubContentWidget extends HookConsumerWidget {
     return AppScaffold(
       isNoBackground: true,
       appBar: AppBar(
-        // Keep the bar a single flat surface: without this the scrolled-under
-        // elevation tints the bar with the surface tint colour, showing a
-        // coloured scrim over the title once the body scrolls beneath it.
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        // The narrow (portrait) layout follows the app's themed top bars and
+        // uses the theme colour; the wide split view keeps a plain surface bar.
+        // Either way the surface tint and scrolled-under elevation stay off so
+        // no coloured scrim appears over the title while scrolling.
+        backgroundColor: isWideScreen(context)
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.primary,
+        foregroundColor: isWideScreen(context)
+            ? Theme.of(context).colorScheme.onSurface
+            : Theme.of(context).colorScheme.onPrimary,
+        // The theme pins the title to onSurface, so re-tint it to match the bar.
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
+          color: isWideScreen(context)
+              ? Theme.of(context).colorScheme.onSurface
+              : Theme.of(context).colorScheme.onPrimary,
+        ),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         leading: IconButton(
