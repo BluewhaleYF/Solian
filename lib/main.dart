@@ -26,6 +26,7 @@ import 'package:island/shared/services/location_search_service.dart';
 import 'package:island/shared/widgets/app_wrapper.dart';
 import 'package:island/firebase_options.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/auth_wiring.dart';
 import 'package:island/core/drive_wiring.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/accounts/account_pod.dart';
@@ -425,6 +426,7 @@ void main(List<String> args) async {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           ...driveHostOverrides(),
+          ...authHostOverrides(),
         ],
         child: Directionality(
           textDirection: TextDirection.ltr,

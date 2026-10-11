@@ -17,7 +17,7 @@ import 'package:island/core/services/event_bus.dart';
 import 'package:island/core/services/notify.dart';
 import 'package:island/core/services/udid.dart';
 import 'package:island/route.gr.dart';
-import 'package:island/auth/auth_form_widgets.dart';
+import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher_string.dart';

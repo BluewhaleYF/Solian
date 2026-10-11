@@ -10,7 +10,7 @@ import 'package:island/accounts/account_pod.dart';
 import 'package:island/accounts/screens/me/account_settings.dart';
 import 'package:island/auth/captcha.config.dart';
 import 'package:island/auth/login_content.dart';
-import 'package:island/auth/widgets/auth_factor_widgets.dart';
+import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/main.dart' show globalOverlay;
