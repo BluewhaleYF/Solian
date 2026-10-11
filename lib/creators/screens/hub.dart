@@ -399,7 +399,7 @@ class PublisherSelector extends StatelessWidget {
               ),
               Flexible(
                 child: Text(
-                  isValueValid ? currentValue.nick : 'Select Publisher',
+                  isValueValid ? currentValue.nick : 'selectPublisher'.tr(),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
