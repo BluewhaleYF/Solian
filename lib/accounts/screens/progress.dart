@@ -467,6 +467,7 @@ class _AchievementsTabState extends ConsumerState<_AchievementsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final achievementsAsync = ref.watch(achievementsProvider);
     final statsAsync = ref.watch(achievementStatsProvider);
 
@@ -487,6 +488,7 @@ class _AchievementsTabState extends ConsumerState<_AchievementsTab> {
                 child: SearchBar(
                   controller: _searchController,
                   hintText: 'searchAchievements'.tr(),
+                  elevation: const WidgetStatePropertyAll(0),
                   leading: const Icon(Symbols.search),
                   padding: WidgetStatePropertyAll(
                     EdgeInsets.symmetric(horizontal: 24),
@@ -526,20 +528,32 @@ class _AchievementsTabState extends ConsumerState<_AchievementsTab> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(top: 8),
                   sliver: SliverList.separated(
                     itemCount: _searchResults!.length,
-                    separatorBuilder: (context, index) => const Gap(12),
+                    separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                    ),
                     itemBuilder: (context, index) =>
                         _AchievementCard(achievement: _searchResults![index]),
                   ),
                 )
             else
               SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.only(top: 8),
                 sliver: SliverList.separated(
                   itemCount: achievements.length,
-                  separatorBuilder: (context, index) => const Gap(12),
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 16,
+                    endIndent: 16,
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  ),
                   itemBuilder: (context, index) =>
                       _AchievementCard(achievement: achievements[index]),
                 ),
@@ -820,160 +834,124 @@ class _AchievementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = achievement.targetCount > 0
-        ? achievement.progressCount / achievement.targetCount
-        : 0.0;
     final reward = achievement.reward;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _showAchievementDetails(context),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return InkWell(
+      onTap: () => _showAchievementDetails(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: achievement.isCompleted
+                    ? theme.colorScheme.primary.withOpacity(0.15)
+                    : theme.colorScheme.surfaceContainerHigh,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getAchievementIcon(achievement.icon),
+                size: 22,
+                color: achievement.isCompleted
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: achievement.isCompleted
-                          ? theme.colorScheme.primary.withOpacity(0.2)
-                          : theme.colorScheme.surfaceContainerHigh,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _getAchievementIcon(achievement.icon),
-                      size: 24,
-                      color: achievement.isCompleted
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Gap(8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
                           _getAchievementTitle(
                             achievement.identifier,
                             achievement.title,
                           ),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          _getAchievementSummary(
-                            achievement.identifier,
-                            achievement.summary,
-                          ),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      ),
+                      if (achievement.seriesTotalSteps > 1) ...[
+                        const Gap(8),
+                        _buildLevelBadge(theme),
                       ],
-                    ),
+                    ],
                   ),
-                  if (achievement.isCompleted)
-                    Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Symbols.check,
-                        size: 14,
-                        color: theme.colorScheme.onPrimary,
-                      ),
+                  const Gap(4),
+                  Text(
+                    _getAchievementSummary(
+                      achievement.identifier,
+                      achievement.summary,
                     ),
-                  if (achievement.seriesTotalSteps > 1) ...[
-                    const Gap(4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${achievement.seriesCompletedSteps}/${achievement.seriesTotalSteps}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
-                      ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (reward != null && _hasRewards(reward)) ...[
+                    const Gap(10),
+                    _RewardPreview(reward: reward),
                   ],
                 ],
               ),
-              const Gap(12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!achievement.isCompleted) ...[
-                    LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    const Gap(4),
-                    Text(
-                      '${achievement.progressCount}/${achievement.targetCount}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ] else ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'completed'.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ).padding(horizontal: 4),
-              if (reward != null && _hasRewards(reward)) ...[
-                const Gap(12),
-                _RewardPreview(reward: reward),
-              ],
-            ],
-          ),
+            ),
+            const Gap(12),
+            _buildTrailing(context),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLevelBadge(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.6),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        '${'level'.tr()} ${achievement.seriesCompletedSteps}/${achievement.seriesTotalSteps}',
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          height: 1.1,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (achievement.isCompleted) {
+      return Icon(
+        Symbols.check_circle,
+        size: 20,
+        color: theme.colorScheme.primary,
+      );
+    }
+
+    return Text(
+      '${achievement.progressCount}/${achievement.targetCount}',
+      style: theme.textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface,
       ),
     );
   }
