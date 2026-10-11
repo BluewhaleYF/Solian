@@ -980,6 +980,12 @@ class CreatorHubContentWidget extends HookConsumerWidget {
     return AppScaffold(
       isNoBackground: true,
       appBar: AppBar(
+        // Keep the bar a single flat surface: without this the scrolled-under
+        // elevation tints the bar with the surface tint colour, showing a
+        // coloured scrim over the title once the body scrolls beneath it.
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Symbols.menu),
           onPressed: () {
