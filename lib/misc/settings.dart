@@ -40,11 +40,15 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/drive/screens/file_pool.dart';
 import 'package:island/plugins/screens/plugin_manager_screen.dart';
 import 'package:island/route.gr.dart';
 
-const EdgeInsets _kSettingsTilePadding = EdgeInsets.only(left: 24, right: 16);
+const EdgeInsets _kSettingsTilePadding = EdgeInsets.only(
+  left: SolSpace.xxl,
+  right: SolSpace.xl,
+);
 
 @RoutePage()
 class SettingsScreen extends HookConsumerWidget {
@@ -2618,7 +2622,7 @@ class _SettingsSection extends StatelessWidget {
           ),
         ),
         ...children,
-        const SizedBox(height: 16),
+        const SizedBox(height: SolSpace.xl),
       ],
     );
   }

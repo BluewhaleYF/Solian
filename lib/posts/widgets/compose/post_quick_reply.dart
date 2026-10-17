@@ -147,6 +147,7 @@ class PostQuickReply extends HookConsumerWidget {
                         ? 'postChainPlaceholder'.tr()
                         : 'postReplyPlaceholder'.tr(),
                     border: InputBorder.none,
+                    filled: false,
                     isDense: true,
                     isCollapsed: true,
                     contentPadding: EdgeInsets.symmetric(

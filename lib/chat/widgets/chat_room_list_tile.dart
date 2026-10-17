@@ -7,6 +7,7 @@ import 'package:island/accounts/utils/account_status_utils.dart';
 import 'package:island/accounts/widgets/account/friends_overview.dart';
 import 'package:island/chat/pods/chat_summary.dart';
 import 'package:island/chat/widgets/chat_room_widgets.dart';
+import 'package:island/core/theme.dart';
 import 'package:relative_time/relative_time.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -130,7 +131,10 @@ class ChatRoomListTile extends HookConsumerWidget {
             onTap?.call();
           },
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: SolSpace.xl,
+              vertical: SolSpace.md,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

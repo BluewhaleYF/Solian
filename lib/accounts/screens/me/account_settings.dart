@@ -30,6 +30,7 @@ import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/chat/widgets/chat_groups_manager.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/server_compatibility.dart';
 import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/creators/screens/publishers_form.dart';
@@ -849,7 +850,7 @@ class AccountSettingsScreen extends HookConsumerWidget {
     // Create a responsive layout based on screen width
     Widget buildSettingsList() {
       return Column(
-        spacing: 16,
+        spacing: SolSpace.xl,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SettingsSection(
@@ -881,7 +882,7 @@ class AccountSettingsScreen extends HookConsumerWidget {
             children: dangerZoneSettings,
           ),
         ],
-      ).padding(horizontal: 16);
+      ).padding(horizontal: SolSpace.page);
     }
 
     return AppScaffold(
@@ -890,7 +891,7 @@ class AccountSettingsScreen extends HookConsumerWidget {
         leading: const AutoLeadingButton(),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: SolSpace.page),
         child: buildSettingsList(),
       ),
     );

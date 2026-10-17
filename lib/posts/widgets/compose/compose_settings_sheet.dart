@@ -204,6 +204,7 @@ class ComposeSettingsSheet extends HookConsumerWidget {
                         decoration: InputDecoration(
                           hintText: 'addTag'.tr(),
                           border: InputBorder.none,
+                          filled: false,
                           isCollapsed: true,
                           contentPadding: EdgeInsets.zero,
                         ),

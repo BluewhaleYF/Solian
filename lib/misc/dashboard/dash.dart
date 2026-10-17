@@ -35,6 +35,7 @@ import 'package:island/misc/dashboard/dash_customize.dart';
 import 'package:island/misc/dashboard/dashboard_layout.dart';
 import 'package:island/misc/dashboard/weather.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/plugins/apis/dashboard_api.dart';
 import 'package:island/plugins/widgets/plugin_ui_bridge.dart';
 import 'package:island_plugin_foundation/island_plugin_foundation.dart';
@@ -43,12 +44,12 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 // Dashboard rhythm. One spacing scale for both breakpoints: roomy page
 // gutters, `_kCardGap` between cards, and a generous top band so the overview
 // reads as a calm glance instead of a dense wall of cards.
-const _kCardGap = 20.0;
-const _kBlockGap = 32.0;
-const _kCardPadding = 20.0;
-const _kCardHeaderPadding = 16.0;
-const _kGutterCompact = 20.0;
-const _kGutterExpanded = 32.0;
+const _kCardGap = SolSpace.xl;
+const _kBlockGap = SolSpace.xxxl;
+const _kCardPadding = SolSpace.card;
+const _kCardHeaderPadding = SolSpace.lg;
+const _kGutterCompact = SolSpace.page;
+const _kGutterExpanded = SolSpace.pageWide;
 // Top band, as a fraction of viewport height, that rests the clock/search row
 // (and everything under it) lower in the viewport. It lives inside the scroll
 // view, so it scrolls away instead of permanently eating the viewport.

@@ -109,6 +109,7 @@ class ComposeFormFields extends HookConsumerWidget {
                   decoration: InputDecoration(
                     hintText: 'postTitle'.tr(),
                     border: InputBorder.none,
+                    filled: false,
                     isCollapsed: true,
                     contentPadding: const EdgeInsets.symmetric(
                       vertical: 8,
@@ -130,6 +131,7 @@ class ComposeFormFields extends HookConsumerWidget {
                   decoration: InputDecoration(
                     hintText: 'postDescription'.tr(),
                     border: InputBorder.none,
+                    filled: false,
                     isCollapsed: true,
                     contentPadding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
                   ),
@@ -183,6 +185,7 @@ class ArticleComposeFormFields extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'postTitle',
                   border: InputBorder.none,
+                  filled: false,
                   isCollapsed: true,
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: 8,
@@ -203,6 +206,7 @@ class ArticleComposeFormFields extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'postDescription',
                   border: InputBorder.none,
+                  filled: false,
                   isCollapsed: true,
                   contentPadding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
                 ),

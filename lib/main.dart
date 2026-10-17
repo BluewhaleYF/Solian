@@ -648,15 +648,39 @@ legacy_material.InputDecorationThemeData _toLegacyInputDecoration(
   InputDecorationThemeData? input,
 ) {
   return legacy_material.InputDecorationThemeData(
-    border: switch (input?.border) {
-      OutlineInputBorder(:final borderRadius, :final borderSide) =>
-        legacy_material.OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: borderSide,
-        ),
-      _ => null,
-    },
+    border: _toLegacyInputBorder(input?.border),
+    enabledBorder: _toLegacyInputBorder(input?.enabledBorder),
+    focusedBorder: _toLegacyInputBorder(input?.focusedBorder),
+    errorBorder: _toLegacyInputBorder(input?.errorBorder),
+    focusedErrorBorder: _toLegacyInputBorder(input?.focusedErrorBorder),
+    disabledBorder: _toLegacyInputBorder(input?.disabledBorder),
+    filled: input?.filled ?? false,
+    fillColor: input?.fillColor,
+    contentPadding: input?.contentPadding,
+    hintStyle: input?.hintStyle,
+    labelStyle: input?.labelStyle,
+    floatingLabelStyle: input?.floatingLabelStyle,
+    helperStyle: input?.helperStyle,
+    errorStyle: input?.errorStyle,
+    prefixIconColor: input?.prefixIconColor,
+    suffixIconColor: input?.suffixIconColor,
   );
+}
+
+legacy_material.InputBorder? _toLegacyInputBorder(InputBorder? border) {
+  return switch (border) {
+    OutlineInputBorder(:final borderRadius, :final borderSide) =>
+      legacy_material.OutlineInputBorder(
+        borderRadius: borderRadius,
+        borderSide: borderSide,
+      ),
+    UnderlineInputBorder(:final borderRadius, :final borderSide) =>
+      legacy_material.UnderlineInputBorder(
+        borderRadius: borderRadius,
+        borderSide: borderSide,
+      ),
+    _ => null,
+  };
 }
 
 /// Reads the persisted window bounds (position + size) from shared

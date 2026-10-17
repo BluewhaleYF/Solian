@@ -854,6 +854,7 @@ class _ComposerBar extends StatelessWidget {
                             decoration: InputDecoration(
                               hintText: 'addAdditionalMessage'.tr(),
                               border: InputBorder.none,
+                              filled: false,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,

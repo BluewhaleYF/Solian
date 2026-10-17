@@ -2570,6 +2570,7 @@ class ChatInput extends HookConsumerWidget {
                                                   args: [chatRoom.name!],
                                                 ),
                                           border: InputBorder.none,
+                                          filled: false,
                                           isDense: true,
                                           contentPadding:
                                               const EdgeInsets.symmetric(
