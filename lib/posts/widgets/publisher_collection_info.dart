@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:island/accounts/widgets/account/handle_chip.dart';
@@ -8,6 +9,7 @@ import 'package:island/core/services/responsive.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/route.gr.dart';
+import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -28,6 +30,117 @@ final publisherCollectionDetailPublisherProvider = FutureProvider.autoDispose
       final client = ref.watch(solarNetworkClientProvider);
       return client.sphere.getPublisher(publisherName);
     });
+
+/// The current account's subscription to a collection, or null when it has
+/// none.
+final collectionSubscriptionProvider = FutureProvider.autoDispose
+    .family<SnCategorySubscription?, (String, String)>((ref, args) async {
+      final client = ref.watch(solarNetworkClientProvider);
+      return client.sphere.getCollectionSubscriptionStatus(
+        publisherName: args.$1,
+        slug: args.$2,
+      );
+    });
+
+/// Subscribes to, or unsubscribes from, a collection. Subscribers receive the
+/// same new-post notification flow as publisher, category and tag subscribers
+/// for every post added to the collection.
+class CollectionSubscribeButton extends ConsumerStatefulWidget {
+  final String publisherName;
+  final SnPostCollection collection;
+
+  const CollectionSubscribeButton({
+    super.key,
+    required this.publisherName,
+    required this.collection,
+  });
+
+  @override
+  ConsumerState<CollectionSubscribeButton> createState() =>
+      _CollectionSubscribeButtonState();
+}
+
+class _CollectionSubscribeButtonState
+    extends ConsumerState<CollectionSubscribeButton> {
+  final _busy = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _busy.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle(bool subscribed) async {
+    final client = ref.read(solarNetworkClientProvider);
+    _busy.value = true;
+    try {
+      if (subscribed) {
+        await client.sphere.unsubscribeFromCollection(
+          publisherName: widget.publisherName,
+          slug: widget.collection.slug,
+        );
+      } else {
+        await client.sphere.subscribeToCollection(
+          publisherName: widget.publisherName,
+          slug: widget.collection.slug,
+        );
+      }
+      HapticFeedback.heavyImpact();
+      ref.invalidate(
+        collectionSubscriptionProvider((
+          widget.publisherName,
+          widget.collection.slug,
+        )),
+      );
+    } catch (err) {
+      showErrorAlert(err);
+    } finally {
+      _busy.value = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = ref.watch(
+      collectionSubscriptionProvider((
+        widget.publisherName,
+        widget.collection.slug,
+      )),
+    );
+
+    return status.when(
+      data: (subscription) => ValueListenableBuilder<bool>(
+        valueListenable: _busy,
+        builder: (context, busy, _) {
+          if (busy) {
+            return const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            );
+          }
+          return subscription != null
+              ? FilledButton.tonalIcon(
+                  onPressed: () => _toggle(true),
+                  icon: const Icon(Symbols.remove_circle),
+                  label: Text('unsubscribe'.tr()),
+                )
+              : FilledButton.icon(
+                  onPressed: () => _toggle(false),
+                  icon: const Icon(Symbols.add_circle),
+                  label: Text('subscribe'.tr()),
+                );
+        },
+      ),
+      error: (error, _) => Text('errorLoadingSubscription'.tr()),
+      loading: () => const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+}
 
 class PublisherCollectionPublisherInfo extends StatelessWidget {
   final SnPublisher data;
@@ -296,6 +409,17 @@ class PublisherCollectionDetailSheet extends ConsumerWidget {
       collection: collection,
       title: title,
     );
+    final subscribeAction = Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          CollectionSubscribeButton(
+            publisherName: publisherName,
+            collection: collection,
+          ),
+        ],
+      ),
+    );
 
     return AttentionModalScaffold(
       titleText: title,
@@ -311,6 +435,7 @@ class PublisherCollectionDetailSheet extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
               children: [
                 collectionInfo,
+                subscribeAction,
                 const Gap(16),
                 publisherInfo,
                 const Gap(16),
@@ -334,7 +459,12 @@ class PublisherCollectionDetailSheet extends ConsumerWidget {
                 flex: 3,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(0, 12, 12, 16),
-                  children: [collectionInfo, const Gap(12), publisherInfo],
+                  children: [
+                    collectionInfo,
+                    subscribeAction,
+                    const Gap(12),
+                    publisherInfo,
+                  ],
                 ),
               ),
             ],
