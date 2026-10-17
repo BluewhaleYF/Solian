@@ -38,6 +38,7 @@ import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/response.dart';
@@ -1284,25 +1285,56 @@ class ChatFabWidget extends HookConsumerWidget {
   }
 }
 
-class _ChatListAppBar extends HookConsumerWidget {
+/// The three chat filters (all / direct / groups) rendered as an app bar
+/// title, so the leading drawer button and the trailing actions stay in the
+/// bar's own layout instead of a hand-built overlay row.
+class _ChatListTabBar extends StatelessWidget {
   final TabController tabController;
-  final List<SnChatGroup> chatGroups;
-  final Future<void> Function() onChatGroupsChanged;
-  final String? accountId;
   final Color foreground;
 
-  const _ChatListAppBar({
-    required this.tabController,
-    required this.chatGroups,
-    required this.onChatGroupsChanged,
-    required this.accountId,
-    required this.foreground,
-  });
+  const _ChatListTabBar({required this.tabController, required this.foreground});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      spacing: 4,
+      children: [
+        IconButton(
+          icon: Icon(Symbols.inbox, fill: tabController.index == 0 ? 1 : 0),
+          color: foreground,
+          visualDensity: VisualDensity.compact,
+          onPressed: () => tabController.animateTo(0),
+          tooltip: 'chatTabAll'.tr(),
+        ),
+        IconButton(
+          icon: Icon(Symbols.person, fill: tabController.index == 1 ? 1 : 0),
+          color: foreground,
+          visualDensity: VisualDensity.compact,
+          onPressed: () => tabController.animateTo(1),
+          tooltip: 'chatTabDirect'.tr(),
+        ),
+        IconButton(
+          icon: Icon(Symbols.group, fill: tabController.index == 2 ? 1 : 0),
+          color: foreground,
+          visualDensity: VisualDensity.compact,
+          onPressed: () => tabController.animateTo(2),
+          tooltip: 'chatTabGroup'.tr(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Chat invite action moved from the old inline header into the app bar's
+/// trailing actions.
+class _ChatInviteButton extends HookConsumerWidget {
+  final Color foreground;
+
+  const _ChatInviteButton({required this.foreground});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatInvites = ref.watch(chatroomInvitesProvider);
-    final isSyncing = ref.watch(chatSyncingProvider);
 
     Future<void> openInvites() async {
       await showModalBottomSheet(
@@ -1313,94 +1345,24 @@ class _ChatListAppBar extends HookConsumerWidget {
       );
     }
 
-    Widget buildInviteButton() {
-      return IconButton(
-        tooltip: 'Chat Invites',
-        color: foreground,
-        onPressed: openInvites,
-        icon: Badge(
-          label: Text(
-            chatInvites.when(
-              data: (invites) => invites.length.toString(),
-              error: (_, _) => '0',
-              loading: () => '0',
-            ),
+    return IconButton(
+      tooltip: 'Chat Invites',
+      color: foreground,
+      onPressed: openInvites,
+      icon: Badge(
+        label: Text(
+          chatInvites.when(
+            data: (invites) => invites.length.toString(),
+            error: (_, _) => '0',
+            loading: () => '0',
           ),
-          isLabelVisible: chatInvites.when(
-            data: (invites) => invites.isNotEmpty,
-            error: (_, _) => false,
-            loading: () => false,
-          ),
-          child: Icon(Symbols.email),
         ),
-      );
-    }
-
-    return Container(
-      height: 48,
-      margin: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        top: 4 + MediaQuery.of(context).padding.top,
-        bottom: 4,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Row(
-                spacing: 8,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Symbols.inbox,
-                      fill: tabController.index == 0 ? 1 : 0,
-                    ),
-                    color: foreground,
-                    onPressed: () => tabController.animateTo(0),
-                    tooltip: 'chatTabAll'.tr(),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Symbols.person,
-                      fill: tabController.index == 1 ? 1 : 0,
-                    ),
-                    color: foreground,
-                    onPressed: () => tabController.animateTo(1),
-                    tooltip: 'chatTabDirect'.tr(),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Symbols.group,
-                      fill: tabController.index == 2 ? 1 : 0,
-                    ),
-                    color: foreground,
-                    onPressed: () => tabController.animateTo(2),
-                    tooltip: 'chatTabGroup'.tr(),
-                  ),
-                ],
-              ),
-            ),
-            // Sync indicator
-            if (isSyncing)
-              Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: ConfuseSpinner(
-                    size: 24,
-                    speed: 7,
-                    fontSize: 12,
-                    color: foreground.withOpacity(0.65),
-                  ),
-                ),
-              ),
-            _MarkAllReadButton(color: foreground),
-            buildInviteButton(),
-          ],
+        isLabelVisible: chatInvites.when(
+          data: (invites) => invites.isNotEmpty,
+          error: (_, _) => false,
+          loading: () => false,
         ),
+        child: Icon(Symbols.email),
       ),
     );
   }
@@ -2129,18 +2091,12 @@ class ChatListWidget extends HookConsumerWidget {
     }
 
     final colorScheme = Theme.of(context).colorScheme;
-    final appBarTransparent = ref.watch(
-      appSettingsProvider.select((s) => s.appBarTransparent),
-    );
-    // With the transparent app bar setting off the header is a solid primary
-    // band, matching the explore page; with it on it defers to the theme's
-    // transparent treatment. The foreground has to be threaded into every
-    // child because `flexibleSpace` is not covered by the AppBar's own
+    // Same as the explore header: a tonal surface band, never the saturated
+    // primary color. The foreground has to be threaded into every child
+    // because the title and actions are not covered by the AppBar's own
     // foreground `IconTheme`.
-    final appBarForeground = appBarTransparent
-        ? (Theme.of(context).appBarTheme.foregroundColor ??
-              colorScheme.onSurface)
-        : colorScheme.onPrimary;
+    final appBarForeground = colorScheme.onSurface;
+    final isSyncing = ref.watch(chatSyncingProvider);
 
     return AppScaffold(
       extendBody: false,
@@ -2148,24 +2104,35 @@ class ChatListWidget extends HookConsumerWidget {
         bottom: MediaQuery.paddingOf(context).bottom,
       ),
       appBar: AppBar(
-        leading: null,
-        automaticallyImplyLeading: false,
-        // Null keeps the theme background (transparent when the setting is on).
-        backgroundColor: appBarTransparent ? null : colorScheme.primary,
-        foregroundColor: appBarForeground,
+        leading: const SolDrawerButton(),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        flexibleSpace: Stack(
-          children: [
-            _ChatListAppBar(
-              tabController: tabController,
-              chatGroups: chatGroups,
-              onChatGroupsChanged: refreshChatGroups,
-              accountId: accountId,
-              foreground: appBarForeground,
-            ),
-          ],
+        backgroundColor: colorScheme.surfaceContainerLow,
+        foregroundColor: appBarForeground,
+        title: _ChatListTabBar(
+          tabController: tabController,
+          foreground: appBarForeground,
         ),
+        titleSpacing: 0,
+        actions: [
+          if (isSyncing)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: ConfuseSpinner(
+                  size: 24,
+                  speed: 7,
+                  fontSize: 12,
+                  color: appBarForeground.withOpacity(0.65),
+                ),
+              ),
+            ),
+          _MarkAllReadButton(color: appBarForeground),
+          _ChatInviteButton(foreground: appBarForeground),
+          const Gap(8),
+        ],
       ),
       body: userInfo.value == null
           ? const ResponseUnauthorizedWidget()

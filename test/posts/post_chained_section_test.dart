@@ -410,7 +410,7 @@ void main() {
             ),
           PostItem(
             item: post,
-            padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             connectChainAbove: preceding.isNotEmpty,
             connectChainBelow: following.isNotEmpty,
           ),

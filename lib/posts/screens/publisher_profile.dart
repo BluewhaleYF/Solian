@@ -1159,7 +1159,10 @@ class _PublisherPostsTab extends HookWidget {
             query: queryState.value,
             queryKey: 'publisher-$pubName-$queryId',
             maxWidth: double.infinity,
-            itemPadding: const EdgeInsets.symmetric(vertical: 4),
+            itemPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4,
+            ),
           ),
         ),
         SliverGap(MediaQuery.of(context).padding.bottom + 16),

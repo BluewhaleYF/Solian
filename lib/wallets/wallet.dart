@@ -13,6 +13,7 @@ import 'package:island/accounts/widgets/account/account_picker.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
@@ -3059,14 +3060,7 @@ class WalletScreen extends HookConsumerWidget {
     return AppScaffold(
       appBar: AppBar(
         title: Text('wallet').tr(),
-        leading: !isWideScreen(context)
-            ? IconButton(
-                icon: const Icon(Symbols.menu),
-                onPressed: () {
-                  rootScaffoldKey.currentState?.openDrawer();
-                },
-              )
-            : const AutoLeadingButton(),
+        leading: const SolDrawerButton(),
         actions: [
           IconButton(
             icon: const Icon(Symbols.add),

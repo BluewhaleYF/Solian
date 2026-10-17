@@ -500,7 +500,6 @@ class EventHubScreen extends HookConsumerWidget {
       isNoBackground: false,
       appBar: AppBar(
         scrolledUnderElevation: 3,
-        centerTitle: true,
         leading: const AutoLeadingButton(),
         automaticallyImplyLeading: false,
         title: isSearchActive.value

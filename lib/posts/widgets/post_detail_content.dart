@@ -556,7 +556,7 @@ class PostDetailContent extends HookConsumerWidget {
                     isTranslatable: false,
                     hideAttachments: isMediaPost,
                     textScale: post.type == 1 ? 1.2 : 1.1,
-                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     onUpdate: onUpdate,
                     trailing: headerSliver != null ? null : trailing,
                     onPostTap: onPostTap,

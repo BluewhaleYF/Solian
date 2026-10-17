@@ -277,12 +277,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
         defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux ||
         shouldShowBottomNavForCurrentPath(context, routes: rootTabRoutes);
-    final showBottomNavMenuButton =
-        isDrawerEnabled &&
-        (ref.watch(bottomNavMenuButtonVisibleProvider) ||
-            // `NavigationBar` asserts at least two destinations, so keep the
-            // drawer button when hiding it would drop below that minimum.
-            bottomNavDestinations.length < 2);
 
     void onDestinationSelected(int index) {
       tabsRouter.setActiveIndex(index);
@@ -318,6 +312,66 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
             ref.read(_navCustomizationProvider.notifier).restoreDefaults();
           },
         ),
+      );
+    }
+
+    /// Opens the per-tab entrances that used to live in the page app bar.
+    ///
+    /// Only Explore has entrances today (category/tag browsing and shuffle).
+    /// Long-pressing its destination in the bottom bar, drawer or rail is the
+    /// replacement for the two app-bar icons.
+    void showDestinationEntrances(_TabDestination destination) {
+      if (destination.id != 'explore') return;
+      HapticFeedback.mediumImpact();
+      showModalBottomSheet<void>(
+        context: context,
+        useRootNavigator: true,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                  child: Text(
+                    'explore'.tr(),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: const Icon(Symbols.category),
+                  title: Text('categoriesAndTags'.tr()),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.router.push(PostCategoriesListRoute());
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: const Icon(Symbols.shuffle),
+                  title: Text('postShuffle'.tr()),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.router.push(const PostShuffleRoute());
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget withEntranceMenu(Widget child, _TabDestination destination) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: () => showDestinationEntrances(destination),
+        child: child,
       );
     }
 
@@ -453,9 +507,12 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
             ),
             ...drawerDestinations.map((d) {
               return NavigationDrawerDestination(
-                label: Text(d.label),
-                icon: Icon(d.navigationIcon),
-                selectedIcon: Icon(d.navigationIcon, fill: 1),
+                label: withEntranceMenu(Text(d.label), d),
+                icon: withEntranceMenu(Icon(d.navigationIcon), d),
+                selectedIcon: withEntranceMenu(
+                  Icon(d.navigationIcon, fill: 1),
+                  d,
+                ),
               );
             }),
             const Divider(),
@@ -483,6 +540,8 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
               : null,
           drawerEnableOpenDragGesture: isDrawerEnabled,
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+          // The drawer is opened from the app bar's leading slot, not from a
+          // floating button.
           body: SafeArea(
             child: ClipRRect(
               borderRadius: const BorderRadius.only(
@@ -491,13 +550,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
               child: RepaintBoundary(child: widget.child),
             ),
           ),
-          floatingActionButton: isDrawerEnabled
-              ? FloatingActionButton.small(
-                  onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
-                  child: const Icon(Symbols.menu_rounded),
-                )
-              : null,
-          floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
         );
       }
       return Scaffold(
@@ -514,22 +566,15 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                 backgroundColor: Colors.transparent,
                 destinations: railDestinations.mapIndexed((idx, d) {
                   return NavigationRailDestination(
-                    icon: d.iconBuilder(railCurrentIndex == idx),
+                    icon: withEntranceMenu(
+                      d.iconBuilder(railCurrentIndex == idx),
+                      d,
+                    ),
                     label: Text(d.label),
                   );
                 }).toList(),
                 selectedIndex: railCurrentIndex,
                 onDestinationSelected: onRailDestinationSelected,
-                trailingAtBottom: true,
-                trailing: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: FloatingActionButton(
-                    onPressed: isDrawerEnabled
-                        ? () => rootScaffoldKey.currentState?.openDrawer()
-                        : null,
-                    child: const Icon(Symbols.menu_rounded),
-                  ),
-                ),
               ),
               Expanded(
                 child: ClipRRect(
@@ -570,34 +615,27 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       body: mobileTabBody,
       bottomNavigationBar: ConditionalBottomNav(
         routes: bottomNavRoutes,
+        // The drawer's only entry point is the app bar's leading slot, so the
+        // tab bar no longer carries a leading menu destination.
         child: NavigationBar(
           height: 56,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          selectedIndex:
-              bottomNavCurrentIndex + (showBottomNavMenuButton ? 1 : 0),
+          selectedIndex: bottomNavCurrentIndex,
           onDestinationSelected: (index) {
-            final destinationIndex = showBottomNavMenuButton
-                ? index - 1
-                : index;
-            if (destinationIndex < 0) {
-              rootScaffoldKey.currentState?.openDrawer();
-            } else {
-              onBottomNavDestinationSelected(destinationIndex);
-            }
+            onBottomNavDestinationSelected(index);
           },
-          destinations: [
-            if (showBottomNavMenuButton)
-              NavigationDestination(
-                icon: const Icon(Symbols.menu_rounded),
-                label: MaterialLocalizations.of(context).openAppDrawerTooltip,
+          destinations: bottomNavDestinations.mapIndexed((idx, destination) {
+            return NavigationDestination(
+              icon: withEntranceMenu(
+                destination.iconBuilder(bottomNavCurrentIndex == idx),
+                destination,
               ),
-            ...bottomNavDestinations.mapIndexed((idx, destination) {
-              return NavigationDestination(
-                icon: destination.iconBuilder(bottomNavCurrentIndex == idx),
-                label: destination.label,
-              );
-            }),
-          ],
+              label: destination.label,
+              // Suppress the built-in long-press tooltip: that gesture is the
+              // explore entrance menu now.
+              tooltip: '',
+            );
+          }).toList(),
         ),
       ),
     );

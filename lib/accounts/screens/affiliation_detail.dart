@@ -36,7 +36,6 @@ class AffiliationDetailScreen extends HookConsumerWidget {
     return AppScaffold(
       appBar: AppBar(
         title: Text('affiliationDetail').tr(),
-        centerTitle: true,
         scrolledUnderElevation: 4,
         actions: [
           spellAsync.whenOrNull(

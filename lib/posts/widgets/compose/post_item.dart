@@ -53,8 +53,9 @@ class PostActionableItem extends HookConsumerWidget {
   final bool hideAttachments;
 
   /// Inset attachments like the body text (with side padding and rounded
-  /// corners) instead of letting them bleed to the post's edges. Featured
-  /// carousels use this so an image never touches the card border.
+  /// corners) instead of letting them bleed to the post's edges. Contained is
+  /// the default now that cards use generous rounded geometry; pass false only
+  /// for an edge-to-edge host.
   final bool containAttachments;
   final double? borderRadius;
   final VoidCallback? onRefresh;
@@ -73,7 +74,7 @@ class PostActionableItem extends HookConsumerWidget {
     this.isCompact = false,
     this.hideAvatar = false,
     this.hideAttachments = false,
-    this.containAttachments = false,
+    this.containAttachments = true,
     this.borderRadius,
     this.onRefresh,
     this.onUpdate,
@@ -579,7 +580,7 @@ class PostItem extends HookConsumerWidget {
     this.isCompact = false,
     this.hideAvatar = false,
     this.hideAttachments = false,
-    this.containAttachments = false,
+    this.containAttachments = true,
     this.connectChainAbove = false,
     this.connectChainBelow = false,
     this.textScale,
@@ -626,7 +627,7 @@ class PostItem extends HookConsumerWidget {
 
     final item = displayResult.item;
     final renderingPadding =
-        padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
+        padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
     final postLanguage = item.content != null && isTranslatable
         ? ref.watch(detectStringLanguageProvider(item.content!))
@@ -671,12 +672,11 @@ class PostItem extends HookConsumerWidget {
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  const Gap(8),
-                  const Text('translated').tr().fontSize(11).opacity(0.75),
-                ],
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'translated'.tr(),
+                ).fontSize(11).opacity(0.75).padding(bottom: 4),
               ),
               MarkdownTextContent(
                 textStyle: TextStyle(
@@ -731,18 +731,18 @@ class PostItem extends HookConsumerWidget {
     final canConnectChainToHead =
         !hideAvatar &&
         !(isShowReference && (item.repliedPost != null || item.repliedGone));
-    // The header and the chain rail are inset by renderingPadding.horizontal;
-    // the chain column then reserves a further 44px (32 avatar + 12 gap) for
-    // the chained children's avatars. PostBody already insets its content by
-    // renderingPadding.horizontal, so shift the head's body the remaining 44px
-    // onto that column. Every row of the card — embeddings, reactions and the
-    // reply footer included — uses renderingPadding.horizontal on both sides,
-    // so a row that starts at the chain column keeps the same right inset as
-    // the body above it.
+    // The header and the chain rail are inset by renderingPadding.left (and
+    // .right); the chain column then reserves a further 44px (32 avatar + 12
+    // gap) for the chained children's avatars. PostBody already insets its
+    // content by renderingPadding.left, so shift the head's body the remaining
+    // 44px onto that column. Every row of the card — embeddings, reactions and
+    // the reply footer included — uses the same left/right insets, so a row that
+    // starts at the chain column keeps the same right inset as the body above
+    // it.
     final bodyInset = hasChainColumn ? 44.0 : 0.0;
     final chainColumnLeft = hasChainColumn
-        ? renderingPadding.horizontal + 44.0
-        : renderingPadding.horizontal;
+        ? renderingPadding.left + 44.0
+        : renderingPadding.left;
 
     final postContent = Column(
       mainAxisSize: MainAxisSize.min,
@@ -753,7 +753,7 @@ class PostItem extends HookConsumerWidget {
                 !(item.forwardedGone ||
                     item.repliedGone ||
                     item.repliedPost != null)))
-          Gap(renderingPadding.vertical),
+          Gap(renderingPadding.top),
         if (isShowReference && (item.repliedPost != null || item.repliedGone))
           ReferencedPostWidget(
             item: item,
@@ -763,8 +763,8 @@ class PostItem extends HookConsumerWidget {
         if (item.sponsored)
           Padding(
             padding: EdgeInsets.only(
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
               bottom: 6,
             ),
             child: const Align(
@@ -806,13 +806,13 @@ class PostItem extends HookConsumerWidget {
             borderRadius: BorderRadius.circular(12),
           ).padding(
             left: chainColumnLeft,
-            right: renderingPadding.horizontal,
+            right: renderingPadding.right,
             vertical: 8,
           ),
         PostReactionList(
           padding: EdgeInsets.only(
             left: chainColumnLeft,
-            right: renderingPadding.horizontal,
+            right: renderingPadding.right,
             top: 8,
           ),
           item: item,
@@ -839,10 +839,10 @@ class PostItem extends HookConsumerWidget {
             onPostTap: onPostTap,
           ).padding(
             left: chainColumnLeft,
-            right: renderingPadding.horizontal,
+            right: renderingPadding.right,
             top: 8,
           ),
-        Gap(hasChain ? 8 : renderingPadding.vertical),
+        Gap(hasChain ? 8 : renderingPadding.bottom),
       ],
     );
 
@@ -861,10 +861,10 @@ class PostItem extends HookConsumerWidget {
             if (showChainRail)
               Positioned(
                 left:
-                    renderingPadding.horizontal +
+                    renderingPadding.left +
                     16 -
                     (kPostThreadingLineWidth / 2),
-                top: renderingPadding.vertical + 32,
+                top: renderingPadding.top + 32,
                 bottom: 0,
                 child: SizedBox(
                   width: kPostThreadingLineWidth,
@@ -881,8 +881,8 @@ class PostItem extends HookConsumerWidget {
           PostChainedSection(
             head: item,
             onPostTap: onPostTap,
-          ).padding(horizontal: renderingPadding.horizontal),
-          Gap(renderingPadding.vertical),
+          ).padding(left: renderingPadding.left, right: renderingPadding.right),
+          Gap(renderingPadding.bottom),
         ],
       ],
     );
@@ -909,7 +909,6 @@ class PostItem extends HookConsumerWidget {
               (item.forwardedPost != null || item.forwardedGone))
           ? _ForwardedReferenceCard(
               item: item,
-              renderingPadding: renderingPadding,
               onPostTap: onPostTap,
             ).padding(top: 8, bottom: 4)
           : null,
@@ -919,12 +918,10 @@ class PostItem extends HookConsumerWidget {
 
 class _ForwardedReferenceCard extends HookConsumerWidget {
   final SnPost item;
-  final EdgeInsets renderingPadding;
   final void Function(String)? onPostTap;
 
   const _ForwardedReferenceCard({
     required this.item,
-    required this.renderingPadding,
     this.onPostTap,
   });
 
@@ -937,8 +934,8 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -1006,9 +1003,7 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
                       item: referencePost,
                       isFullPost: false,
                       isCompact: true,
-                      renderingPadding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                      ),
+                      renderingPadding: EdgeInsets.zero,
                     ),
                   ),
                   if (referencePost.content != null &&
@@ -1034,7 +1029,8 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
                         ? FullBleedSingleAttachment(
                             file: referencePost.attachments.first,
                             sourcePost: referencePost,
-                            bottomRadius: 12,
+                            borderRadius: 16,
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                             onTap: () {
                               final file = referencePost.attachments.first;
                               final isImage = file.mimeType.startsWith('image');
@@ -1063,11 +1059,11 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
                             files: referencePost.attachments,
                             sourcePost: referencePost,
                             isColumn: true,
-                            isFullBleed: true,
+                            isFullBleed: false,
                             maxHeight: 240,
-                            borderRadius: 0,
-                            padding: EdgeInsets.zero,
-                          ).clipRRect(bottomLeft: 12, bottomRight: 12),
+                            borderRadius: 16,
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                          ),
                 ],
               ),
             ),
@@ -1092,12 +1088,11 @@ Widget buildPostTranslationSection({
       ? Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                const Gap(8),
-                const Text('translated').tr().fontSize(11).opacity(0.75),
-              ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'translated'.tr(),
+              ).fontSize(11).opacity(0.75).padding(bottom: 4),
             ),
             MarkdownTextContent(
               textStyle: TextStyle(
@@ -1108,7 +1103,7 @@ Widget buildPostTranslationSection({
               isSelectable: isTextSelectable,
               attachments: item.attachments,
               noMentionChip: item.fediverseUri != null,
-            ).padding(bottom: 16),
+            ).padding(bottom: 12),
           ],
         )
       : null;
@@ -1148,12 +1143,9 @@ Widget buildPostTranslationSection({
   final children = <Widget>[];
   if (translationStatusWidget != null) {
     children.add(
-      Row(
-        children: [
-          const Expanded(child: Divider()),
-          const Gap(8),
-          translationStatusWidget,
-        ],
+      Align(
+        alignment: Alignment.centerLeft,
+        child: translationStatusWidget,
       ),
     );
   }

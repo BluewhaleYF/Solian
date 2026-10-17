@@ -1956,7 +1956,6 @@ SliverAppBar buildPostDetailSliverAppBar({
     pinned: true,
     // Opaque on purpose: this bar stays pinned over scrolling content, so it
     // must not inherit the "transparent app bar" user setting.
-    centerTitle: true,
     leading: leading,
     title: hasTitle
         ? Text(

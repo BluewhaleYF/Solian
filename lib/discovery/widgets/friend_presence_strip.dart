@@ -5,6 +5,7 @@ import 'package:island/accounts/utils/account_status_utils.dart';
 import 'package:island/accounts/widgets/account/account_pfc.dart';
 import 'package:island/accounts/widgets/account/friends_overview.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
@@ -31,47 +32,41 @@ class FriendPresenceStrip extends HookConsumerWidget {
         final onlineCount = friends
             .where((friend) => showsOnlinePresence(friend.status))
             .length;
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
 
-        return Material(
-          color: colorScheme.surfaceContainerLow.withOpacity(0.65),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Height: 8 top + 48 avatar + 4 gap + ~14 label + 6 bottom
-              SizedBox(
-                height: 80,
-                child: HoverHorizontalScrollList(
-                  padding: const EdgeInsets.fromLTRB(6, 8, 6, 6),
-                  itemCount: ordered.length + 1,
-                  separatorWidth: 2,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Align(
-                        alignment: Alignment.topCenter,
-                        child: _FriendsSummaryTile(
-                          onlineCount: onlineCount,
-                          onTap: () => showFriendsOverviewSheet(context),
-                        ),
-                      );
-                    }
-
-                    final friend = ordered[index - 1];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Height: 10 top + 48 avatar + 4 gap + ~14 label + 8 bottom
+            SizedBox(
+              height: 84,
+              child: HoverHorizontalScrollList(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                itemCount: ordered.length + 1,
+                separatorWidth: 2,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
                     return Align(
                       alignment: Alignment.topCenter,
-                      child: AccountPfcRegion(
-                        uname: friend.account.name,
-                        child: _FriendPresenceTile(friend: friend),
+                      child: _FriendsSummaryTile(
+                        onlineCount: onlineCount,
+                        onTap: () => showFriendsOverviewSheet(context),
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  final friend = ordered[index - 1];
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: AccountPfcRegion(
+                      uname: friend.account.name,
+                      child: _FriendPresenceTile(friend: friend),
+                    ),
+                  );
+                },
               ),
-              Divider(height: 1),
-            ],
-          ),
+            ),
+          ],
         );
       },
       loading: () => const SizedBox.shrink(),
@@ -80,13 +75,19 @@ class FriendPresenceStrip extends HookConsumerWidget {
   }
 }
 
-/// Sliver wrapper for [FriendPresenceStrip], placed above the post feed.
+/// Sliver wrapper for [FriendPresenceStrip], placed above the post feed as a
+/// floating section card.
 class SliverFriendPresenceStrip extends StatelessWidget {
   const SliverFriendPresenceStrip({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const SliverToBoxAdapter(child: FriendPresenceStrip());
+    return SliverPadding(
+      padding: explorePageGutter(context),
+      sliver: const SliverToBoxAdapter(
+        child: ExploreCard(child: FriendPresenceStrip()),
+      ),
+    );
   }
 }
 

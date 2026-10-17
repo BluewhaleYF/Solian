@@ -85,7 +85,6 @@ class ActionLogsScreen extends HookConsumerWidget {
     return AppScaffold(
       appBar: AppBar(
         title: Text('actionLogs').tr(),
-        centerTitle: true,
         scrolledUnderElevation: 4,
       ),
       body: Column(

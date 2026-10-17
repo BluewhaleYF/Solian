@@ -33,13 +33,13 @@ class PostItemSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final renderingPadding =
-        padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
+        padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
     final row = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Gap(renderingPadding.vertical),
+        Gap(renderingPadding.top),
         _PostHeaderSkeleton(
           isFullPost: isFullPost,
           isCompact: isCompact,
@@ -52,10 +52,12 @@ class PostItemSkeleton extends StatelessWidget {
         if (isShowReference)
           _ReferencedPostWidgetSkeleton(renderingPadding: renderingPadding),
         if (isEmbedReply)
-          _PostReplyPreviewSkeleton(
-            renderingPadding: renderingPadding,
-          ).padding(horizontal: renderingPadding.horizontal, top: 8),
-        Gap(renderingPadding.vertical),
+          _PostReplyPreviewSkeleton(renderingPadding: renderingPadding).padding(
+            left: renderingPadding.left,
+            right: renderingPadding.right,
+            top: 8,
+          ),
+        Gap(renderingPadding.bottom),
       ],
     );
 
@@ -160,7 +162,11 @@ class _PostHeaderSkeleton extends StatelessWidget {
             ],
           ),
         ],
-      ).padding(horizontal: renderingPadding.horizontal, bottom: 4),
+      ).padding(
+        left: renderingPadding.left,
+        right: renderingPadding.right,
+        bottom: 4,
+      ),
     );
   }
 }
@@ -187,8 +193,8 @@ class _PostBodySkeleton extends StatelessWidget {
               height: 20,
               width: 200,
               margin: EdgeInsets.only(
-                left: renderingPadding.horizontal,
-                right: renderingPadding.horizontal,
+                left: renderingPadding.left,
+                right: renderingPadding.right,
                 bottom: 8,
               ),
               decoration: BoxDecoration(
@@ -200,8 +206,8 @@ class _PostBodySkeleton extends StatelessWidget {
           Container(
             height: 16,
             margin: EdgeInsets.only(
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
               bottom: 4,
             ),
             decoration: BoxDecoration(
@@ -213,8 +219,8 @@ class _PostBodySkeleton extends StatelessWidget {
             height: 16,
             width: 250,
             margin: EdgeInsets.only(
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
               bottom: 4,
             ),
             decoration: BoxDecoration(
@@ -226,8 +232,8 @@ class _PostBodySkeleton extends StatelessWidget {
             height: 16,
             width: 180,
             margin: EdgeInsets.only(
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
               bottom: 8,
             ),
             decoration: BoxDecoration(
@@ -256,7 +262,11 @@ class _PostBodySkeleton extends StatelessWidget {
                 ),
               ),
             ],
-          ).padding(horizontal: renderingPadding.horizontal + 4, top: 4),
+          ).padding(
+            left: renderingPadding.left,
+            right: renderingPadding.right,
+            top: 4,
+          ),
         ],
       ),
     );
@@ -273,14 +283,16 @@ class _ReferencedPostWidgetSkeleton extends StatelessWidget {
     return Skeletonizer(
       enabled: true,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: renderingPadding.horizontal,
-          vertical: 8,
+        padding: EdgeInsets.only(
+          left: renderingPadding.left,
+          right: renderingPadding.right,
+          top: 8,
+          bottom: 8,
         ),
         margin: EdgeInsets.only(
           top: 8,
-          left: renderingPadding.vertical,
-          right: renderingPadding.vertical,
+          left: renderingPadding.left,
+          right: renderingPadding.right,
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),

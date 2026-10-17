@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/hover_horizontal_scroll_list.dart';
@@ -39,83 +40,77 @@ class SubscribedPublishersStrip extends HookConsumerWidget {
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
 
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
         final unreadCount = items.where((i) => i.hasNewContent).length;
 
-        return Material(
-          color: colorScheme.surfaceContainerLow.withOpacity(0.65),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Height: 8 top + 48 avatar + 4 gap + ~14 label + 6 bottom
-              SizedBox(
-                height: 80,
-                child: HoverHorizontalScrollList(
-                  padding: const EdgeInsets.fromLTRB(6, 8, 6, 6),
-                  itemCount: items.length + (unreadCount > 0 ? 1 : 0),
-                  separatorWidth: 2,
-                  itemBuilder: (context, index) {
-                    // Leading "mark all read" action when any publisher is unread.
-                    if (unreadCount > 0 && index == 0) {
-                      return Align(
-                        alignment: Alignment.topCenter,
-                        child: _MarkAllReadTile(
-                          unreadCount: unreadCount,
-                          isLoading: isMarkingAll.value,
-                          onTap: isMarkingAll.value
-                              ? null
-                              : () async {
-                                  isMarkingAll.value = true;
-                                  try {
-                                    await ref
-                                        .read(
-                                          publishersSubscriptionsLiveProvider
-                                              .notifier,
-                                        )
-                                        .markAllAsRead();
-                                  } catch (_) {
-                                    // Best-effort; list reloads on failure.
-                                  } finally {
-                                    isMarkingAll.value = false;
-                                  }
-                                },
-                        ),
-                      );
-                    }
-
-                    final item = items[unreadCount > 0 ? index - 1 : index];
-                    final publisher = item.subscription.publisher;
-                    final isSelected =
-                        selectedPublisherNames.length == 1 &&
-                        selectedPublisherNames.first == publisher.name;
-
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Height: 10 top + 48 avatar + 4 gap + ~14 label + 8 bottom
+            SizedBox(
+              height: 84,
+              child: HoverHorizontalScrollList(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                itemCount: items.length + (unreadCount > 0 ? 1 : 0),
+                separatorWidth: 2,
+                itemBuilder: (context, index) {
+                  // Leading "mark all read" action when any publisher is unread.
+                  if (unreadCount > 0 && index == 0) {
                     return Align(
                       alignment: Alignment.topCenter,
-                      child: _SubscribedPublisherTile(
-                        publisher: publisher,
-                        isSelected: isSelected,
-                        hasNewContent: item.hasNewContent,
-                        isLive: item.isLive,
-                        onTap: () => _handleTap(
-                          ref: ref,
-                          item: item,
-                          isSelected: isSelected,
-                        ),
-                        onLongPress: () {
-                          context.router.push(
-                            PublisherProfileRoute(name: publisher.name),
-                          );
-                        },
+                      child: _MarkAllReadTile(
+                        unreadCount: unreadCount,
+                        isLoading: isMarkingAll.value,
+                        onTap: isMarkingAll.value
+                            ? null
+                            : () async {
+                                isMarkingAll.value = true;
+                                try {
+                                  await ref
+                                      .read(
+                                        publishersSubscriptionsLiveProvider
+                                            .notifier,
+                                      )
+                                      .markAllAsRead();
+                                } catch (_) {
+                                  // Best-effort; list reloads on failure.
+                                } finally {
+                                  isMarkingAll.value = false;
+                                }
+                              },
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  final item = items[unreadCount > 0 ? index - 1 : index];
+                  final publisher = item.subscription.publisher;
+                  final isSelected =
+                      selectedPublisherNames.length == 1 &&
+                      selectedPublisherNames.first == publisher.name;
+
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: _SubscribedPublisherTile(
+                      publisher: publisher,
+                      isSelected: isSelected,
+                      hasNewContent: item.hasNewContent,
+                      isLive: item.isLive,
+                      onTap: () => _handleTap(
+                        ref: ref,
+                        item: item,
+                        isSelected: isSelected,
+                      ),
+                      onLongPress: () {
+                        context.router.push(
+                          PublisherProfileRoute(name: publisher.name),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
-              Divider(height: 1),
-            ],
-          ),
+            ),
+          ],
         );
       },
       loading: () => const SizedBox.shrink(),
@@ -385,7 +380,8 @@ class _SubscribedPublisherTile extends StatelessWidget {
   }
 }
 
-/// Sliver wrapper for [SubscribedPublishersStrip], placed above the post feed.
+/// Sliver wrapper for [SubscribedPublishersStrip], placed above the post feed
+/// as a floating section card.
 class SliverSubscribedPublishersStrip extends HookConsumerWidget {
   final List<String> selectedPublisherNames;
   final ValueChanged<List<String>> onSelectedPublishersChanged;
@@ -400,11 +396,16 @@ class SliverSubscribedPublishersStrip extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SliverToBoxAdapter(
-      child: SubscribedPublishersStrip(
-        selectedPublisherNames: selectedPublisherNames,
-        onSelectedPublishersChanged: onSelectedPublishersChanged,
-        onSelectionChanged: onSelectionChanged,
+    return SliverPadding(
+      padding: explorePageGutter(context),
+      sliver: SliverToBoxAdapter(
+        child: ExploreCard(
+          child: SubscribedPublishersStrip(
+            selectedPublisherNames: selectedPublisherNames,
+            onSelectedPublishersChanged: onSelectedPublishersChanged,
+            onSelectionChanged: onSelectionChanged,
+          ),
+        ),
       ),
     );
   }

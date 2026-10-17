@@ -13,8 +13,10 @@ Future<void> _loadFonts() async {
   await loader.load();
 }
 
-Future<ThemeData> _readTheme(Brightness brightness) async {
-  SharedPreferences.setMockInitialValues({});
+Future<ThemeData> _readTheme(Brightness brightness, {Color? seed}) async {
+  SharedPreferences.setMockInitialValues({
+    if (seed != null) kAppColorSchemeStoreKey: seed.toARGB32(),
+  });
   final prefs = await SharedPreferences.getInstance();
   final container = ProviderContainer(
     overrides: [sharedPreferencesProvider.overrideWith((ref) => prefs)],
@@ -202,4 +204,28 @@ void main() {
       );
     });
   }
+
+  // The neutral ramp is derived from the seed, so a different accent must
+  // visibly move the ground too. This golden is the guard against drifting
+  // back to a fixed beige/cocoa palette.
+  testWidgets('theme preview follows a green seed', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final theme = await _readTheme(
+      Brightness.light,
+      seed: const Color(0xFF2F7A63),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        home: const _Preview(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/theme_seed.png'),
+    );
+  });
 }

@@ -71,9 +71,10 @@ void main() {
   });
 
   // Regression: the header title lives in a `FlexibleSpaceBar`, which ignores
-  // `AppBarTheme.centerTitle` and defaults per platform — left on Windows. The
-  // account header must thread `appBarCenterTitle(theme)` into it explicitly.
-  testWidgets('account header centers its title on Windows', (tester) async {
+  // `AppBarTheme.centerTitle` and defaults per platform. The account header must
+  // thread `appBarCenterTitle(theme)` into it explicitly; the app-wide design is
+  // now left-aligned titles.
+  testWidgets('account header left aligns its title on Windows', (tester) async {
     final theme = await _windowsTheme();
     final prefs = await SharedPreferences.getInstance();
     await tester.binding.setSurfaceSize(const Size(400, 800));
@@ -124,9 +125,11 @@ void main() {
     expect(title, findsOneWidget);
 
     expect(
-      tester.getCenter(title).dx,
-      closeTo(tester.getCenter(header).dx, 1.0),
-      reason: 'FlexibleSpaceBar title must follow the app-wide centerTitle',
+      tester.getTopLeft(title).dx,
+      lessThan(tester.getCenter(header).dx),
+      reason:
+          'FlexibleSpaceBar title must follow the app-wide left alignment and '
+          'start after the leading drawer button',
     );
 
     // Dispose so the presence-refresh timer is cancelled.

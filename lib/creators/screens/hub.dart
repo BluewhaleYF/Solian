@@ -15,6 +15,7 @@ import 'package:island/core/services/responsive.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
@@ -992,30 +993,9 @@ class CreatorHubContentWidget extends HookConsumerWidget {
     return AppScaffold(
       isNoBackground: true,
       appBar: AppBar(
-        // The narrow (portrait) layout follows the app's themed top bars and
-        // uses the theme colour; the wide split view keeps a plain surface bar.
-        // Either way the surface tint and scrolled-under elevation stay off so
-        // no coloured scrim appears over the title while scrolling.
-        backgroundColor: isWideScreen(context)
-            ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.primary,
-        foregroundColor: isWideScreen(context)
-            ? Theme.of(context).colorScheme.onSurface
-            : Theme.of(context).colorScheme.onPrimary,
-        // The theme pins the title to onSurface, so re-tint it to match the bar.
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-          color: isWideScreen(context)
-              ? Theme.of(context).colorScheme.onSurface
-              : Theme.of(context).colorScheme.onPrimary,
-        ),
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Symbols.menu),
-          onPressed: () {
-            rootScaffoldKey.currentState?.openDrawer();
-          },
-        ),
+        leading: const SolDrawerButton(),
         title: Text('creatorHub').tr(),
         actions: [
           PublisherSelector(

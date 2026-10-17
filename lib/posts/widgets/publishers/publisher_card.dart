@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/discovery/widgets/discovery_feedback_widget.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/posts/screens/publisher_profile.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -35,8 +36,8 @@ class PublisherDiscoveryCard extends ConsumerWidget {
     Widget card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.zero,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(SolRadius.md),
       ),
       child: InkWell(
         onTap: () => openPublisherProfile(context, publisher),

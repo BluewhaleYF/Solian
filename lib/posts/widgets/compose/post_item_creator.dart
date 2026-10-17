@@ -43,7 +43,7 @@ class PostItemCreator extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final renderingPadding =
-        padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8);
+        padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
     return ContextMenuWidget(
       previewBuilder: contextMenuPreviewBuilder,
@@ -144,8 +144,11 @@ class PostItemCreator extends HookConsumerWidget {
               const Gap(16),
               _buildAnalyticsSection(
                 context,
-              ).padding(horizontal: renderingPadding.horizontal),
-              Gap(renderingPadding.vertical),
+              ).padding(
+                left: renderingPadding.left,
+                right: renderingPadding.right,
+              ),
+              Gap(renderingPadding.bottom),
             ],
           ),
         ),

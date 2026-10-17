@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:island/core/config.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -75,7 +76,7 @@ abstract final class SolRadius {
   static const double xxl = 28;
   static const double pill = 999;
 
-  static const double control = lg;
+  static const double control = xl;
   static const double card = lg;
   static const double input = lg;
   static const double chip = sm;
@@ -100,6 +101,10 @@ abstract final class SolRadius {
   );
   static const BorderRadius dialogRadius = BorderRadius.all(
     Radius.circular(dialog),
+  );
+  /// Fully rounded capsule: any height collapses to a pill, never a squircle.
+  static const BorderRadius pillRadius = BorderRadius.all(
+    Radius.circular(pill),
   );
 }
 
@@ -152,9 +157,11 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     brightness: brightness,
   );
 
-  // Warm the neutral ground before applying user overrides, so a custom
-  // accent still sits on the same warm paper.
-  colorScheme = _warmNeutrals(colorScheme, brightness);
+  // Replace the seed-generated neutral ramp with a paper ramp built from the
+  // seed's own hue, before applying user overrides. Tones control the warmth
+  // (soft, low-contrast steps); the hue comes from the seed, so the ground
+  // moves with the accent instead of sitting on a fixed beige.
+  colorScheme = _seedPaper(colorScheme, seedColor, brightness);
 
   final customColors = settings.customColors;
   if (customColors != null) {
@@ -253,11 +260,13 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     borderRadius: SolRadius.controlRadius,
   );
 
-  // Inputs use the stronger outline, not the decorative outlineVariant: a
-  // control boundary has to stay legible (3:1) against its own fill.
+  // Inputs are tonal first: a soft filled shape defines the field, and only
+  // the focused/error states draw an outline. The resting border is an
+  // `OutlineInputBorder` with no side so the fill keeps its rounded shape
+  // instead of collapsing into a sharp rectangle.
   final inputBorder = OutlineInputBorder(
     borderRadius: SolRadius.inputRadius,
-    borderSide: BorderSide(color: colorScheme.outline),
+    borderSide: BorderSide.none,
   );
   final focusedInputBorder = OutlineInputBorder(
     borderRadius: SolRadius.inputRadius,
@@ -273,7 +282,9 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
   return baseTheme.copyWith(
     textTheme: textTheme,
     appBarTheme: AppBarThemeData(
-      centerTitle: true,
+      // Titles read left aligned, like a document: the leading icon occupies
+      // the left edge and the title starts right of it.
+      centerTitle: false,
       elevation: hasAppBarTransparent ? 0 : null,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
@@ -284,7 +295,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       iconTheme: IconThemeData(color: appBarForeground),
       actionsIconTheme: IconThemeData(color: appBarForeground),
       toolbarHeight: 60,
-      titleSpacing: SolSpace.xl,
+      titleSpacing: SolSpace.md,
       actionsPadding: const EdgeInsets.only(right: SolSpace.sm),
       titleTextStyle: textTheme.titleLarge?.copyWith(
         fontSize: 16,
@@ -333,7 +344,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     ),
     inputDecorationTheme: InputDecorationThemeData(
       filled: true,
-      fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.55),
+      fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.7),
       contentPadding: SolInsets.input,
       border: inputBorder,
       enabledBorder: inputBorder,
@@ -342,12 +353,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       focusedErrorBorder: focusedInputBorder.copyWith(
         borderSide: BorderSide(color: colorScheme.error, width: 1.5),
       ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: SolRadius.inputRadius,
-        borderSide: BorderSide(
-          color: colorScheme.onSurface.withValues(alpha: 0.12),
-        ),
-      ),
+      disabledBorder: inputBorder,
       hintStyle: textTheme.bodyMedium?.copyWith(
         color: onSurfaceVariant.withValues(alpha: 0.72),
       ),
@@ -386,7 +392,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
         padding: SolInsets.control,
         minimumSize: const Size(64, SolSpace.control),
         shape: buttonShape,
-        side: BorderSide(color: colorScheme.outline),
+        side: BorderSide(color: colorScheme.outlineVariant),
         animationDuration: const Duration(milliseconds: 180),
       ),
     ),
@@ -518,7 +524,8 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       backgroundColor: colorScheme.surfaceContainerHigh,
       selectedColor: colorScheme.secondaryContainer,
       secondarySelectedColor: colorScheme.secondaryContainer,
-      side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.55)),
+      // Tonal chips: the fill carries the shape, no outline.
+      side: BorderSide.none,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SolRadius.chip),
       ),
@@ -614,9 +621,7 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       shadowColor: const WidgetStatePropertyAll(Colors.transparent),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
       backgroundColor: WidgetStatePropertyAll(colorScheme.surfaceContainerHigh),
-      side: WidgetStatePropertyAll(
-        BorderSide(color: colorScheme.outline.withValues(alpha: 0.8)),
-      ),
+      side: const WidgetStatePropertyAll(BorderSide.none),
       shape: const WidgetStatePropertyAll(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(SolRadius.input)),
@@ -689,44 +694,47 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
   );
 }
 
-/// Turns the seed-generated neutrals into a warm paper palette.
+/// Builds the neutral ramp for the app's paper look from the seed.
 ///
-/// Accent roles (primary / secondary / tertiary / error) are left exactly as
-/// the seed produced them. Only the ground the accents sit on is warmed, which
-/// is what makes a cool indigo or a bright orange scheme feel equally cozy.
-ColorScheme _warmNeutrals(ColorScheme scheme, Brightness brightness) {
+/// Only the *ground* is rebuilt here: accent roles (primary, secondary,
+/// tertiary, error) are left exactly as the seed produced them. The difference
+/// from a stock `ColorScheme.fromSeed` is that tones are fixed to a soft,
+/// paper-like ramp while the hue and a trace of the seed's chroma are kept, so
+/// an indigo seed reads as cool paper and a clay seed as warm paper. A near-gray
+/// seed stays neutral instead of picking up an unrelated hue.
+ColorScheme _seedPaper(
+  ColorScheme scheme,
+  Color seedColor,
+  Brightness brightness,
+) {
+  final seed = Hct.fromInt(seedColor.toARGB32());
+  // A near-gray seed is a deliberate choice: do not invent a hue for it.
+  final hasHue = seed.chroma >= 5;
+  final hue = hasHue ? seed.hue : 0.0;
+  // Cap the tint so vivid seeds stay paper, not pastel; muted seeds get less.
+  final tint = hasHue ? (seed.chroma / 16).clamp(1.5, 4.0) : 0.0;
+
+  Color shade(double tone, [double tintScale = 1]) =>
+      Color(Hct.from(hue, tint * tintScale, tone).toInt());
+
   final isDark = brightness == Brightness.dark;
   return scheme.copyWith(
-    surface: isDark ? const Color(0xFF17130F) : const Color(0xFFFBF7F3),
-    surfaceDim: isDark ? const Color(0xFF14110E) : const Color(0xFFE9DFD6),
-    surfaceBright: isDark ? const Color(0xFF3D332C) : const Color(0xFFFFFCF8),
-    surfaceContainerLowest: isDark
-        ? const Color(0xFF120F0C)
-        : const Color(0xFFFFFFFF),
-    surfaceContainerLow: isDark
-        ? const Color(0xFF1E1915)
-        : const Color(0xFFF8F2EC),
-    surfaceContainer: isDark
-        ? const Color(0xFF231D18)
-        : const Color(0xFFF3ECE5),
-    surfaceContainerHigh: isDark
-        ? const Color(0xFF2D2620)
-        : const Color(0xFFEDE4DC),
-    surfaceContainerHighest: isDark
-        ? const Color(0xFF392F28)
-        : const Color(0xFFE7DDD4),
-    onSurface: isDark ? const Color(0xFFF3EAE2) : const Color(0xFF261F1A),
-    onSurfaceVariant: isDark
-        ? const Color(0xFFD2C3B6)
-        : const Color(0xFF5E544B),
-    outline: isDark ? const Color(0xFF9C8B7D) : const Color(0xFF8D7F73),
-    outlineVariant: isDark ? const Color(0xFF4D423A) : const Color(0xFFDBCFC4),
-    inverseSurface: isDark ? const Color(0xFFF3EAE2) : const Color(0xFF362E27),
-    onInverseSurface: isDark
-        ? const Color(0xFF2B241E)
-        : const Color(0xFFF8F0E9),
-    shadow: isDark ? Colors.black : const Color(0xFF3D2C1E),
-    scrim: isDark ? Colors.black : const Color(0xFF2A1F17),
+    surface: shade(isDark ? 7.5 : 97.5, 0.7),
+    surfaceDim: shade(isDark ? 5 : 87),
+    surfaceBright: shade(isDark ? 25 : 99, 0.5),
+    surfaceContainerLowest: shade(isDark ? 4 : 100, 0.3),
+    surfaceContainerLow: shade(isDark ? 11 : 96),
+    surfaceContainer: shade(isDark ? 14 : 93),
+    surfaceContainerHigh: shade(isDark ? 19 : 90),
+    surfaceContainerHighest: shade(isDark ? 24 : 87),
+    onSurface: shade(isDark ? 93 : 12, 1.1),
+    onSurfaceVariant: shade(isDark ? 80 : 32, 1.25),
+    outline: shade(isDark ? 62 : 52, 1.4),
+    outlineVariant: shade(isDark ? 32 : 84, 1.2),
+    inverseSurface: shade(isDark ? 92 : 22),
+    onInverseSurface: shade(isDark ? 18 : 96, 0.8),
+    shadow: shade(isDark ? 2 : 14, 1.5),
+    scrim: shade(isDark ? 2 : 8, 1.5),
   );
 }
 
@@ -796,8 +804,7 @@ TextTheme _buildTextTheme(TextTheme base) {
 /// `centerTitle ?? AppBarTheme.centerTitle ?? platformDefault`. `FlexibleSpaceBar`
 /// does not: it resolves `centerTitle ?? platformDefault`, and `AppBarTheme`
 /// never reaches it (nor is it forwarded through `FlexibleSpaceBar.createSettings`).
-/// The platform default is left-aligned on Android/Windows/Linux and centered
-/// only on iOS/macOS, so a `SliverAppBar` whose title lives in a
-/// `FlexibleSpaceBar` must thread this value into *both* widgets itself.
+/// The theme pins [AppBarThemeData.centerTitle] to false, so a collapsing header
+/// must thread the same value into *both* widgets itself.
 bool appBarCenterTitle(ThemeData theme) =>
-    theme.appBarTheme.centerTitle ?? true;
+    theme.appBarTheme.centerTitle ?? false;

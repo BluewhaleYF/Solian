@@ -22,6 +22,7 @@ import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/route.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/notifications/notification_tile.dart';
@@ -68,6 +69,12 @@ class DashboardScreen extends HookConsumerWidget {
 
     return AppScaffold(
       isNoBackground: false,
+      appBar: AppBar(
+        title: const Text('Solar Network'),
+        leading: const SolDrawerButton(),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
       body: Center(child: DashboardGrid()),
     );
   }

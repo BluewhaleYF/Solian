@@ -71,8 +71,8 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
           Container(
             margin: EdgeInsets.only(
               top: 8,
-              left: widget.renderingPadding.horizontal,
-              right: widget.renderingPadding.horizontal,
+              left: widget.renderingPadding.left,
+              right: widget.renderingPadding.right,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +133,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
             'survey' => _SurveyEmbedCard(
               surveyId: embedData['id']?.toString(),
               margin: EdgeInsets.symmetric(
-                horizontal: widget.renderingPadding.horizontal,
+                horizontal: widget.renderingPadding.left,
                 vertical: 8,
               ),
               isInteractive: widget.isInteractive,
@@ -144,7 +144,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
                   : FundEnvelopeWidget(
                       fundId: embedData['id'],
                       margin: EdgeInsets.symmetric(
-                        horizontal: widget.renderingPadding.horizontal,
+                        horizontal: widget.renderingPadding.left,
                         vertical: 8,
                       ),
                     ),
@@ -154,7 +154,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
               address: embedData['address']?.toString(),
               wkt: embedData['wkt']?.toString(),
               margin: EdgeInsets.symmetric(
-                horizontal: widget.renderingPadding.horizontal,
+                horizontal: widget.renderingPadding.left,
                 vertical: 8,
               ),
             ),
@@ -164,7 +164,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
                   : _MeetEmbedCard(
                       meetId: embedData['id'],
                       margin: EdgeInsets.symmetric(
-                        horizontal: widget.renderingPadding.horizontal,
+                        horizontal: widget.renderingPadding.left,
                         vertical: 8,
                       ),
                     ),
@@ -174,7 +174,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
                   : _CalendarEventEmbedCard(
                       eventId: embedData['id'],
                       margin: EdgeInsets.symmetric(
-                        horizontal: widget.renderingPadding.horizontal,
+                        horizontal: widget.renderingPadding.left,
                         vertical: 8,
                       ),
                     ),
@@ -184,7 +184,7 @@ class _EmbedListWidgetState extends ConsumerState<EmbedListWidget>
                   : _NotableDayEmbedCard(
                       notableDayId: embedData['id'],
                       margin: EdgeInsets.symmetric(
-                        horizontal: widget.renderingPadding.horizontal,
+                        horizontal: widget.renderingPadding.left,
                         vertical: 8,
                       ),
                     ),

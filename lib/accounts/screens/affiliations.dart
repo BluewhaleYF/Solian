@@ -80,7 +80,7 @@ class AffiliationScreen extends HookConsumerWidget {
 
     if (!serverFeatureEnabled(capabilities, 'affiliations')) {
       return AppScaffold(
-        appBar: AppBar(title: Text('affiliations').tr(), centerTitle: true),
+        appBar: AppBar(title: Text('affiliations').tr()),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -107,7 +107,6 @@ class AffiliationScreen extends HookConsumerWidget {
     return AppScaffold(
       appBar: AppBar(
         title: Text('affiliations').tr(),
-        centerTitle: true,
         scrolledUnderElevation: 4,
         actions: [
           PopupMenuButton<String>(

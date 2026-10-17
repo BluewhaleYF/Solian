@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:logging/logging.dart';
@@ -256,7 +257,7 @@ class PostFeaturedList extends HookConsumerWidget {
 }
 
 /// Gutter kept on each side of a featured post card, and between two cards.
-const double _kFeaturedCarouselGap = 8;
+const double _kFeaturedCarouselGap = 12;
 
 /// Snapping carousel of featured posts, built on Material's [CarouselView].
 ///
@@ -361,7 +362,9 @@ class _FeaturedPostCarousel extends HookWidget {
                   backgroundColor: Colors.transparent,
                   enableSplash: false,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(SolRadius.md),
+                    ),
                   ),
                   onIndexChanged: onIndexChanged,
                   children: [
@@ -404,9 +407,9 @@ class _FeaturedPostCarousel extends HookWidget {
   }
 }
 
-/// Bordered, rounded card wrapping one featured post.
+/// Flat, rounded card wrapping one featured post.
 class _FeaturedPostCard extends StatelessWidget {
-  static const double _radius = 12;
+  static const double _radius = SolRadius.md;
 
   final SnPost post;
   final bool compact;
@@ -418,23 +421,16 @@ class _FeaturedPostCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(
-            width: 1 / MediaQuery.devicePixelRatioOf(context),
-            color: theme.dividerColor.withOpacity(0.5),
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(_radius)),
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(_radius)),
-          child: SingleChildScrollView(
-            child: PostActionableItem(
-              item: post,
-              isCompact: compact,
-              borderRadius: _radius,
-              containAttachments: true,
-            ),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHigh,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(_radius),
+        child: SingleChildScrollView(
+          child: PostActionableItem(
+            item: post,
+            isCompact: compact,
+            borderRadius: _radius,
+            containAttachments: true,
           ),
         ),
       ),
@@ -464,8 +460,7 @@ class _CarouselArrowButton extends StatelessWidget {
         opacity: isVisible ? 1 : 0,
         child: Material(
           color: colorScheme.surface.withOpacity(0.92),
-          elevation: 2,
-          shadowColor: Colors.black26,
+          elevation: 0,
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(

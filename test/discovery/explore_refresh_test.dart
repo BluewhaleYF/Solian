@@ -256,8 +256,10 @@ void main() {
     final feed = _RecordingFeed();
     await pumpExplore(tester, const Size(1400, 420), feed);
 
-    // Render the quick pick so the publisher live list is on screen.
-    await tester.tap(find.byType(Tab).at(1));
+    // The section picker is a dropdown in the bar, not a tab bar.
+    await tester.tap(find.byType(MenuAnchor).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(MenuItemButton).at(1));
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

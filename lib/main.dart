@@ -668,6 +668,8 @@ legacy_material.InputDecorationThemeData _toLegacyInputDecoration(
 }
 
 legacy_material.InputBorder? _toLegacyInputBorder(InputBorder? border) {
+  if (border == null) return null;
+  if (border == InputBorder.none) return legacy_material.InputBorder.none;
   return switch (border) {
     OutlineInputBorder(:final borderRadius, :final borderSide) =>
       legacy_material.OutlineInputBorder(

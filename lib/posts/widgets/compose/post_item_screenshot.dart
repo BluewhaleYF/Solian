@@ -169,8 +169,8 @@ class PostItemScreenshot extends ConsumerWidget {
     final visibleReplies = replies.take(3).toList();
     return Padding(
       padding: EdgeInsets.only(
-        left: renderingPadding.horizontal,
-        right: renderingPadding.horizontal,
+        left: renderingPadding.left,
+        right: renderingPadding.right,
         top: 8,
       ),
       child: Container(
@@ -347,7 +347,7 @@ class PostItemScreenshot extends ConsumerWidget {
                   item.repliedGone ||
                   item.forwardedPost != null ||
                   item.repliedPost != null))
-            Gap(renderingPadding.vertical),
+            Gap(renderingPadding.top),
           if (isShowReference)
             ReferencedPostWidget(
               item: item,
@@ -358,8 +358,8 @@ class PostItemScreenshot extends ConsumerWidget {
           if (item.sponsored)
             Padding(
               padding: EdgeInsets.only(
-                left: renderingPadding.horizontal,
-                right: renderingPadding.horizontal,
+                left: renderingPadding.left,
+                right: renderingPadding.right,
                 bottom: 6,
               ),
               child: const Align(
@@ -393,15 +393,15 @@ class PostItemScreenshot extends ConsumerWidget {
               embedView: item.embedView!,
               maxHeight: 400,
               borderRadius: BorderRadius.circular(12),
-            ).padding(horizontal: renderingPadding.horizontal, vertical: 8),
+            ).padding(left: renderingPadding.left, right: renderingPadding.right, vertical: 8),
           if (item.attachments.isNotEmpty)
             _buildScreenshotAttachments(
               context,
               item.attachments,
               maxVisible: _kScreenshotVisibleMainAttachments,
               padding: EdgeInsets.only(
-                left: renderingPadding.horizontal,
-                right: renderingPadding.horizontal,
+                left: renderingPadding.left,
+                right: renderingPadding.right,
                 top: 8,
               ),
             ),
@@ -410,8 +410,8 @@ class PostItemScreenshot extends ConsumerWidget {
           if (item.reactionsCount.isNotEmpty)
             Padding(
               padding: EdgeInsets.only(
-                left: renderingPadding.horizontal,
-                right: renderingPadding.horizontal,
+                left: renderingPadding.left,
+                right: renderingPadding.right,
                 top: 8,
               ),
               child: _buildScreenshotReactionChips(context, item),
@@ -421,9 +421,11 @@ class PostItemScreenshot extends ConsumerWidget {
           Container(
             color: Theme.of(context).colorScheme.surfaceContainerLow,
             margin: const EdgeInsets.only(top: 8),
-            padding: EdgeInsets.symmetric(
-              horizontal: renderingPadding.horizontal,
-              vertical: 4,
+            padding: EdgeInsets.only(
+              left: renderingPadding.left,
+              right: renderingPadding.right,
+              top: 4,
+              bottom: 4,
             ),
             child: Row(
               children: [

@@ -187,7 +187,7 @@ class FriendPresenceItem extends ConsumerWidget {
         if (isSteam && activity.meta != null)
           _SteamHeroImage(meta: activity.meta as Map<String, dynamic>),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             spacing: 10,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +467,7 @@ class FriendStatusItem extends ConsumerWidget {
     final indicatorFill = getStatusIndicatorFill(status);
 
     final content = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         spacing: 10,
         crossAxisAlignment: CrossAxisAlignment.start,

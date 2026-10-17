@@ -2,8 +2,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:island/shared/hooks/material_hooks.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
@@ -22,11 +20,13 @@ import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/realms/widgets/realm_card.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/discovery/widgets/discovery_feedback_widget.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/discovery/widgets/friend_presence_strip.dart';
 import 'package:island/discovery/widgets/friend_presence_widgets.dart';
 import 'package:island/discovery/widgets/subscribed_publishers_strip.dart';
@@ -35,6 +35,7 @@ import 'package:super_sliver_list/super_sliver_list.dart';
 import 'package:island/posts/widgets/compose/post_list.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/theme.dart';
 
 @RoutePage()
 class ExploreScreen extends HookConsumerWidget {
@@ -48,20 +49,9 @@ class ExploreScreen extends HookConsumerWidget {
     final exploreSettings = ref.watch(appSettingsProvider).exploreSettings;
     // Publisher picks are session-scoped; only category/tag filters persist.
     final selectedPublisherNames = useState<List<String>>(<String>[]);
-    // Keep a single controller so tapping a tab animates the indicator. The
-    // listener below syncs external section changes (e.g. the settings screen)
-    // without recreating (and thus resetting) the controller.
-    final filterTabController = useMaterialTabController(
-      initialLength: 3,
-      initialIndex: _filterTabIndex(exploreSettings.filter),
-    );
-
-    ref.listen(appSettingsProvider, (previous, next) {
-      final target = _filterTabIndex(next.exploreSettings.filter);
-      if (filterTabController.index != target) {
-        filterTabController.animateTo(target);
-      }
-    });
+    // The explore section is a single persisted choice (null / subscriptions /
+    // friends). The settings screen can change it out from under the page, so
+    // it is read straight from the persisted state on every build.
 
     void handleFilterChange(String? filter) {
       ref
@@ -85,6 +75,12 @@ class ExploreScreen extends HookConsumerWidget {
           );
     }
 
+    // Drives the header's morph on a 0..1 scale: 0 is the flush, square band
+    // at the top of the feed, 1 the fully inset pill after scrolling. A
+    // notifier rather than setState so a scroll tick repaints the header only,
+    // never the whole timeline.
+    final morph = useValueNotifier(0.0);
+
     final isWide = isWideScreen(context);
 
     final hasSubscriptionFiltersApplied =
@@ -94,301 +90,191 @@ class ExploreScreen extends HookConsumerWidget {
 
     final userInfo = ref.watch(userInfoProvider);
 
+    final feed = _buildFeed(
+      context,
+      ref,
+      morph: morph,
+      selectedPublisherNames: selectedPublisherNames,
+      onPublishersChanged: handlePublishersChanged,
+      hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+      handleFilterChange: handleFilterChange,
+      currentFilter: exploreSettings.filter,
+      isWide: isWide,
+      onOpenPost: isWide ? (post) => _openPost(context, post) : null,
+    );
+
+    final composeFab = userInfo.value != null
+        ? _buildComposeFab(context)
+        : null;
+
     if (isWide) {
       return AppScaffold(
         isNoBackground: false,
         appBar: null,
-        floatingActionButton: userInfo.value != null
-            ? FloatingActionButton(
-                heroTag: 'explore-fab',
-                child: const Icon(Symbols.create),
-                onPressed: () {
-                  final parentContext = context;
-                  showModalBottomSheet(
-                    context: parentContext,
-                    isScrollControlled: true,
-                    useRootNavigator: true,
-                    builder: (sheetContext) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Gap(40),
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                          ),
-                          leading: const Icon(Symbols.post_add_rounded),
-                          title: Text('postCompose').tr(),
-                          onTap: () async {
-                            Navigator.of(sheetContext).pop();
-                            await PostComposeDialog.show(parentContext);
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                          ),
-                          leading: const Icon(Symbols.article),
-                          title: Text('articleCompose').tr(),
-                          onTap: () async {
-                            Navigator.of(sheetContext).pop();
-                            await context.router.push(ArticleComposeRoute());
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                          ),
-                          leading: const Icon(Symbols.docs),
-                          title: Text('linkBlog').tr(),
-                          onTap: () async {
-                            Navigator.of(sheetContext).pop();
-                            await BlogComposeDialog.show(parentContext);
-                          },
-                        ),
-                        const Gap(16),
-                      ],
-                    ),
-                  );
-                },
-              ).padding(bottom: MediaQuery.of(context).padding.bottom)
-            : null,
-        body: _buildWideBody(
-          context,
-          ref,
-          filterTabController,
-          selectedPublisherNames,
-          handlePublishersChanged,
-          hasSubscriptionFiltersApplied,
-          handleFilterChange,
-          exploreSettings.filter,
+        floatingActionButton: composeFab,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: _kWideTimelineMaxWidth,
+            ),
+            child: SizedBox.expand(child: feed),
+          ),
         ),
       );
     }
 
-    return AppScaffold(
-      floatingActionButton: userInfo.value != null
-          ? FloatingActionButton(
-              heroTag: 'explore-fab',
-              child: const Icon(Symbols.create),
-              onPressed: () {
-                final parentContext = context;
-                showModalBottomSheet(
-                  context: parentContext,
-                  isScrollControlled: true,
-                  useRootNavigator: true,
-                  builder: (sheetContext) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Gap(40),
-                      ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                        ),
-                        leading: const Icon(Symbols.post_add_rounded),
-                        title: Text('postCompose').tr(),
-                        onTap: () async {
-                          Navigator.of(sheetContext).pop();
-                          await PostComposeDialog.show(parentContext);
-                        },
-                      ),
-                      ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                        ),
-                        leading: const Icon(Symbols.article),
-                        title: Text('articleCompose').tr(),
-                        onTap: () async {
-                          Navigator.of(sheetContext).pop();
-                          await context.router.push(ArticleComposeRoute());
-                        },
-                      ),
-                      ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                        ),
-                        leading: const Icon(Symbols.docs),
-                        title: Text('linkBlog').tr(),
-                        onTap: () async {
-                          Navigator.of(sheetContext).pop();
-                          await BlogComposeDialog.show(parentContext);
-                        },
-                      ),
-                      const Gap(16),
-                    ],
-                  ),
-                );
-              },
-            ).padding(bottom: MediaQuery.of(context).padding.bottom)
-          : null,
-      body: _buildNarrowBodySliver(
-        context,
-        ref,
-        filterTabController,
-        selectedPublisherNames,
-        handlePublishersChanged,
-        hasSubscriptionFiltersApplied,
-        handleFilterChange,
-        exploreSettings.filter,
-      ),
-    );
+    return AppScaffold(floatingActionButton: composeFab, body: feed);
+  }
+
+  /// Opens a post the way the wide layout wants it: short posts in the
+  /// attention modal, anything that needs room on the full detail page.
+  void _openPost(BuildContext context, SnPost post) {
+    if (postFitsAttentionModal(post)) {
+      showPostDetailAttentionModal(post.id);
+      return;
+    }
+    context.router.push(PostDetailRoute(id: post.id));
+  }
+
+  /// The compose action, shared by both layouts.
+  Widget _buildComposeFab(BuildContext context) {
+    return FloatingActionButton(
+      heroTag: 'explore-fab',
+      child: const Icon(Symbols.create),
+      onPressed: () {
+        final parentContext = context;
+        showModalBottomSheet(
+          context: parentContext,
+          isScrollControlled: true,
+          useRootNavigator: true,
+          builder: (sheetContext) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Gap(40),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                leading: const Icon(Symbols.post_add_rounded),
+                title: Text('postCompose').tr(),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  await PostComposeDialog.show(parentContext);
+                },
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                leading: const Icon(Symbols.article),
+                title: Text('articleCompose').tr(),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  await context.router.push(ArticleComposeRoute());
+                },
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                leading: const Icon(Symbols.docs),
+                title: Text('linkBlog').tr(),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  await BlogComposeDialog.show(parentContext);
+                },
+              ),
+              const Gap(16),
+            ],
+          ),
+        );
+      },
+    ).padding(bottom: MediaQuery.of(context).padding.bottom);
   }
 
   /// Header of the explore feed.
   ///
-  /// With the transparent app bar setting off the header is a solid primary
-  /// band (see [AppSettings.appBarTransparent]); with it on it defers to the
-  /// theme's transparent treatment. [foreground] carries the matching on-color
-  /// into every child because the icon/label colors below are picked locally
-  /// rather than inherited from the [AppBar]'s [IconTheme].
-  SliverAppBar _buildExploreSliverAppBar({
+  /// The bar morphs continuously with [morph] (0..1):
+  ///
+  /// * At 0 it is flush and square: it reads as the top of the page, not as a
+  ///   card floating over it.
+  /// * At 1 it is a capsule inset 12px left/right and 12px below the status
+  ///   bar, so it keeps breathing room instead of clipping against it.
+  ///
+  /// Intermediate values lerp the margin and radius, so the transition tracks
+  /// the drag rather than snapping.
+  ///
+  /// The pill paints a tonal surface (`surfaceContainerLow`): the page has one
+  /// accent vocabulary — cards — and a saturated primary band would compete
+  /// with every card in the stack. The section picker replaced the tab strip
+  /// that used to be the bar's `bottom` row, so the bar is a single compact
+  /// row. The shape follows the scroll offset, not the bar's attachment: it
+  /// returns to the flush band as the feed comes back to the top.
+  Widget _buildExploreSliverAppBar({
     required BuildContext context,
-    required TabController filterTabController,
+    required ValueNotifier<double> morph,
+    required String? currentFilter,
     required bool hasSubscriptionFiltersApplied,
     required void Function(String?) handleFilterChange,
-    required bool isWide,
-    required bool appBarTransparent,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final foreground = appBarTransparent
-        ? (Theme.of(context).appBarTheme.foregroundColor ??
-              colorScheme.onSurface)
-        : colorScheme.onPrimary;
+    // With `primary: false` the bar does not add the status-bar inset itself.
+    // The inset has to live *inside* the bar's box: a `SliverPadding` above
+    // the bar scrolls away with the content, which let the pill ride up to
+    // y=0 and collide with the status bar. Reserving it here keeps the
+    // surface below the status bar in both the flush and the pill state.
+    final statusTop = MediaQuery.paddingOf(context).top;
 
+    // Bar geometry never changes; only what is painted inside `flexibleSpace`
+    // morphs. Rebuilding the sliver from the `slivers` list on every scroll
+    // tick would unmount it and the bar would vanish mid-scroll.
     return SliverAppBar(
+      primary: false,
       automaticallyImplyLeading: false,
-      automaticallyImplyActions: false,
-      // Null keeps the theme background (transparent when the setting is on).
-      backgroundColor: appBarTransparent ? null : colorScheme.primary,
-      foregroundColor: foreground,
-      shape: isWide
-          ? const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            )
-          : null,
-      // Category/tag browsing is the left-hand action; shuffle is a regular
-      // trailing action.
-      leading: IconButton(
-        icon: const Icon(Symbols.category),
-        color: foreground,
-        tooltip: 'categoriesAndTags'.tr(),
-        onPressed: () => context.router.push(PostCategoriesListRoute()),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Symbols.shuffle),
-          color: foreground,
-          tooltip: 'postShuffle'.tr(),
-          onPressed: () => context.router.push(const PostShuffleRoute()),
-        ),
-        const Gap(8),
-      ],
-      title: SvgPicture.asset(
-        'assets/icons/icon-outline.svg',
-        color: foreground,
-        width: 32,
-        height: 32,
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
-        child: Row(
-          children: [
-            Expanded(
-              child: IgnorePointer(
-                ignoring: hasSubscriptionFiltersApplied,
-                child: TabBar(
-                  indicatorColor: foreground,
-                  controller: filterTabController,
-                  dividerHeight: 0,
-                  onTap: hasSubscriptionFiltersApplied
-                      ? null
-                      : (index) {
-                          final filter = switch (index) {
-                            1 => 'subscriptions',
-                            2 => 'friends',
-                            _ => null,
-                          };
-                          handleFilterChange(filter);
-                        },
-                  tabs: [
-                    Tab(
-                      child: Row(
-                        spacing: 8,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Symbols.explore,
-                            size: 18,
-                            fill: filterTabController.index == 0 ? 1 : 0,
-                            color: foreground,
-                          ),
-                          Flexible(
-                            child: Text(
-                              'explore'.tr(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: foreground),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        spacing: 8,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Symbols.subscriptions,
-                            size: 18,
-                            fill: filterTabController.index == 1 ? 1 : 0,
-                            color: foreground,
-                          ),
-                          Flexible(
-                            child: Text(
-                              'exploreFilterSubscriptions'.tr(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: foreground),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        spacing: 8,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Symbols.people,
-                            size: 18,
-                            fill: filterTabController.index == 2 ? 1 : 0,
-                            color: foreground,
-                          ),
-                          Flexible(
-                            child: Text(
-                              'exploreFilterFriends'.tr(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: foreground),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      // Status bar + one control row + the collapsed pill's top margin, so
+      // the box can host both states without resizing the sliver.
+      toolbarHeight: statusTop + SolSpace.control + SolSpace.md,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      elevation: 0,
       floating: true,
       snap: true,
+      flexibleSpace: ValueListenableBuilder<double>(
+        valueListenable: morph,
+        builder: (context, t, _) {
+          // Margin and radius lerp with the scroll offset, so the band visibly
+          // contracts into the capsule as the feed leaves the top instead of
+          // popping at the first scrolled pixel.
+          return Container(
+            margin: EdgeInsets.fromLTRB(
+              SolSpace.md * t,
+              statusTop + SolSpace.md * t,
+              SolSpace.md * t,
+              0,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(SolRadius.pill * t),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  // The section picker takes the brand mark's place, so the
+                  // bar holds exactly two things: the drawer toggle and the
+                  // dropdown.
+                  const SolDrawerButton(),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _ExploreSectionButton(
+                        filter: currentFilter,
+                        hasFiltersApplied: hasSubscriptionFiltersApplied,
+                        onSelected: handleFilterChange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -397,8 +283,6 @@ class ExploreScreen extends HookConsumerWidget {
     WidgetRef ref, {
     void Function(SnPost)? onOpenPost,
   }) {
-    final isWide = isWideScreen(context);
-
     return PaginationWidget(
       provider: activityListProvider,
       notifier: activityListProvider.notifier,
@@ -410,7 +294,6 @@ class ExploreScreen extends HookConsumerWidget {
       ),
       contentBuilder: (data, footer) => _ActivityListView(
         data: data,
-        isWide: isWide,
         footer: footer,
         onOpenPost: onOpenPost,
       ),
@@ -433,82 +316,137 @@ class ExploreScreen extends HookConsumerWidget {
         tags: selectedTags,
       ),
       padding: EdgeInsets.zero,
-      itemPadding: const EdgeInsets.only(bottom: 8),
+      itemPadding: const EdgeInsets.fromLTRB(
+        SolSpace.lg,
+        SolSpace.md + 2,
+        SolSpace.lg,
+        SolSpace.md,
+      ),
       onOpenPost: onOpenPost,
+      itemWrapper: (context, index, post, child) => ExploreCard(child: child),
+      separatorBuilder: (context, index, post) =>
+          const Gap(kExploreCardGap),
     );
   }
 
-  Widget _buildNarrowBodySliver(
+  /// The feed itself.
+  ///
+  /// There is no page-wide surface card: the section quick pick, the featured
+  /// strip and every row in the timeline are floating cards on the page
+  /// background, separated by one uniform gap and no horizontal rules. The wide
+  /// layout only constrains the feed to a readable column; it no longer wraps
+  /// it in a card.
+  Widget _buildFeed(
     BuildContext context,
-    WidgetRef ref,
-    TabController filterTabController,
-    ValueNotifier<List<String>> selectedPublishers,
-    ValueChanged<List<String>> onPublishersChanged,
-    bool hasSubscriptionFiltersApplied,
-    void Function(String?) handleFilterChange,
-    String? currentFilter,
-  ) {
+    WidgetRef ref, {
+    required ValueNotifier<double> morph,
+    required ValueNotifier<List<String>> selectedPublisherNames,
+    required ValueChanged<List<String>> onPublishersChanged,
+    required bool hasSubscriptionFiltersApplied,
+    required void Function(String?) handleFilterChange,
+    required String? currentFilter,
+    required bool isWide,
+    required void Function(SnPost)? onOpenPost,
+  }) {
     final appSettings = ref.watch(appSettingsProvider);
     final exploreSettings = appSettings.exploreSettings;
+    final gutter = explorePageGutter(context);
+    // The header is a single toolbar row; the old 48px tab strip is gone, so
+    // the refresh indicator only has to clear the bar itself.
     final sliverRefreshInset =
-        MediaQuery.paddingOf(context).top + kToolbarHeight + 48;
+        MediaQuery.paddingOf(context).top + SolSpace.md + SolSpace.control;
     final usePostList =
-        selectedPublishers.value.isNotEmpty ||
+        selectedPublisherNames.value.isNotEmpty ||
         exploreSettings.selectedCategoryIds.isNotEmpty ||
         exploreSettings.selectedTagIds.isNotEmpty;
+    final isSubscriptionsTab = currentFilter == 'subscriptions';
+    final isExploreTab = currentFilter == null;
+    // The featured carousel is a wide-screen section; only watch it there.
+    final hasFeaturedPosts =
+        isWide &&
+        isExploreTab &&
+        (ref.watch(featuredPostsProvider).value?.isNotEmpty == true);
     final activityState = ref.watch(activityListProvider);
     final isListInitialLoading =
         (activityState.isLoading || activityState.value?.isLoading == true) &&
         (activityState.value?.items.isEmpty ?? true);
 
-    final notifier = ref.watch(activityListProvider.notifier);
+    Future<void> refreshTimeline() async {
+      // The publisher live list only exists while its quick pick is on screen
+      // (the Subscriptions tab). Reading its notifier on any other tab would
+      // refresh a throwaway instance that is already disposed by the time the
+      // request resolves.
+      if (isSubscriptionsTab) {
+        await ref.read(publishersSubscriptionsLiveProvider.notifier).refresh();
+      }
+      if (!usePostList) {
+        await ref.read(activityListProvider.notifier).refresh();
+      }
+    }
 
-    return ExtendedRefreshIndicator(
-      leadingEdgeInset: sliverRefreshInset,
-      hoverRefreshLabel: 'refresh'.tr(),
-      onRefresh: () async {
-        // The publisher live list only exists while its quick pick is on
-        // screen (the Subscriptions tab). Reading its notifier on any other
-        // tab would refresh a throwaway instance that is already disposed by
-        // the time the request resolves.
-        if (currentFilter == 'subscriptions') {
-          await ref
-              .read(publishersSubscriptionsLiveProvider.notifier)
-              .refresh();
-        }
-        if (!usePostList) {
-          await notifier.refresh();
-        }
+    // The morph is driven off the scroll offset itself, on a 0..1 ramp, so it
+    // interpolates with the drag instead of snapping at the first pixel. A
+    // feed that is still at its origin is flush; once it has moved a full
+    // header height it is the fully inset pill. Because the bar is
+    // `floating` + `snap`, scrolling back brings it in again at the same
+    // offset, so the inverse plays as the feed returns to the top.
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        final metrics = notification.metrics;
+        if (metrics.axis != Axis.vertical) return false;
+        final ramp = (metrics.pixels / _kHeaderMorphDistance).clamp(0.0, 1.0);
+        if (morph.value != ramp) morph.value = ramp;
+        return false;
       },
-      child: CustomScrollView(
-        slivers: [
-          _buildExploreSliverAppBar(
-            context: context,
-            filterTabController: filterTabController,
-            hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-            handleFilterChange: handleFilterChange,
-            isWide: false,
-            appBarTransparent: appSettings.appBarTransparent,
-          ),
-          SliverToBoxAdapter(child: const Divider(height: 1)),
+      child: ExtendedRefreshIndicator(
+        leadingEdgeInset: sliverRefreshInset,
+        hoverRefreshLabel: 'refresh'.tr(),
+        onRefresh: refreshTimeline,
+        child: CustomScrollView(
+          slivers: [
+            _buildExploreSliverAppBar(
+              context: context,
+              morph: morph,
+              currentFilter: currentFilter,
+              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+              handleFilterChange: handleFilterChange,
+            ),
+          const SliverGap(kExploreCardGap),
           // The Subscriptions tab keeps the publisher quick pick; Explore and
-          // Friends show the friend presence strip in the same slot.
-          if (currentFilter == 'subscriptions')
+          // Friends show the friend presence strip in the same floating slot.
+          if (isSubscriptionsTab)
             SliverSubscribedPublishersStrip(
-              selectedPublisherNames: selectedPublishers.value,
+              selectedPublisherNames: selectedPublisherNames.value,
               onSelectedPublishersChanged: onPublishersChanged,
             )
           else
             const SliverFriendPresenceStrip(),
-          if (usePostList) ...[
-            _buildPostList(
-              context,
-              ref,
-              selectedPublishers.value,
-              exploreSettings.selectedCategoryIds,
-              exploreSettings.selectedTagIds,
+          const SliverGap(kExploreCardGap),
+          // Explore only, and only once the carousel has something to show.
+          if (hasFeaturedPosts) ...[
+            SliverPadding(
+              padding: gutter,
+              sliver: SliverToBoxAdapter(
+                child: ExploreCard(
+                  child: const PostFeaturedList(flush: true),
+                ),
+              ),
             ),
-          ] else if (isListInitialLoading)
+            const SliverGap(kExploreCardGap),
+          ],
+          if (usePostList)
+            SliverPadding(
+              padding: gutter,
+              sliver: _buildPostList(
+                context,
+                ref,
+                selectedPublisherNames.value,
+                exploreSettings.selectedCategoryIds,
+                exploreSettings.selectedTagIds,
+                onOpenPost: onOpenPost,
+              ),
+            )
+          else if (isListInitialLoading)
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
@@ -522,167 +460,23 @@ class ExploreScreen extends HookConsumerWidget {
               ),
             )
           else
-            _buildActivityList(context, ref),
-          // The tab shell floats the NavigationBar over the page, so reserve
-          // its height or the last row stays underneath the bar.
-          SliverGap(MediaQuery.paddingOf(context).bottom),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWideBody(
-    BuildContext context,
-    WidgetRef ref,
-    TabController filterTabController,
-    ValueNotifier<List<String>> selectedPublishers,
-    ValueChanged<List<String>> onPublishersChanged,
-    bool hasSubscriptionFiltersApplied,
-    void Function(String?) handleFilterChange,
-    String? currentFilter,
-  ) {
-    final appSettings = ref.watch(appSettingsProvider);
-    final exploreSettings = appSettings.exploreSettings;
-    final sliverRefreshInset =
-        MediaQuery.paddingOf(context).top + kToolbarHeight + 48;
-    final usePostList =
-        selectedPublishers.value.isNotEmpty ||
-        exploreSettings.selectedCategoryIds.isNotEmpty ||
-        exploreSettings.selectedTagIds.isNotEmpty;
-    final notifier = usePostList
-        ? null
-        : ref.watch(activityListProvider.notifier);
-    final isSubscriptionsTab = currentFilter == 'subscriptions';
-    final isExploreTab = currentFilter == null;
-    final hasFeaturedPosts =
-        ref.watch(featuredPostsProvider).value?.isNotEmpty == true;
-    final activityState = ref.watch(activityListProvider);
-    final isListInitialLoading =
-        (activityState.isLoading || activityState.value?.isLoading == true) &&
-        (activityState.value?.items.isEmpty ?? true);
-
-    // Short posts read fine in the attention modal, so the wide timeline opens
-    // them there; anything that needs room (media, chains, a long body) keeps
-    // the full detail page.
-    void openPost(SnPost post) {
-      if (postFitsAttentionModal(post)) {
-        showPostDetailAttentionModal(post.id);
-        return;
-      }
-      context.router.push(PostDetailRoute(id: post.id));
-    }
-
-    Future<void> refreshTimeline() async {
-      // The publisher live list only exists while its quick pick is on screen
-      // (the Subscriptions tab). Reading its notifier on any other tab would
-      // refresh a throwaway instance that is already disposed by the time the
-      // request resolves.
-      if (isSubscriptionsTab) {
-        await ref.read(publishersSubscriptionsLiveProvider.notifier).refresh();
-      }
-      if (notifier != null) await notifier.refresh();
-    }
-
-    final timelinePane = Card(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: ExtendedRefreshIndicator(
-        leadingEdgeInset: sliverRefreshInset,
-        hoverRefreshLabel: 'refresh'.tr(),
-        onRefresh: refreshTimeline,
-        child: CustomScrollView(
-          slivers: [
-            _buildExploreSliverAppBar(
-              context: context,
-              filterTabController: filterTabController,
-              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-              handleFilterChange: handleFilterChange,
-              isWide: true,
-              appBarTransparent: appSettings.appBarTransparent,
-            ),
-            SliverToBoxAdapter(child: const Divider(height: 1)),
-            // The quick pick lives under the section app bar (same slot as the
-            // narrow layout) instead of the right sidebar.
-            if (isSubscriptionsTab)
-              SliverSubscribedPublishersStrip(
-                selectedPublisherNames: selectedPublishers.value,
-                onSelectedPublishersChanged: onPublishersChanged,
-              )
-            else
-              const SliverFriendPresenceStrip(),
-            // Explore only, and only once the carousel has something to show:
-            // the card would otherwise draw an empty header band above the
-            // feed.
-            if (isExploreTab && hasFeaturedPosts) ...[
-              const SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                sliver: SliverToBoxAdapter(
-                  child: PostFeaturedList(flush: true),
-                ),
-              ),
-              const SliverToBoxAdapter(child: Divider(height: 1)),
-            ],
-            if (usePostList)
-              _buildPostList(
+            SliverPadding(
+              padding: gutter,
+              sliver: _buildActivityList(
                 context,
                 ref,
-                selectedPublishers.value,
-                exploreSettings.selectedCategoryIds,
-                exploreSettings.selectedTagIds,
-                onOpenPost: openPost,
-              )
-            else if (isListInitialLoading)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: ConfuseSpinner(
-                    speed: 7,
-                    size: 72,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withOpacity(0.65),
-                  ),
-                ),
-              )
-            else
-              _buildActivityList(context, ref, onOpenPost: openPost),
-          ],
-        ),
-      ),
-    );
-
-    // One centered column: without a right sidebar the timeline stretches
-    // across the whole window, so it keeps the comfortable measure the wide
-    // layout used before the sidebar existed.
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _kWideTimelineMaxWidth),
-        child: SizedBox.expand(
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
+                onOpenPost: onOpenPost,
+              ),
             ),
-            child: timelinePane,
-          ),
+            // The tab shell floats the NavigationBar over the page, so reserve
+            // its height or the last card stays underneath the bar.
+            SliverGap(MediaQuery.paddingOf(context).bottom + kExploreCardGap),
+          ],
         ),
       ),
     );
   }
 }
-
-/// Position of a persisted section in the explore filter tabs:
-/// Explore (0), Subscriptions (1), Friends (2).
-int _filterTabIndex(String? filter) => switch (filter) {
-  'subscriptions' => 1,
-  'friends' => 2,
-  _ => 0,
-};
 
 /// Reading measure of the wide explore timeline. A single column spanning the
 /// whole window reads as a stretched feed, so the pane is centred instead.
@@ -731,8 +525,8 @@ class _DiscoveryActivityItem extends ConsumerWidget {
       'post' => SuperListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (context, index) => const Gap(12),
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        separatorBuilder: (context, index) => const Gap(SolSpace.md),
+        padding: const EdgeInsets.symmetric(vertical: SolSpace.xxs),
         itemBuilder: (context, index) {
           final item = Map<String, dynamic>.from(items[index]);
           final itemData = _extractDiscoveryItemData(item);
@@ -741,20 +535,27 @@ class _DiscoveryActivityItem extends ConsumerWidget {
 
           return Container(
             width: 320,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              border: Border.all(
-                width: 1 / MediaQuery.of(context).devicePixelRatio,
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(SolRadius.md),
               ),
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
             ),
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: SingleChildScrollView(
-                      child: PostActionableItem(item: post, isCompact: true),
+                  child: SingleChildScrollView(
+                    child: PostActionableItem(
+                      item: post,
+                      isCompact: true,
+                      borderRadius: SolRadius.md,
+                      padding: const EdgeInsets.fromLTRB(
+                        SolSpace.lg,
+                        SolSpace.md + 2,
+                        SolSpace.lg,
+                        SolSpace.md,
+                      ),
                     ),
                   ),
                 ),
@@ -773,7 +574,7 @@ class _DiscoveryActivityItem extends ConsumerWidget {
                             color: Theme.of(
                               context,
                             ).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SolRadius.xs),
                           ),
                           child: Text(
                             'discoveryTopPick'.tr(),
@@ -793,7 +594,7 @@ class _DiscoveryActivityItem extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.errorContainer,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SolRadius.xs),
                           ),
                           child: Text(
                             'discoveryNotRecommended'.tr(),
@@ -815,19 +616,12 @@ class _DiscoveryActivityItem extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: Theme.of(
                         context,
-                      ).colorScheme.surface.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      ).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(SolRadius.sm),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 2,
+                      horizontal: SolSpace.xs,
+                      vertical: SolSpace.xxs,
                     ),
                     child: DiscoveryFeedbackWidget(
                       kind: 'post',
@@ -869,42 +663,36 @@ class _DiscoveryActivityItem extends ConsumerWidget {
           children: [
             _buildDiscoveryCard(type, itemData, maxWidth: double.infinity),
             if (reasons.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    const Icon(Symbols.mindfulness, size: 16),
-                    for (final reason in reasons.take(3))
-                      Text(
-                        reason,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.color?.withOpacity(0.7),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            if (shouldShowRank)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  spacing: 8,
-                  children: [
-                    const Icon(Symbols.rule, size: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  const Icon(Symbols.mindfulness, size: 16),
+                  for (final reason in reasons.take(3))
                     Text(
-                      'discoveryRank'.tr(args: ['$rank']),
+                      reason,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
                           context,
                         ).textTheme.bodySmall?.color?.withOpacity(0.7),
                       ),
                     ),
-                  ],
-                ),
+                ],
+              ),
+            if (shouldShowRank)
+              Row(
+                spacing: 8,
+                children: [
+                  const Icon(Symbols.rule, size: 16),
+                  Text(
+                    'discoveryRank'.tr(args: ['$rank']),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
+                  ),
+                ],
               ),
           ],
         );
@@ -913,8 +701,9 @@ class _DiscoveryActivityItem extends ConsumerWidget {
         flexWeights: flexWeights,
         consumeMaxWeight: false,
         enableSplash: false,
+        backgroundColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(SolRadius.md)),
         ),
         itemSnapping: false,
         children: [
@@ -928,31 +717,44 @@ class _DiscoveryActivityItem extends ConsumerWidget {
       ),
     };
 
-    return Container(
-      margin: EdgeInsets.zero,
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+    return ExploreCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(switch (type) {
-                'realm' => Symbols.public,
-                'publisher' => Symbols.account_circle,
-                'account' => Symbols.person,
-                'article' => Symbols.auto_stories,
-                'post' => Symbols.shuffle,
-                _ => Symbols.explore,
-              }, size: 19),
+              Icon(
+                switch (type) {
+                  'realm' => Symbols.public,
+                  'publisher' => Symbols.account_circle,
+                  'account' => Symbols.person,
+                  'article' => Symbols.auto_stories,
+                  'post' => Symbols.shuffle,
+                  _ => Symbols.explore,
+                },
+                size: 19,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const Gap(8),
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium,
               ).padding(top: 1),
             ],
-          ).padding(horizontal: 20, top: 8, bottom: 4),
-          SizedBox(height: height, child: contentWidget).padding(bottom: 8),
+          ).padding(
+            horizontal: SolSpace.lg,
+            top: SolSpace.md + 2,
+            bottom: SolSpace.sm,
+          ),
+          SizedBox(
+            height: height,
+            child: contentWidget,
+          ).padding(
+            left: SolSpace.md,
+            right: SolSpace.md,
+            bottom: SolSpace.md,
+          ),
         ],
       ),
     );
@@ -1045,8 +847,8 @@ class AccountDiscoveryCard extends ConsumerWidget {
     final card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.zero,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(SolRadius.md),
       ),
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -1141,13 +943,11 @@ class AccountDiscoveryCard extends ConsumerWidget {
 
 class _ActivityListView extends HookConsumerWidget {
   final List<SnTimelineEvent> data;
-  final bool isWide;
   final Widget footer;
   final void Function(SnPost)? onOpenPost;
 
   const _ActivityListView({
     required this.data,
-    required this.isWide,
     required this.footer,
     this.onOpenPost,
   });
@@ -1158,10 +958,9 @@ class _ActivityListView extends HookConsumerWidget {
 
     return SuperSliverList.separated(
       itemCount: data.length + 1,
-      separatorBuilder: (_, _) => Divider(
-        height: 1 / MediaQuery.devicePixelRatioOf(context),
-        thickness: 1 / MediaQuery.devicePixelRatioOf(context),
-      ),
+      // Cards own their boundary; the feed separates them with one gap instead
+      // of a horizontal rule.
+      separatorBuilder: (_, _) => const Gap(kExploreCardGap),
       itemBuilder: (context, index) {
         if (index == data.length) {
           return footer;
@@ -1182,23 +981,33 @@ class _ActivityListView extends HookConsumerWidget {
                 : (postData as Map).cast<String, dynamic>();
             final post = SnPost.fromJson(postJson);
 
-            itemWidget = PostActionableItem(
-              borderRadius: 8,
-              item: post,
-              onRefresh: () {
-                notifier.refresh();
-              },
-              onUpdate: (updatedPost) {
-                notifier.updateOne(
-                  index,
-                  item.copyWith(data: updatedPost.toJson()),
-                );
-              },
-              onTap: onOpenPost != null ? () => onOpenPost!(post) : null,
+            itemWidget = ExploreCard(
+              child: PostActionableItem(
+                borderRadius: SolRadius.card,
+                padding: const EdgeInsets.fromLTRB(
+                  SolSpace.lg,
+                  SolSpace.md + 2,
+                  SolSpace.lg,
+                  SolSpace.md,
+                ),
+                item: post,
+                onRefresh: () {
+                  notifier.refresh();
+                },
+                onUpdate: (updatedPost) {
+                  notifier.updateOne(
+                    index,
+                    item.copyWith(data: updatedPost.toJson()),
+                  );
+                },
+                onTap: onOpenPost != null ? () => onOpenPost!(post) : null,
+              ),
             );
             break;
           case 'discovery':
           case 'discovery.v2':
+            // Discovery sections carry their own card (they own a header plus
+            // a row of suggestion cards inside it).
             itemWidget = _DiscoveryActivityItem(
               data: item.data!,
               eventType: item.type,
@@ -1211,9 +1020,11 @@ class _ActivityListView extends HookConsumerWidget {
               asStringKeyedMap(rawData['activity']),
             );
             final activity = SnPresenceActivity.fromJson(activityJson);
-            itemWidget = FriendPresenceItem(
-              activity: activity,
-              rawData: rawData,
+            itemWidget = ExploreCard(
+              child: FriendPresenceItem(
+                activity: activity,
+                rawData: rawData,
+              ),
             );
             break;
           case 'status.friend':
@@ -1221,13 +1032,15 @@ class _ActivityListView extends HookConsumerWidget {
               asStringKeyedMap(asStringKeyedMap(item.data)['status']),
             );
             final status = SnAccountStatus.fromJson(statusJson);
-            itemWidget = FriendStatusItem(
-              status: status,
-              createdAt: item.createdAt,
+            itemWidget = ExploreCard(
+              child: FriendStatusItem(
+                status: status,
+                createdAt: item.createdAt,
+              ),
             );
             break;
           default:
-            itemWidget = const Placeholder();
+            itemWidget = const SizedBox.shrink();
         }
 
         return itemWidget;
@@ -1235,3 +1048,125 @@ class _ActivityListView extends HookConsumerWidget {
     );
   }
 }
+
+/// Section picker for the explore header.
+///
+/// Shows the active section's icon and label in the bar's title slot, where
+/// the brand mark used to sit. The trigger paints no surface of its own — it
+/// floats directly on the bar's pill — so the only chrome is the icon, the
+/// label and a dropdown caret. Selecting a section persists it through
+/// [onSelected] using the same `null` / `'subscriptions'` / `'friends'`
+/// vocabulary the old tab bar used.
+class _ExploreSectionButton extends StatelessWidget {
+  final String? filter;
+  final bool hasFiltersApplied;
+  final ValueChanged<String?> onSelected;
+
+  const _ExploreSectionButton({
+    required this.filter,
+    required this.hasFiltersApplied,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selected = _sections.firstWhere(
+      (section) => section.filter == filter,
+      orElse: () => _sections.first,
+    );
+
+    return MenuAnchor(
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          colorScheme.surfaceContainerHigh,
+        ),
+        shape: const WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: SolRadius.menuRadius),
+        ),
+      ),
+      builder: (context, controller, child) {
+        return InkWell(
+          borderRadius: SolRadius.pillRadius,
+          onTap: () => controller.isOpen
+              ? controller.close()
+              : controller.open(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SolSpace.sm,
+              vertical: SolSpace.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 6,
+              children: [
+                Icon(selected.icon, size: 20, color: colorScheme.onSurface),
+                Text(
+                  selected.label.tr(),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Icon(
+                  Symbols.arrow_drop_down,
+                  size: 20,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      menuChildren: [
+        for (final section in _sections)
+          MenuItemButton(
+            leadingIcon: Icon(section.icon, size: 20),
+            trailingIcon: filter == section.filter
+                ? const Icon(Symbols.check, size: 18)
+                : null,
+            onPressed: hasFiltersApplied
+                ? null
+                : () => onSelected(section.filter),
+            child: Text(section.label.tr()),
+          ),
+      ],
+    );
+  }
+}
+
+class _ExploreSection {
+  final String? filter;
+  final String label;
+  final IconData icon;
+
+  const _ExploreSection({
+    required this.filter,
+    required this.label,
+    required this.icon,
+  });
+}
+
+const _sections = <_ExploreSection>[
+  _ExploreSection(
+    filter: null,
+    label: 'explore',
+    icon: Symbols.explore,
+  ),
+  _ExploreSection(
+    filter: 'subscriptions',
+    label: 'exploreFilterSubscriptions',
+    icon: Symbols.subscriptions,
+  ),
+  _ExploreSection(
+    filter: 'friends',
+    label: 'exploreFilterFriends',
+    icon: Symbols.people,
+  ),
+];
+
+/// Scroll distance over which the explore header completes its morph into the
+/// pill state. Tied to roughly one header height: by the time the bar has
+/// scrolled out of the way, it is fully a capsule.
+const _kHeaderMorphDistance = 96.0;

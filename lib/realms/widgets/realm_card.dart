@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/discovery/widgets/discovery_feedback_widget.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/route.gr.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -37,6 +38,11 @@ class RealmDiscoveryCard extends ConsumerWidget {
     Widget card = Card(
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SolRadius.md),
+      ),
       child: InkWell(
         onTap: () {
           context.router.push(RealmDetailRoute(slug: realm.slug));

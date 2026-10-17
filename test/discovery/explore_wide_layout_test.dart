@@ -10,6 +10,7 @@ import 'package:island/accounts/widgets/account/friends_overview.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/discovery/explore.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/discovery/widgets/friend_presence_strip.dart';
 import 'package:island/discovery/widgets/subscribed_publishers_strip.dart';
 import 'package:island/posts/posts_pod.dart';
@@ -130,9 +131,12 @@ SnFriendOverviewItem _friendOverviewItem() {
   );
 }
 
-SnPost _smallPost({Map<String, dynamic> overrides = const {}}) {
+SnPost _smallPost({
+  Map<String, dynamic> overrides = const {},
+  String id = 'small-post',
+}) {
   return SnPost.fromJson({
-    'id': 'small-post',
+    'id': id,
     'type': 0,
     'content': 'A short post body.',
     'publisher': {'id': 'publisher-1', 'name': 'alice', 'nick': 'Alice'},
@@ -176,6 +180,40 @@ class _OnePostFeed extends ActivityListNotifier {
   Future<List<SnTimelineEvent>> fetch({int retryCount = 0}) async => [
     _postEvent(post),
   ];
+}
+
+/// Timeline with two rows, so the uniform gap between floating cards can be
+/// measured.
+class _TwoPostFeed extends ActivityListNotifier {
+  _TwoPostFeed(this.posts);
+
+  final List<SnPost> posts;
+
+  List<SnTimelineEvent> get _events => [
+    for (final (index, post) in posts.indexed)
+      SnTimelineEvent.fromJson({
+        'id': 'event-$index',
+        'type': 'posts.new',
+        'resource_identifier': 'post:${post.id}',
+        'data': post.toJson(),
+        'created_at': '2026-01-01T00:00:00Z',
+        'updated_at': '2026-01-01T00:00:00Z',
+        'deleted_at': null,
+      }),
+  ];
+
+  @override
+  Future<PaginationState<SnTimelineEvent>> build() async => PaginationState(
+    items: _events,
+    isLoading: false,
+    isReloading: false,
+    totalCount: _events.length,
+    hasMore: false,
+    cursor: null,
+  );
+
+  @override
+  Future<List<SnTimelineEvent>> fetch({int retryCount = 0}) async => _events;
 }
 
 /// Answers every request with an empty JSON list so the sidebar cards settle
@@ -288,6 +326,11 @@ void main() {
     expect(sliver, findsOneWidget);
     expect(strip, findsOneWidget);
     expect(find.byType(SidebarPanelHost), findsNothing);
+    expect(
+      find.ancestor(of: strip, matching: find.byType(ExploreCard)),
+      findsOneWidget,
+      reason: 'the quick pick floats as its own section card',
+    );
 
     final pane = find.ancestor(
       of: sliver,
@@ -295,15 +338,15 @@ void main() {
     );
     final scrollView = tester.widget<CustomScrollView>(pane);
     // The pane keeps the wide reading measure and stays centred instead of
-    // spanning the window.
-    final paneRect = tester.getRect(
-      find.ancestor(of: sliver, matching: find.byType(Card)).first,
-    );
+    // spanning the window. It is no longer wrapped in a page-wide card.
+    final paneRect = tester.getRect(pane.first);
     expect(paneRect.width, closeTo(720, 1));
     expect(paneRect.left, closeTo((windowWidth - paneRect.width) / 2, 1));
+    // The header is the first sliver: a `SliverAppBar` whose geometry never
+    // changes. The flush/inset pill morph happens inside its `flexibleSpace`,
+    // so the sliver topology does not change with scrolling.
     expect(scrollView.slivers.first, isA<SliverAppBar>());
-    // [app bar, divider, strip, feed] — the same stack the narrow layout uses.
-    expect(scrollView.slivers[1], isA<SliverToBoxAdapter>());
+
     final sliverWidget = tester.widget(sliver);
     expect(
       scrollView.slivers.indexWhere(
@@ -339,6 +382,12 @@ void main() {
       findsNothing,
       reason: 'the carousel no longer paints a card surface of its own',
     );
+    // The section itself floats on a card, though.
+    expect(
+      find.ancestor(of: featured, matching: find.byType(ExploreCard)),
+      findsOneWidget,
+      reason: 'the featured section is its own floating card',
+    );
     // The online strip uses the same list, so scope to the featured one.
     final featuredStrip = find.descendant(
       of: featured,
@@ -368,7 +417,6 @@ void main() {
       scrollView.slivers.indexWhere((s) => s is SliverFriendPresenceStrip),
       2,
     );
-    expect(scrollView.slivers.indexWhere((s) => s is SliverPadding), 3);
     expect(
       tester.getTopLeft(featured).dy,
       greaterThan(tester.getTopLeft(find.byType(FriendPresenceStrip)).dy),
@@ -472,6 +520,85 @@ void main() {
     await disposeTree(tester);
   });
 
+  testWidgets('wide explore: posts float on their own cards', (tester) async {
+    await pumpExplore(
+      tester,
+      const Size(1400, 900),
+      feed: () => _TwoPostFeed([
+        _smallPost(id: 'post-a'),
+        _smallPost(id: 'post-b'),
+      ]),
+      featuredPosts: const <SnPost>[],
+    );
+
+    final posts = find.byType(PostActionableItem);
+    expect(posts, findsNWidgets(2));
+    final cards = find.ancestor(
+      of: posts,
+      matching: find.byType(ExploreCard),
+    );
+    expect(cards, findsNWidgets(2));
+    final cardWidget = tester.widget<ExploreCard>(cards.first);
+    expect(cardWidget.radius, 20);
+    expect(
+      tester
+          .widget<Card>(
+            find.descendant(of: cards.first, matching: find.byType(Card)),
+          )
+          .elevation,
+      0,
+    );
+
+    final first = tester.getRect(cards.at(0));
+    final second = tester.getRect(cards.at(1));
+    // The feed is an inset card stack in the centred 720px column.
+    expect(first.left, closeTo((1400 - 720) / 2 + 12, 1));
+    expect(first.width, closeTo(720 - 24, 1));
+    expect(second.top - first.bottom, closeTo(kExploreCardGap, 1));
+
+    final scrollView = find.ancestor(
+      of: posts.first,
+      matching: find.byType(CustomScrollView),
+    );
+    expect(
+      find.descendant(of: scrollView, matching: find.byType(Divider)),
+      findsNothing,
+      reason: 'cards are separated by gaps, not horizontal rules',
+    );
+
+    await disposeTree(tester);
+  });
+
+  testWidgets('narrow explore: cards use the page gutter and one gap', (
+    tester,
+  ) async {
+    await pumpExplore(
+      tester,
+      const Size(420, 900),
+      feed: () => _TwoPostFeed([
+        _smallPost(id: 'post-a'),
+        _smallPost(id: 'post-b'),
+      ]),
+      featuredPosts: const <SnPost>[],
+    );
+
+    final posts = find.byType(PostActionableItem);
+    expect(posts, findsNWidgets(2));
+    final cards = find.ancestor(
+      of: posts,
+      matching: find.byType(ExploreCard),
+    );
+    expect(cards, findsNWidgets(2));
+
+    final first = tester.getRect(cards.at(0));
+    final second = tester.getRect(cards.at(1));
+    expect(first.left, closeTo(12, 1));
+    expect(first.width, closeTo(420 - 24, 1));
+    expect(second.top - first.bottom, closeTo(kExploreCardGap, 1));
+
+    await disposeTree(tester);
+  });
+
   group('postFitsAttentionModal', () {
     test('a short regular post fits', () {
       expect(postFitsAttentionModal(_smallPost()), isTrue);
@@ -549,11 +676,11 @@ void main() {
   ) async {
     await pumpExplore(tester, const Size(1400, 900));
 
-    await tester.tap(
-      find
-          .descendant(of: find.byType(TabBar), matching: find.byType(Tab))
-          .at(1),
-    );
+    // The section picker is now a dropdown in the leading slot, not a tab bar.
+    await tester.tap(find.byType(MenuAnchor).first);
+    await tester.pumpAndSettle();
+    // Second menu item = Subscriptions (Explore, Subscriptions, Friends).
+    await tester.tap(find.byType(MenuItemButton).at(1));
     await tester.pump();
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));

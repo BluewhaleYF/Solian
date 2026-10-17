@@ -23,6 +23,7 @@ import 'package:island/realms/widgets/realm_list.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
@@ -114,13 +115,7 @@ class UniversalSearchScreen extends HookConsumerWidget {
 
     return AppScaffold(
       isNoBackground: false,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Symbols.menu),
-          onPressed: () {
-            rootScaffoldKey.currentState?.openDrawer();
-          },
-        ),
+      appBar: PageAppBar(
         title: SearchBar(
           controller: searchController,
           focusNode: searchFocusNode,
@@ -183,7 +178,6 @@ class UniversalSearchScreen extends HookConsumerWidget {
           ),
           const Gap(8),
         ],
-        elevation: 0,
       ),
       body: Column(
         children: [

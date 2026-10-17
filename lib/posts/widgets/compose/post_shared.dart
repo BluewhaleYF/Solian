@@ -1462,8 +1462,8 @@ class ReferencedPostWidget extends HookConsumerWidget {
 
     final content = Padding(
       padding: EdgeInsets.only(
-        left: renderingPadding.horizontal,
-        right: renderingPadding.horizontal,
+        left: renderingPadding.left,
+        right: renderingPadding.right,
         top: 8,
       ),
       child: buildContent(),
@@ -1759,7 +1759,8 @@ class PostHeader extends HookConsumerWidget {
         ),
       ],
     ).padding(
-      horizontal: renderingPadding.horizontal,
+      left: renderingPadding.left,
+      right: renderingPadding.right,
       bottom: showLowerLine ? 0 : 4,
     );
   }
@@ -1907,7 +1908,7 @@ class PostBody extends ConsumerWidget {
     this.hideAttachments = false,
     this.textScale,
     this.forwardedCard,
-    this.useContainedAttachments = false,
+    this.useContainedAttachments = true,
     this.hideTitle = false,
     this.hideDescription = false,
     this.headingAnchors,
@@ -1941,8 +1942,8 @@ class PostBody extends ConsumerWidget {
     // matches the body text; the column layout keeps the full gutter because
     // its spacing comes from the column itself.
     final containedAttachmentInset = isInteractive
-        ? renderingPadding.horizontal / 2
-        : renderingPadding.horizontal;
+        ? renderingPadding.left / 2
+        : renderingPadding.left;
 
     if (item.debugRank != null && kDebugMode) {
       metadataChildren.add(
@@ -2128,8 +2129,8 @@ class PostBody extends ConsumerWidget {
           Padding(
             padding: EdgeInsets.only(
               top: 4,
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
             ),
             child: _buildArticlePreviewCard(
               context,
@@ -2141,8 +2142,8 @@ class PostBody extends ConsumerWidget {
           Padding(
             padding: EdgeInsets.only(
               top: 4,
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
             ),
             child: _buildBlogPreviewCard(
               context,
@@ -2155,8 +2156,8 @@ class PostBody extends ConsumerWidget {
             (item.description?.isNotEmpty ?? false))
           Padding(
             padding: EdgeInsets.only(
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2221,8 +2222,8 @@ class PostBody extends ConsumerWidget {
             margin: EdgeInsets.only(
               top: 4,
               bottom: 4,
-              left: renderingPadding.horizontal,
-              right: renderingPadding.horizontal,
+              left: renderingPadding.left,
+              right: renderingPadding.right,
             ),
           ),
         if (item.attachments.isNotEmpty &&
@@ -2235,13 +2236,13 @@ class PostBody extends ConsumerWidget {
                   sourcePost: item,
                   padding: useContainedAttachments
                       ? EdgeInsets.fromLTRB(
-                          renderingPadding.horizontal,
-                          4,
-                          renderingPadding.horizontal,
-                          4,
+                          renderingPadding.left,
+                          8,
+                          renderingPadding.right,
+                          8,
                         )
-                      : const EdgeInsets.symmetric(vertical: 4),
-                  borderRadius: useContainedAttachments ? 12 : null,
+                      : const EdgeInsets.symmetric(vertical: 8),
+                  borderRadius: useContainedAttachments ? 16 : null,
                   onTap: () {
                     final file = item.attachments.first;
                     final isImage = file.mimeType.startsWith('image');
@@ -2271,21 +2272,21 @@ class PostBody extends ConsumerWidget {
                   isFullBleed: !useContainedAttachments,
                   padding: EdgeInsets.fromLTRB(
                     useContainedAttachments ? containedAttachmentInset : 0,
-                    4,
+                    8,
                     useContainedAttachments ? containedAttachmentInset : 0,
-                    4,
+                    8,
                   ),
-                  borderRadius: useContainedAttachments ? 12 : 8,
+                  borderRadius: useContainedAttachments ? 16 : 8,
                 ),
         if (forwardedCard != null)
-          forwardedCard!.padding(horizontal: renderingPadding.horizontal),
+          forwardedCard!.padding(left: renderingPadding.left, right: renderingPadding.right),
         if (metadataChildren.isNotEmpty)
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 2,
             children: metadataChildren,
-          ).padding(horizontal: renderingPadding.horizontal + 4, top: 4),
+          ).padding(left: renderingPadding.left, right: renderingPadding.right, top: 4),
         if (visibleEmbeds.isNotEmpty)
           EmbedListWidget(
             embeds: visibleEmbeds,

@@ -30,6 +30,15 @@ class SliverPostList extends HookConsumerWidget {
   final String? queryKey;
   final void Function(String)? onPostTap;
 
+  /// Wraps each built row, letting a host give it the page's own card chrome
+  /// (the explore feed floats every post on its own card) without changing the
+  /// widget used for the row itself.
+  final Widget Function(BuildContext, int, SnPost, Widget)? itemWrapper;
+
+  /// Separator between rows. Defaults to a hairline divider; hosts that render
+  /// cards pass a gap instead so no line touches a card edge.
+  final Widget Function(BuildContext, int, SnPost)? separatorBuilder;
+
   /// Receives the tapped post itself, so a host can pick how to open it (e.g.
   /// a modal for short posts). Takes precedence over [onPostTap], which stays
   /// wired to taps on posts embedded in the row.
@@ -48,6 +57,8 @@ class SliverPostList extends HookConsumerWidget {
     this.maxWidth,
     this.queryKey,
     this.onPostTap,
+    this.itemWrapper,
+    this.separatorBuilder,
     this.onOpenPost,
   });
 
@@ -79,18 +90,25 @@ class SliverPostList extends HookConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: PostItemSkeleton(maxWidth: maxWidth ?? double.infinity),
       ),
-      seperatorBuilder: (context, index, post) => const Divider(height: 1),
+      seperatorBuilder: separatorBuilder ??
+          (context, index, post) => const Divider(height: 1),
       itemBuilder: (context, index, post) {
+        Widget row;
         if (maxWidth != null) {
-          return Center(
+          row = Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth!),
               child: _buildPostItem(post, itemPadding),
             ),
           );
+        } else {
+          row = _buildPostItem(post, itemPadding);
         }
 
-        return _buildPostItem(post, itemPadding);
+        if (itemWrapper != null) {
+          return itemWrapper!(context, index, post, row);
+        }
+        return row;
       },
     );
   }
@@ -116,6 +134,7 @@ class SliverPostList extends HookConsumerWidget {
       case PostItemType.regular:
         return PostActionableItem(
           item: post,
+          padding: padding,
           borderRadius: 8,
           onTap: onTap,
           onPostTap: onPostTap,

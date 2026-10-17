@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/widgets/content/cloud_file_collection.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -26,6 +28,32 @@ SnPost _postWithAttachment() {
         'name': 'report.pdf',
         'mime_type': 'application/pdf',
         'size': 2048,
+      },
+    ],
+    'created_at': '2026-01-01T00:00:00Z',
+    'updated_at': '2026-01-01T00:00:00Z',
+  });
+}
+
+SnPost _postWithTwoAttachments() {
+  return SnPost.fromJson({
+    'id': 'post-with-two-attachments',
+    'type': 0,
+    'content': 'caption',
+    'chained_posts': const [],
+    'publisher': {'id': 'publisher-1', 'name': 'alice', 'nick': 'Alice'},
+    'attachments': [
+      {
+        'id': 'file-1',
+        'name': 'report.pdf',
+        'mime_type': 'application/pdf',
+        'size': 2048,
+      },
+      {
+        'id': 'file-2',
+        'name': 'invoice.pdf',
+        'mime_type': 'application/pdf',
+        'size': 4096,
       },
     ],
     'created_at': '2026-01-01T00:00:00Z',
@@ -61,7 +89,7 @@ void main() {
                     ),
                     apiClientProvider.overrideWith((ref) => Dio()),
                   ],
-                  child: item,
+                  child: mui.SingleChildScrollView(child: item),
                 ),
               ),
               localizationsDelegates: context.localizationDelegates,
@@ -100,5 +128,45 @@ void main() {
     // layouts that draw the media elsewhere do not repeat it.
     expect(find.text('caption', findRichText: true), findsOneWidget);
     expect(find.text('report.pdf'), findsNothing);
+  });
+
+  testWidgets('attachments are inset and rounded inside the post', (
+    tester,
+  ) async {
+    await pumpPostItem(
+      tester,
+      PostItem(
+        item: _postWithAttachment(),
+        isTranslatable: false,
+        padding: const EdgeInsets.all(12),
+      ),
+    );
+
+    final attachment = tester.widget<FullBleedSingleAttachment>(
+      find.byType(FullBleedSingleAttachment),
+    );
+    final body = tester.widget<PostBody>(find.byType(PostBody));
+    expect(body.renderingPadding, const EdgeInsets.all(12));
+    expect(attachment.borderRadius, 16);
+    expect(attachment.padding, const EdgeInsets.fromLTRB(12, 8, 12, 8));
+  });
+
+  testWidgets('multi-attachment lists stay contained instead of bleeding', (
+    tester,
+  ) async {
+    await pumpPostItem(
+      tester,
+      PostItem(
+        item: _postWithTwoAttachments(),
+        isTranslatable: false,
+        padding: const EdgeInsets.all(12),
+      ),
+    );
+
+    final list = tester.widget<CloudFileList>(find.byType(CloudFileList));
+    expect(list.isFullBleed, isFalse);
+    expect(list.borderRadius, 16);
+    expect(list.padding!.left, greaterThan(0));
+    expect(list.padding!.right, greaterThan(0));
   });
 }

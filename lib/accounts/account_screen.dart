@@ -19,6 +19,7 @@ import 'package:island/core/services/responsive.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/core/debug_sheet.dart';
@@ -173,7 +174,7 @@ class AccountFeatureWidget extends HookConsumerWidget {
             pinned: true,
             centerTitle: centerTitle,
             expandedHeight: 220,
-            automaticallyImplyLeading: false,
+            leading: const SolDrawerButton(),
             backgroundColor: headerCollapsed.value
                 ? primary
                 : theme.colorScheme.surface,

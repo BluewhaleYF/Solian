@@ -12,6 +12,7 @@ import 'package:island/realms/widgets/realm_tile.dart';
 import 'package:island/realms/widgets/realm_form_content.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
@@ -54,12 +55,7 @@ class RealmListScreen extends HookConsumerWidget {
     return AppScaffold(
       appBar: AppBar(
         title: const Text('realms').tr(),
-        leading: IconButton(
-          icon: const Icon(Symbols.menu),
-          onPressed: () {
-            rootScaffoldKey.currentState?.openDrawer();
-          },
-        ),
+        leading: const SolDrawerButton(),
         actions: [
           IconButton(
             icon: Icon(isCardMode ? Symbols.view_list : Symbols.grid_view),

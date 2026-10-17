@@ -1,0 +1,114 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/shared/widgets/app_scaffold.dart';
+
+/// The drawer toggle shared by the root tabs.
+///
+/// The drawer is no longer reachable from a floating button or the bottom
+/// navigation bar, so every root tab's leading slot uses this exact button.
+class SolDrawerButton extends StatelessWidget {
+  const SolDrawerButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground =
+        Theme.of(context).appBarTheme.foregroundColor ??
+        Theme.of(context).colorScheme.onSurface;
+    return IconButton(
+      icon: const Icon(Symbols.menu_rounded),
+      color: foreground,
+      tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+      onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
+    );
+  }
+}
+
+/// App bar used by the root tabs.
+///
+/// The title is left aligned, and the leading slot always shows something the
+/// user can act on: a back button when the page has something to pop, and the
+/// drawer toggle otherwise. The drawer no longer floats over the content or
+/// lives inside the bottom navigation bar — this leading slot is its single
+/// entry point.
+class PageAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final Widget? title;
+  final String? titleText;
+  final List<Widget> actions;
+  final PreferredSizeWidget? bottom;
+  final bool automaticallyImplyLeading;
+
+  const PageAppBar({
+    super.key,
+    this.title,
+    this.titleText,
+    this.actions = const <Widget>[],
+    this.bottom,
+    this.automaticallyImplyLeading = true,
+  });
+
+  @override
+  Size get preferredSize => Size.fromHeight(
+    SolSpace.control + 12 + (bottom?.preferredSize.height ?? 0),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final foreground = theme.appBarTheme.foregroundColor ?? colorScheme.onSurface;
+
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: theme.appBarTheme.backgroundColor,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      foregroundColor: foreground,
+      actionsPadding: const EdgeInsets.only(right: SolSpace.sm),
+      leading: automaticallyImplyLeading
+          ? _PageLeadingButton(foreground: foreground)
+          : null,
+      title:
+          title ??
+          (titleText == null
+              ? null
+              : Text(
+                  titleText!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )),
+      actions: actions,
+      bottom: bottom,
+    );
+  }
+}
+
+/// Back button when the router can pop, drawer toggle otherwise.
+///
+/// The page below the tab shell builds inside its own [Scaffold] (from
+/// [AppScaffold]), so `Scaffold.maybeOf` cannot see the shell's drawer. The
+/// drawer availability therefore comes from the shell's global scaffold key.
+class _PageLeadingButton extends StatelessWidget {
+  final Color foreground;
+
+  const _PageLeadingButton({required this.foreground});
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.router.canPop()) {
+      final useIosArrow = defaultTargetPlatform == TargetPlatform.iOS;
+      return IconButton(
+        icon: Icon(useIosArrow ? Symbols.arrow_back_ios_new : Symbols.arrow_back),
+        color: foreground,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: () => context.router.maybePop(),
+      );
+    }
+    if (rootScaffoldKey.currentState?.hasDrawer == true) {
+      return const SolDrawerButton();
+    }
+    return const SizedBox.shrink();
+  }
+}

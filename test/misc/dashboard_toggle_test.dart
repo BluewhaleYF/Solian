@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as flutter_localizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:island/core/config.dart';
 import 'package:island/discovery/explore.dart';
 import 'package:island/misc/dashboard/dash.dart';
 import 'package:island/route.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -179,5 +181,54 @@ void main() {
     expect(rail.destinations.length, 7);
 
     await _teardown(tester);
+  });
+
+  testWidgets('long-pressing Explore opens its entrance sheet', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpApp(tester, const {'app_dashboard_enabled': false});
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    await tester.longPress(find.byIcon(Symbols.explore_rounded));
+    await tester.pumpAndSettle();
+
+    // The two icons that used to sit in the explore app bar now live in the
+    // long-press sheet.
+    expect(find.byIcon(Symbols.category), findsOneWidget);
+    expect(find.byIcon(Symbols.shuffle), findsOneWidget);
+
+    await _teardown(tester);
+  });
+
+  testWidgets('long-pressing Explore in the drawer opens its entrance sheet', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpApp(tester, const {'app_dashboard_enabled': false});
+    expect(find.byType(NavigationRail), findsOneWidget);
+
+    await tester.tap(find.byIcon(Symbols.menu_rounded).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationDrawer), findsOneWidget);
+
+    final drawerExplore = find.descendant(
+      of: find.byType(NavigationDrawer),
+      matching: find.text('Explore'),
+    );
+    expect(drawerExplore, findsOneWidget);
+    await tester.longPress(drawerExplore);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.category), findsOneWidget);
+    expect(find.byIcon(Symbols.shuffle), findsOneWidget);
+
+    await _teardown(tester);
+    debugDefaultTargetPlatformOverride = null;
   });
 }
