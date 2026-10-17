@@ -15,7 +15,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// A websocket service the test pushes frames into directly.
-class _FakeWebSocketService extends WebSocketService {
+class _FakeWebSocketService extends SolarWebSocketService {
+  _FakeWebSocketService() : super(uri: () => Uri(), token: () async => null);
+
   final _controller = StreamController<WebSocketPacket>.broadcast();
 
   @override
@@ -179,7 +181,9 @@ void main() {
 
     test('a repeated frame does not count twice', () async {
       ws.push(_newMessageFrame('m1', 'room-1'));
-      await _settle(() => _unread(container.read(chatUnreadCountProvider)) == 1);
+      await _settle(
+        () => _unread(container.read(chatUnreadCountProvider)) == 1,
+      );
 
       // The gateway re-sends until acked, so the same message arrives again.
       ws.push(_newMessageFrame('m1', 'room-1'));
@@ -188,7 +192,9 @@ void main() {
 
       // A genuinely new message still counts.
       ws.push(_newMessageFrame('m2', 'room-1'));
-      await _settle(() => _unread(container.read(chatUnreadCountProvider)) == 2);
+      await _settle(
+        () => _unread(container.read(chatUnreadCountProvider)) == 2,
+      );
     });
   });
 

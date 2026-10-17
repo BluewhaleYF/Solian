@@ -58,7 +58,9 @@ class _EmptyResponseAdapter implements HttpClientAdapter {
 }
 
 /// A fake WebSocket service whose data stream the test can drive directly.
-class _FakeWebSocketService extends WebSocketService {
+class _FakeWebSocketService extends SolarWebSocketService {
+  _FakeWebSocketService() : super(uri: () => Uri(), token: () async => null);
+
   final _controller = StreamController<WebSocketPacket>.broadcast();
 
   @override
@@ -191,7 +193,9 @@ void main() {
               'chat_room_id': 'room-1',
               'account_id': account.id,
               'member_id': member.id,
-              'last_read_at': now.add(const Duration(minutes: 5)).toIso8601String(),
+              'last_read_at': now
+                  .add(const Duration(minutes: 5))
+                  .toIso8601String(),
             },
             endpoint: 'messager',
           ),

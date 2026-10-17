@@ -17,7 +17,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// A websocket service the test pushes frames into directly.
-class _FakeWebSocketService extends WebSocketService {
+class _FakeWebSocketService extends SolarWebSocketService {
+  _FakeWebSocketService() : super(uri: () => Uri(), token: () async => null);
+
   final _controller = StreamController<WebSocketPacket>.broadcast();
 
   @override
@@ -210,7 +212,5 @@ Future<List<LocalChatMessage>> _roomMessages(
   ProviderContainer container,
   String roomId,
 ) async {
-  return container
-      .read(databaseProvider)
-      .getMessagesForRoom(roomId, limit: 50);
+  return container.read(databaseProvider).getMessagesForRoom(roomId, limit: 50);
 }

@@ -336,7 +336,7 @@ class MlsClient {
 
   StreamSubscription<WebSocketPacket>? _wsSubscription;
 
-  void startKeyPackageDepletedListener(WebSocketService wsService) {
+  void startKeyPackageDepletedListener(SolarWebSocketService wsService) {
     _wsSubscription?.cancel();
     _wsSubscription = wsService.dataStream.listen((packet) async {
       if (packet.type == 'e2ee.kp.depleted') {

@@ -20,7 +20,7 @@ class _WsPacketHandler {
 }
 
 class PluginWebsocketApi extends PluginApi {
-  WebSocketService? _service;
+  SolarWebSocketService? _service;
   StreamSubscription<WebSocketPacket>? _packetSub;
   StreamSubscription<WebSocketState>? _statusSub;
   final List<_WsPacketHandler> _handlers = [];
@@ -35,7 +35,7 @@ class PluginWebsocketApi extends PluginApi {
     PluginPermission.websocketSend,
   };
 
-  void attach(WebSocketService service) {
+  void attach(SolarWebSocketService service) {
     if (identical(_service, service) && _packetSub != null) return;
     detach();
     _service = service;
@@ -195,7 +195,7 @@ ws.send = function(type, data, endpoint) {
   bool _isConnected() {
     final service = _service;
     if (service == null) return false;
-    return service.ws != null;
+    return service.isConnected;
   }
 
   void _dispatchPacket(WebSocketPacket packet) {

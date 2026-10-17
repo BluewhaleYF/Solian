@@ -44,7 +44,9 @@ class _EmptyResponseAdapter implements HttpClientAdapter {
   );
 }
 
-class _FakeWebSocketService extends WebSocketService {
+class _FakeWebSocketService extends SolarWebSocketService {
+  _FakeWebSocketService() : super(uri: () => Uri(), token: () async => null);
+
   final _controller = StreamController<WebSocketPacket>.broadcast();
 
   @override
@@ -418,4 +420,3 @@ void main() {
     );
   }
 }
-
