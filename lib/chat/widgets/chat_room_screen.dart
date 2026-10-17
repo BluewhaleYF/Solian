@@ -575,6 +575,12 @@ class ChatRoomScreen extends HookConsumerWidget {
       return wsState.maybeWhen(connected: () => true, orElse: () => false);
     }
 
+    // Watched so the resync effect below re-runs on a connect/disconnect
+    // transition. Reading the provider without watching it left the
+    // 'ws-reconnected' branch dead: the effect only ran when the notifier
+    // itself was rebuilt for an unrelated reason.
+    final wsConnected = ref.watch(websocketConnectedProvider);
+
     useEffect(() {
       final nextState = lifecycleState.value;
       if (nextState == null) return null;
@@ -618,18 +624,20 @@ class ChatRoomScreen extends HookConsumerWidget {
     }, [lifecycleState.value, messagesNotifier]);
 
     useEffect(() {
-      final isConnected = checkWsConnected();
       final previousConnected = wasWsConnected.value;
 
-      if (previousConnected == false && isConnected) {
+      if (isWebSocketReconnect(
+        wasConnected: previousConnected,
+        isConnected: wsConnected,
+      )) {
         Future<void>(() async {
           await resyncRoom(reason: 'ws-reconnected');
         });
       }
 
-      wasWsConnected.value = isConnected;
+      wasWsConnected.value = wsConnected;
       return null;
-    }, [messagesNotifier]);
+    }, [messagesNotifier, wsConnected]);
 
     useEffect(() {
       var disposed = false;

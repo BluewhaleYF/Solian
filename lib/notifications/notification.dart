@@ -8,6 +8,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/utils/bounded_id_set.dart';
 import 'package:island/core/websocket.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -107,6 +108,10 @@ class NotificationUnreadCountNotifier
     extends _$NotificationUnreadCountNotifier {
   StreamSubscription<WebSocketPacket>? _subscription;
 
+  /// Ids already counted. Push delivery is at-least-once, so the same
+  /// notification can be re-sent; `refresh()` reconciles the true total.
+  final _countedNotificationIds = BoundedIdSet(512);
+
   @override
   Future<int> build() async {
     // Subscribe to websocket events when this provider is built
@@ -132,6 +137,7 @@ class NotificationUnreadCountNotifier
     _subscription = webSocketService.dataStream.listen((packet) {
       if (packet.type == 'notifications.new' && packet.data != null) {
         final notification = SnNotification.fromJson(packet.data!);
+        if (!_countedNotificationIds.add(notification.id)) return;
         if (notification.topic != 'messages.new') _incrementCounter();
       }
     });

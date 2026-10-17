@@ -6,6 +6,7 @@ import 'package:island/core/websocket.dart';
 import 'package:island/core/database.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/chat/pods/chat_subscribe.dart';
+import 'package:island/core/utils/bounded_id_set.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 part 'chat_summary.g.dart';
@@ -13,6 +14,10 @@ part 'chat_summary.g.dart';
 @riverpod
 class ChatUnreadCountNotifier extends _$ChatUnreadCountNotifier {
   StreamSubscription<WebSocketPacket>? _subscription;
+
+  /// Ids whose unread increment already happened. Delivery is at-least-once,
+  /// so the same message can arrive again after a retry or a resume replay.
+  final _countedMessageIds = BoundedIdSet(512);
 
   @override
   Future<int> build() async {
@@ -42,6 +47,9 @@ class ChatUnreadCountNotifier extends _$ChatUnreadCountNotifier {
         // The subsequent messages.sync.finalize delivery carries the single
         // unread increment for the completed message.
         if (message.type == 'placeholder') return;
+        // A re-delivered frame must not count twice; the total is reconciled
+        // from the server on room open and by applySyncedSummaries.
+        if (!_countedMessageIds.add(message.id)) return;
         final currentSubscribed = ref.read(currentSubscribedChatIdProvider);
         // Only increment if the message is not from the currently subscribed chat
         if (message.chatRoomId != currentSubscribed) {
@@ -72,6 +80,9 @@ class ChatUnreadCountNotifier extends _$ChatUnreadCountNotifier {
 
 @Riverpod(keepAlive: true)
 class ChatSummary extends _$ChatSummary {
+  /// Ids already folded into the summary; a re-delivered frame is a no-op.
+  final _summarizedMessageIds = BoundedIdSet(512);
+
   Map<String, dynamic> _sanitizeChatMessageJson(Map<String, dynamic> input) {
     final data = Map<String, dynamic>.from(input);
     final meta = data['meta'] is Map<String, dynamic>
@@ -245,6 +256,9 @@ class ChatSummary extends _$ChatSummary {
   }
 
   void updateLastMessage(String chatId, SnChatMessage message) {
+    // At-least-once delivery replays a frame until it is acked, so the same
+    // message must only move the summary once.
+    if (!_summarizedMessageIds.add(message.id)) return;
     _shouldCountMessage(chatId, message).then((shouldCount) {
       state.whenData((summaries) {
         final summary = summaries[chatId];

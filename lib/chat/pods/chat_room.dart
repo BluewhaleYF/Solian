@@ -400,13 +400,20 @@ class ChatGlobalSyncNotifier extends _$ChatGlobalSyncNotifier {
             );
           }
           await db.saveMessageWithSender(localMessage);
-          if (_shouldPlayForegroundRoomMessageSfx(
-            message,
-            currentUserId: currentUserId,
-          )) {
-            playMessageSfxRef(ref);
+          // At-least-once delivery: a re-sent frame (no ack seen by the
+          // gateway, or a session.resume replay) must reach the store again —
+          // that is how the row converges — but must not re-fire side effects.
+          // The store is the dedupe: a row already present means the client
+          // already handled this message.
+          if (existingMsg == null) {
+            if (_shouldPlayForegroundRoomMessageSfx(
+              message,
+              currentUserId: currentUserId,
+            )) {
+              playMessageSfxRef(ref);
+            }
+            eventBus.fire(ChatMessageNewEvent(message));
           }
-          eventBus.fire(ChatMessageNewEvent(message));
         }
       case 'messages.update':
       case 'messages.sync.file':

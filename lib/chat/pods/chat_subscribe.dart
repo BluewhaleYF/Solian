@@ -376,15 +376,8 @@ class ChatSubscribeNotifier extends _$ChatSubscribeNotifier {
       }
     });
 
-    ref.listen(websocketStateProvider, (previous, next) {
-      final wasConnected =
-          previous?.maybeWhen(connected: () => true, orElse: () => false) ??
-          false;
-      final isConnected = next.maybeWhen(
-        connected: () => true,
-        orElse: () => false,
-      );
-      if (!wasConnected && isConnected) {
+    ref.listen(websocketConnectedProvider, (previous, next) {
+      if (isWebSocketReconnect(wasConnected: previous, isConnected: next)) {
         _sendSubscribe(reason: 'ws-reconnected');
       }
     });

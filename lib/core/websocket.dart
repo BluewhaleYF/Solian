@@ -59,6 +59,23 @@ final weakInternetModeProvider = Provider<bool>((ref) {
   return websocketState.maybeWhen(connected: () => false, orElse: () => true);
 });
 
+/// Reads the gateway's at-least-once delivery stamp off a decoded frame.
+///
+/// The stamp lives on the frame envelope, not inside `data`, and the generated
+/// [WebSocketPacket] model drops unknown keys, so it has to be read from the raw
+/// JSON before `fromJson`.
+String? ackIdForFrame(Map<String, dynamic> decoded) {
+  // Sibling of `data` on the envelope, mirroring wsgateway.Packet.AckID.
+  final ackId = decoded['_ack_id'];
+  if (ackId is! String) return null;
+  final trimmed = ackId.trim();
+  return trimmed.isEmpty ? null : trimmed;
+}
+
+/// The control packets the gateway understands for ack tracking.
+const String kAckPacketType = 'session.ack';
+const String kResumePacketType = 'session.resume';
+
 class WebSocketService {
   Ref? _ref;
   WebSocketChannel? _channel;
@@ -178,6 +195,7 @@ class WebSocketService {
       _reconnectWindowStart = null;
       _addStatus(WebSocketState.connected());
       _scheduleHeartbeat();
+      _requestResume();
       _channelSubscription = _channel!.stream.listen(
         (data) {
           if (connectionGeneration != _connectionGeneration) return;
@@ -189,7 +207,13 @@ class WebSocketService {
             return;
           }
           try {
-            final packet = WebSocketPacket.fromJson(jsonDecode(dataStr));
+            final decoded = jsonDecode(dataStr);
+            if (decoded is! Map<String, dynamic>) {
+              Logger.root.severe('[WebSocket] Failed to parse packet: not an object');
+              return;
+            }
+            final ackId = ackIdForFrame(decoded);
+            final packet = WebSocketPacket.fromJson(decoded);
             Logger.root.info('[WebSocket] Received packet: ${packet.type}');
 
             if (packet.type == 'error.dupe') {
@@ -213,6 +237,12 @@ class WebSocketService {
             }
 
             _streamController.sink.add(packet);
+            if (ackId != null) {
+              // Always ack, including a repeated _ack_id: a repeat means the
+              // gateway never saw the previous ack, so de-duplicating here
+              // would strand the frame in the retry buffer.
+              _sendAck(ackId);
+            }
             if (packet.type == 'pong' && _heartbeatAt != null) {
               final now = DateTime.now();
               final delay = now.difference(_heartbeatAt!);
@@ -433,6 +463,31 @@ class WebSocketService {
 
   WebSocketChannel? get ws => _channel;
 
+  void _sendAck(String ackId) {
+    final sent = sendMessage(
+      jsonEncode(
+        WebSocketPacket(type: kAckPacketType, data: {'ack_id': ackId}),
+      ),
+    );
+    if (!sent) {
+      // The reconnected socket re-requests the buffer, so nothing is lost.
+      Logger.root.fine('[WebSocket] Failed to ack $ackId; will be replayed');
+    }
+  }
+
+  /// Asks the gateway for every frame still pending for this account+device.
+  ///
+  /// Sent on every connection generation, not just reconnects: a push that
+  /// landed while the app was offline is pending for the new connection too,
+  /// which is the window a reconnect-only resume would leave uncovered.
+  void _requestResume() {
+    sendMessage(
+      jsonEncode(WebSocketPacket(type: kResumePacketType, data: null)),
+    );
+    // Do not make the app wait a whole heartbeat period for its first pong.
+    _beatTheHeart();
+  }
+
   bool sendMessage(String message) {
     if (_channel == null || _isClosing) {
       Logger.root.info(
@@ -582,6 +637,27 @@ final websocketStateProvider =
       WebSocketStateNotifier.new,
     );
 
+/// Whether a socket-state change is a reconnect: previously connected, not now
+/// connected. Anything holding a room open uses this to decide that its
+/// realtime view went stale while the socket was down.
+bool isWebSocketReconnect({required bool? wasConnected, required bool isConnected}) {
+  return wasConnected == false && isConnected;
+}
+
+/// True while the socket is connected.
+///
+/// Anything that has to react to a connect/disconnect *transition* watches
+/// this instead of reading [websocketStateProvider]: a read inside an effect
+/// never re-runs when the socket comes back, which is how the room's
+/// reconnect resync silently stopped firing.
+final websocketConnectedProvider = Provider<bool>((ref) {
+  return ref.watch(
+    websocketStateProvider.select(
+      (wsState) => wsState.maybeWhen(connected: () => true, orElse: () => false),
+    ),
+  );
+});
+
 class WebSocketStateNotifier extends Notifier<WebSocketState> {
   StreamSubscription<WebSocketState>? _statusSubscription;
 
@@ -595,7 +671,8 @@ class WebSocketStateNotifier extends Notifier<WebSocketState> {
 
     ref.onDispose(() {
       _statusSubscription?.cancel();
-      final service = ref.read(websocketProvider);
+      // Captured during build: `ref.read` is invalid once the element is
+      // disposing, which made this callback throw instead of closing.
       service.close();
     });
     return const WebSocketState.disconnected();
