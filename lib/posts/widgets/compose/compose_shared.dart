@@ -57,6 +57,7 @@ class ComposeState {
   final ValueNotifier<SnPostEmbedView?> embedView;
   final ValueNotifier<DateTime?> lastOwnPostPublishedAt;
   final ValueNotifier<bool> chainWithPrevious;
+  final ValueNotifier<DateTime?> scheduledAt;
   String draftId;
   final ValueNotifier<String?> cloudDraftId;
   int postType;
@@ -107,6 +108,7 @@ class ComposeState {
     required this.embedView,
     required this.draftId,
     String? cloudDraftId,
+    DateTime? scheduledAt,
     this.postType = 0,
     List<Map<String, dynamic>>? embeds,
     String? thumbnailId,
@@ -116,6 +118,7 @@ class ComposeState {
        collectionIds = ValueNotifier<List<String>>(collectionIds ?? []),
        lastOwnPostPublishedAt = ValueNotifier<DateTime?>(null),
        chainWithPrevious = ValueNotifier<bool>(true),
+       scheduledAt = ValueNotifier<DateTime?>(scheduledAt),
        cloudDraftId = ValueNotifier<String?>(cloudDraftId),
        _lastSyncedText = contentController.text {
     contentQuillController = QuillController(
@@ -359,6 +362,8 @@ class ComposeSubmissionSnapshot {
   final String? forwardedPostId;
   final String? chainedPostId;
   final bool autoChain;
+  final DateTime? scheduledAt;
+  final bool publishNow;
 
   const ComposeSubmissionSnapshot({
     required this.draftId,
@@ -384,9 +389,18 @@ class ComposeSubmissionSnapshot {
     required this.forwardedPostId,
     this.chainedPostId,
     this.autoChain = true,
+    this.scheduledAt,
+    this.publishNow = false,
   });
 
   String get activeDraftId => cloudDraftId ?? draftId;
+
+  /// True when the submission should be scheduled instead of published now.
+  bool get isScheduled =>
+      scheduledAt != null && scheduledAt!.isAfter(DateTime.now());
+
+  String? get scheduledAtIso =>
+      isScheduled ? scheduledAt!.toUtc().toIso8601String() : null;
 }
 
 class ComposeLogic {
@@ -474,6 +488,7 @@ class ComposeLogic {
       cloudDraftId:
           cloudDraftId ??
           (originalPost?.draftedAt != null ? originalPost?.id : null),
+      scheduledAt: scheduledTimeOf(originalPost),
       postType: postType,
       embeds: embeds,
       thumbnailId: thumbnailId,
@@ -514,6 +529,7 @@ class ComposeLogic {
       embedView: ValueNotifier<SnPostEmbedView?>(draft.embedView),
       draftId: draft.id,
       cloudDraftId: draft.draftedAt != null ? draft.id : null,
+      scheduledAt: scheduledTimeOf(draft),
       postType: postType,
       embeds: embeds,
       thumbnailId: thumbnailId,
@@ -548,6 +564,17 @@ class ComposeLogic {
             ?.map((e) => e.toString())
             .toList() ??
         <String>[];
+    state.scheduledAt.value = scheduledTimeOf(draft);
+  }
+
+  /// The future [SnPost.publishedAt] of a post or draft, in local time, when it
+  /// is still awaiting publication.
+  static DateTime? scheduledTimeOf(SnPost? post) {
+    final publishedAt = post?.publishedAt;
+    if (publishedAt == null || !publishedAt.isAfter(DateTime.now())) {
+      return null;
+    }
+    return publishedAt.toLocal();
   }
 
   static ComposeSubmissionSnapshot createSubmissionSnapshot(
@@ -584,6 +611,10 @@ class ComposeLogic {
       forwardedPostId: forwardedPost?.id,
       chainedPostId: chainedPost?.id,
       autoChain: autoChain,
+      scheduledAt: state.scheduledAt.value,
+      publishNow:
+          ComposeLogic.scheduledTimeOf(originalPost) != null &&
+          state.scheduledAt.value == null,
     );
   }
 
@@ -706,7 +737,7 @@ class ComposeLogic {
       language: state.language.value,
       editedAt: null,
       draftedAt: state.cloudDraftId.value != null ? DateTime.now() : null,
-      publishedAt: null,
+      publishedAt: state.scheduledAt.value,
       visibility: state.visibility.value,
       content: state.contentController.text,
       slug: state.slugController.text,
@@ -798,7 +829,7 @@ class ComposeLogic {
       language: snapshot.language,
       editedAt: null,
       draftedAt: cloudDraftId != null ? DateTime.now() : null,
-      publishedAt: null,
+      publishedAt: snapshot.scheduledAt,
       visibility: snapshot.visibility,
       content: snapshot.content,
       slug: snapshot.slug,
@@ -957,8 +988,7 @@ class ComposeLogic {
     for (final f in result) {
       if (f.path == null) continue;
 
-      final mimeType =
-          lookupMimeType(f.path!) ?? 'application/octet-stream';
+      final mimeType = lookupMimeType(f.path!) ?? 'application/octet-stream';
       final xfile = XFile(f.path!, name: f.name, mimeType: mimeType);
 
       final uf = UniversalFile(data: xfile, type: UniversalFileType.file);
@@ -1061,9 +1091,9 @@ class ComposeLogic {
         data: xfile,
         type: UniversalFileType.file,
       );
-      final fileType = switch (FileUploader.getMimeType(provisional)
-          .split('/')
-          .firstOrNull) {
+      final fileType = switch (FileUploader.getMimeType(
+        provisional,
+      ).split('/').firstOrNull) {
         'image' => UniversalFileType.image,
         'video' => UniversalFileType.video,
         'audio' => UniversalFileType.audio,
@@ -1085,8 +1115,7 @@ class ComposeLogic {
     String content,
   ) {
     final targets = <String>[
-      for (final m in inlineMarkdownLinkRegex.allMatches(content))
-        m.group(1)!,
+      for (final m in inlineMarkdownLinkRegex.allMatches(content)) m.group(1)!,
       for (final m in markdownReferenceDefinitionRegex.allMatches(content))
         m.group(1)!,
     ];
@@ -1095,16 +1124,11 @@ class ComposeLogic {
     for (var target in targets) {
       target = target.trim();
       // `[text](<path>)` — strip wrapping angle brackets.
-      if (target.length > 2 &&
-          target.startsWith('<') &&
-          target.endsWith('>')) {
+      if (target.length > 2 && target.startsWith('<') && target.endsWith('>')) {
         target = target.substring(1, target.length - 1).trim();
       }
       // `path "title"` / `path 'title'` — strip the trailing title.
-      target = target.replaceFirst(
-        RegExp(r'\s+["\x27].*["\x27]$'),
-        '',
-      );
+      target = target.replaceFirst(RegExp(r'\s+["\x27].*["\x27]$'), '');
       if (!_isLocalFileTarget(target)) continue;
       // Normalize Windows separators so absolute/resolution logic is uniform.
       target = target.replaceAll('\\', '/');
@@ -1148,9 +1172,7 @@ class ComposeLogic {
   }
 
   static Future<void> pickVideoMedia(WidgetRef ref, ComposeState state) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.video,
-    );
+    final result = await FilePicker.pickFiles(type: FileType.video);
     if (result.isEmpty) return;
     state.attachments.value = [
       ...state.attachments.value,
@@ -1689,18 +1711,21 @@ class ComposeLogic {
         for (var i = 0; i < localAttachments.length; i++) {
           final index = i;
           final attachment = localAttachments[index].value;
-          manager.entryFor(attachment)?.adoptProgress(
-            (progress) => tasks.updateTask(
-              taskId,
-              progress:
-                  0.1 +
-                  ((index + (progress ?? 0.0)) / localAttachments.length) * 0.5,
-              statusMessage: _taskUploadingProgressMessage(
-                index + 1,
-                localAttachments.length,
-              ),
-            ),
-          );
+          manager
+              .entryFor(attachment)
+              ?.adoptProgress(
+                (progress) => tasks.updateTask(
+                  taskId,
+                  progress:
+                      0.1 +
+                      ((index + (progress ?? 0.0)) / localAttachments.length) *
+                          0.5,
+                  statusMessage: _taskUploadingProgressMessage(
+                    index + 1,
+                    localAttachments.length,
+                  ),
+                ),
+              );
         }
         tasks.updateTask(
           taskId,
@@ -1771,25 +1796,52 @@ class ComposeLogic {
         throw Exception('Publisher is required');
       }
 
+      final scheduledAt = state.scheduledAt.value;
+      final isScheduled =
+          scheduledAt != null && scheduledAt.isAfter(DateTime.now());
+      final scheduledAtIso = isScheduled
+          ? scheduledAt.toUtc().toIso8601String()
+          : null;
+      if (scheduledAtIso != null) {
+        effectivePayload['published_at'] = scheduledAtIso;
+      } else if (scheduledTimeOf(originalPost) != null) {
+        // The post was scheduled and the user chose to publish it now.
+        effectivePayload['published_at'] = DateTime.now()
+            .toUtc()
+            .toIso8601String();
+      }
+
       late final SnPost post;
 
       // Publish server-side draft directly when available.
       if (isNewPost && state.cloudDraftId.value != null) {
-        await client.dio.request(
-          '/sphere/posts/${state.cloudDraftId.value}',
-          queryParameters: {'pub': publisherName},
-          data: {
-            ...effectivePayload,
-            'drafted_at': DateTime.now().toUtc().toIso8601String(),
-            'published_at': null,
-          },
-          options: Options(method: 'PATCH'),
-        );
-        final publishResp = await client.dio.post(
-          '/sphere/posts/${state.cloudDraftId.value}/publish',
-          queryParameters: {'pub': publisherName},
-        );
-        post = SnPost.fromJson(publishResp.data);
+        if (isScheduled) {
+          // Scheduling is a publish action: move the cloud draft to the
+          // scheduled time instead of saving it back as a draft.
+          final response = await client.dio.request(
+            '/sphere/posts/${state.cloudDraftId.value}',
+            queryParameters: {'pub': publisherName},
+            data: {...effectivePayload, 'published_at': scheduledAtIso},
+            options: Options(method: 'PATCH'),
+          );
+          post = SnPost.fromJson(response.data);
+        } else {
+          await client.dio.request(
+            '/sphere/posts/${state.cloudDraftId.value}',
+            queryParameters: {'pub': publisherName},
+            data: {
+              ...effectivePayload,
+              'drafted_at': DateTime.now().toUtc().toIso8601String(),
+              'published_at': null,
+            },
+            options: Options(method: 'PATCH'),
+          );
+          final publishResp = await client.dio.post(
+            '/sphere/posts/${state.cloudDraftId.value}/publish',
+            queryParameters: {'pub': publisherName},
+          );
+          post = SnPost.fromJson(publishResp.data);
+        }
       } else {
         final response = await client.dio.request(
           endpoint,
@@ -1799,6 +1851,8 @@ class ComposeLogic {
         );
         post = SnPost.fromJson(response.data);
       }
+
+      state.scheduledAt.value = null;
 
       published = true;
 
@@ -2098,6 +2152,10 @@ class ComposeLogic {
           'embed_view': snapshot.embedView!.toJson(),
         if (snapshot.collectionIds.isNotEmpty)
           'collection_ids': snapshot.collectionIds,
+        if (snapshot.scheduledAtIso != null)
+          'published_at': snapshot.scheduledAtIso
+        else if (snapshot.publishNow)
+          'published_at': DateTime.now().toUtc().toIso8601String(),
       };
 
       final hookResult = PluginHooks().runBeforePostCreate(
@@ -2116,21 +2174,34 @@ class ComposeLogic {
       late final SnPost post;
       final isNewPost = snapshot.originalPostId == null;
       if (isNewPost && cloudDraftId != null) {
-        await client.dio.request(
-          '/sphere/posts/$cloudDraftId',
-          queryParameters: {'pub': publisherName},
-          data: {
-            ...effectivePayload,
-            'drafted_at': DateTime.now().toUtc().toIso8601String(),
-            'published_at': null,
-          },
-          options: Options(method: 'PATCH'),
-        );
-        final publishResp = await client.dio.post(
-          '/sphere/posts/$cloudDraftId/publish',
-          queryParameters: {'pub': publisherName},
-        );
-        post = SnPost.fromJson(publishResp.data);
+        if (snapshot.scheduledAtIso != null) {
+          final response = await client.dio.request(
+            '/sphere/posts/$cloudDraftId',
+            queryParameters: {'pub': publisherName},
+            data: {
+              ...effectivePayload,
+              'published_at': snapshot.scheduledAtIso,
+            },
+            options: Options(method: 'PATCH'),
+          );
+          post = SnPost.fromJson(response.data);
+        } else {
+          await client.dio.request(
+            '/sphere/posts/$cloudDraftId',
+            queryParameters: {'pub': publisherName},
+            data: {
+              ...effectivePayload,
+              'drafted_at': DateTime.now().toUtc().toIso8601String(),
+              'published_at': null,
+            },
+            options: Options(method: 'PATCH'),
+          );
+          final publishResp = await client.dio.post(
+            '/sphere/posts/$cloudDraftId/publish',
+            queryParameters: {'pub': publisherName},
+          );
+          post = SnPost.fromJson(publishResp.data);
+        }
       } else {
         final endpoint =
             '/sphere${isNewPost ? '/posts' : '/posts/${snapshot.originalPostId}'}';
@@ -2190,6 +2261,48 @@ class ComposeLogic {
         ).toMap(),
       );
     }
+  }
+
+  static void clearSchedule(ComposeState state) {
+    state.scheduledAt.value = null;
+  }
+
+  /// Opens a date + time picker and stores the chosen publish time on [state].
+  /// The post is published at that time by the Sphere scheduled publish job.
+  static Future<void> pickSchedule(
+    BuildContext context,
+    ComposeState state,
+  ) async {
+    final now = DateTime.now();
+    final initial =
+        state.scheduledAt.value ?? now.add(const Duration(hours: 1));
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial.isBefore(now) ? now : initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !context.mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return;
+
+    final scheduled = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    if (!scheduled.isAfter(DateTime.now())) {
+      showErrorAlert('postScheduleFutureRequired'.tr());
+      return;
+    }
+    state.scheduledAt.value = scheduled;
   }
 
   static Future<void> performAction(
@@ -2311,5 +2424,6 @@ class ComposeLogic {
     state.thumbnailId.dispose();
     state.collectionIds.dispose();
     state.cloudDraftId.dispose();
+    state.scheduledAt.dispose();
   }
 }

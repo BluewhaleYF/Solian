@@ -16,6 +16,7 @@ import 'package:island/posts/widgets/compose/compose_attachments.dart';
 import 'package:island/posts/widgets/compose/compose_form_fields.dart';
 import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
+import 'package:island/posts/widgets/compose/compose_schedule.dart';
 import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:island/posts/widgets/compose/compose_toolbar.dart';
 import 'package:island/posts/widgets/compose/publishers_modal.dart';
@@ -420,6 +421,7 @@ class ArticleComposeScreen extends HookConsumerWidget {
                       onPressed: () => showPreview.value = !showPreview.value,
                     ),
                   ),
+                  ComposeScheduleButton(state: state),
                   ValueListenableBuilder<bool>(
                     valueListenable: state.submitting,
                     builder: (context, submitting, _) {

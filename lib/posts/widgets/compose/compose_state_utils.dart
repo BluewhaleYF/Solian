@@ -106,6 +106,9 @@ class ComposeStateUtils {
           state.descriptionController.text = mostRecentDraft.description ?? '';
           state.contentController.text = mostRecentDraft.content ?? '';
           state.visibility.value = mostRecentDraft.visibility;
+          state.scheduledAt.value = ComposeLogic.scheduledTimeOf(
+            mostRecentDraft,
+          );
         }
       }
       return null;
@@ -196,6 +199,9 @@ class ComposeStateUtils {
 
     // Clear realm
     state.realm.value = null;
+
+    // Clear the pending publish schedule
+    state.scheduledAt.value = null;
 
     // Generate new draft ID for fresh composition
     // Note: We don't recreate the entire state, just reset the fields

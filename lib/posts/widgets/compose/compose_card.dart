@@ -17,6 +17,7 @@ import 'package:island/posts/widgets/compose/compose_attachments.dart';
 import 'package:island/posts/widgets/compose/compose_form_fields.dart';
 import 'package:island/posts/widgets/compose/compose_info_banner.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
+import 'package:island/posts/widgets/compose/compose_schedule.dart';
 import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:island/posts/widgets/compose/compose_toolbar.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -60,8 +61,7 @@ class PostComposeCard extends HookConsumerWidget {
     final repliedPost = initialState?.replyingTo ?? originalPost?.repliedPost;
     final forwardedPost =
         initialState?.forwardingTo ?? originalPost?.forwardedPost;
-    final chainedPost =
-        initialState?.chainingTo ?? originalPost?.chainedPost;
+    final chainedPost = initialState?.chainingTo ?? originalPost?.chainedPost;
 
     // Matches server Posts:AutoChainWindowMinutes default (5 minutes).
     const autoChainWindow = Duration(minutes: 5);
@@ -169,9 +169,9 @@ class PostComposeCard extends HookConsumerWidget {
             if (cancelled) return;
             final data = response.data;
             if (data is List && data.isNotEmpty) {
-              composeState.lastOwnPostPublishedAt.value =
-                  SnPost.fromJson(data.first as Map<String, dynamic>)
-                      .publishedAt;
+              composeState.lastOwnPostPublishedAt.value = SnPost.fromJson(
+                data.first as Map<String, dynamic>,
+              ).publishedAt;
             } else {
               composeState.lastOwnPostPublishedAt.value = null;
             }
@@ -292,6 +292,7 @@ class PostComposeCard extends HookConsumerWidget {
                         vertical: -2,
                       ),
                     ),
+                    ComposeScheduleButton(state: composeState),
                     IconButton(
                       onPressed:
                           (composeState.submitting.value ||
@@ -332,6 +333,8 @@ class PostComposeCard extends HookConsumerWidget {
                   ],
                 ),
               ),
+
+            ComposeScheduledBanner(state: composeState),
 
             // Info banner (reply/forward/chain)
             ComposeInfoBanner(
@@ -553,10 +556,7 @@ class _AutoChainBanner extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(
-              onPressed: onCancel,
-              child: Text('cancel'.tr()),
-            ),
+            TextButton(onPressed: onCancel, child: Text('cancel'.tr())),
           ],
         ),
       ),

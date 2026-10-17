@@ -34,14 +34,18 @@ class CreatorPostCardTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasTitle = post.title?.isNotEmpty == true;
-    final surface = index.isEven ? theme.colorScheme.surface : theme.colorScheme.surfaceContainerLow;
+    final surface = index.isEven
+        ? theme.colorScheme.surface
+        : theme.colorScheme.surfaceContainerLow;
 
     return Material(
       color: surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent),
+        side: BorderSide(
+          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
@@ -57,12 +61,17 @@ class CreatorPostCardTile extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4, right: 8),
                   child: IconButton(
                     visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                     onPressed: onSelectionToggle,
                     icon: Icon(
                       isSelected ? Symbols.check_circle : Symbols.circle,
                       fill: 1,
-                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline,
                     ),
                   ),
                 ),
@@ -76,7 +85,11 @@ class CreatorPostCardTile extends StatelessWidget {
                       : Container(
                           color: theme.colorScheme.surfaceContainerHighest,
                           alignment: Alignment.center,
-                          child: Icon(Symbols.article, size: 24, color: theme.colorScheme.secondary),
+                          child: Icon(
+                            Symbols.article,
+                            size: 24,
+                            color: theme.colorScheme.secondary,
+                          ),
                         ),
                 ),
               ),
@@ -92,12 +105,20 @@ class CreatorPostCardTile extends StatelessWidget {
                           if (post.pinMode != null)
                             Padding(
                               padding: const EdgeInsets.only(right: 4),
-                              child: Icon(Symbols.keep, size: 13, color: theme.colorScheme.primary),
+                              child: Icon(
+                                Symbols.keep,
+                                size: 13,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                           if (post.type == 1)
                             Padding(
                               padding: const EdgeInsets.only(right: 4, top: 3),
-                              child: Icon(Symbols.article, size: 13, color: theme.colorScheme.tertiary),
+                              child: Icon(
+                                Symbols.article,
+                                size: 13,
+                                color: theme.colorScheme.tertiary,
+                              ),
                             ),
                           Expanded(
                             child: Text(
@@ -128,23 +149,64 @@ class CreatorPostCardTile extends StatelessWidget {
                       runSpacing: 6,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        _MetricChip(icon: Symbols.schedule, label: post.createdAt?.formatSystem() ?? '-'),
-                        _MetricChip(icon: Symbols.visibility, label: _formatNumber(post.viewsUnique)),
-                        _MetricChip(icon: Symbols.bar_chart, label: _formatNumber(post.viewsTotal)),
-                        _MetricChip(icon: Symbols.chat_bubble, label: '${post.repliesCount}'),
-                        _MetricChip(icon: Symbols.thumb_up, label: '${post.upvotes}'),
-                        _MetricChip(icon: Symbols.thumb_down, label: '${post.downvotes}'),
-                        _MetricChip(icon: Symbols.emoji_events, label: '${post.awardedScore}'),
-                        if (post.featuredRecords.isNotEmpty)
-                          _MetricChip(icon: Symbols.highlight, label: '${post.featuredRecords.length}'),
                         _MetricChip(
-                          icon: PostVisibilityHelpers.getVisibilityIcon(post.visibility),
-                          label: PostVisibilityHelpers.getVisibilityText(post.visibility).tr(),
+                          icon: Symbols.schedule,
+                          label: post.createdAt?.formatSystem() ?? '-',
+                        ),
+                        if (post.publishedAt != null &&
+                            post.publishedAt!.isAfter(DateTime.now()))
+                          _MetricChip(
+                            icon: Symbols.event_available,
+                            label:
+                                '${'postScheduled'.tr()} ${post.publishedAt!.formatSystem()}',
+                          ),
+                        _MetricChip(
+                          icon: Symbols.visibility,
+                          label: _formatNumber(post.viewsUnique),
+                        ),
+                        _MetricChip(
+                          icon: Symbols.bar_chart,
+                          label: _formatNumber(post.viewsTotal),
+                        ),
+                        _MetricChip(
+                          icon: Symbols.chat_bubble,
+                          label: '${post.repliesCount}',
+                        ),
+                        _MetricChip(
+                          icon: Symbols.thumb_up,
+                          label: '${post.upvotes}',
+                        ),
+                        _MetricChip(
+                          icon: Symbols.thumb_down,
+                          label: '${post.downvotes}',
+                        ),
+                        _MetricChip(
+                          icon: Symbols.emoji_events,
+                          label: '${post.awardedScore}',
+                        ),
+                        if (post.featuredRecords.isNotEmpty)
+                          _MetricChip(
+                            icon: Symbols.highlight,
+                            label: '${post.featuredRecords.length}',
+                          ),
+                        _MetricChip(
+                          icon: PostVisibilityHelpers.getVisibilityIcon(
+                            post.visibility,
+                          ),
+                          label: PostVisibilityHelpers.getVisibilityText(
+                            post.visibility,
+                          ).tr(),
                         ),
                         if (post.attachments.isNotEmpty)
-                          _MetricChip(icon: Symbols.attach_file, label: '${post.attachments.length}'),
+                          _MetricChip(
+                            icon: Symbols.attach_file,
+                            label: '${post.attachments.length}',
+                          ),
                         if (post.editedAt != null)
-                          _MetricChip(icon: Symbols.edit, label: post.editedAt!.formatSystem()),
+                          _MetricChip(
+                            icon: Symbols.edit,
+                            label: post.editedAt!.formatSystem(),
+                          ),
                       ],
                     ),
                     if (post.tags.isNotEmpty || post.categories.isNotEmpty) ...[
@@ -170,14 +232,24 @@ class CreatorPostCardTile extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                            if (post.tags.length > 4) Text('+${post.tags.length - 4}', style: TextStyle(fontSize: 13)),
+                            if (post.tags.length > 4)
+                              Text(
+                                '+${post.tags.length - 4}',
+                                style: TextStyle(fontSize: 13),
+                              ),
                           ],
                           if (post.categories.isNotEmpty) ...[
                             const Icon(Symbols.category, size: 16),
                             for (final category in post.categories.take(3))
-                              Text(category.categoryTranslationKey.tr(), style: TextStyle(fontSize: 13)),
+                              Text(
+                                category.categoryTranslationKey.tr(),
+                                style: TextStyle(fontSize: 13),
+                              ),
                             if (post.categories.length > 3)
-                              Text('+${post.categories.length - 3}', style: TextStyle(fontSize: 13)),
+                              Text(
+                                '+${post.categories.length - 3}',
+                                style: TextStyle(fontSize: 13),
+                              ),
                           ],
                         ],
                       ),
@@ -247,4 +319,3 @@ class _MetricChip extends StatelessWidget {
     );
   }
 }
-

@@ -20,6 +20,7 @@ import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/posts/widgets/compose/compose_card.dart';
 import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
+import 'package:island/posts/widgets/compose/compose_schedule.dart';
 import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -221,6 +222,7 @@ class PostComposeDialog extends HookConsumerWidget {
         onPressed: showSettingsSheet,
         tooltip: 'postSettings'.tr(),
       ),
+      ComposeScheduleButton(state: state),
       IconButton(
         onPressed:
             (state.submitting.value || state.currentPublisher.value == null)
