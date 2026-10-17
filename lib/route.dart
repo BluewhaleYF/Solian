@@ -50,6 +50,7 @@ class AppRouter extends RootStackRouter {
       path: '/posts/categories/:slug',
     ),
     AutoRoute(page: PostDetailRoute.page, path: '/posts/:id'),
+    AutoRoute(page: DraftBoxRoute.page, path: '/drafts'),
     AutoRoute(page: PublisherProfileRoute.page, path: '/publishers/:name'),
     AutoRoute(
       page: FediverseActorProfileRoute.page,

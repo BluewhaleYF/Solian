@@ -760,6 +760,18 @@ class CreatorHubContentWidget extends HookConsumerWidget {
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           minTileHeight: 48,
+          title: Text('draftBox').tr(),
+          trailing: Icon(Symbols.chevron_right),
+          leading: const Icon(Symbols.drafts),
+          onTap: () {
+            context.router.push(const DraftBoxRoute());
+          },
+        ),
+        ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          ),
+          minTileHeight: 48,
           title: Text('collections').tr(),
           trailing: Icon(Symbols.chevron_right),
           leading: const Icon(Symbols.collections),

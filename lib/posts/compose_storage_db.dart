@@ -136,6 +136,11 @@ class ComposeStorageNotifier extends _$ComposeStorageNotifier {
 
     final client = ref.read(solarNetworkClientProvider);
     final isCloudDraft = draft.draftedAt != null;
+    final publishedAt = draft.publishedAt;
+    // A draft that already carries a publish time keeps it: uploading it
+    // schedules the post instead of turning it back into a plain draft.
+    final isScheduled =
+        publishedAt != null && publishedAt.isAfter(DateTime.now());
     final endpoint = isCloudDraft ? '/sphere/posts/$id' : '/sphere/posts';
     final payload = {
       'title': draft.title ?? '',
@@ -151,8 +156,13 @@ class ComposeStorageNotifier extends _$ComposeStorageNotifier {
       if (draft.meta?['thumbnail'] != null)
         'thumbnail_id': draft.meta?['thumbnail'],
       if (draft.embedView != null) 'embed_view': draft.embedView!.toJson(),
-      'drafted_at': DateTime.now().toUtc().toIso8601String(),
-      'published_at': null,
+      if (isScheduled) ...{
+        'drafted_at': null,
+        'published_at': publishedAt.toUtc().toIso8601String(),
+      } else ...{
+        'drafted_at': DateTime.now().toUtc().toIso8601String(),
+        'published_at': null,
+      },
     };
 
     final response = await client.dio.request(
@@ -162,9 +172,15 @@ class ComposeStorageNotifier extends _$ComposeStorageNotifier {
       options: Options(method: isCloudDraft ? 'PATCH' : 'POST'),
     );
     final cloudDraft = SnPost.fromJson(response.data);
-    await saveDraft(cloudDraft);
-    if (!isCloudDraft && id != cloudDraft.id) {
+    if (isScheduled) {
+      // The post is now a scheduled server post; the device copy would be a
+      // duplicate that the draft list can never reconcile.
       await deleteLocalDraft(id);
+    } else {
+      await saveDraft(cloudDraft);
+      if (!isCloudDraft && id != cloudDraft.id) {
+        await deleteLocalDraft(id);
+      }
     }
     return cloudDraft;
   }

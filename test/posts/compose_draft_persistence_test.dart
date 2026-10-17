@@ -11,6 +11,7 @@ import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/data/database.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
+import 'package:island/tasks/tasks_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -79,6 +80,8 @@ class _RefCapture extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     capturedRef = ref;
     capturedContext = context;
+    // Keep the task queue alive for the duration of the submission flow.
+    ref.watch(tasksProvider);
     return const SizedBox.shrink();
   }
 }
@@ -246,5 +249,49 @@ void main() {
     );
 
     expect(await readDrafts(tester), isEmpty);
+  });
+
+  testWidgets('a draft that never reached the server publishes as a new post', (
+    tester,
+  ) async {
+    final adapter = _ScriptedAdapter(
+      (options) async => _json(
+        _postJson(id: 'new-post', content: 'device only', drafted: false),
+      ),
+    );
+    await pumpHost(tester, adapter);
+
+    final localDraft = SnPost.fromJson({
+      'id': 'local-1',
+      'type': 0,
+      'content': 'device only',
+      'chained_posts': const [],
+      'publisher': _publisher().toJson(),
+      'drafted_at': null,
+      'published_at': null,
+      'created_at': '2026-01-01T00:00:00Z',
+      'updated_at': '2026-01-01T00:00:00Z',
+    });
+
+    final state = ComposeLogic.createState(originalPost: localDraft);
+    // The composer keeps the local id so its auto-save overwrites the same row.
+    expect(state.draftId, 'local-1');
+    expect(state.cloudDraftId.value, isNull);
+    state.currentPublisher.value = _publisher();
+
+    await tester.runAsync(
+      () => ComposeLogic.performSubmit(
+        capturedRef,
+        state,
+        capturedContext,
+        originalPost: localDraft,
+        onSuccess: () {},
+      ),
+    );
+
+    final request = adapter.requests.single;
+    expect(request.method.toUpperCase(), 'POST');
+    expect(request.path, '/sphere/posts');
+    expect(request.data, isNot(containsPair('drafted_at', anything)));
   });
 }

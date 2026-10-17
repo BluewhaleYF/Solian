@@ -28,6 +28,13 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 class PostComposeDialog extends HookConsumerWidget {
   final SnPost? originalPost;
   final PostComposeInitialState? initialState;
+
+  /// Reply, forward and chain targets that the caller resolved itself, used
+  /// when [originalPost] carries only their ids — a draft saved on this device
+  /// has no server payload to read them from.
+  final SnPost? replyingTo;
+  final SnPost? forwardingTo;
+  final SnPost? chainingTo;
   final VoidCallback onCancel;
   final VoidCallback onSubmitted;
 
@@ -37,12 +44,18 @@ class PostComposeDialog extends HookConsumerWidget {
     required this.onSubmitted,
     this.originalPost,
     this.initialState,
+    this.replyingTo,
+    this.forwardingTo,
+    this.chainingTo,
   });
 
   static Future<bool?> show(
     BuildContext context, {
     SnPost? originalPost,
     PostComposeInitialState? initialState,
+    SnPost? replyingTo,
+    SnPost? forwardingTo,
+    SnPost? chainingTo,
   }) {
     if (originalPost != null && originalPost.type == 1) {
       context.router.push(ArticleEditRoute(id: originalPost.id));
@@ -62,6 +75,9 @@ class PostComposeDialog extends HookConsumerWidget {
         key: dialogKey,
         originalPost: originalPost,
         initialState: initialState,
+        replyingTo: replyingTo,
+        forwardingTo: forwardingTo,
+        chainingTo: chainingTo,
         onCancel: () {
           if (!completer.isCompleted) completer.complete(null);
           dismiss();
@@ -81,7 +97,9 @@ class PostComposeDialog extends HookConsumerWidget {
     final prompted = useState(false);
     final showPreview = useState(false);
 
-    final fullPostData = originalPost != null
+    final fullPostData =
+        originalPost != null &&
+            ComposeLogic.serverBackedPostId(originalPost!) != null
         ? ref.watch(postProvider(originalPost!.id))
         : const AsyncValue.data(null);
 
@@ -92,11 +110,17 @@ class PostComposeDialog extends HookConsumerWidget {
     );
 
     final repliedPost =
-        initialState?.replyingTo ?? effectiveOriginalPost?.repliedPost;
+        replyingTo ??
+        initialState?.replyingTo ??
+        effectiveOriginalPost?.repliedPost;
     final forwardedPost =
-        initialState?.forwardingTo ?? effectiveOriginalPost?.forwardedPost;
+        forwardingTo ??
+        initialState?.forwardingTo ??
+        effectiveOriginalPost?.forwardedPost;
     final chainedPost =
-        initialState?.chainingTo ?? effectiveOriginalPost?.chainedPost;
+        chainingTo ??
+        initialState?.chainingTo ??
+        effectiveOriginalPost?.chainedPost;
 
     final ComposeState state = useMemoized(
       () => ComposeLogic.createState(

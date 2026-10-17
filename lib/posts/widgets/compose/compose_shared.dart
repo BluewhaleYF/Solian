@@ -420,6 +420,17 @@ class ComposeLogic {
     );
   }
 
+  /// The id of the server post this composer edits, or null when submitting
+  /// creates a new post.
+  ///
+  /// A draft that only exists on this device has no server row, so it must not
+  /// be patched by its local id when it is published.
+  static String? serverBackedPostId(SnPost? post) {
+    if (post == null) return null;
+    if (post.draftedAt == null && post.publishedAt == null) return null;
+    return post.id;
+  }
+
   static ComposeState createState({
     SnPost? originalPost,
     SnPost? forwardedPost,
@@ -428,7 +439,15 @@ class ComposeLogic {
     String? cloudDraftId,
     int postType = 0,
   }) {
-    final id = draftId ?? const Uuid().v4();
+    // A draft that exists only on this device keeps its id, so the auto-save of
+    // the opened composer overwrites it instead of leaving a second copy
+    // behind. Posts the server knows are addressed by their own ids.
+    final serverPostId = serverBackedPostId(originalPost);
+    final id =
+        draftId ??
+        (originalPost != null && serverPostId == null
+            ? originalPost.id
+            : const Uuid().v4());
 
     // Initialize tags from original post
     final tags =
@@ -606,7 +625,7 @@ class ComposeLogic {
           .toList(),
       thumbnailId: state.thumbnailId.value,
       collectionIds: List<String>.from(state.collectionIds.value),
-      originalPostId: originalPost?.id,
+      originalPostId: serverBackedPostId(originalPost),
       repliedPostId: repliedPost?.id,
       forwardedPostId: forwardedPost?.id,
       chainedPostId: chainedPost?.id,
@@ -1746,9 +1765,9 @@ class ComposeLogic {
       );
 
       final client = ref.read(solarNetworkClientProvider);
-      final isNewPost = originalPost == null;
-      final endpoint =
-          '/sphere${isNewPost ? '/posts' : '/posts/${originalPost.id}'}';
+      final serverPostId = serverBackedPostId(originalPost);
+      final isNewPost = serverPostId == null;
+      final endpoint = '/sphere${isNewPost ? '/posts' : '/posts/$serverPostId'}';
 
       // Create request payload
       final payload = {
@@ -1814,7 +1833,7 @@ class ComposeLogic {
       late final SnPost post;
 
       // Publish server-side draft directly when available.
-      if (isNewPost && state.cloudDraftId.value != null) {
+      if (state.cloudDraftId.value != null) {
         if (isScheduled) {
           // Scheduling is a publish action: move the cloud draft to the
           // scheduled time instead of saving it back as a draft.
