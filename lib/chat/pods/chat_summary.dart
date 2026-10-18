@@ -239,20 +239,33 @@ class ChatSummary extends _$ChatSummary {
     });
   }
 
-  Future<bool> _shouldCountMessage(String chatId, SnChatMessage message) async {
-    final accountId = ref.read(userInfoProvider).value?.id;
-    if (accountId == null) return true;
-
-    final member = await ref
-        .read(databaseProvider)
-        .getMemberByRoomAndAccount(chatId, accountId);
-    if (member == null) return true;
-
+  /// Whether [message] should raise an unread count for the current account,
+  /// given the member row that carries the room's notify setting.
+  bool _countsForNotification({
+    required String? accountId,
+    required SnChatMember? member,
+    required SnChatMessage message,
+  }) {
+    if (accountId == null || member == null) return true;
     return switch (member.notify) {
       0 => true,
       1 => message.membersMentioned.contains(accountId),
       _ => false,
     };
+  }
+
+  Future<bool> _shouldCountMessage(String chatId, SnChatMessage message) async {
+    final accountId = ref.read(userInfoProvider).value?.id;
+    final member = accountId == null
+        ? null
+        : await ref
+              .read(databaseProvider)
+              .getMemberByRoomAndAccount(chatId, accountId);
+    return _countsForNotification(
+      accountId: accountId,
+      member: member,
+      message: message,
+    );
   }
 
   void updateLastMessage(String chatId, SnChatMessage message) {
@@ -293,6 +306,96 @@ class ChatSummary extends _$ChatSummary {
         });
       }
     });
+  }
+
+  /// Applies the newest message synced by the cross-room message sync.
+  ///
+  /// The list tile renders its preview, timestamp, ordering and unread state
+  /// from this summary, not from the message store. A global sync commits rows
+  /// for rooms that are not open, so without this the list keeps showing the
+  /// previous message until the next rooms sync happens to run.
+  ///
+  /// [newMessagesByRoom] carries only the synced messages that were not stored
+  /// before, which keeps the unread bump idempotent across the sync's repeated
+  /// rounds. Each id is claimed in the re-delivery guard as it is counted, so
+  /// the socket frame for the same message never folds it a second time.
+  Future<void> applySyncedLastMessages({
+    required Map<String, SnChatMessage> latestByRoom,
+    required Map<String, List<SnChatMessage>> newMessagesByRoom,
+  }) async {
+    if (latestByRoom.isEmpty) return;
+
+    final currentSubscribed = ref.read(currentSubscribedChatIdProvider);
+    final accountId = ref.read(userInfoProvider).value?.id;
+    final db = ref.read(databaseProvider);
+    final current = state.maybeWhen(
+      data: (summaries) => summaries,
+      orElse: () => const <String, SnChatSummary>{},
+    );
+    final next = Map<String, SnChatSummary>.from(current);
+    var changed = false;
+
+    for (final entry in latestByRoom.entries) {
+      final chatId = entry.key;
+      final message = entry.value;
+      final summary = next[chatId];
+      if (summary == null) continue;
+
+      // Sync pages ascend, but a resumed cursor can replay older rows; never
+      // move a preview backwards.
+      final existing = summary.lastMessage;
+      if (existing != null && !message.createdAt.isAfter(existing.createdAt)) {
+        continue;
+      }
+
+      var unread = 0;
+      if (chatId != currentSubscribed) {
+        // One member read per room: it carries both the notify setting and the
+        // read marker.
+        final member = accountId == null
+            ? null
+            : await db.getMemberByRoomAndAccount(chatId, accountId);
+
+        // A catch-up backfills days of history, so only what arrived after this
+        // member's read marker is still unread. Reading on another device must
+        // not reopen a badge here.
+        final lastReadAt = member?.lastReadAt?.toUtc();
+
+        for (final newMessage in newMessagesByRoom[chatId] ??
+            const <SnChatMessage>[]) {
+          // Claiming the id here is what makes the bump safe against the socket
+          // path: a live frame for the same message can arrive while this sync
+          // is still in flight, and whichever folds it first takes the count.
+          if (!_summarizedMessageIds.add(newMessage.id)) continue;
+          if (lastReadAt != null &&
+              !newMessage.createdAt.toUtc().isAfter(lastReadAt)) {
+            continue;
+          }
+          if (_countsForNotification(
+            accountId: accountId,
+            member: member,
+            message: newMessage,
+          )) {
+            unread += 1;
+          }
+        }
+      }
+
+      next[chatId] = SnChatSummary(
+        unreadCount: summary.unreadCount + unread,
+        hasUnread: summary.hasUnread || unread > 0,
+        lastMessage: message,
+      );
+      changed = true;
+    }
+
+    if (!changed) return;
+    state = AsyncData(next);
+    ref
+        .read(chatUnreadCountProvider.notifier)
+        .setCount(
+          next.values.fold<int>(0, (sum, item) => sum + item.unreadCount),
+        );
   }
 
   void updateMessageContent(String chatId, SnChatMessage message) {

@@ -976,6 +976,16 @@ class ChatGlobalSyncNotifier extends _$ChatGlobalSyncNotifier {
       // advanced cursor to reduce race-window misses.
       var totalSynced = 0;
       final updatedRoomIds = <String>{};
+
+      // Newest synced message per room, plus the synced messages the client had
+      // not stored before. Both feed the room-list summary once the sync
+      // commits, so a cross-room sync shows up without a rooms sync.
+      final syncedLatestByRoom = <String, SnChatMessage>{};
+      final newMessagesByRoom = <String, List<SnChatMessage>>{};
+
+      // Pages are committed after the whole page is classified, so the store
+      // alone cannot tell a first sight from a repeat inside one run.
+      final countedMessageIds = <String>{};
       var syncCursor = currentSyncTimestamp;
       String? syncCursorMessageId = currentSyncMessageId;
       var eagerRound = 0;
@@ -1079,6 +1089,8 @@ class ChatGlobalSyncNotifier extends _$ChatGlobalSyncNotifier {
               continue;
             }
 
+            final newToStore =
+                await _fetchMessageFromDb(db, msg.id, msg.chatRoomId) == null;
             normalMessages.add(
               LocalChatMessage.fromRemoteMessage(
                 decryptedMsg,
@@ -1087,6 +1099,16 @@ class ChatGlobalSyncNotifier extends _$ChatGlobalSyncNotifier {
             );
             updatedRoomIds.add(msg.chatRoomId);
             roundSynced += 1;
+            final existingLatest = syncedLatestByRoom[msg.chatRoomId];
+            if (existingLatest == null ||
+                msg.createdAt.isAfter(existingLatest.createdAt)) {
+              syncedLatestByRoom[msg.chatRoomId] = decryptedMsg;
+            }
+            if (newToStore && countedMessageIds.add(msg.id)) {
+              newMessagesByRoom.putIfAbsent(msg.chatRoomId, () => []).add(
+                decryptedMsg,
+              );
+            }
           }
 
           if (normalMessages.isNotEmpty) {
@@ -1213,6 +1235,14 @@ class ChatGlobalSyncNotifier extends _$ChatGlobalSyncNotifier {
       ref
           .read(chatSyncHintProvider.notifier)
           .set('chatSyncComplete'.tr(args: ['$totalSynced']));
+      if (syncedLatestByRoom.isNotEmpty) {
+        await ref
+            .read(chatSummaryProvider.notifier)
+            .applySyncedLastMessages(
+              latestByRoom: syncedLatestByRoom,
+              newMessagesByRoom: newMessagesByRoom,
+            );
+      }
       if (updatedRoomIds.isNotEmpty) {
         eventBus.fire(ChatMessagesSyncedEvent(roomIds: updatedRoomIds));
       }
