@@ -45,13 +45,13 @@ const kChainedRowGap = 8.0;
 
 /// The surface one post row floats on.
 ///
-/// Posts own their card: the page ground is `surface`, and a row is a sheet of
-/// lighter paper on top of it — `surfaceContainerLowest` — so the feed reads as
-/// a stack of sheets separated by tone and one gap, never by rules or outlines.
-/// A host only wraps the row (see [PostRowSurface]); the row widget itself
-/// paints nothing.
+/// Posts own their card: the page ground is `surface`, and a row is a sheet a
+/// step lighter — `surfaceContainerLow` — so the feed reads as a stack of
+/// sheets separated by tone and one gap, never by rules or outlines. A host
+/// only wraps the row (see [PostRowSurface]); the row widget itself paints
+/// nothing.
 Color postRowSurfaceColor(BuildContext context) =>
-    Theme.of(context).colorScheme.surfaceContainerLowest;
+    Theme.of(context).colorScheme.surfaceContainerLow;
 
 /// The card chrome of one post row (or of a compact post list).
 ///

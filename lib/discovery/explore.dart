@@ -534,9 +534,9 @@ class _DiscoveryActivityItem extends ConsumerWidget {
             width: 320,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: const BorderRadius.all(
-                Radius.circular(SolRadius.md),
+                Radius.circular(SolRadius.card),
               ),
             ),
             child: Stack(
@@ -839,8 +839,8 @@ class AccountDiscoveryCard extends ConsumerWidget {
     final card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(SolRadius.md),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(SolRadius.card),
       ),
       margin: EdgeInsets.zero,
       child: InkWell(

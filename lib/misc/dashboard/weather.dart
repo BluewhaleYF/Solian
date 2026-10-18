@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
@@ -1329,9 +1330,12 @@ class WeatherCard extends ConsumerWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
+      color: colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

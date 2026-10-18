@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/accounts/utils/account_status_utils.dart';
 import 'package:island/accounts/widgets/account/account_pfc.dart';
 import 'package:island/core/network.dart';
@@ -101,6 +102,11 @@ class FriendsOverviewWidget extends HookConsumerWidget {
 
         final card = Card(
           margin: EdgeInsets.zero,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => showFriendsOverviewSheet(context),
@@ -177,6 +183,12 @@ class FriendsOverviewWidget extends HookConsumerWidget {
       loading: () {
         final card = Card(
           margin: EdgeInsets.zero,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
               Row(

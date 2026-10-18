@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/shared/hooks/material_hooks.dart';
 import 'package:logging/logging.dart';
 
@@ -42,7 +43,7 @@ class PostFeaturedList extends HookConsumerWidget {
     this.collapsable = true,
     this.maxHeight,
     this.emphasizeHeader = true,
-    this.borderRadius = 8,
+    this.borderRadius = SolRadius.card,
     this.flush = false,
   });
 
@@ -240,13 +241,17 @@ class PostFeaturedList extends HookConsumerWidget {
       return Column(mainAxisSize: MainAxisSize.min, children: [header, body]);
     }
 
+    // The section itself is the deepest sheet — `surfaceContainerLowest` — and
+    // the post cards inside it step up to `surfaceContainerLow`, so the section
+    // reads as a well the cards sit in rather than a card inside a card.
     return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh.withOpacity(
-        appSettings.cardTransparency,
+      color: Theme.of(context).colorScheme.surfaceContainerLowest.withValues(
+        alpha: appSettings.cardTransparency,
       ),
       margin: EdgeInsets.zero,
-      // Clip content to the rounded corners without clipping the elevation
-      // shadow; an outer ClipRRect would cut the shadow (visible at the bottom).
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       ),
@@ -363,7 +368,7 @@ class _FeaturedPostCarousel extends HookWidget {
                   enableSplash: false,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(
-                      Radius.circular(SolRadius.md),
+                      Radius.circular(_FeaturedPostCard.radius),
                     ),
                   ),
                   onIndexChanged: onIndexChanged,
@@ -408,23 +413,28 @@ class _FeaturedPostCarousel extends HookWidget {
 }
 
 /// Flat, rounded card wrapping one featured post.
+///
+/// Featured posts sit one tone above the section that contains them, so the
+/// carousel reads as a stack of cards on a well: `surfaceContainerLow` on the
+/// section's `surfaceContainerLowest`. In the flush host (the explore timeline)
+/// the same card lands directly on the page ground, where `Low` still separates
+/// it from `surface`.
 class _FeaturedPostCard extends StatelessWidget {
-  static const double _radius = SolRadius.md;
-
   final SnPost post;
   final bool compact;
+
+  /// Radius of every featured card. The carousel also rounds its own viewport
+  /// with the same value so the page transition clips to the same curve.
+  static const double radius = SolRadius.card;
 
   const _FeaturedPostCard({required this.post, required this.compact});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHigh,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: BorderRadius.circular(_radius),
+      padding: const EdgeInsets.only(bottom: SolSpace.md),
+      child: PostRowSurface(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: SingleChildScrollView(
           child: PostActionableItem(
             item: post,

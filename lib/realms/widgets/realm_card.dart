@@ -39,9 +39,9 @@ class RealmDiscoveryCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      color: Theme.of(context).colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SolRadius.md),
+        borderRadius: BorderRadius.circular(SolRadius.card),
       ),
       child: InkWell(
         onTap: () {

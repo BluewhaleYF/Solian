@@ -36,8 +36,8 @@ class PublisherDiscoveryCard extends ConsumerWidget {
     Widget card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(SolRadius.md),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(SolRadius.card),
       ),
       child: InkWell(
         onTap: () => openPublisherProfile(context, publisher),

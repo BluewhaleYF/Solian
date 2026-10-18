@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/post_featured.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -112,7 +113,21 @@ void main() {
   ) async {
     await pumpFeatured(tester);
 
-    expect(find.byType(Card), findsOneWidget);
+    // The section paints its own card; every featured post floats on a row
+    // surface inside it, one tone above the section.
+    expect(
+      find.ancestor(of: find.byType(CarouselView), matching: find.byType(Card)),
+      findsOneWidget,
+    );
+    // The carousel only builds the page in view.
+    final rows = find.byType(PostRowSurface);
+    expect(rows, findsWidgets);
+    final scheme = Theme.of(
+      tester.element(find.byType(PostFeaturedList)),
+    ).colorScheme;
+    for (final row in tester.widgetList<PostRowSurface>(rows)) {
+      expect(row.color, scheme.surfaceContainerLow);
+    }
     expect(find.byType(CarouselView), findsOneWidget);
     expect(find.byType(PageView), findsNothing);
     expect(find.byIcon(Symbols.arrow_left), findsOneWidget);
@@ -126,7 +141,13 @@ void main() {
   ) async {
     await pumpFeatured(tester, flush: true);
 
-    expect(find.byType(Card), findsNothing);
+    // The host owns the surface, so the section adds no card of its own; the
+    // post rows still carry theirs.
+    expect(
+      find.ancestor(of: find.byType(CarouselView), matching: find.byType(Card)),
+      findsNothing,
+    );
+    expect(find.byType(PostRowSurface), findsWidgets);
     expect(find.byType(CarouselView), findsOneWidget);
     expect(find.byType(PageView), findsNothing);
     expect(find.byIcon(Symbols.arrow_left), findsNothing);

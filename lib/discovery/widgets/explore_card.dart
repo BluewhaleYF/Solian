@@ -20,6 +20,11 @@ const double kDiscoveryWideColumnWidth = 720.0;
 /// suggestion items each own a card. Separation comes from tone and a uniform
 /// gap, never from elevation, so the card always paints flat (the global card
 /// theme also uses elevation 0).
+///
+/// Every top-level card of the timeline — post rows, section bands, the friend
+/// and publisher strips — shares one tone, `surfaceContainerLow`, so the feed
+/// is a single family of sheets. Only cards nested *inside* one of these step
+/// further away (see the discovery cards); a caller can still override [color].
 class ExploreCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -41,7 +46,7 @@ class ExploreCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: color,
+      color: color ?? Theme.of(context).colorScheme.surfaceContainerLow,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       clipBehavior: clipBehavior,

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/accounts/badge.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
@@ -536,6 +537,11 @@ class AccountUnactivatedCard extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

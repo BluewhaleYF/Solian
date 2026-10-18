@@ -786,11 +786,14 @@ class NotificationsCard extends HookConsumerWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderRadius: SolRadius.cardRadius,
         onTap: () {
           showAttentionModal(
             id: 'notifications',
@@ -884,9 +887,12 @@ class ChatListCard extends HookConsumerWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
@@ -971,9 +977,12 @@ class FortuneCard extends HookConsumerWidget {
 
     final child = Card(
       margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: fortuneAsync.when(
         loading: () => Center(
           child: ConfuseSpinner(
@@ -1022,6 +1031,12 @@ class TodayOracleCard extends ConsumerWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      color: theme.colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+      clipBehavior: Clip.antiAlias,
       child: todayResult.when(
         loading: () => Center(
           child: ConfuseSpinner(
@@ -1267,7 +1282,9 @@ class _UnauthorizedCard extends HookConsumerWidget {
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerLow,
+        shape: const RoundedRectangleBorder(borderRadius: SolRadius.cardRadius),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: isWide ? 48 : 32,

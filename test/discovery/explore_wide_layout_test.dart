@@ -385,12 +385,13 @@ void main() {
 
     final featured = find.byType(PostFeaturedList);
     expect(featured, findsOneWidget);
+    // The host owns the section's surface; each featured post still floats on
+    // its own row card inside the strip.
     expect(
-      find.descendant(of: featured, matching: find.byType(Card)),
-      findsNothing,
-      reason: 'the carousel no longer paints a card surface of its own',
+      find.descendant(of: featured, matching: find.byType(PostRowSurface)),
+      findsWidgets,
+      reason: 'featured posts keep their own card',
     );
-    // The section itself floats on a card, though.
     expect(
       find.ancestor(of: featured, matching: find.byType(ExploreCard)),
       findsOneWidget,
