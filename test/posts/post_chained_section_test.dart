@@ -15,11 +15,12 @@ import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-SnPost _post(String id, String content) {
+SnPost _post(String id, String content, {int replies = 0}) {
   return SnPost.fromJson({
     'id': id,
     'type': 0,
     'content': content,
+    'replies_count': replies,
     'chained_posts': const [],
     'publisher': {'id': 'publisher-$id', 'name': 'alice', 'nick': 'Alice'},
     'created_at': '2026-01-01T00:00:00Z',
@@ -34,7 +35,46 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  Future<void> pumpSection(WidgetTester tester, Widget section) async {
+  /// Stands in for `GET /sphere/posts/{id}/replies`, so a reply preview can be
+  /// exercised without a live server.
+  Dio repliesClient(Map<String, List<SnPost>> repliesByPostId) {
+    final dio = Dio(BaseOptions(baseUrl: 'https://chain.test'));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final match = RegExp(
+            r'^/sphere/posts/([^/]+)/replies$',
+          ).firstMatch(options.path);
+          if (match == null) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response(requestOptions: options, statusCode: 404),
+              ),
+            );
+            return;
+          }
+          handler.resolve(
+            Response(
+              requestOptions: options,
+              statusCode: 200,
+              data: [
+                for (final post in repliesByPostId[match.group(1)] ?? [])
+                  post.toJson(),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    return dio;
+  }
+
+  Future<void> pumpSection(
+    WidgetTester tester,
+    Widget section, {
+    Dio? client,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await tester.runAsync(() async {
       await tester.pumpWidget(
@@ -53,7 +93,7 @@ void main() {
                     publishersManagedProvider.overrideWith(
                       (ref) async => <SnPublisher>[],
                     ),
-                    apiClientProvider.overrideWith((ref) => Dio()),
+                    apiClientProvider.overrideWith((ref) => client ?? Dio()),
                   ],
                   child: section,
                 ),
@@ -74,6 +114,62 @@ void main() {
     final head = _post('head', 'root');
     await pumpSection(tester, PostChainedSection(head: head));
     expect(find.text('first', findRichText: true), findsNothing);
+  });
+
+  testWidgets('previews the replies of a chained post with replies', (
+    tester,
+  ) async {
+    final head = SnPost.fromJson({
+      ..._post('head', 'root').toJson(),
+      'chained_posts': [_post('c1', 'first', replies: 2).toJson()],
+    });
+    await pumpSection(
+      tester,
+      PostChainedSection(head: head),
+      client: repliesClient({
+        'c1': [_post('r1', 'chained reply one')],
+      }),
+    );
+
+    expect(find.byType(PostReplyPreview), findsOneWidget);
+    expect(find.text('chained reply one', findRichText: true), findsOneWidget);
+    // The preview box and the "rest hidden" label both carry the count.
+    expect(find.text('2 replies', findRichText: true), findsWidgets);
+  });
+
+  testWidgets('previews the replies of a preceding chain member', (
+    tester,
+  ) async {
+    await pumpSection(
+      tester,
+      PostChainPrecedingSection(posts: [_post('head', 'root', replies: 1)]),
+      client: repliesClient({
+        'head': [_post('r1', 'preceding reply')],
+      }),
+    );
+
+    expect(find.byType(PostReplyPreview), findsOneWidget);
+    expect(find.text('preceding reply', findRichText: true), findsOneWidget);
+    expect(find.text('1 reply', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('shows no reply preview for a chained post without replies', (
+    tester,
+  ) async {
+    final head = SnPost.fromJson({
+      ..._post('head', 'root').toJson(),
+      'chained_posts': [_post('c1', 'first').toJson()],
+    });
+    await pumpSection(
+      tester,
+      PostChainedSection(head: head),
+      client: repliesClient({
+        'c1': [_post('r1', 'unexpected reply')],
+      }),
+    );
+
+    expect(find.byType(PostReplyPreview), findsNothing);
+    expect(find.text('unexpected reply', findRichText: true), findsNothing);
   });
 
   testWidgets('renders each chained post threaded under the head', (
@@ -134,6 +230,50 @@ void main() {
     await tester.tap(find.text('first', findRichText: true));
     await tester.pumpAndSettle();
     expect(tapped, 'c1');
+  });
+
+  testWidgets('keeps the rail continuous across a reply preview', (
+    tester,
+  ) async {
+    // A preview only fits inside the rail because the rail is painted behind
+    // the row rather than stretched through it by `IntrinsicHeight`: the
+    // preview's own `LayoutBuilder` cannot answer intrinsic height.
+    final head = SnPost.fromJson({
+      ..._post('head', 'root').toJson(),
+      'chained_posts': [
+        _post('c1', 'first', replies: 1).toJson(),
+        _post('c2', 'second').toJson(),
+      ],
+    });
+    await pumpSection(
+      tester,
+      PostChainedSection(head: head),
+      client: repliesClient({
+        'c1': [_post('r1', 'reply to first')],
+      }),
+    );
+
+    expect(find.byType(PostReplyPreview), findsOneWidget);
+    expect(find.text('reply to first', findRichText: true), findsOneWidget);
+
+    final lines = find.descendant(
+      of: find.byType(PostChainedSection),
+      matching: find.byWidgetPredicate(
+        (w) => w is SizedBox && w.width == kPostThreadingLineWidth,
+      ),
+    );
+    expect(lines, findsNWidgets(2));
+    // The rail spans the whole preview-carrying row, so the next row starts
+    // exactly where it ends.
+    final first = tester.getRect(lines.at(0));
+    final second = tester.getRect(lines.at(1));
+    expect(second.top, moreOrLessEquals(first.bottom, epsilon: 0.5));
+    expect(second.left, moreOrLessEquals(first.left, epsilon: 0.5));
+    // The rail follows the preview instead of stopping at the avatar.
+    expect(
+      first.bottom,
+      greaterThan(tester.getRect(find.byType(PostReplyPreview)).bottom),
+    );
   });
 
   testWidgets('spaces chained rows apart', (tester) async {

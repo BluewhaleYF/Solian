@@ -113,56 +113,56 @@ class _ChainedPostRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 32,
-            child: Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                // The rail spans the full row height, including the trailing
-                // gap, so consecutive rows stay connected.
-                Positioned(
-                  top: 0,
-                  bottom: isLast ? null : 0,
-                  height: isLast ? 16 : null,
-                  child: SizedBox(
-                    width: kPostThreadingLineWidth,
-                    child: ColoredBox(color: dividerColor),
+    // The rail is painted behind the row instead of stretched through it: a
+    // chained post can carry a reply preview, and that subtree contains a
+    // `LayoutBuilder`, which cannot answer intrinsic height. The row is laid
+    // out first and the rail is then stretched over its final height.
+    return Stack(
+      children: [
+        Positioned(
+          left: 16 - (kPostThreadingLineWidth / 2),
+          top: 0,
+          bottom: isLast ? null : 0,
+          // The last row ends in a stub, so the thread stops at its avatar.
+          height: isLast ? 16 : null,
+          child: SizedBox(
+            width: kPostThreadingLineWidth,
+            child: ColoredBox(color: dividerColor),
+          ),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 32,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PostAvatar(item: post),
+                  if (!isLast) const Gap(kChainedRowGap),
+                ],
+              ),
+            ),
+            const Gap(12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PostActionableItem(
+                    item: post,
+                    isShowReference: false,
+                    padding: EdgeInsets.zero,
+                    hideAvatar: true,
+                    onPostTap: onPostTap,
                   ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PostAvatar(item: post),
-                    if (!isLast) const Gap(kChainedRowGap),
-                  ],
-                ),
-              ],
+                  if (!isLast) const Gap(kChainedRowGap),
+                ],
+              ),
             ),
-          ),
-          const Gap(12),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                PostActionableItem(
-                  item: post,
-                  isShowReference: false,
-                  isEmbedReply: false,
-                  padding: EdgeInsets.zero,
-                  hideAvatar: true,
-                  onPostTap: onPostTap,
-                ),
-                if (!isLast) const Gap(kChainedRowGap),
-              ],
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }
