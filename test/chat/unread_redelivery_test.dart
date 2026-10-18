@@ -9,8 +9,10 @@ import 'package:island/chat/pods/chat_subscribe.dart';
 import 'package:island/chat/pods/chat_summary.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/database.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/notifications/notification.dart';
+import 'package:island/data/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -55,7 +57,77 @@ class _SignedOutUserInfo extends UserInfoNotifier {
   Future<SnAccount?> build() async => null;
 }
 
-Map<String, dynamic> _newMessageFrame(String id, String roomId) {
+/// Signed in as `account-1`, the account the member rows belong to.
+class _SignedInUserInfo extends UserInfoNotifier {
+  _SignedInUserInfo(this._account);
+
+  final SnAccount _account;
+
+  @override
+  Future<SnAccount?> build() async => _account;
+}
+
+final SnAccount _selfAccount = SnAccount(
+  id: 'account-1',
+  name: 'me',
+  nick: 'Me',
+  language: 'en',
+  isSuperuser: false,
+  automatedId: null,
+  profile: SnAccountProfile(
+    id: 'profile-self',
+    experience: 0,
+    level: 1,
+    levelingProgress: 0,
+    picture: null,
+    background: null,
+    verification: null,
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    deletedAt: null,
+  ),
+  perkSubscription: null,
+  activatedAt: null,
+  createdAt: DateTime.utc(2026),
+  updatedAt: DateTime.utc(2026),
+  deletedAt: null,
+);
+
+/// The current account's row in [roomId], carrying the room's notify level.
+SnChatMember _selfMember(String roomId, {required int notify}) {
+  final now = DateTime.utc(2026);
+  return SnChatMember(
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    id: 'self-$roomId',
+    chatRoomId: roomId,
+    chatRoom: null,
+    accountId: 'account-1',
+    account: _selfAccount,
+    nick: null,
+    notify: notify,
+    joinedAt: now,
+    breakUntil: null,
+    timeoutUntil: null,
+    chatGroupId: null,
+    chatGroup: null,
+    lastReadAt: null,
+    status: null,
+    realmNick: null,
+    realmBio: null,
+    realmExperience: null,
+    realmLevel: null,
+    realmLevelingProgress: null,
+    realmLabel: null,
+  );
+}
+
+Map<String, dynamic> _newMessageFrame(
+  String id,
+  String roomId, {
+  List<String> mentions = const [],
+}) {
   final now = DateTime.utc(2026);
   final member = SnChatMember(
     createdAt: now,
@@ -115,6 +187,7 @@ Map<String, dynamic> _newMessageFrame(String id, String roomId) {
       content: 'hello',
       senderId: member.id,
       sender: member,
+      membersMentioned: mentions,
       chatRoomId: roomId,
     ).toJson(),
     '_ack_id': 'ack-$id',
@@ -194,6 +267,100 @@ void main() {
       ws.push(_newMessageFrame('m2', 'room-1'));
       await _settle(
         () => _unread(container.read(chatUnreadCountProvider)) == 2,
+      );
+    });
+  });
+
+  group('ChatUnreadCountNotifier room notify level', () {
+    late ProviderContainer container;
+    late _FakeWebSocketService ws;
+    late AppDatabase database;
+    late ProviderSubscription<AsyncValue<int>> subscription;
+
+    /// Starts the notifier signed in with [member] stored, so the frame's room
+    /// resolves to a notify level.
+    Future<void> pump(SnChatMember member) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      ws = _FakeWebSocketService();
+      database = AppDatabase.web();
+      container = ProviderContainer(
+        retry: (_, _) => null,
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          tokenProvider.overrideWithValue(null),
+          websocketProvider.overrideWithValue(ws),
+          userInfoProvider.overrideWith(
+            () => _SignedInUserInfo(_selfAccount),
+          ),
+          currentSubscribedChatIdProvider.overrideWith(
+            _NoSubscribedRoomNotifier.new,
+          ),
+          apiClientProvider.overrideWithValue(
+            Dio()..httpClientAdapter = _UnreadAdapter('0'),
+          ),
+        ],
+      );
+      addTearDown(() async {
+        subscription.close();
+        container.dispose();
+        await database.close();
+      });
+      await database.saveMember(member);
+      subscription = container.listen(
+        chatUnreadCountProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(chatUnreadCountProvider.future);
+    }
+
+    test('a mentions-only room counts a mention', () async {
+      await pump(_selfMember('room-1', notify: 1));
+
+      ws.push(
+        _newMessageFrame('m1', 'room-1', mentions: const ['account-1']),
+      );
+
+      await _settle(
+        () => _unread(container.read(chatUnreadCountProvider)) == 1,
+      );
+    });
+
+    test('a mentions-only room ignores a plain message', () async {
+      await pump(_selfMember('room-1', notify: 1));
+
+      ws.push(_newMessageFrame('m1', 'room-1'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(_unread(container.read(chatUnreadCountProvider)), 0);
+
+      // A later mention in the same room still raises the badge.
+      ws.push(
+        _newMessageFrame('m2', 'room-1', mentions: const ['account-1']),
+      );
+      await _settle(
+        () => _unread(container.read(chatUnreadCountProvider)) == 1,
+      );
+    });
+
+    test('a muted room never counts', () async {
+      await pump(_selfMember('room-1', notify: 2));
+
+      ws.push(
+        _newMessageFrame('m1', 'room-1', mentions: const ['account-1']),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(_unread(container.read(chatUnreadCountProvider)), 0);
+    });
+
+    test('an all-messages room counts every message', () async {
+      await pump(_selfMember('room-1', notify: 0));
+
+      ws.push(_newMessageFrame('m1', 'room-1'));
+
+      await _settle(
+        () => _unread(container.read(chatUnreadCountProvider)) == 1,
       );
     });
   });

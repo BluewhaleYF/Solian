@@ -11,6 +11,24 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 part 'chat_summary.g.dart';
 
+/// Whether [message] should raise an unread count for the current account,
+/// given the member row that carries the room's notify setting. Both the
+/// per-room summary and the global badge go through this so they never
+/// disagree: a mentions-only room contributes only its mentions, and a muted
+/// room contributes nothing.
+bool _countsForNotification({
+  required String? accountId,
+  required SnChatMember? member,
+  required SnChatMessage message,
+}) {
+  if (accountId == null || member == null) return true;
+  return switch (member.notify) {
+    0 => true,
+    1 => message.membersMentioned.contains(accountId),
+    _ => false,
+  };
+}
+
 @riverpod
 class ChatUnreadCountNotifier extends _$ChatUnreadCountNotifier {
   StreamSubscription<WebSocketPacket>? _subscription;
@@ -52,15 +70,41 @@ class ChatUnreadCountNotifier extends _$ChatUnreadCountNotifier {
         if (!_countedMessageIds.add(message.id)) return;
         final currentSubscribed = ref.read(currentSubscribedChatIdProvider);
         // Only increment if the message is not from the currently subscribed chat
-        if (message.chatRoomId != currentSubscribed) {
-          _incrementCounter();
-        }
+        if (message.chatRoomId == currentSubscribed) return;
+        unawaited(_countIfNotifiable(message));
       }
     });
   }
 
+  /// Raises the badge for [message] only when the room's notify level lets it
+  /// through: a mentions-only room contributes just its mentions, and a muted
+  /// room contributes nothing. Without this the badge would disagree with the
+  /// per-room summary, which already applies the same setting.
+  Future<void> _countIfNotifiable(SnChatMessage message) async {
+    // The notify setting lives on the member row, which is keyed by account.
+    // Resolve the signed-in account first: reading it mid-load would see no
+    // account and fall through to counting every message.
+    final accountId = (await ref.read(userInfoProvider.future))?.id;
+    if (!ref.mounted) return;
+    final member = accountId == null
+        ? null
+        : await ref
+              .read(databaseProvider)
+              .getMemberByRoomAndAccount(message.chatRoomId, accountId);
+    if (!ref.mounted) return;
+    if (!_countsForNotification(
+      accountId: accountId,
+      member: member,
+      message: message,
+    )) {
+      return;
+    }
+    await _incrementCounter();
+  }
+
   Future<void> _incrementCounter() async {
     final current = await future;
+    if (!ref.mounted) return;
     state = AsyncData(current + 1);
   }
 
@@ -237,21 +281,6 @@ class ChatSummary extends _$ChatSummary {
       });
       ref.read(chatUnreadCountProvider.notifier).clear();
     });
-  }
-
-  /// Whether [message] should raise an unread count for the current account,
-  /// given the member row that carries the room's notify setting.
-  bool _countsForNotification({
-    required String? accountId,
-    required SnChatMember? member,
-    required SnChatMessage message,
-  }) {
-    if (accountId == null || member == null) return true;
-    return switch (member.notify) {
-      0 => true,
-      1 => message.membersMentioned.contains(accountId),
-      _ => false,
-    };
   }
 
   Future<bool> _shouldCountMessage(String chatId, SnChatMessage message) async {
