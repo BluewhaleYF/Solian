@@ -11,7 +11,6 @@ import 'package:island/posts/widgets/compose/compose_location_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_meet_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_survey.dart';
 import 'package:island/posts/widgets/compose/compose_recorder.dart';
-import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:dio/dio.dart';
@@ -1767,7 +1766,8 @@ class ComposeLogic {
       final client = ref.read(solarNetworkClientProvider);
       final serverPostId = serverBackedPostId(originalPost);
       final isNewPost = serverPostId == null;
-      final endpoint = '/sphere${isNewPost ? '/posts' : '/posts/$serverPostId'}';
+      final endpoint =
+          '/sphere${isNewPost ? '/posts' : '/posts/$serverPostId'}';
 
       // Create request payload
       final payload = {
@@ -2354,15 +2354,6 @@ class ComposeLogic {
           Navigator.of(context).maybePop(true);
         }
       },
-    );
-  }
-
-  /// Shows the settings sheet modal.
-  static void showSettingsSheet(BuildContext context, ComposeState state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => ComposeSettingsSheet(state: state),
     );
   }
 

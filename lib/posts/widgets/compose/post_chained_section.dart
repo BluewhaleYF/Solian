@@ -67,8 +67,7 @@ class _PostChainedSectionState extends State<PostChainedSection> {
     if (children.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
 
-    final hiddenCount =
-        children.length > PostChainedSection.collapseThreshold
+    final hiddenCount = children.length > PostChainedSection.collapseThreshold
         ? children.length - PostChainedSection.collapseThreshold
         : 0;
     final collapsed = hiddenCount > 0 && !_expanded;

@@ -1093,17 +1093,34 @@ class CreatorHubScreen extends HookConsumerWidget {
                     child: ClipRRect(
                       borderRadius: const BorderRadius.all(Radius.circular(8)),
                       child: const CreatorHubContentWidget(),
-                    ).padding(left: 16, top: 16),
+                    ).padding(left: 16),
                   ),
                   const Gap(8),
                   Flexible(
                     flex: 3,
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
+                        topLeft: Radius.circular(SolRadius.card),
+                        topRight: Radius.circular(SolRadius.card),
                       ),
-                      child: const AutoRouter(),
-                    ).padding(top: 16),
+                      child: AutoRouter(
+                        builder: (context, child) {
+                          return Card(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLowest,
+                            margin: .zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(SolRadius.card),
+                                topRight: Radius.circular(SolRadius.card),
+                              ),
+                            ),
+                            child: child,
+                          );
+                        },
+                      ).padding(top: 16),
+                    ),
                   ),
                 ],
               ),

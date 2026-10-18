@@ -14,7 +14,6 @@ import 'package:island/posts/compose_storage_db.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
-import 'package:island/posts/widgets/compose/compose_schedule.dart';
 import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:island/posts/widgets/compose/publishers_modal.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
@@ -244,19 +243,7 @@ class BlogComposeDialog extends HookConsumerWidget {
 
     ComposeStateUtils.usePublisherInitialization(ref, state);
 
-    void showSettingsSheet() {
-      showAttentionModal(
-        id: 'blog-compose-settings',
-        replaceIfExists: true,
-        barrierDismissible: true,
-        builder: (context, dismiss) => AttentionModalScaffold(
-          titleText: 'postSettings'.tr(),
-          onDismiss: dismiss,
-          forceCard: true,
-          child: ComposeSettingsSheet(state: state),
-        ),
-      );
-    }
+    void showSettingsSheet() => showComposeSettingsSheet(context, state);
 
     Future<void> performSubmit() async {
       final url = state.contentController.text.trim();
@@ -329,7 +316,6 @@ class BlogComposeDialog extends HookConsumerWidget {
             onPressed: showSettingsSheet,
             tooltip: 'settings'.tr(),
           ),
-          ComposeScheduleButton(state: state),
           ValueListenableBuilder<bool>(
             valueListenable: state.submitting,
             builder: (context, submitting, _) {

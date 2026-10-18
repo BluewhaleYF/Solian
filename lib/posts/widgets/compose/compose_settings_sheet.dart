@@ -8,30 +8,28 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/creators/screens/posts/post_collections_manage.dart';
 import 'package:island/posts/pods/post_categories.dart';
+import 'package:island/posts/widgets/compose/compose_schedule.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
 import 'package:island/realms/screens/realms.dart';
 import 'package:island/core/network.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/shared/widgets/typeahead_enter_handler.dart';
-import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
+import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:island/core/theme.dart';
 
+/// The settings body of a composer: slug, tags, publish time, categories,
+/// collections, language, realm and visibility.
+///
+/// Only the content: [showComposeSettingsSheet] supplies the modal chrome, and
+/// the article sidebar embeds the same body in its settings tab.
 class ComposeSettingsSheet extends HookConsumerWidget {
   final ComposeState state;
 
-  /// When true, the sheet fills the height given by its parent (used when
-  /// embedded in the article sidebar panel) instead of capping at the modal
-  /// sheet height factor.
-  final bool fillAvailableHeight;
-
-  const ComposeSettingsSheet({
-    super.key,
-    required this.state,
-    this.fillAvailableHeight = false,
-  });
+  const ComposeSettingsSheet({super.key, required this.state});
 
   Future<List<SnPostTag>> _fetchTagSuggestions(
     String query,
@@ -125,20 +123,18 @@ class ComposeSettingsSheet extends HookConsumerWidget {
           ),
 
           // Tags field
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: SolRadius.cardRadius,
+          InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'tags'.tr(),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: SolSpace.lg,
+                vertical: SolSpace.md,
+              ),
             ),
-            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 12,
               children: [
-                Text(
-                  'tags'.tr(),
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
                 // Existing tags display
                 if (currentTags.isNotEmpty)
                   Wrap(
@@ -243,6 +239,9 @@ class ComposeSettingsSheet extends HookConsumerWidget {
             ),
           ),
 
+          // Publish time field
+          ComposeScheduleField(state: state),
+
           // Categories field
           DropdownButtonFormField2<SnPostCategory>(
             isExpanded: true,
@@ -262,7 +261,9 @@ class ComposeSettingsSheet extends HookConsumerWidget {
                 child: StatefulBuilder(
                   builder: (context, menuSetState) {
                     final isSelected = state.categories.value.contains(item);
-                    return InkWell(
+                    // dropdown_button2 prints its menu items on a legacy
+                    // `Material`; the fork's InkWell cannot see it.
+                    return legacy_material.InkWell(
                       onTap: () {
                         isSelected
                             ? state.categories.value = state.categories.value
@@ -360,19 +361,20 @@ class ComposeSettingsSheet extends HookConsumerWidget {
                   enabled: false,
                   child: StatefulBuilder(
                     builder: (context, menuSetState) {
-                      final isSelected = currentCollectionIds.contains(item.id);
-                      return InkWell(
+                      // Read the notifier, not the sheet's snapshot: the menu
+                      // route captured these item widgets when it opened, so
+                      // the snapshot stays frozen while the menu is up — the
+                      // box never ticks and every tap adds the same
+                      // collection again.
+                      final isSelected = state.collectionIds.value.contains(
+                        item.id,
+                      );
+                      return legacy_material.InkWell(
                         onTap: () {
-                          isSelected
-                              ? state.collectionIds.value = state
-                                    .collectionIds
-                                    .value
-                                    .where((e) => e != item.id)
-                                    .toList()
-                              : state.collectionIds.value = [
-                                  ...state.collectionIds.value,
-                                  item.id,
-                                ];
+                          final selected = state.collectionIds.value;
+                          state.collectionIds.value = isSelected
+                              ? selected.where((e) => e != item.id).toList()
+                              : [...selected, item.id];
                           menuSetState(() {});
                         },
                         child: Container(
@@ -753,11 +755,26 @@ class ComposeSettingsSheet extends HookConsumerWidget {
         ],
       ),
     );
-
-    if (fillAvailableHeight) {
-      return body;
-    }
-
-    return SheetScaffold(heightFactor: 0.6, showHeader: false, child: body);
+    return body;
   }
+}
+
+/// Identifier of the settings attention modal, so a sheet opened by
+/// [showComposeSettingsSheet] can dismiss itself.
+const String kComposeSettingsModalId = 'compose-settings';
+
+/// Shows the settings sheet as an attention modal, so it reads as the same
+/// surface as the composer's other modals instead of a bottom sheet.
+void showComposeSettingsSheet(BuildContext context, ComposeState state) {
+  showAttentionModal(
+    id: kComposeSettingsModalId,
+    replaceIfExists: true,
+    barrierDismissible: true,
+    builder: (context, dismiss) => AttentionModalScaffold(
+      titleText: 'postSettings'.tr(),
+      onDismiss: dismiss,
+      forceCard: true,
+      child: ComposeSettingsSheet(state: state),
+    ),
+  );
 }

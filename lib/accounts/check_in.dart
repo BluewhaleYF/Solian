@@ -97,6 +97,7 @@ class CheckInWidget extends ConsumerWidget {
 
     return Card(
       elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       margin: margin ?? const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [

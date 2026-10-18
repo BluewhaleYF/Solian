@@ -1824,6 +1824,7 @@
   "settingsCategoryGeneral": "通用",
   "settingsCategoryLanguage": "言語",
   "settingsCategoryMessages": "訊息",
+  "settingsCategoryNavigation": "Navigation",
   "settingsCategoryNotifications": "通知",
   "settingsCategorySpeech": "言語",
   "settingsChatRoomStorage": "Chat Room Storage",
@@ -2640,6 +2641,7 @@
   "currentPost": "Current post",
   "customize": "Customize",
   "customizeNavigation": "Customize Navigation",
+  "customizeNavigationHelper": "Choose which destinations the bottom bar and the navigation rail show, and in what order.",
   "dashboardAvailableCards": "Available Cards",
   "dashboardCardActivityColumn": "Activity Column",
   "dashboardCardActivityColumnDescription": "Check In, Fortune Graph & Fortune",
@@ -5283,5 +5285,15 @@
   "aboutScreenFailedToLoadDeviceInfo": "載機訊敗：{}",
   "boostedBy": "{} 所助",
   "settingsDesktopUseSeparateCallWindow": "別窗開話",
-  "settingsOutgoingCallKit": "發話用 CallKit"
+  "settingsOutgoingCallKit": "發話用 CallKit",
+  "updateInstalledVersion": "已安裝",
+  "updateChannelLabel": "{} 通道",
+  "updateDownloadSize": "下載 {}",
+  "updateDownloadingInstaller": "正在下載安裝程式…",
+  "updateExtractingInstaller": "正在解壓縮安裝程式…",
+  "updateInstallingAppImage": "正在安裝 AppImage…",
+  "updateInstalling": "正在安裝更新",
+  "updateComplete": "更新完成",
+  "updateFailed": "更新失敗",
+  "updateFailedHint": "無法安裝更新。請重試，或前往發佈頁面下載最新版本。"
 }

@@ -1214,6 +1214,7 @@
   "customReactions": "Custom Reactions",
   "customize": "Customize",
   "customizeNavigation": "Customize Navigation",
+  "customizeNavigationHelper": "Choose which destinations the bottom bar and the navigation rail show, and in what order.",
   "daily": "Daily",
   "dashboard": "Dashboard",
   "dashboardAvailableCards": "Available Cards",
@@ -3473,6 +3474,7 @@
   "settingsCategoryGeneral": "General",
   "settingsCategoryLanguage": "Language",
   "settingsCategoryMessages": "Messages",
+  "settingsCategoryNavigation": "Navigation",
   "settingsCategoryNotifications": "Notifications",
   "settingsCategoryPlugins": "Plugins",
   "settingsCategorySpeech": "Speech",
@@ -5722,5 +5724,15 @@
   "settingsChatGroupsDesc": "Manage your chat room groups",
   "pinRoom": "Pin Room",
   "unpinRoom": "Unpin Room",
-  "moveToGroup": "Move To Group"
+  "moveToGroup": "Move To Group",
+  "updateInstalledVersion": "Installed",
+  "updateChannelLabel": "{} channel",
+  "updateDownloadSize": "{} download",
+  "updateDownloadingInstaller": "Downloading installer…",
+  "updateExtractingInstaller": "Extracting installer…",
+  "updateInstallingAppImage": "Installing AppImage…",
+  "updateInstalling": "Installing update",
+  "updateComplete": "Update complete",
+  "updateFailed": "Update failed",
+  "updateFailedHint": "The update could not be installed. Try again, or download the latest release from the release page."
 }

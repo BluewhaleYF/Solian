@@ -10,7 +10,7 @@ import 'package:island/posts/compose.dart';
 import 'package:island/posts/compose_storage_db.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/compose_card.dart';
-import 'package:island/posts/widgets/compose/compose_schedule.dart';
+import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
 import 'package:island/posts/widgets/compose/compose_shared.dart';
 import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:island/route.gr.dart';
@@ -226,10 +226,9 @@ class PostComposeScreen extends HookConsumerWidget {
       ),
       IconButton(
         icon: const Icon(Symbols.settings),
-        onPressed: () => ComposeLogic.showSettingsSheet(context, state),
+        onPressed: () => showComposeSettingsSheet(context, state),
         tooltip: 'postSettings'.tr(),
       ),
-      ComposeScheduleButton(state: state),
       ValueListenableBuilder<bool>(
         valueListenable: state.submitting,
         builder: (context, submitting, _) {

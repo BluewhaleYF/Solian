@@ -976,12 +976,13 @@ class PostReplyPreview extends HookConsumerWidget {
     final contentWidget = isCompact
         ? itemBuilder(itemMaxWidth ?? MediaQuery.of(context).size.width)
         : Container(
+            constraints: const BoxConstraints(minWidth: .infinity),
             padding: const EdgeInsets.symmetric(
               horizontal: SolSpace.lg,
               vertical: SolSpace.md,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: SolRadius.cardRadius,
             ),
             child: LayoutBuilder(

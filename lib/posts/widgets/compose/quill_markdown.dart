@@ -181,7 +181,6 @@ List<Line> _documentLines(Document document) {
 /// [Line.toPlainText] keeps the terminating newline, so compare the content.
 bool _isEmptyLine(Line line) => line.toPlainText().trim().isEmpty;
 
-
 /// Matches markdown block markers at the start of a line (optionally
 /// indented up to 3 spaces, beyond which markdown treats content as code).
 final RegExp _lineStartBlockMarker = RegExp(r'^\s{0,3}([-+>#])');
@@ -200,7 +199,8 @@ final RegExp _lineStartOrderedList = RegExp(r'^\s{0,3}\d+\.');
 /// - Code runs (inline or block) are written verbatim.
 void _escapeMarkdownSpecial(QuillText text, StringSink out) {
   final style = text.style;
-  final isCode = style.containsKey(Attribute.codeBlock.key) ||
+  final isCode =
+      style.containsKey(Attribute.codeBlock.key) ||
       style.containsKey(Attribute.inlineCode.key) ||
       (text.parent?.style.containsKey(Attribute.codeBlock.key) ?? false);
   if (isCode) {

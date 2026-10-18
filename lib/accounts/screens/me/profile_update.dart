@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/widgets/content/image_picker_editor.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -608,11 +609,11 @@ class AccountUpdateProfileScreen extends HookConsumerWidget {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(SolRadius.control),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHigh
+                            .withValues(alpha: 0.7),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -620,7 +621,9 @@ class AccountUpdateProfileScreen extends HookConsumerWidget {
                           Text(
                             'birthday'.tr(),
                             style: TextStyle(
-                              color: Theme.of(context).hintColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           Text(
@@ -641,12 +644,12 @@ class AccountUpdateProfileScreen extends HookConsumerWidget {
                     children: [
                       // Preview section
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
+                          ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(SolRadius.control),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

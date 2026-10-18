@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:material_ui/material_ui.dart' as mui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -208,7 +209,7 @@ void main() {
     expect(adapter.requests.any((r) => r.path.endsWith('/publish')), isFalse);
   });
 
-  testWidgets('schedule button and banner reflect the chosen time', (
+  testWidgets('schedule field reflects and clears the chosen time', (
     tester,
   ) async {
     final prefs = await SharedPreferences.getInstance();
@@ -229,11 +230,9 @@ void main() {
               supportedLocales: const [Locale('en', 'US')],
               localizationsDelegates: context.localizationDelegates,
               home: Scaffold(
-                body: Column(
-                  children: [
-                    ComposeScheduleButton(state: state),
-                    ComposeScheduledBanner(state: state),
-                  ],
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ComposeScheduleField(state: state),
                 ),
               ),
             ),
@@ -246,22 +245,32 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Unset: the field advertises the label and offers to set a time.
+    expect(find.text('Schedule'), findsOneWidget);
+    expect(find.text('Not set'), findsOneWidget);
     expect(find.text('Publish now'), findsNothing);
 
     state.scheduledAt.value = DateTime.now().add(const Duration(hours: 2));
     await tester.pump();
 
-    for (final w in tester.widgetList<Text>(find.byType(Text))) {
-      // ignore: avoid_print
-      print('TEXT: ${w.data}');
-    }
+    expect(find.text('Not set'), findsNothing);
     expect(find.textContaining('Scheduled for'), findsOneWidget);
     expect(find.text('Publish now'), findsOneWidget);
+
+    // The field fills its decorated background, like the other Island fields.
+    final decorator = tester.widget<mui.InputDecorator>(
+      find.descendant(
+        of: find.byType(ComposeScheduleField),
+        matching: find.byType(mui.InputDecorator),
+      ),
+    );
+    expect(decorator.isEmpty, isFalse);
 
     await tester.tap(find.text('Publish now'));
     await tester.pump();
 
     expect(state.scheduledAt.value, isNull);
+    expect(find.text('Not set'), findsOneWidget);
     expect(find.text('Publish now'), findsNothing);
   });
 

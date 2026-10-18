@@ -133,9 +133,11 @@ class PostRepliesSheet extends HookConsumerWidget {
                 postId: query.postId,
                 order: query.order,
                 orderDesc: query.orderDesc,
-                onOpen: onClose ?? () {
-                  Navigator.pop(context);
-                },
+                onOpen:
+                    onClose ??
+                    () {
+                      Navigator.pop(context);
+                    },
               ),
               SliverGap(80),
             ],

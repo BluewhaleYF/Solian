@@ -1201,6 +1201,7 @@
   "customReactions": "自定义反应",
   "customize": "自定义",
   "customizeNavigation": "自定义导航",
+  "customizeNavigationHelper": "选择底部导航栏和侧边导航显示的入口及其顺序。",
   "daily": "每日",
   "dashboard": "仪表板",
   "dashboardAvailableCards": "可用卡片",
@@ -3449,6 +3450,7 @@
   "settingsCategoryGeneral": "通用",
   "settingsCategoryLanguage": "语言",
   "settingsCategoryMessages": "消息",
+  "settingsCategoryNavigation": "导航",
   "settingsCategoryNotifications": "通知",
   "settingsCategoryPlugins": "插件",
   "settingsCategorySpeech": "语音",
@@ -5722,5 +5724,15 @@
   "clearChatLocalDataHint": "这将从此设备中移除该聊天室、其消息以及缓存的发送者。同步时该聊天室将重新下载。是否继续？",
   "pinRoom": "置顶",
   "unpinRoom": "取消置顶",
-  "moveToGroup": "移动到组"
+  "moveToGroup": "移动到组",
+  "updateInstalledVersion": "已安装",
+  "updateChannelLabel": "{} 通道",
+  "updateDownloadSize": "下载 {}",
+  "updateDownloadingInstaller": "正在下载安装程序…",
+  "updateExtractingInstaller": "正在解压安装程序…",
+  "updateInstallingAppImage": "正在安装 AppImage…",
+  "updateInstalling": "正在安装更新",
+  "updateComplete": "更新完成",
+  "updateFailed": "更新失败",
+  "updateFailedHint": "无法安装更新。请重试，或前往发布页面下载最新版本。"
 }

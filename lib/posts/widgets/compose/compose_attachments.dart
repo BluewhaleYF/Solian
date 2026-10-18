@@ -93,7 +93,8 @@ class ComposeAttachments extends ConsumerWidget {
           );
         }
       },
-      onCancelUpload: () => ComposeLogic.cancelAttachmentUpload(ref, state, idx),
+      onCancelUpload: () =>
+          ComposeLogic.cancelAttachmentUpload(ref, state, idx),
       onDelete: () => ComposeLogic.deleteAttachment(ref, state, idx),
       onUpdate: (value) =>
           ComposeLogic.updateAttachment(ref, state, value, idx),

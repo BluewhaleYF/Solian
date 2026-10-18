@@ -245,7 +245,7 @@ class PostFeaturedList extends HookConsumerWidget {
     // the post cards inside it step up to `surfaceContainerLow`, so the section
     // reads as a well the cards sit in rather than a card inside a card.
     return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerLowest.withValues(
+      color: Theme.of(context).colorScheme.surfaceContainerLow.withValues(
         alpha: appSettings.cardTransparency,
       ),
       margin: EdgeInsets.zero,

@@ -257,7 +257,57 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('long-pressing Explore in the drawer opens its entrance sheet', (
+  testWidgets('the menu expands the rail instead of opening a drawer', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    // A rail the user trimmed to two entries: the drawer's job here is to
+    // reach what the collapsed rail dropped.
+    await _pumpApp(tester, const {
+      'app_dashboard_enabled': false,
+      'app_rail_nav_layouts': '["explore","chat"]',
+    });
+
+    NavigationRail rail() =>
+        tester.widget<NavigationRail>(find.byType(NavigationRail));
+    expect(rail().destinations.length, 2);
+    expect(rail().extended, isFalse);
+    // The wide layout carries no drawer at all.
+    expect(find.byType(Drawer), findsNothing);
+    expect(find.byType(NavigationDrawer), findsNothing);
+
+    await tester.tap(find.byIcon(Symbols.menu_rounded).first);
+    await tester.pumpAndSettle();
+
+    // Expanded: the whole reachable set, in rail order with the rest behind.
+    expect(rail().extended, isTrue);
+    expect(rail().destinations.length, 7);
+    expect(find.byType(Drawer), findsNothing);
+
+    // A destination only the expanded rail offers is selectable, and picking
+    // one navigates and collapses the rail.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text('Wallet'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(_router.currentPath, '/wallet');
+    expect(rail().extended, isFalse);
+    expect(rail().destinations.length, 2);
+
+    await _teardown(tester);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('long-pressing Explore in the expanded rail opens its entrance sheet', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
@@ -266,24 +316,56 @@ void main() {
     addTearDown(tester.view.reset);
 
     await _pumpApp(tester, const {'app_dashboard_enabled': false});
-    expect(find.byType(NavigationRail), findsOneWidget);
-
     await tester.tap(find.byIcon(Symbols.menu_rounded).first);
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationDrawer), findsOneWidget);
+    expect(
+      tester.widget<NavigationRail>(find.byType(NavigationRail)).extended,
+      isTrue,
+    );
 
-    final drawerExplore = find.descendant(
-      of: find.byType(NavigationDrawer),
+    final railExplore = find.descendant(
+      of: find.byType(NavigationRail),
       matching: find.text('Explore'),
     );
-    expect(drawerExplore, findsOneWidget);
-    await tester.longPress(drawerExplore);
+    expect(railExplore, findsOneWidget);
+    await tester.longPress(railExplore);
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Symbols.category), findsOneWidget);
     expect(find.byIcon(Symbols.shuffle), findsOneWidget);
     expect(find.byIcon(Symbols.footprint), findsOneWidget);
     expect(find.byIcon(Symbols.drafts), findsOneWidget);
+
+    await _teardown(tester);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('the menu still opens the drawer on a narrow layout', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpApp(tester, const {'app_dashboard_enabled': false});
+    expect(find.byType(NavigationRail), findsNothing);
+
+    await tester.tap(find.byIcon(Symbols.menu_rounded).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationDrawer), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationDrawer),
+        matching: find.text('Wallet'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(_router.currentPath, '/wallet');
+    expect(find.byType(NavigationDrawer), findsNothing);
 
     await _teardown(tester);
     debugDefaultTargetPlatformOverride = null;

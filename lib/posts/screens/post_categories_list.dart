@@ -118,9 +118,7 @@ class _TagsTab extends ConsumerWidget {
             child: ListTile(
               title: Text(tag.name ?? '#${tag.slug}'),
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              leading: Icon(
-                tag.isProtected ? Symbols.lock : Symbols.label,
-              ),
+              leading: Icon(tag.isProtected ? Symbols.lock : Symbols.label),
               trailing: const Icon(Symbols.chevron_right),
               subtitle: Text('postCount'.plural(tag.usage)),
               onTap: () {

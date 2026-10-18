@@ -36,7 +36,9 @@ import 'package:island/chat/widgets/room_app_bar.dart';
 import 'package:island/chat/widgets/room_message_list.dart';
 import 'package:island/chat/widgets/room_selection_mode.dart';
 import 'package:island/chat/messages_notifier.dart';
+import 'package:gap/gap.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/lifecycle.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/event_bus.dart';
@@ -44,6 +46,7 @@ import 'package:island/core/services/ios_share_suggestions.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/core/services/analytics_service.dart';
 import 'package:island/data/message.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/route.gr.dart';
 
 import 'package:island/shared/widgets/alert.dart';
@@ -51,7 +54,6 @@ import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/attachment_uploader.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/response.dart';
-import 'package:island/shared/widgets/sync_indicator.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -274,10 +276,15 @@ class ChatRoomScreen extends HookConsumerWidget {
 
     if (chatIdentity.isLoading || chatRoom.isLoading) {
       return AppScaffold(
-        appBar: AppBar(leading: const _ChatRoomLeading()),
+        appBarOverContent: true,
+        appBar: _RoomPillAppBar(
+          roomId: id,
+          statusTop: MediaQuery.paddingOf(context).top,
+          room: chatRoom.value,
+        ),
         body: Column(
           children: [
-            const ChatSyncIndicator(),
+            _roomHeaderBand(context),
             Expanded(
               child: Center(
                 child: ConfuseSpinner(
@@ -308,26 +315,37 @@ class ChatRoomScreen extends HookConsumerWidget {
               .firstOrNull;
           if (blockedDirectMember != null) {
             return AppScaffold(
-              appBar: AppBar(leading: const _ChatRoomLeading()),
-              body: Center(
-                child: FilledButton.tonalIcon(
-                  onPressed: () async {
-                    try {
-                      showLoadingModal(context);
-                      final client = ref.read(solarNetworkClientProvider);
-                      await client.chat.unblockDirectChat(room.id);
-                      ref.invalidate(chatRoomJoinedProvider);
-                      ref.invalidate(chatRoomProvider(id));
-                      ref.invalidate(chatRoomIdentityProvider(id));
-                    } catch (err) {
-                      showErrorAlert(err);
-                    } finally {
-                      if (context.mounted) hideLoadingModal(context);
-                    }
-                  },
-                  label: Text('chatJoin').tr(),
-                  icon: const Icon(Icons.add),
-                ),
+              appBarOverContent: true,
+              appBar: _RoomPillAppBar(
+                roomId: id,
+                statusTop: MediaQuery.paddingOf(context).top,
+              ),
+              body: Column(
+                children: [
+                  _roomHeaderBand(context),
+                  Expanded(
+                    child: Center(
+                      child: FilledButton.tonalIcon(
+                        onPressed: () async {
+                          try {
+                            showLoadingModal(context);
+                            final client = ref.read(solarNetworkClientProvider);
+                            await client.chat.unblockDirectChat(room.id);
+                            ref.invalidate(chatRoomJoinedProvider);
+                            ref.invalidate(chatRoomProvider(id));
+                            ref.invalidate(chatRoomIdentityProvider(id));
+                          } catch (err) {
+                            showErrorAlert(err);
+                          } finally {
+                            if (context.mounted) hideLoadingModal(context);
+                          }
+                        },
+                        label: Text('chatJoin').tr(),
+                        icon: const Icon(Icons.add),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -335,72 +353,109 @@ class ChatRoomScreen extends HookConsumerWidget {
             return PublicRoomPreview(id: id, room: room);
           } else {
             return AppScaffold(
-              appBar: AppBar(leading: const _ChatRoomLeading()),
-              body: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        room.isCommunity == true
-                            ? Icons.person_add
-                            : Icons.person_remove,
-                        size: 36,
-                        fill: 1,
-                      ).padding(bottom: 4),
-                      Text('chatNotJoined').tr(),
-                      if (room.isCommunity != true)
-                        Text(
-                          'chatUnableJoin',
-                          textAlign: TextAlign.center,
-                        ).tr().bold()
-                      else
-                        FilledButton.tonalIcon(
-                          onPressed: () async {
-                            try {
-                              showLoadingModal(context);
-                              final apiClient = ref.read(apiClientProvider);
-                              await apiClient.post(
-                                '/messager/chat/${room.id}/members/me',
-                              );
-                              ref.invalidate(chatRoomIdentityProvider(id));
-                            } catch (err) {
-                              showErrorAlert(err);
-                            } finally {
-                              if (context.mounted) {
-                                hideLoadingModal(context);
-                              }
-                            }
-                          },
-                          label: Text('chatJoin').tr(),
-                          icon: const Icon(Icons.add),
-                        ).padding(top: 8),
-                    ],
+              appBarOverContent: true,
+              appBar: _RoomPillAppBar(
+                roomId: id,
+                statusTop: MediaQuery.paddingOf(context).top,
+              ),
+              body: Column(
+                children: [
+                  _roomHeaderBand(context),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              room.isCommunity == true
+                                  ? Icons.person_add
+                                  : Icons.person_remove,
+                              size: 36,
+                              fill: 1,
+                            ).padding(bottom: 4),
+                            Text('chatNotJoined').tr(),
+                            if (room.isCommunity != true)
+                              Text(
+                                'chatUnableJoin',
+                                textAlign: TextAlign.center,
+                              ).tr().bold()
+                            else
+                              FilledButton.tonalIcon(
+                                onPressed: () async {
+                                  try {
+                                    showLoadingModal(context);
+                                    final apiClient = ref.read(
+                                      apiClientProvider,
+                                    );
+                                    await apiClient.post(
+                                      '/messager/chat/${room.id}/members/me',
+                                    );
+                                    ref.invalidate(
+                                      chatRoomIdentityProvider(id),
+                                    );
+                                  } catch (err) {
+                                    showErrorAlert(err);
+                                  } finally {
+                                    if (context.mounted) {
+                                      hideLoadingModal(context);
+                                    }
+                                  }
+                                },
+                                label: Text('chatJoin').tr(),
+                                icon: const Icon(Icons.add),
+                              ).padding(top: 8),
+                          ],
+                        ),
+                      ).center(),
+                    ),
                   ),
-                ).center(),
+                ],
               ),
             );
           }
         },
         loading: () => AppScaffold(
-          appBar: AppBar(leading: const _ChatRoomLeading()),
-          body: Center(
-            child: ConfuseSpinner(
-              size: 40,
-              speed: 6,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant.withOpacity(0.65),
-            ),
+          appBarOverContent: true,
+          appBar: _RoomPillAppBar(
+            roomId: id,
+            statusTop: MediaQuery.paddingOf(context).top,
+          ),
+          body: Column(
+            children: [
+              _roomHeaderBand(context),
+              Expanded(
+                child: Center(
+                  child: ConfuseSpinner(
+                    size: 40,
+                    speed: 6,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withOpacity(0.65),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         error: (error, _) => AppScaffold(
-          appBar: AppBar(leading: const _ChatRoomLeading()),
-          body: ResponseErrorWidget(
-            error: error,
-            onRetry: () => ref.refresh(chatRoomProvider(id)),
+          appBarOverContent: true,
+          appBar: _RoomPillAppBar(
+            roomId: id,
+            statusTop: MediaQuery.paddingOf(context).top,
+          ),
+          body: Column(
+            children: [
+              _roomHeaderBand(context),
+              Expanded(
+                child: ResponseErrorWidget(
+                  error: error,
+                  onRetry: () => ref.refresh(chatRoomProvider(id)),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -1011,59 +1066,42 @@ class ChatRoomScreen extends HookConsumerWidget {
     final mainContent = Stack(
       children: [
         AppScaffold(
-          appBar: AppBar(
-            leading: isSelectionMode
-                ? IconButton(
+          // The pill floats over the timeline; the column below clears it.
+          appBarOverContent: !isSelectionMode,
+          appBar: isSelectionMode
+              ? AppBar(
+                  leading: IconButton(
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'exitSelectionMode'.tr(),
                     onPressed: chatStateNotifier.exitSelectionMode,
-                  )
-                : const _ChatRoomLeading(),
-            automaticallyImplyLeading: false,
-            title: isSelectionMode
-                ? Text(
+                  ),
+                  automaticallyImplyLeading: false,
+                  title: Text(
                     selectedMessageIds.isEmpty
                         ? 'chatSelectMessages'.tr()
                         : 'selectedCount'.tr(
                             args: [selectedMessageIds.length.toString()],
                           ),
-                  )
-                : chatRoom.when(
-                    data: (room) => room == null
-                        ? const SizedBox.shrink()
-                        : _RoomAppBarTitle(roomId: id, room: room),
-                    loading: () => Text('loading'.tr()),
-                    error: (err, _) => ResponseErrorWidget(
-                      error: err,
-                      onRetry: () => messagesNotifier.loadInitial(),
-                    ),
                   ),
-            actions: isSelectionMode
-                ? const [SizedBox(width: 8)]
-                : [
-                    chatRoom.when(
-                      data: (data) => AudioCallButton(room: data!),
-                      error: (_, _) => const SizedBox.shrink(),
-                      loading: () => const SizedBox.shrink(),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      onPressed: () async {
-                        final result = await context.router.push(
-                          ChatDetailRoute(id: id),
-                        );
-                        if (result is SearchMessagesResult &&
-                            messages.value != null) {
-                          final messageId = result.messageId;
-                          jumpAndRevealMessage(messageId);
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-          ),
+                  actions: const [SizedBox(width: 8)],
+                )
+              : _RoomPillAppBar(
+                  roomId: id,
+                  statusTop: MediaQuery.paddingOf(context).top,
+                  room: chatRoom.value,
+                  onOpenDetail: () async {
+                    final result = await context.router.push(
+                      ChatDetailRoute(id: id),
+                    );
+                    if (result is SearchMessagesResult &&
+                        messages.value != null) {
+                      jumpAndRevealMessage(result.messageId);
+                    }
+                  },
+                ),
           body: Column(
             children: [
+              if (!isSelectionMode) _roomHeaderBand(context),
               if (currentRoom != null &&
                   currentIdentity != null &&
                   currentRoom.type == 1 &&
@@ -1079,7 +1117,6 @@ class ChatRoomScreen extends HookConsumerWidget {
                     }
                   },
                 ),
-              const ChatSyncIndicator(),
               if (pinnedPins.value.isNotEmpty)
                 _PinnedMessagesBar(
                   pins: pinnedPins.value,
@@ -1528,19 +1565,86 @@ Widget _buildThreadSidebar(
   );
 }
 
-/// Keeps presence updates local to the app bar. In busy rooms the online-count
-/// provider can change independently of the timeline; rebuilding the whole
-/// screen for it causes unnecessary list work while scrolling.
-class _RoomAppBarTitle extends ConsumerWidget {
-  final String roomId;
-  final SnChatRoom room;
+/// Reserves the band the floating header paints into.
+///
+/// [PillAppBar] draws a capsule over the top of the page rather than taking a
+/// solid row, so the scaffold is told to let content run under it and every
+/// body starts with this gap instead. It is the status-bar inset plus the
+/// bar's own height — exactly [PillAppBar.preferredSize], so the pill and the
+/// content it clears can never disagree about where the bar ends.
+Widget _roomHeaderBand(BuildContext context) =>
+    SizedBox(height: MediaQuery.paddingOf(context).top + kPillAppBarHeight);
 
-  const _RoomAppBarTitle({required this.roomId, required this.room});
+/// The room's floating header.
+///
+/// The pill carries the room identity and its two actions on the left, and
+/// the room's status — online members, or a placeholder while the room is
+/// loading — on the right. While work is in flight the pill's own border is
+/// the spinner ([PillAppBar.loading]), so the room screen has no separate
+/// progress chrome: the status line just says what is happening.
+///
+/// Presence, sync and summary updates are watched here rather than in the
+/// screen, so a change in any of them repaints the bar alone. In busy rooms
+/// the online count moves independently of the timeline, and rebuilding the
+/// whole screen for it would do list work on every presence tick.
+class _RoomPillAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  final String roomId;
+
+  /// The room, when it has already loaded. Null renders the header skeleton:
+  /// the same pill with the same height, so the page below is never re-laid
+  /// out when the room arrives.
+  final SnChatRoom? room;
+
+  /// Opens the room's detail page. The pill only offers the action once it
+  /// knows which room it is describing.
+  final VoidCallback? onOpenDetail;
+
+  /// Status-bar inset. Taken at the call site because the scaffold needs the
+  /// bar's [preferredSize] before it can lay the bar out.
+  final double statusTop;
+
+  const _RoomPillAppBar({
+    required this.roomId,
+    required this.statusTop,
+    this.room,
+    this.onOpenDetail,
+  });
+
+  @override
+  Size get preferredSize => Size.fromHeight(statusTop + kPillAppBarHeight);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onlineCount = ref.watch(chatOnlineCountProvider(roomId));
-    return RoomAppBar(room: room, onlineStatus: onlineCount.value);
+    final busy = watchRoomHeaderState(ref);
+    final currentRoom = room;
+
+    return PillAppBar(
+      statusTop: statusTop,
+      loading: busy.loading,
+      child: Row(
+        children: [
+          const _ChatRoomLeading(),
+          const Gap(SolSpace.sm),
+          Expanded(
+            child: currentRoom == null
+                ? const SizedBox.shrink()
+                : RoomAppBar(
+                    room: currentRoom,
+                    onlineStatus: onlineCount.value,
+                    statusLine: busy.status,
+                  ),
+          ),
+          if (currentRoom != null) ...[
+            AudioCallButton(room: currentRoom),
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: onOpenDetail,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

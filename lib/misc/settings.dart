@@ -23,6 +23,7 @@ import 'package:island/core/services/app_icon_service.dart';
 import 'package:island/core/services/cache_service.dart';
 import 'package:island/core/services/color_extraction.dart';
 import 'package:island/core/services/responsive.dart';
+import 'package:island/core/navigation/tab_destinations.dart';
 import 'package:solsynth_express/solsynth_express.dart';
 import 'package:island/activity/activity_rpc.dart';
 import 'package:island/discovery/widgets/discovery_profile_sheet.dart';
@@ -1929,6 +1930,51 @@ class SettingsScreen extends HookConsumerWidget {
                 showSnackBar('settingsApplied'.tr());
               },
             ),
+          ),
+        ],
+      ),
+    );
+
+    // Which destinations the bottom bar and the rail carry used to be a
+    // "Customize Navigation" entry inside the drawer (and the expanded rail);
+    // the navigation surfaces are now purely for navigating, so the editor
+    // lives here.
+    categories.add(
+      _SettingCategory(
+        icon: Symbols.bottom_navigation,
+        title: 'Navigation',
+        localizedTitleKey: 'settingsCategoryNavigation',
+        searchTerms: [
+          'navigation',
+          'rail',
+          'side bar',
+          'bottom navigation',
+          'tab bar',
+          'customize navigation',
+          'restore defaults',
+          'settingsCategoryNavigation',
+          'customizeNavigation',
+          'customizeNavigationHelper',
+          'bottomNavigation',
+          'railNavigation',
+        ],
+        children: [
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('customizeNavigation').tr(),
+            subtitle: Text('customizeNavigationHelper').tr().fontSize(12),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.tune_rounded),
+            trailing: const Icon(Symbols.chevron_right),
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                useRootNavigator: true,
+                builder: (_) => const NavigationCustomizationSheet(),
+              );
+            },
           ),
         ],
       ),

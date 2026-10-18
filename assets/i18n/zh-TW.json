@@ -1150,6 +1150,7 @@
   "customReactions": "自訂反應",
   "customize": "自訂",
   "customizeNavigation": "自訂導航",
+  "customizeNavigationHelper": "選擇底部導覽列與側邊導覽顯示的入口及其順序。",
   "daily": "每日",
   "dashboard": "儀表板",
   "dashboardAvailableCards": "可用卡片",
@@ -3290,6 +3291,7 @@
   "settingsCategoryGeneral": "通用",
   "settingsCategoryLanguage": "語言",
   "settingsCategoryMessages": "訊息",
+  "settingsCategoryNavigation": "導覽",
   "settingsCategoryNotifications": "通知",
   "settingsCategoryPlugins": "外掛",
   "settingsCategorySpeech": "語音",
@@ -5574,5 +5576,15 @@
   "aboutScreenFailedToLoadDeviceInfo": "無法載入裝置資訊：{}",
   "boostedBy": "由 {} 助推",
   "settingsDesktopUseSeparateCallWindow": "使用獨立通話視窗",
-  "settingsOutgoingCallKit": "撥出通話使用 CallKit"
+  "settingsOutgoingCallKit": "撥出通話使用 CallKit",
+  "updateInstalledVersion": "已安裝",
+  "updateChannelLabel": "{} 通道",
+  "updateDownloadSize": "下載 {}",
+  "updateDownloadingInstaller": "正在下載安裝程式…",
+  "updateExtractingInstaller": "正在解壓縮安裝程式…",
+  "updateInstallingAppImage": "正在安裝 AppImage…",
+  "updateInstalling": "正在安裝更新",
+  "updateComplete": "更新完成",
+  "updateFailed": "更新失敗",
+  "updateFailedHint": "無法安裝更新。請重試，或前往發佈頁面下載最新版本。"
 }

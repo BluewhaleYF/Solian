@@ -1915,6 +1915,7 @@
   "settingsCategoryGeneral": "一般",
   "settingsCategoryLanguage": "言語",
   "settingsCategoryMessages": "メッセージ",
+  "settingsCategoryNavigation": "ナビゲーション",
   "settingsCategoryNotifications": "通知",
   "settingsCategorySpeech": "音声",
   "settingsChatRoomStorage": "Chat Room Storage",
@@ -2664,6 +2665,7 @@
   "currentPost": "Current post",
   "customize": "Customize",
   "customizeNavigation": "Customize Navigation",
+  "customizeNavigationHelper": "Choose which destinations the bottom bar and the navigation rail show, and in what order.",
   "dashboardAvailableCards": "Available Cards",
   "dashboardCardActivityColumn": "Activity Column",
   "dashboardCardActivityColumnDescription": "Check In, Fortune Graph & Fortune",
@@ -5315,5 +5317,15 @@
   "aboutScreenFailedToLoadDeviceInfo": "デバイス情報の読み込みに失敗: {}",
   "boostedBy": "{} がブースト",
   "settingsDesktopUseSeparateCallWindow": "通話を別ウィンドウで開く",
-  "settingsOutgoingCallKit": "発信通話に CallKit を使う"
+  "settingsOutgoingCallKit": "発信通話に CallKit を使う",
+  "updateInstalledVersion": "インストール済み",
+  "updateChannelLabel": "{} チャンネル",
+  "updateDownloadSize": "ダウンロード {}",
+  "updateDownloadingInstaller": "インストーラーをダウンロードしています…",
+  "updateExtractingInstaller": "インストーラーを展開しています…",
+  "updateInstallingAppImage": "AppImage をインストールしています…",
+  "updateInstalling": "アップデートをインストールしています",
+  "updateComplete": "アップデートが完了しました",
+  "updateFailed": "アップデートに失敗しました",
+  "updateFailedHint": "アップデートをインストールできませんでした。再試行するか、リリースページから最新版をダウンロードしてください。"
 }

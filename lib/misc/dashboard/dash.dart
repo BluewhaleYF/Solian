@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -22,7 +24,6 @@ import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/route.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
-import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/attention_modal.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/notifications/notification_tile.dart';
@@ -67,15 +68,34 @@ class DashboardScreen extends HookConsumerWidget {
     );
     if (!dashboardEnabled) return const _DisabledDashboardRedirect();
 
+    final fade = useValueNotifier(0.0);
+
     return AppScaffold(
+      appBarOverContent: true,
       isNoBackground: false,
-      appBar: AppBar(
-        title: const Text('Solar Network'),
-        leading: const SolDrawerButton(),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: MediaQuery.paddingOf(context).top,
+        child: Row(
+          children: [
+            const SolDrawerButton(),
+            const Gap(SolSpace.sm),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Solar Network',
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      body: Center(child: DashboardGrid()),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => updatePillFade(notification, fade),
+        child: Center(child: DashboardGrid()),
+      ),
     );
   }
 }

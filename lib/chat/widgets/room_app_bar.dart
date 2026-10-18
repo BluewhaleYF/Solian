@@ -3,6 +3,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
+import 'package:island/chat/pods/chat_room.dart';
+import 'package:island/chat/pods/chat_summary.dart';
 import 'package:island/accounts/relationship_pod.dart';
 import 'package:island/accounts/utils/account_status_utils.dart';
 import 'package:island/chat/widgets/chat_member_list_tile.dart';
@@ -149,6 +151,31 @@ class _OnlineMembersSheet extends HookConsumerWidget {
   }
 }
 
+/// The room header's busy state.
+///
+/// One source for both halves of the merged indicator: the pill paints its
+/// border as a spinner while [loading] is set, and its status line carries
+/// [status] instead of the member count.
+///
+/// [loading] keeps the pair of conditions the standalone sync bar used —
+/// a global chat sync, or the summary fetch that backs the unread badges.
+/// [status] prefers the sync's own hint (it names the room being worked on)
+/// and otherwise says which of the two is running.
+({bool loading, String? status}) watchRoomHeaderState(WidgetRef ref) {
+  final summaryLoading = ref.watch(chatSummaryProvider).isLoading;
+  final isSyncing = ref.watch(chatSyncingProvider);
+  final hint = ref.watch(chatSyncHintProvider);
+  final loading = summaryLoading || isSyncing;
+  return (
+    loading: loading,
+    status: !loading
+        ? null
+        : isSyncing
+        ? (hint ?? 'syncing'.tr())
+        : 'loading'.tr(),
+  );
+}
+
 List<SnChatMember> getValidMembers(List<SnChatMember> members, String? userId) {
   return members.where((member) => member.accountId != userId).toList();
 }
@@ -157,7 +184,16 @@ class RoomAppBar extends ConsumerWidget {
   final SnChatRoom room;
   final SnChatOnlineStatus? onlineStatus;
 
-  const RoomAppBar({super.key, required this.room, required this.onlineStatus});
+  /// Line shown where the member count normally sits, while the room is busy
+  /// — a sync in progress, a timeline still loading. Null shows the count.
+  final String? statusLine;
+
+  const RoomAppBar({
+    super.key,
+    required this.room,
+    required this.onlineStatus,
+    this.statusLine,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,6 +228,7 @@ class RoomAppBar extends ConsumerWidget {
       onlineStatus,
       userInfo.value?.id,
       weakInternetMode,
+      statusLine: statusLine,
     );
     final hasOnlineAccounts =
         room.type != 1 && (onlineStatus?.onlineAccounts.isNotEmpty == true);
@@ -212,13 +249,28 @@ class RoomAppBar extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ).fontSize(15),
-              if (subtitle != null)
-                GestureDetector(
-                  onTap: hasOnlineAccounts
-                      ? () => _showOnlineMembers(context, room.id)
-                      : null,
-                  child: subtitle,
-                ),
+              // The count and the busy line are the same slot showing the
+              // same kind of thing, so they cross-fade instead of swapping:
+              // the row keeps its height and the change reads as a state
+              // transition rather than a redraw.
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+                child: subtitle == null
+                    ? const SizedBox.shrink(key: ValueKey('subtitle-none'))
+                    : GestureDetector(
+                        key: ValueKey(
+                          statusLine != null ? 'subtitle-status' : 'subtitle-info',
+                        ),
+                        onTap: hasOnlineAccounts && statusLine == null
+                            ? () => _showOnlineMembers(context, room.id)
+                            : null,
+                        child: subtitle,
+                      ),
+              ),
             ],
           ),
         ),
@@ -233,8 +285,9 @@ Widget? _buildSubtitle(
   List<SnChatMember> validMembers,
   SnChatOnlineStatus? onlineStatus,
   String? currentUserId,
-  bool weakInternetMode,
-) {
+  bool weakInternetMode, {
+  String? statusLine,
+}) {
   final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
     fontSize: 11,
     height: 1,
@@ -242,6 +295,28 @@ Widget? _buildSubtitle(
         Theme.of(context).appBarTheme.foregroundColor ??
         Theme.of(context).colorScheme.onSurface,
   );
+
+  // The room's own status takes the count's place rather than joining it: the
+  // line carries one piece of information, and a sync hint is more urgent than
+  // how many people are around.
+  if (statusLine != null && statusLine.isNotEmpty) {
+    return Row(
+      children: [
+        if (weakInternetMode) ...[
+          _WeakInternetChip(style: subtitleStyle),
+          const SizedBox(width: 6),
+        ],
+        Flexible(
+          child: Text(
+            statusLine,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: subtitleStyle,
+          ),
+        ),
+      ],
+    );
+  }
 
   if (room.type == 1) {
     final status = onlineStatus?.directMessageStatus;

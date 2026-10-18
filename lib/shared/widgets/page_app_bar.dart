@@ -1,14 +1,19 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/navigation/navigation_rail_scope.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 
-/// The drawer toggle shared by the root tabs.
+/// The navigation toggle shared by the root tabs.
 ///
 /// The drawer is no longer reachable from a floating button or the bottom
 /// navigation bar, so every root tab's leading slot uses this exact button.
+///
+/// On the wide layout the rail replaces the drawer, so the same button expands
+/// and collapses the rail over every destination instead.
 class SolDrawerButton extends StatelessWidget {
   const SolDrawerButton({super.key});
 
@@ -17,6 +22,15 @@ class SolDrawerButton extends StatelessWidget {
     final foreground =
         Theme.of(context).appBarTheme.foregroundColor ??
         Theme.of(context).colorScheme.onSurface;
+    final rail = NavigationRailScope.maybeOf(context);
+    if (rail != null && rail.available) {
+      return IconButton(
+        icon: const Icon(Symbols.menu_rounded),
+        color: foreground,
+        tooltip: (rail.expanded ? 'collapse' : 'expand').tr(),
+        onPressed: rail.toggle,
+      );
+    }
     return IconButton(
       icon: const Icon(Symbols.menu_rounded),
       color: foreground,

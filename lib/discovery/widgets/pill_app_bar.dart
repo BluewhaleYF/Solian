@@ -45,12 +45,18 @@ bool updatePillFade(
 ///
 /// Wide pages give the bar the window's full width, so the pill spans the
 /// viewport rather than hugging the feed column.
+///
+/// [loading] is forwarded to the [PillSurface], which draws the capsule's own
+/// border as a spinner while it is set.
 class PillBarSurface extends StatelessWidget {
   /// Fade position, 0..1. Drives the blur, tint, border and shadow together.
   final double t;
 
   /// Status-bar inset, reserved inside the bar's own box.
   final double statusTop;
+
+  /// Draw the capsule's border as a spinner instead of a hairline.
+  final bool loading;
 
   final Widget child;
 
@@ -59,12 +65,14 @@ class PillBarSurface extends StatelessWidget {
     required this.t,
     required this.statusTop,
     required this.child,
+    this.loading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return PillSurface(
       t: t,
+      loading: loading,
       margin: EdgeInsets.fromLTRB(
         kPillSideGutter,
         statusTop + kPillSideGutter,
@@ -97,6 +105,9 @@ class PillSliverAppBar extends StatelessWidget {
   /// Status-bar inset, measured by the caller so the sliver's height matches.
   final double statusTop;
 
+  /// Draw the capsule's border as a spinner instead of a hairline.
+  final bool loading;
+
   /// The bar's single row of controls.
   final Widget child;
 
@@ -105,6 +116,7 @@ class PillSliverAppBar extends StatelessWidget {
     required this.fade,
     required this.statusTop,
     required this.child,
+    this.loading = false,
   });
 
   @override
@@ -124,6 +136,7 @@ class PillSliverAppBar extends StatelessWidget {
         builder: (context, t, _) => PillBarSurface(
           t: t,
           statusTop: statusTop,
+          loading: loading,
           child: Material(color: Colors.transparent, child: child),
         ),
       ),
@@ -137,18 +150,25 @@ class PillSliverAppBar extends StatelessWidget {
 /// sliver list. The scaffold reserves the bar's height, so the pill floats
 /// over whatever the body paints underneath instead of being part of it.
 class PillAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final ValueListenable<double> fade;
+  /// Surface fade, 0..1. Null keeps the capsule surfaced: a persistent
+  /// control whose page never slides content under it has no fade to track,
+  /// and hiding its fill would leave bare controls floating on the page.
+  final ValueListenable<double>? fade;
 
   /// Status-bar inset, measured by the caller so the bar's height matches.
   final double statusTop;
+
+  /// Draw the capsule's border as a spinner instead of a hairline.
+  final bool loading;
 
   final Widget child;
 
   const PillAppBar({
     super.key,
-    required this.fade,
+    this.fade,
     required this.statusTop,
     required this.child,
+    this.loading = false,
   });
 
   @override
@@ -156,13 +176,18 @@ class PillAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget surface(double t) => PillBarSurface(
+      t: t,
+      statusTop: statusTop,
+      loading: loading,
+      child: Material(color: Colors.transparent, child: child),
+    );
+
+    final fade = this.fade;
+    if (fade == null) return surface(1);
     return ValueListenableBuilder<double>(
       valueListenable: fade,
-      builder: (context, t, _) => PillBarSurface(
-        t: t,
-        statusTop: statusTop,
-        child: Material(color: Colors.transparent, child: child),
-      ),
+      builder: (context, t, _) => surface(t),
     );
   }
 }

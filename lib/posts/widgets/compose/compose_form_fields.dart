@@ -6,6 +6,10 @@ import 'package:island/posts/widgets/compose/compose_shared.dart';
 import 'package:island/posts/widgets/compose/quill_content_editor.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 
+/// Inset shared by the title, description and content fields so their text
+/// starts on the same column and the gaps between them stay even.
+const EdgeInsets _fieldPadding = EdgeInsets.all(8);
+
 KeyEventResult _preserveComposeFieldFocus(FocusNode node, KeyEvent event) {
   final isArrowKey =
       event.logicalKey == LogicalKeyboardKey.arrowUp ||
@@ -111,10 +115,7 @@ class ComposeFormFields extends HookConsumerWidget {
                     border: InputBorder.none,
                     filled: false,
                     isCollapsed: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 8,
-                    ),
+                    contentPadding: _fieldPadding,
                   ),
                   style: theme.textTheme.titleMedium,
                   onTapOutside: (_) =>
@@ -133,7 +134,9 @@ class ComposeFormFields extends HookConsumerWidget {
                     border: InputBorder.none,
                     filled: false,
                     isCollapsed: true,
-                    contentPadding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+                    // Same inset as the title above and the content below, so
+                    // the three fields read as one block of text.
+                    contentPadding: _fieldPadding,
                   ),
                   style: theme.textTheme.bodyMedium,
                   minLines: 1,
@@ -145,6 +148,7 @@ class ComposeFormFields extends HookConsumerWidget {
 
               // Content field
               QuillContentEditor(
+                padding: const .symmetric(horizontal: 12, vertical: 8),
                 state: state,
                 enabled: enabled && state.currentPublisher.value != null,
               ),
@@ -152,87 +156,6 @@ class ComposeFormFields extends HookConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// A specialized form fields widget for article compose with expanded content field.
-class ArticleComposeFormFields extends StatelessWidget {
-  final ComposeState state;
-  final bool enabled;
-
-  const ArticleComposeFormFields({
-    super.key,
-    required this.state,
-    this.enabled = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title field
-            Focus(
-              onKeyEvent: _preserveComposeFieldFocus,
-              child: TextField(
-                controller: state.titleController,
-                decoration: InputDecoration(
-                  hintText: 'postTitle',
-                  border: InputBorder.none,
-                  filled: false,
-                  isCollapsed: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 8,
-                  ),
-                ),
-                style: theme.textTheme.titleMedium,
-                onTapOutside: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-              ),
-            ),
-
-            // Description field
-            Focus(
-              onKeyEvent: _preserveComposeFieldFocus,
-              child: TextField(
-                controller: state.descriptionController,
-                decoration: InputDecoration(
-                  hintText: 'postDescription',
-                  border: InputBorder.none,
-                  filled: false,
-                  isCollapsed: true,
-                  contentPadding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
-                ),
-                style: theme.textTheme.bodyMedium,
-                minLines: 1,
-                maxLines: 3,
-                onTapOutside: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-              ),
-            ),
-
-            // Content field (expanded)
-            Expanded(
-              child: QuillContentEditor(
-                state: state,
-                enabled: enabled,
-                expands: true,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 8,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

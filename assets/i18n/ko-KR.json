@@ -2161,6 +2161,7 @@
   "settingsCategoryGeneral": "일반",
   "settingsCategoryLanguage": "언어",
   "settingsCategoryMessages": "메시지",
+  "settingsCategoryNavigation": "내비게이션",
   "settingsCategoryNotifications": "알림",
   "settingsCategorySpeech": "음성",
   "settingsChatRoomStorage": "Chat Room Storage",
@@ -2940,6 +2941,7 @@
   "currencies": "One share is 1 gold or 1000 points.",
   "currentPost": "Current post",
   "customizeNavigation": "Customize Navigation",
+  "customizeNavigationHelper": "Choose which destinations the bottom bar and the navigation rail show, and in what order.",
   "dataTypes": "Data Types",
   "day": "Day",
   "days": "days",
@@ -5308,5 +5310,15 @@
   "aboutScreenFailedToLoadDeviceInfo": "기기 정보를 불러오지 못했습니다: {}",
   "boostedBy": "{} 님이 부스트함",
   "settingsDesktopUseSeparateCallWindow": "통화를 별도 창에서 열기",
-  "settingsOutgoingCallKit": "발신 통화에 CallKit 사용"
+  "settingsOutgoingCallKit": "발신 통화에 CallKit 사용",
+  "updateInstalledVersion": "설치됨",
+  "updateChannelLabel": "{} 채널",
+  "updateDownloadSize": "다운로드 {}",
+  "updateDownloadingInstaller": "설치 프로그램을 다운로드하는 중…",
+  "updateExtractingInstaller": "설치 프로그램을 푸는 중…",
+  "updateInstallingAppImage": "AppImage를 설치하는 중…",
+  "updateInstalling": "업데이트 설치 중",
+  "updateComplete": "업데이트 완료",
+  "updateFailed": "업데이트 실패",
+  "updateFailedHint": "업데이트를 설치하지 못했습니다. 다시 시도하거나 릴리스 페이지에서 최신 버전을 내려받으세요."
 }

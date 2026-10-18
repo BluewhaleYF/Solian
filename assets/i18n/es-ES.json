@@ -1827,6 +1827,7 @@
   "settingsCategoryGeneral": "General",
   "settingsCategoryLanguage": "Idioma",
   "settingsCategoryMessages": "Mensajes",
+  "settingsCategoryNavigation": "Navegación",
   "settingsCategoryNotifications": "Notificaciones",
   "settingsCategorySpeech": "Voz",
   "settingsChatRoomStorage": "Chat Room Storage",
@@ -2638,6 +2639,7 @@
   "currentPost": "Current post",
   "customize": "Customize",
   "customizeNavigation": "Customize Navigation",
+  "customizeNavigationHelper": "Choose which destinations the bottom bar and the navigation rail show, and in what order.",
   "dashboardAvailableCards": "Available Cards",
   "dashboardCardActivityColumn": "Activity Column",
   "dashboardCardActivityColumnDescription": "Check In, Fortune Graph & Fortune",
@@ -5315,5 +5317,15 @@
   "aboutScreenFailedToLoadDeviceInfo": "No se pudo cargar la información del dispositivo: {}",
   "boostedBy": "Impulsado por {}",
   "settingsDesktopUseSeparateCallWindow": "Usar una ventana de llamada independiente",
-  "settingsOutgoingCallKit": "Usar CallKit para las llamadas salientes"
+  "settingsOutgoingCallKit": "Usar CallKit para las llamadas salientes",
+  "updateInstalledVersion": "Instalada",
+  "updateChannelLabel": "Canal {}",
+  "updateDownloadSize": "Descarga de {}",
+  "updateDownloadingInstaller": "Descargando el instalador…",
+  "updateExtractingInstaller": "Extrayendo el instalador…",
+  "updateInstallingAppImage": "Instalando AppImage…",
+  "updateInstalling": "Instalando la actualización",
+  "updateComplete": "Actualización completada",
+  "updateFailed": "Error en la actualización",
+  "updateFailedHint": "No se pudo instalar la actualización. Inténtalo de nuevo o descarga la última versión desde la página de la versión."
 }

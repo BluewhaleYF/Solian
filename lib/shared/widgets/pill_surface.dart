@@ -24,6 +24,21 @@ const double kPillGlassTint = 0.4;
 /// Alpha of the hairline outlining the glass once it is fully surfaced.
 const double _kPillBorderOpacity = 0.5;
 
+/// Stroke of the ring a loading pill paints along its own edge.
+const double _kPillRingStroke = 2.0;
+
+/// Share of the capsule's perimeter the indeterminate ring sweeps.
+const double _kPillRingSweep = 0.26;
+
+/// One full lap of the indeterminate ring.
+const Duration _kPillRingPeriod = Duration(milliseconds: 1100);
+
+/// How long the loading border takes to fade in or out.
+///
+/// Long enough for the ring and the hairline to hand over to each other
+/// without a blink, short enough that the bar still reads as reacting at once.
+const Duration _kPillRingFade = Duration(milliseconds: 220);
+
 /// The painted chrome of a floating pill.
 ///
 /// Geometry is fixed: the capsule keeps the same [margin], radius and height
@@ -38,6 +53,9 @@ const double _kPillBorderOpacity = 0.5;
 /// layer, and it stays soft enough that the page's colours still bleed
 /// through. A hairline border and a soft shadow come with the fill, and both
 /// are scaled by [t], so a pill over an empty page stays completely flat.
+///
+/// A loading pill drops the hairline and laps its own outline instead: see
+/// [loading].
 class PillSurface extends StatelessWidget {
   /// Fade position, 0..1. Drives the blur, tint, border and shadow together.
   final double t;
@@ -53,6 +71,14 @@ class PillSurface extends StatelessWidget {
 
   final Widget child;
 
+  /// Draw the capsule's border as a spinner: the hairline is dropped and an
+  /// arc laps the outline instead.
+  ///
+  /// The ring deliberately ignores [t]. The glass only exists once content has
+  /// slid under the bar, but a loader has to be legible while the page is
+  /// still sitting at its top, so it paints over a fully transparent pill.
+  final bool loading;
+
   const PillSurface({
     super.key,
     required this.t,
@@ -60,6 +86,7 @@ class PillSurface extends StatelessWidget {
     required this.radius,
     required this.contentPadding,
     required this.child,
+    this.loading = false,
   });
 
   @override
@@ -91,13 +118,21 @@ class PillSurface extends StatelessWidget {
                 ),
               ),
             ),
-          DecoratedBox(
+          // Animated rather than a bare [DecoratedBox]: entering and leaving
+          // the loading state swaps the hairline for the ring, and both halves
+          // of that swap should arrive and leave with the same timing instead
+          // of the edge snapping twice.
+          AnimatedContainer(
+            duration: _kPillRingFade,
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerLow.withValues(
                 alpha: kPillGlassTint * t,
               ),
               borderRadius: radius,
-              border: t == 0
+              // While loading the edge carries the spinner, so the static
+              // hairline stands down rather than doubling it up.
+              border: t == 0 || loading
                   ? null
                   : Border.all(
                       color: colorScheme.outlineVariant.withValues(
@@ -118,9 +153,137 @@ class PillSurface extends StatelessWidget {
             ),
             child: Padding(padding: contentPadding, child: child),
           ),
+          // The ring keeps a slot while it fades out, so leaving the loading
+          // state dissolves the arc instead of clipping it off mid-lap.
+          Positioned.fill(
+            child: AnimatedSwitcher(
+              duration: _kPillRingFade,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: loading
+                  ? _PillRing(
+                      key: const ValueKey('pill-ring'),
+                      radius: radius,
+                      color: colorScheme.primary,
+                    )
+                  : const SizedBox.shrink(key: ValueKey('pill-ring-idle')),
+            ),
+          ),
         ],
       ),
     );
+  }
+}
+
+/// The capsule's own edge as a spinner.
+///
+/// The arc is extracted from a rounded rect of the caller's [radius] and
+/// swept clockwise, so it reads as the pill's border lapping rather than as
+/// a separate widget laid over it.
+class _PillRing extends StatefulWidget {
+  final BorderRadius radius;
+  final Color color;
+
+  const _PillRing({super.key, required this.radius, required this.color});
+
+  @override
+  State<_PillRing> createState() => _PillRingState();
+}
+
+class _PillRingState extends State<_PillRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _kPillRingPeriod,
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: IgnorePointer(
+        // A childless [CustomPaint] takes its size from its child, and inside
+        // the switcher's stack there is none — it would collapse to zero and
+        // paint nothing. `SizedBox.expand` gives the painter the bar's box.
+        child: SizedBox.expand(
+          child: CustomPaint(
+            painter: _PillRingPainter(
+              radius: widget.radius,
+              color: widget.color,
+              sweep: _controller,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PillRingPainter extends CustomPainter {
+  final BorderRadius radius;
+  final Color color;
+  final Animation<double> sweep;
+
+  _PillRingPainter({
+    required this.radius,
+    required this.color,
+    required this.sweep,
+  }) : super(repaint: sweep);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+
+    // Inset by half the stroke so the ring's outer edge lands on the capsule
+    // outline the hairline used to draw, not half a stroke outside it.
+    final outline = radius
+        .toRRect(Offset.zero & size)
+        .deflate(_kPillRingStroke / 2);
+    // A capsule is a single contour, so one metric covers the whole edge.
+    final metric = (Path()..addRRect(outline)).computeMetrics().first;
+    final total = metric.length;
+    if (total <= 0) return;
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _kPillRingStroke
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+
+    // The rounded rect's contour starts at the middle of its top edge, which
+    // is exactly where a lap should begin. This offsets the *extraction*
+    // only, never the canvas: rotating the canvas would turn the capsule
+    // itself and paint the arc down the page.
+    final start = (sweep.value * total) % total;
+    final extent = total * _kPillRingSweep;
+
+    void draw(double from, double to) {
+      if (to - from < 0.5) return;
+      canvas.drawPath(
+        metric.extractPath(from.clamp(0.0, total), to.clamp(0.0, total)),
+        paint,
+      );
+    }
+
+    if (start + extent <= total) {
+      draw(start, start + extent);
+    } else {
+      // The lap straddles the seam: paint the tail and the head separately.
+      draw(start, total);
+      draw(0, start + extent - total);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PillRingPainter oldDelegate) {
+    return oldDelegate.radius != radius || oldDelegate.color != color;
   }
 }
 
