@@ -9,6 +9,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/database.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/compose.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/posts/compose_storage_db.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
@@ -403,8 +404,7 @@ class _BlogComposeForm extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,8 +508,7 @@ class _BlogComposeInfoPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

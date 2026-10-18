@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
@@ -178,8 +179,7 @@ class PostItemScreenshot extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
-          border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: SolRadius.cardRadius,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +393,11 @@ class PostItemScreenshot extends ConsumerWidget {
               embedView: item.embedView!,
               maxHeight: 400,
               borderRadius: BorderRadius.circular(12),
-            ).padding(left: renderingPadding.left, right: renderingPadding.right, vertical: 8),
+            ).padding(
+              left: renderingPadding.left,
+              right: renderingPadding.right,
+              vertical: 8,
+            ),
           if (item.attachments.isNotEmpty)
             _buildScreenshotAttachments(
               context,

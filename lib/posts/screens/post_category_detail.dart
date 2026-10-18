@@ -123,10 +123,7 @@ Future<void> _claimTag(
   }
 }
 
-SnPublisher? _ownedPublisher(
-  List<SnPublisher> publishers,
-  SnPostTag tag,
-) {
+SnPublisher? _ownedPublisher(List<SnPublisher> publishers, SnPostTag tag) {
   for (final p in publishers) {
     if (p.id == tag.ownerPublisherId) return p;
   }
@@ -157,10 +154,7 @@ Future<void> _releaseTag(
   try {
     showLoadingModal(context);
     final client = ref.read(solarNetworkClientProvider);
-    await client.sphere.releaseTag(
-      slug: tag.slug,
-      publisherName: owner.name,
-    );
+    await client.sphere.releaseTag(slug: tag.slug, publisherName: owner.name);
     ref.invalidate(postTagProvider(tag.slug));
     if (context.mounted) {
       showSnackBar('postTagReleased'.tr());
@@ -437,10 +431,7 @@ class PostCategoryDetailScreen extends HookConsumerWidget {
               itemBuilder: (context) {
                 final tag = postTag?.value;
                 return [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Text('editPostTag'.tr()),
-                  ),
+                  PopupMenuItem(value: 'edit', child: Text('editPostTag'.tr())),
                   if (tag?.isProtected == true)
                     PopupMenuItem(
                       value: 'unprotect',
@@ -526,8 +517,7 @@ class PostCategoryDetailScreen extends HookConsumerWidget {
                             isCategory: false,
                           ),
                           onClaim: () => _claimTag(context, ref, slug: slug),
-                          onRelease: () =>
-                              _releaseTag(context, ref, tag: tag),
+                          onRelease: () => _releaseTag(context, ref, tag: tag),
                         ),
                         error: (error, _) => ResponseErrorWidget(
                           error: error,

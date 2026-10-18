@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:island/core/theme.dart';
 import 'package:styled_widget/styled_widget.dart';
 
 class PostItemSkeleton extends StatelessWidget {
@@ -87,86 +88,89 @@ class _PostHeaderSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Skeletonizer(
       enabled: true,
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 12,
+      child:
+          Column(
             children: [
-              // Profile picture skeleton
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 12,
+                children: [
+                  // Profile picture skeleton
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Container(
-                            height: 16,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              borderRadius: BorderRadius.circular(4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 16,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
                             ),
+                            if (!isCompact)
+                              Container(
+                                height: 12,
+                                width: 80,
+                                margin: const EdgeInsets.only(left: 8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const Gap(4),
+                        // Timestamp skeleton
+                        Container(
+                          height: 12,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainer,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        if (!isCompact)
-                          Container(
-                            height: 12,
-                            width: 80,
-                            margin: const EdgeInsets.only(left: 8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
                       ],
                     ),
-                    const Gap(4),
-                    // Timestamp skeleton
+                  ),
+                  // Reaction button skeleton
+                  if (!isCompact)
                     Container(
-                      height: 12,
-                      width: 60,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-              // Reaction button skeleton
-              if (!isCompact)
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
             ],
+          ).padding(
+            left: renderingPadding.left,
+            right: renderingPadding.right,
+            bottom: 4,
           ),
-        ],
-      ).padding(
-        left: renderingPadding.left,
-        right: renderingPadding.right,
-        bottom: 4,
-      ),
     );
   }
 }
@@ -295,11 +299,8 @@ class _ReferencedPostWidgetSkeleton extends StatelessWidget {
           right: renderingPadding.right,
         ),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.5),
-          ),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: SolRadius.cardRadius,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,10 +394,7 @@ class _PostReplyPreviewSkeleton extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.5),
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          borderRadius: SolRadius.cardRadius,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

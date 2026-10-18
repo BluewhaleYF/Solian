@@ -11,6 +11,7 @@ import 'package:island/core/database.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/compose.dart';
 import 'package:island/posts/compose_storage_db.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/posts/widgets/compose/compose_attachments.dart';
 import 'package:island/posts/widgets/compose/compose_form_fields.dart';
@@ -110,9 +111,8 @@ class _ArticlePreviewPane extends HookWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(8),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: SolRadius.cardRadius,
       ),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -121,10 +121,9 @@ class _ArticlePreviewPane extends HookWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+              color: colorScheme.surfaceContainerLowest,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(SolRadius.card),
               ),
             ),
             child: Row(

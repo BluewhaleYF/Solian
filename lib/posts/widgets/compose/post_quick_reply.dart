@@ -9,7 +9,7 @@ import 'package:island/accounts/account_pod.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/core/network.dart';
 import 'package:island/posts/compose.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/posts/widgets/compose/publishers_modal.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -169,7 +169,7 @@ class PostQuickReply extends HookConsumerWidget {
               IconButton(
                 onPressed: () async {
                   onLaunch?.call();
-                  final value = await PostComposeDialog.show(
+                  final value = await PostComposeScreen.show(
                     context,
                     initialState: PostComposeInitialState(
                       content: contentController.text,

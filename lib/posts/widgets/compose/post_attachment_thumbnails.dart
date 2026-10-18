@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/theme.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// A row of square attachment previews, three at most, with a `+N` badge
@@ -26,7 +27,8 @@ class PostAttachmentThumbnails extends StatelessWidget {
       spacing: 4,
       children: [
         for (final attachment in visible) _buildThumbnail(context, attachment),
-        if (remainingCount > 0) _buildRemainingCountBadge(context, remainingCount),
+        if (remainingCount > 0)
+          _buildRemainingCountBadge(context, remainingCount),
       ],
     );
   }
@@ -43,7 +45,7 @@ class PostAttachmentThumbnails extends StatelessWidget {
     if (isImage) {
       // Show actual image thumbnail using CloudFileWidget which handles auth properly
       content = ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(SolRadius.sm),
         child: CloudFileWidget(
           item: attachment,
           fit: BoxFit.cover,
@@ -66,11 +68,8 @@ class PostAttachmentThumbnails extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(SolRadius.sm),
       ),
       child: content,
     );
@@ -130,11 +129,8 @@ class PostAttachmentThumbnails extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(SolRadius.sm),
       ),
       child: Center(
         child: Text(
@@ -142,7 +138,7 @@ class PostAttachmentThumbnails extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),

@@ -12,6 +12,7 @@ import 'package:island/stickers/widgets/stickers/sticker_picker.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
 
 const _kStickerExpandHeight = 280.0;
 
@@ -164,14 +165,11 @@ class ComposeToolbar extends HookConsumerWidget {
                   height: _kStickerExpandHeight,
                   margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 1,
-                      color: Theme.of(context).dividerColor,
-                    ),
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: SolRadius.cardRadius,
                   ),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    borderRadius: SolRadius.cardRadius,
                     child: StickerPickerEmbedded(
                       height: _kStickerExpandHeight,
                       onPick: (pack, sticker) {
@@ -204,8 +202,11 @@ class ComposeToolbar extends HookConsumerWidget {
                               if (state.postType == 1)
                                 IconButton(
                                   onPressed: () async {
-                                    final added = await ComposeLogic
-                                        .importMarkdownFile(ref, state);
+                                    final added =
+                                        await ComposeLogic.importMarkdownFile(
+                                          ref,
+                                          state,
+                                        );
                                     if (added > 0) {
                                       onAttachmentAdded?.call();
                                     }

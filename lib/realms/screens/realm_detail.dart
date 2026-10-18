@@ -10,6 +10,7 @@ import 'package:island/core/utils/text.dart';
 import 'package:island/payments/payment_overlay.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/posts/widgets/compose/post_list.dart';
 import 'package:island/realms/models/realm_overview.dart';
 import 'package:island/realms/widgets/realm_form_content.dart';
@@ -1217,10 +1218,9 @@ class _RealmPinnedPostsPageView extends HookConsumerWidget {
                         return Padding(
                           padding: const EdgeInsets.all(8),
                           child: SingleChildScrollView(
-                            child: Card(
+                            child: PostRowSurface(
                               child: PostActionableItem(
                                 item: data.items[index],
-                                borderRadius: 8,
                               ),
                             ),
                           ),
@@ -2109,6 +2109,9 @@ class RealmDetailScreen extends HookConsumerWidget {
                           ),
                           SliverPostList(
                             query: PostListQuery(realm: slug, pinned: false),
+                            // The pane is this list's card, so the rows sit on
+                            // it flush instead of lifting their own sheets.
+                            flush: true,
                           ),
                         ],
                       ),
@@ -3655,10 +3658,7 @@ class _RealmBoostLeaderboardSheet extends ConsumerWidget {
                           radius: 18,
                         )
                       else
-                        CircleAvatar(
-                          radius: 18,
-                          child: Text('?'),
-                        ),
+                        CircleAvatar(radius: 18, child: Text('?')),
                       const Gap(12),
                       Expanded(
                         child: Column(

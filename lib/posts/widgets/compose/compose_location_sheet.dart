@@ -8,6 +8,7 @@ import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
+import 'package:island/core/theme.dart';
 
 class ComposeLocationSheet extends StatefulWidget {
   const ComposeLocationSheet({super.key});
@@ -173,11 +174,8 @@ class _ComposeLocationSheetState extends State<ComposeLocationSheet> {
                   Container(
                     constraints: const BoxConstraints(maxHeight: 200),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colorScheme.outlineVariant,
-                      ),
+                      color: colorScheme.surfaceContainerLow,
+                      borderRadius: SolRadius.cardRadius,
                     ),
                     child: ListView.builder(
                       shrinkWrap: true,
@@ -284,8 +282,8 @@ class _ComposeLocationSheetState extends State<ComposeLocationSheet> {
                   FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
-                      initialCenter: _currentLocation ??
-                          const LatLng(25.0330, 121.5654),
+                      initialCenter:
+                          _currentLocation ?? const LatLng(25.0330, 121.5654),
                       initialZoom: 5,
                       onTap: (tapPosition, point) {
                         setState(() => _selectedPoint = point);
@@ -326,7 +324,9 @@ class _ComposeLocationSheetState extends State<ComposeLocationSheet> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : Icon(
                                   Symbols.my_location,
@@ -346,7 +346,8 @@ class _ComposeLocationSheetState extends State<ComposeLocationSheet> {
             child: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _selectedPoint != null ||
+                onPressed:
+                    _selectedPoint != null ||
                         _nameController.text.trim().isNotEmpty ||
                         _addressController.text.trim().isNotEmpty
                     ? _confirm

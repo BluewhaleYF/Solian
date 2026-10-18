@@ -9,7 +9,7 @@ import 'package:island/chat/pods/chat_summary.dart';
 import 'package:island/chat/utils/chat_room_ordering.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:solar_network_foundation/solar_network_foundation.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
@@ -255,7 +255,7 @@ class _ShareSheetState extends ConsumerState<ShareSheet> {
 
       // Show compose sheet
       if (mounted) {
-        await PostComposeDialog.show(context, initialState: initialState);
+        await PostComposeScreen.show(context, initialState: initialState);
         // Close the share sheet after the compose sheet is dismissed
         if (mounted) {
           Navigator.of(context).pop();

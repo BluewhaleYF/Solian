@@ -14,6 +14,7 @@ import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
 import 'package:island/posts/widgets/compose/post_replies.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -235,10 +236,9 @@ class PostForwardsList extends HookConsumerWidget {
               ),
             ),
       itemBuilder: (context, index, item) {
-        final contentWidget = Card(
+        final contentWidget = PostRowSurface(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: PostActionableItem(
-            borderRadius: 8,
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,
@@ -379,9 +379,9 @@ class BoostListItem extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final publisher = boost.publisher;
     final account = boost.account;
-    final displayName =
-        publisher?.effectiveName ?? account?.nick ?? 'unknown';
-    final username = publisher?.activitypub?.username ??
+    final displayName = publisher?.effectiveName ?? account?.nick ?? 'unknown';
+    final username =
+        publisher?.activitypub?.username ??
         publisher?.name ??
         (account?.name ?? '');
     final avatarUrl =
@@ -628,10 +628,9 @@ class PostRepliesListNonSliver extends HookConsumerWidget {
               ),
             ),
       itemBuilder: (context, index, item) {
-        final contentWidget = Card(
+        final contentWidget = PostRowSurface(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: PostActionableItem(
-            borderRadius: 8,
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,
@@ -783,10 +782,9 @@ class PostRepliesListSliver extends HookConsumerWidget {
               ),
             ),
       itemBuilder: (context, index, item) {
-        final contentWidget = Card(
+        final contentWidget = PostRowSurface(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: PostActionableItem(
-            borderRadius: 8,
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,
@@ -843,10 +841,9 @@ class PostForwardsListSliver extends HookConsumerWidget {
               ),
             ),
       itemBuilder: (context, index, item) {
-        final contentWidget = Card(
+        final contentWidget = PostRowSurface(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: PostActionableItem(
-            borderRadius: 8,
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,

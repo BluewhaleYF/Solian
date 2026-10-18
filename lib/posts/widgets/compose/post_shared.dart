@@ -6,6 +6,7 @@ import 'package:dismissible_page/dismissible_page.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
+import 'package:island/core/theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
@@ -41,6 +42,53 @@ part 'post_shared.g.dart';
 const kMessageEnableEmbedTypes = ['text', 'messages.new'];
 const kPostThreadingLineWidth = 1.0;
 const kChainedRowGap = 8.0;
+
+/// The surface one post row floats on.
+///
+/// Posts own their card: the page ground is `surface`, and a row is a sheet of
+/// lighter paper on top of it — `surfaceContainerLowest` — so the feed reads as
+/// a stack of sheets separated by tone and one gap, never by rules or outlines.
+/// A host only wraps the row (see [PostRowSurface]); the row widget itself
+/// paints nothing.
+Color postRowSurfaceColor(BuildContext context) =>
+    Theme.of(context).colorScheme.surfaceContainerLowest;
+
+/// The card chrome of one post row (or of a compact post list).
+///
+/// Fixed geometry: [SolRadius.card] corners, no elevation and no shadow, and a
+/// uniform outer margin so consecutive rows step down by one gap. Separation is
+/// purely tonal, which is why this exists instead of the global `CardTheme`
+/// (whose `surfaceContainer` tone belongs to content cards, not post rows).
+class PostRowSurface extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  final EdgeInsetsGeometry margin;
+  final double radius;
+
+  const PostRowSurface({
+    super.key,
+    required this.child,
+    this.color,
+    this.margin = EdgeInsets.zero,
+    this.radius = SolRadius.card,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: margin,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      color: color ?? postRowSurfaceColor(context),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: child,
+    );
+  }
+}
 
 /// Space between two images in a post's contained attachment carousel.
 const kAttachmentCarouselGap = 8.0;
@@ -333,7 +381,16 @@ String _truncateRegularPostBody(String content) {
 /// — no media, chain, embed or collection, and a body short enough that the
 /// feed does not clamp it.
 bool postFitsAttentionModal(SnPost post) {
-  if (post.type != 0) return false;
+  if (post.type != 0 || post.isTruncated) return false;
+  if (post.attachments.isNotEmpty ||
+      post.chainedPosts.isNotEmpty ||
+      post.chainedCount > 0 ||
+      post.embedView != null ||
+      post.publisherCollections.isNotEmpty) {
+    return false;
+  }
+  final content = post.content;
+  if (content == null || content.trim().isEmpty) return false;
   return !_shouldClampRegularPostBody(resolvePostMarkdown(post));
 }
 
@@ -348,10 +405,7 @@ Widget _buildArticlePreviewCard(
     padding: padding,
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      border: Border.all(
-        color: Theme.of(context).dividerColor.withOpacity(0.5),
-      ),
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
+      borderRadius: SolRadius.cardRadius,
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -359,7 +413,9 @@ Widget _buildArticlePreviewCard(
       children: [
         if (thumbnail != null)
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(SolRadius.card),
+            ),
             child: CloudFileWidget(item: thumbnail),
           ),
         Column(
@@ -417,8 +473,8 @@ Widget _buildBlogPreviewCard(
     padding: padding,
     child: Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: SolRadius.cardRadius,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -920,15 +976,14 @@ class PostReplyPreview extends HookConsumerWidget {
     final contentWidget = isCompact
         ? itemBuilder(itemMaxWidth ?? MediaQuery.of(context).size.width)
         : Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: SolSpace.lg,
+              vertical: SolSpace.md,
+            ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerLow,
-              border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderRadius: SolRadius.cardRadius,
             ),
-            width: double.infinity,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
@@ -1064,8 +1119,7 @@ class CompactPostRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.25)),
+        borderRadius: SolRadius.pillRadius,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1105,8 +1159,7 @@ class CompactPostRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.25)),
+        borderRadius: SolRadius.pillRadius,
       ),
       child: Text(
         '+$count',
@@ -1182,46 +1235,34 @@ class CompactPostRow extends ConsumerWidget {
 }
 
 class PostTruncateHint extends StatelessWidget {
-  final bool isCompact;
   final EdgeInsets? margin;
   final bool withArrow;
 
-  const PostTruncateHint({
-    super.key,
-    this.isCompact = false,
-    this.margin,
-    this.withArrow = false,
-  });
+  const PostTruncateHint({super.key, this.margin, this.withArrow = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: margin ?? EdgeInsets.only(top: isCompact ? 4 : 8),
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 8 : 12,
-        vertical: isCompact ? 4 : 8,
-      ),
+      margin: margin ?? EdgeInsets.only(top: 8),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(SolRadius.pill),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
         children: [
           Icon(
             Symbols.more_horiz,
-            size: isCompact ? 14 : 16,
+            size: 16,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          SizedBox(width: isCompact ? 4 : 6),
-          Flexible(
+          const Gap(4),
+          Expanded(
             child: Text(
               'postTruncated'.tr(),
               style: TextStyle(
-                fontSize: isCompact ? 10 : 12,
+                fontSize: 11,
                 color: Theme.of(context).colorScheme.secondary,
                 fontStyle: FontStyle.italic,
               ),
@@ -1230,10 +1271,9 @@ class PostTruncateHint extends StatelessWidget {
             ),
           ),
           if (withArrow) ...[
-            SizedBox(width: isCompact ? 3 : 4),
             Icon(
               Symbols.arrow_forward,
-              size: isCompact ? 12 : 14,
+              size: 14,
               color: Theme.of(context).colorScheme.secondary,
             ),
           ],
@@ -1380,8 +1420,9 @@ class ReferencedPostWidget extends HookConsumerWidget {
                           ? _buildBlogPreviewCard(context, referencePost)
                           : Builder(
                               builder: (context) {
-                                final referenceContent =
-                                    resolvePostMarkdown(referencePost);
+                                final referenceContent = resolvePostMarkdown(
+                                  referencePost,
+                                );
                                 final shouldTruncateReferenceBody =
                                     (referencePost.content?.isNotEmpty ??
                                         false) &&
@@ -1441,9 +1482,8 @@ class ReferencedPostWidget extends HookConsumerWidget {
                                     if (referencePost.isTruncated ||
                                         shouldTruncateReferenceBody)
                                       const PostTruncateHint(
-                                        isCompact: true,
                                         margin: EdgeInsets.only(
-                                          top: 4,
+                                          top: 8,
                                           bottom: 4,
                                         ),
                                       ),
@@ -2220,10 +2260,9 @@ class PostBody extends ConsumerWidget {
         if ((item.isTruncated && item.type != 1 && item.type != 2) ||
             shouldClampRegularBody)
           PostTruncateHint(
-            isCompact: true,
             withArrow: isInteractive,
             margin: EdgeInsets.only(
-              top: 4,
+              top: 8,
               bottom: 4,
               left: renderingPadding.left,
               right: renderingPadding.right,
@@ -2285,7 +2324,10 @@ class PostBody extends ConsumerWidget {
                   borderRadius: useContainedAttachments ? 16 : 8,
                 ),
         if (forwardedCard != null)
-          forwardedCard!.padding(left: renderingPadding.left, right: renderingPadding.right),
+          forwardedCard!.padding(
+            left: renderingPadding.left,
+            right: renderingPadding.right,
+          ),
         if (metadataChildren.isNotEmpty)
           Column(
             mainAxisSize: MainAxisSize.min,

@@ -24,9 +24,10 @@ import 'package:island/posts/pods/post_chain.dart';
 import 'package:island/core/services/deeplink_service.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/posts/compose.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/posts/screens/compose_blog.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/posts/widgets/compose/embed_view_renderer.dart';
 import 'package:island/posts/widgets/compose/post_award_history_sheet.dart';
 import 'package:island/posts/widgets/compose/post_award_sheet.dart';
@@ -225,10 +226,11 @@ class PostRealmBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // A realm pill, not a panel: the fill carries the shape.
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: SolRadius.pillRadius,
       ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
@@ -491,7 +493,7 @@ class PostActionButtons extends HookConsumerWidget {
         label: 'reply'.tr(),
         count: post.repliesCount > 0 ? formatScore(post.repliesCount) : null,
         onPressed: () {
-          PostComposeDialog.show(
+          PostComposeScreen.show(
             context,
             initialState: PostComposeInitialState(replyingTo: post),
           );
@@ -501,7 +503,7 @@ class PostActionButtons extends HookConsumerWidget {
         icon: Symbols.forward,
         label: 'forward'.tr(),
         onPressed: () {
-          PostComposeDialog.show(
+          PostComposeScreen.show(
             context,
             initialState: PostComposeInitialState(forwardingTo: post),
           );
@@ -558,7 +560,7 @@ class PostActionButtons extends HookConsumerWidget {
         label: 'reply'.tr(),
         count: post.repliesCount > 0 ? formatScore(post.repliesCount) : null,
         onPressed: () {
-          PostComposeDialog.show(
+          PostComposeScreen.show(
             context,
             initialState: PostComposeInitialState(replyingTo: post),
           );
@@ -568,7 +570,7 @@ class PostActionButtons extends HookConsumerWidget {
         icon: Symbols.forward,
         label: 'forward'.tr(),
         onPressed: () {
-          PostComposeDialog.show(
+          PostComposeScreen.show(
             context,
             initialState: PostComposeInitialState(forwardingTo: post),
           );
@@ -665,7 +667,7 @@ class PostActionButtons extends HookConsumerWidget {
               }
             });
           } else {
-            PostComposeDialog.show(context, originalPost: post).then((value) {
+            PostComposeScreen.show(context, originalPost: post).then((value) {
               if (value == true) {
                 onRefresh?.call();
               }
@@ -803,12 +805,7 @@ class PostActionButtons extends HookConsumerWidget {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerLow,
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withOpacity(
-                          0.45,
-                        ),
-                      ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: SolRadius.cardRadius,
                     ),
                     child: Row(children: compactRailSlots),
                   ),
@@ -1622,7 +1619,7 @@ class _PostActionsMenu extends HookConsumerWidget {
               );
               if (result != null) refresh();
             } else {
-              final result = await PostComposeDialog.show(
+              final result = await PostComposeScreen.show(
                 context,
                 originalPost: post,
               );
@@ -1658,7 +1655,7 @@ class _PostActionsMenu extends HookConsumerWidget {
           };
         case 'reply':
           return () async {
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               initialState: PostComposeInitialState(replyingTo: post),
             );
@@ -1666,7 +1663,7 @@ class _PostActionsMenu extends HookConsumerWidget {
           };
         case 'forward':
           return () async {
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               initialState: PostComposeInitialState(forwardingTo: post),
             );

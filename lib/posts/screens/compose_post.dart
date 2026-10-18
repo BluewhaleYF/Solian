@@ -1,31 +1,34 @@
-import 'dart:async';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/database.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/posts/compose.dart';
 import 'package:island/posts/compose_storage_db.dart';
-import 'package:island/posts/screens/compose_blog.dart';
 import 'package:island/posts/screens/post_detail.dart';
+import 'package:island/posts/widgets/compose/compose_card.dart';
+import 'package:island/posts/widgets/compose/compose_schedule.dart';
+import 'package:island/posts/widgets/compose/compose_shared.dart';
+import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:island/route.gr.dart';
-import 'package:island/shared/widgets/attention_modal.dart';
-import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
+import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/shared/widgets/empty_state.dart';
-import 'package:island/posts/widgets/compose/compose_card.dart';
-import 'package:island/posts/widgets/compose/compose_settings_sheet.dart';
-import 'package:island/posts/widgets/compose/compose_shared.dart';
-import 'package:island/posts/widgets/compose/compose_schedule.dart';
-import 'package:island/posts/widgets/compose/compose_state_utils.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-class PostComposeDialog extends HookConsumerWidget {
+/// The post composer, as a page.
+///
+/// Authoring a post is a place you go, not a modal that interrupts the feed:
+/// the composer owns the whole viewport, the keyboard and the window's own
+/// back/close affordances, and a draft survives leaving it. [show] keeps the
+/// push-and-await-result shape its callers already use.
+@RoutePage()
+class PostComposeScreen extends HookConsumerWidget {
   final SnPost? originalPost;
   final PostComposeInitialState? initialState;
 
@@ -35,13 +38,9 @@ class PostComposeDialog extends HookConsumerWidget {
   final SnPost? replyingTo;
   final SnPost? forwardingTo;
   final SnPost? chainingTo;
-  final VoidCallback onCancel;
-  final VoidCallback onSubmitted;
 
-  const PostComposeDialog({
+  const PostComposeScreen({
     super.key,
-    required this.onCancel,
-    required this.onSubmitted,
     this.originalPost,
     this.initialState,
     this.replyingTo,
@@ -49,6 +48,10 @@ class PostComposeDialog extends HookConsumerWidget {
     this.chainingTo,
   });
 
+  /// Opens the composer and resolves to `true` once a post was submitted.
+  ///
+  /// Editing an article or a blog is a different authoring surface entirely, so
+  /// those two types are routed to their own pages instead.
   static Future<bool?> show(
     BuildContext context, {
     SnPost? originalPost,
@@ -56,39 +59,25 @@ class PostComposeDialog extends HookConsumerWidget {
     SnPost? replyingTo,
     SnPost? forwardingTo,
     SnPost? chainingTo,
-  }) {
+  }) async {
     if (originalPost != null && originalPost.type == 1) {
-      context.router.push(ArticleEditRoute(id: originalPost.id));
-      return Future.value(true);
+      await context.router.push(ArticleEditRoute(id: originalPost.id));
+      return true;
     }
     if (originalPost != null && originalPost.type == 2) {
-      return BlogComposeDialog.show(context, originalPost: originalPost);
+      await context.router.push(BlogComposeRoute(originalPost: originalPost));
+      return true;
     }
 
-    final completer = Completer<bool?>();
-    final dialogKey = GlobalKey();
-    showAttentionModal(
-      id: 'post-compose',
-      replaceIfExists: true,
-      barrierDismissible: true,
-      builder: (overlayContext, dismiss) => PostComposeDialog(
-        key: dialogKey,
+    return context.router.push<bool?>(
+      PostComposeRoute(
         originalPost: originalPost,
         initialState: initialState,
         replyingTo: replyingTo,
         forwardingTo: forwardingTo,
         chainingTo: chainingTo,
-        onCancel: () {
-          if (!completer.isCompleted) completer.complete(null);
-          dismiss();
-        },
-        onSubmitted: () {
-          if (!completer.isCompleted) completer.complete(true);
-          dismiss();
-        },
       ),
     );
-    return completer.future;
   }
 
   @override
@@ -96,6 +85,7 @@ class PostComposeDialog extends HookConsumerWidget {
     ref.watch(composeStorageProvider);
     final prompted = useState(false);
     final showPreview = useState(false);
+    final isDragging = useState(false);
 
     final fullPostData =
         originalPost != null &&
@@ -160,6 +150,34 @@ class PostComposeDialog extends HookConsumerWidget {
     );
     ComposeStateUtils.useInitialStateLoader(state, initialState);
 
+    // A composer page never traps the user: leaving saves the draft, whether
+    // they pop the route or a submit dismisses it.
+    useEffect(() {
+      final database = ref.read(databaseProvider);
+      return () {
+        state.stopAutoSave();
+        ComposeLogic.saveDraftWithoutUploadWithDatabase(database, state);
+        ComposeLogic.dispose(state);
+      };
+    }, [state]);
+
+    useEffect(() {
+      final database = ref.read(databaseProvider);
+      final isNewPost =
+          effectiveOriginalPost == null &&
+          repliedPost == null &&
+          forwardedPost == null;
+      if (isNewPost) {
+        state.startAutoSave(
+          (composeState) => ComposeLogic.saveDraftWithoutUploadWithDatabase(
+            database,
+            composeState,
+          ),
+        );
+      }
+      return null;
+    }, [state, effectiveOriginalPost, repliedPost, forwardedPost]);
+
     useEffect(
       () {
         if (!prompted.value &&
@@ -185,43 +203,6 @@ class PostComposeDialog extends HookConsumerWidget {
       ],
     );
 
-    useEffect(() {
-      final database = ref.read(databaseProvider);
-      final isNewPost =
-          effectiveOriginalPost == null &&
-          repliedPost == null &&
-          forwardedPost == null;
-      if (isNewPost) {
-        state.startAutoSave(
-          (composeState) => ComposeLogic.saveDraftWithoutUploadWithDatabase(
-            database,
-            composeState,
-          ),
-        );
-      }
-      return () {
-        state.stopAutoSave();
-        if (isNewPost) {
-          ComposeLogic.saveDraftWithoutUploadWithDatabase(database, state);
-        }
-        ComposeLogic.dispose(state);
-      };
-    }, [state, effectiveOriginalPost, repliedPost, forwardedPost]);
-
-    void showSettingsSheet() {
-      showAttentionModal(
-        id: 'compose-settings',
-        replaceIfExists: true,
-        barrierDismissible: true,
-        builder: (context, dismiss) => AttentionModalScaffold(
-          titleText: 'postSettings'.tr(),
-          onDismiss: dismiss,
-          forceCard: true,
-          child: ComposeSettingsSheet(state: state),
-        ),
-      );
-    }
-
     Future<void> performSubmit() async {
       await ComposeLogic.submitInBackground(
         ref,
@@ -231,7 +212,9 @@ class PostComposeDialog extends HookConsumerWidget {
         forwardedPost: forwardedPost,
         chainedPost: chainedPost,
         autoChain: state.chainWithPrevious.value,
-        onSubmitted: onSubmitted,
+        onSubmitted: () {
+          if (context.mounted) context.router.maybePop(true);
+        },
       );
     }
 
@@ -243,96 +226,111 @@ class PostComposeDialog extends HookConsumerWidget {
       ),
       IconButton(
         icon: const Icon(Symbols.settings),
-        onPressed: showSettingsSheet,
+        onPressed: () => ComposeLogic.showSettingsSheet(context, state),
         tooltip: 'postSettings'.tr(),
       ),
       ComposeScheduleButton(state: state),
-      IconButton(
-        onPressed:
-            (state.submitting.value || state.currentPublisher.value == null)
-            ? null
-            : performSubmit,
-        icon: state.submitting.value
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(
-                effectiveOriginalPost != null ? Symbols.edit : Symbols.upload,
-              ),
-        tooltip: effectiveOriginalPost != null
-            ? 'postUpdate'.tr()
-            : 'postPublish'.tr(),
+      ValueListenableBuilder<bool>(
+        valueListenable: state.submitting,
+        builder: (context, submitting, _) {
+          return IconButton(
+            onPressed: (submitting || state.currentPublisher.value == null)
+                ? null
+                : performSubmit,
+            icon: submitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    effectiveOriginalPost != null
+                        ? Symbols.edit
+                        : Symbols.upload,
+                  ),
+            tooltip: effectiveOriginalPost != null
+                ? 'postUpdate'.tr()
+                : 'postPublish'.tr(),
+          );
+        },
       ),
     ];
 
-    final isDragging = useState(false);
-
-    return DropTarget(
-      onDragEntered: (_) => isDragging.value = true,
-      onDragExited: (_) => isDragging.value = false,
-      onDragDone: (details) {
-        isDragging.value = false;
-        ComposeLogic.addDroppedFiles(ref, state, details.files);
-      },
-      child: Stack(
-        children: [
-          AttentionModalScaffold(
-            titleText: 'postCompose'.tr(),
-            actions: actions,
-            onDismiss: onCancel,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: SizedBox.expand(
-                key: ValueKey(showPreview.value),
-                child: showPreview.value
-                    ? _DialogPreviewPane(state: state)
-                    : PostComposeCard(
-                        originalPost: effectiveOriginalPost,
-                        initialState: initialState,
-                        onCancel: onCancel,
-                        onSubmit: onSubmitted,
-                        isContained: true,
-                        showHeader: false,
-                        providedState: state,
-                        onSubmitRequest: performSubmit,
-                      ),
+    return PopScope(
+      child: DropTarget(
+        onDragEntered: (_) => isDragging.value = true,
+        onDragExited: (_) => isDragging.value = false,
+        onDragDone: (details) {
+          isDragging.value = false;
+          ComposeLogic.addDroppedFiles(ref, state, details.files);
+        },
+        child: Stack(
+          children: [
+            AppScaffold(
+              appBar: AppBar(
+                leading: const AutoLeadingButton(),
+                title: Text(
+                  effectiveOriginalPost != null
+                      ? 'postEditing'.tr()
+                      : 'postCompose'.tr(),
+                ),
+                actions: actions,
+              ),
+              body: Column(
+                children: [
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: showPreview.value
+                          ? _ComposePreviewPane(
+                              key: const ValueKey('preview'),
+                              state: state,
+                            )
+                          : PostComposeForm(
+                              key: const ValueKey('compose'),
+                              originalPost: effectiveOriginalPost,
+                              initialState: initialState,
+                              providedState: state,
+                              onSubmitRequest: performSubmit,
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          if (isDragging.value)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primaryContainer.withOpacity(0.9),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Symbols.upload_file,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Gap(16),
-                        Text(
-                          'dropFilesHere'.tr(),
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
+            if (isDragging.value)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withOpacity(0.9),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Symbols.upload_file,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const Gap(SolSpace.lg),
+                          Text(
+                            'dropFilesHere'.tr(),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -353,7 +351,7 @@ class PostComposeDialog extends HookConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('restoreDraftMessage'.tr()),
-            const SizedBox(height: 16),
+            const Gap(SolSpace.lg),
             _buildCompactDraftPreview(context, latestDraft),
           ],
         ),
@@ -375,14 +373,12 @@ class PostComposeDialog extends HookConsumerWidget {
   }
 
   Widget _buildCompactDraftPreview(BuildContext context, SnPost draft) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(SolSpace.md),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-        ),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,27 +386,27 @@ class PostComposeDialog extends HookConsumerWidget {
           Row(
             children: [
               Icon(
-                Icons.description,
+                Symbols.description,
                 size: 16,
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const Gap(SolSpace.sm),
               Text(
                 'draft'.tr(),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const Gap(SolSpace.sm),
           if (draft.title?.isNotEmpty ?? false)
             Text(
               draft.title!,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: theme.colorScheme.onSurface,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -420,7 +416,7 @@ class PostComposeDialog extends HookConsumerWidget {
               draft.content!,
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -430,18 +426,18 @@ class PostComposeDialog extends HookConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.attach_file,
+                  Symbols.attach_file,
                   size: 12,
-                  color: Theme.of(context).colorScheme.secondary,
+                  color: theme.colorScheme.secondary,
                 ),
-                const SizedBox(width: 4),
+                const Gap(SolSpace.xs),
                 Text(
-                  '${draft.attachments.length} attachment${draft.attachments.length > 1 ? 's' : ''}',
+                  'postHasAttachments',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: theme.colorScheme.secondary,
                     fontSize: 11,
                   ),
-                ),
+                ).plural(draft.attachments.length),
               ],
             ),
         ],
@@ -450,10 +446,11 @@ class PostComposeDialog extends HookConsumerWidget {
   }
 }
 
-class _DialogPreviewPane extends HookWidget {
+/// Renders the post exactly as the feed would, on the composer's own surface.
+class _ComposePreviewPane extends HookWidget {
   final ComposeState state;
 
-  const _DialogPreviewPane({required this.state});
+  const _ComposePreviewPane({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -470,14 +467,21 @@ class _DialogPreviewPane extends HookWidget {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: MarkdownTextContent(
-        content: content.text,
-        textStyle: theme.textTheme.bodyMedium,
-        attachments: attachments
-            .where((e) => e.isOnCloud)
-            .map((e) => e.data as IDisplayableCloudFile)
-            .toList(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Padding(
+            padding: const EdgeInsets.all(SolSpace.lg),
+            child: MarkdownTextContent(
+              content: content.text,
+              textStyle: theme.textTheme.bodyMedium,
+              attachments: attachments
+                  .where((e) => e.isOnCloud)
+                  .map((e) => e.data as IDisplayableCloudFile)
+                  .toList(),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:island/accounts/widgets/activitypub/actor_profile.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/posts/widgets/compose/post_interactions.dart';
 import 'package:island/shared/widgets/content/image.dart';
 import 'package:island/shared/widgets/hover_scrollable_list.dart';
@@ -570,13 +571,8 @@ class CustomReactionForm extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-              ),
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: SolRadius.cardRadius,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,11 +624,11 @@ class CustomReactionForm extends HookConsumerWidget {
           Container(
             height: 280,
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).dividerColor),
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              borderRadius: SolRadius.cardRadius,
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
+              borderRadius: SolRadius.cardRadius,
               child: StickerPickerEmbedded(
                 height: 280,
                 onPick: (pack, sticker) {

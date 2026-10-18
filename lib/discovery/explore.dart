@@ -7,7 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/posts/screens/compose_blog.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/screens/post_detail.dart';
@@ -183,7 +183,7 @@ class ExploreScreen extends HookConsumerWidget {
                 title: Text('postCompose').tr(),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
-                  await PostComposeDialog.show(parentContext);
+                  await PostComposeScreen.show(parentContext);
                 },
               ),
               ListTile(
@@ -314,7 +314,8 @@ class ExploreScreen extends HookConsumerWidget {
         SolSpace.md,
       ),
       onOpenPost: onOpenPost,
-      itemWrapper: (context, index, post, child) => ExploreCard(child: child),
+      itemWrapper: (context, index, post, child) =>
+          PostRowSurface(child: child),
       separatorBuilder: (context, index, post) => const Gap(kExploreCardGap),
     );
   }
@@ -545,7 +546,6 @@ class _DiscoveryActivityItem extends ConsumerWidget {
                     child: PostActionableItem(
                       item: post,
                       isCompact: true,
-                      borderRadius: SolRadius.md,
                       padding: const EdgeInsets.fromLTRB(
                         SolSpace.lg,
                         SolSpace.md + 2,
@@ -973,9 +973,8 @@ class _ActivityListView extends HookConsumerWidget {
                 : (postData as Map).cast<String, dynamic>();
             final post = SnPost.fromJson(postJson);
 
-            itemWidget = ExploreCard(
+            itemWidget = PostRowSurface(
               child: PostActionableItem(
-                borderRadius: SolRadius.card,
                 padding: const EdgeInsets.fromLTRB(
                   SolSpace.lg,
                   SolSpace.md + 2,
@@ -1012,7 +1011,7 @@ class _ActivityListView extends HookConsumerWidget {
               asStringKeyedMap(rawData['activity']),
             );
             final activity = SnPresenceActivity.fromJson(activityJson);
-            itemWidget = ExploreCard(
+            itemWidget = PostRowSurface(
               child: FriendPresenceItem(activity: activity, rawData: rawData),
             );
             break;
@@ -1021,7 +1020,7 @@ class _ActivityListView extends HookConsumerWidget {
               asStringKeyedMap(asStringKeyedMap(item.data)['status']),
             );
             final status = SnAccountStatus.fromJson(statusJson);
-            itemWidget = ExploreCard(
+            itemWidget = PostRowSurface(
               child: FriendStatusItem(
                 status: status,
                 createdAt: item.createdAt,

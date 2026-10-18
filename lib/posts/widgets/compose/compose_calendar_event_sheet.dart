@@ -82,24 +82,22 @@ class ComposeCalendarEventSheet extends HookConsumerWidget {
                                 children: [
                                   Text(
                                     event.title,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const Gap(4),
                                   Text(
                                     DateFormat.yMMMd().format(event.startTime),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
                                   ),
                                   if (event.description != null &&
                                       event.description!.isNotEmpty) ...[

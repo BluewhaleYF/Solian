@@ -16,6 +16,7 @@ import 'package:island/shared/widgets/pagination_list.dart';
 
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
+import 'package:island/core/theme.dart';
 
 /// Relationship the current account has with a remote fediverse actor.
 ///
@@ -92,11 +93,10 @@ class FediverseActorPostsWidget extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: PostItemSkeleton(maxWidth: double.infinity),
       ),
-      seperatorBuilder: (context, index, post) => const Divider(height: 1),
+      seperatorBuilder: (context, index, post) => const Gap(SolSpace.md),
       itemBuilder: (context, index, post) {
         return PostActionableItem(
           item: post,
-          borderRadius: 8,
           onTap: !post.isCached && post.fediverseUri != null
               ? () => launchUrlString(post.fediverseUri!)
               : null,
@@ -447,7 +447,8 @@ class FediversePublisherInfoCards extends StatelessWidget {
       spacing: 12,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if ((data.metadata?['_misskey_followedMessage'] as String?)?.isNotEmpty ??
+        if ((data.metadata?['_misskey_followedMessage'] as String?)
+                ?.isNotEmpty ??
             false)
           FediverseFollowedMessageCard(data: data),
         FediverseOriginHintCard(data: data),

@@ -26,6 +26,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: ArticleEditRoute.page, path: '/articles/:id/edit'),
     AutoRoute(page: BlogComposeRoute.page, path: '/blogs/compose'),
     AutoRoute(page: BlogEditRoute.page, path: '/blogs/:id/edit'),
+    AutoRoute(page: PostComposeRoute.page, path: '/compose'),
 
     // Auth routes
     AutoRoute(page: LoginRoute.page, path: '/auth/login'),

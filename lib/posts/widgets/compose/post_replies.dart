@@ -5,6 +5,7 @@ import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 
 typedef PostRepliesQuery = ({String postId, String? order, bool orderDesc});
 
@@ -93,17 +94,9 @@ class PostRepliesList extends HookConsumerWidget {
               ),
             ),
       itemBuilder: (context, index, item) {
-        final theme = Theme.of(context);
-        final contentWidget = Card(
+        final contentWidget = PostRowSurface(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          elevation: 0,
-          color: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: theme.dividerColor.withOpacity(0.45)),
-          ),
           child: PostActionableItem(
-            borderRadius: 8,
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,

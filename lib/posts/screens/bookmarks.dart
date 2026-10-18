@@ -8,6 +8,7 @@ import 'package:island/posts/pods/bookmarks.dart';
 import 'package:island/posts/widgets/compose/post_interactions.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -67,10 +68,9 @@ class _BookmarksTab extends HookConsumerWidget {
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),
-            child: Card(
+            child: PostRowSurface(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: PostActionableItem(
-                borderRadius: 8,
                 item: item,
                 isShowReference: false,
                 isEmbedOpenable: true,
@@ -112,7 +112,9 @@ class _ReactedPostsTab extends HookConsumerWidget {
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),
-            child: Card(
+            // A reacted post is one surface: the reaction header and the row it
+            // annotates share a single sheet, so only the outer chrome paints.
+            child: PostRowSurface(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +137,6 @@ class _ReactedPostsTab extends HookConsumerWidget {
                     ),
                   ),
                   PostActionableItem(
-                    borderRadius: 8,
                     item: item.post,
                     isShowReference: false,
                     isEmbedOpenable: true,

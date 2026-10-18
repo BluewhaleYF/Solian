@@ -214,7 +214,7 @@ void main() {
     final state = ComposeLogic.createState();
     await pump(
       tester,
-      PostComposeCard(
+      PostComposeForm(
         initialState: PostComposeInitialState(
           chainingTo: _post('head', 'head content', chainedPublisher),
         ),

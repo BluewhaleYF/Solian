@@ -17,6 +17,7 @@ import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
 
 class ComposeSettingsSheet extends HookConsumerWidget {
   final ComposeState state;
@@ -126,11 +127,8 @@ class ComposeSettingsSheet extends HookConsumerWidget {
           // Tags field
           Container(
             decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
-                width: 1,
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: SolRadius.cardRadius,
             ),
             padding: const EdgeInsets.all(16),
             child: Column(

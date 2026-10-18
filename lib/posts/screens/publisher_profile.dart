@@ -23,6 +23,7 @@ import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_list.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/posts/widgets/fediverse_publisher_info.dart';
 import 'package:island/posts/widgets/publisher_collection_info.dart';
 import 'package:island/core/services/responsive.dart';
@@ -117,10 +118,9 @@ class _PinnedPostsPageView extends HookConsumerWidget {
                         return Padding(
                           padding: const EdgeInsets.all(8),
                           child: SingleChildScrollView(
-                            child: Card(
+                            child: PostRowSurface(
                               child: PostActionableItem(
                                 item: data.items[index],
-                                borderRadius: 8,
                               ),
                             ),
                           ),
@@ -238,8 +238,7 @@ String _publisherBio(SnPublisher data) {
 /// `username`, so the local part is the only thing the chip renders.
 String _publisherUsername(SnPublisher data) {
   final actorUsername = data.activitypub?.username;
-  final raw =
-      actorUsername?.isNotEmpty == true ? actorUsername! : data.name;
+  final raw = actorUsername?.isNotEmpty == true ? actorUsername! : data.name;
   return raw.split('@').first;
 }
 
@@ -1103,9 +1102,16 @@ class _PublisherPostsTab extends HookWidget {
   /// edge to match the realm feed.
   final double horizontalPadding;
 
+  /// Whether the host already draws the list's card. The wide layout renders
+  /// this tab inside the publication card, so the rows must sit flush on it
+  /// rather than lifting a sheet of their own; the narrow layout lays the tab
+  /// straight on the page ground, where each row needs its own card.
+  final bool flush;
+
   const _PublisherPostsTab({
     required this.pubName,
     this.horizontalPadding = 12,
+    this.flush = false,
   });
 
   @override
@@ -1159,10 +1165,7 @@ class _PublisherPostsTab extends HookWidget {
             query: queryState.value,
             queryKey: 'publisher-$pubName-$queryId',
             maxWidth: double.infinity,
-            itemPadding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
+            flush: flush,
           ),
         ),
         SliverGap(MediaQuery.of(context).padding.bottom + 16),
@@ -1649,6 +1652,9 @@ class PublisherProfileContent extends HookConsumerWidget {
                 _PublisherPostsTab(
                   pubName: name,
                   horizontalPadding: useWideLayout ? 0 : 12,
+                  // Wide layout hosts this tab in the publication card, which
+                  // already draws the row surface.
+                  flush: useWideLayout,
                 ),
                 _PublisherCollectionsTab(pubName: name),
                 _PublisherStickerPacksTab(pubName: name),

@@ -540,10 +540,14 @@ void main() {
 
     final posts = find.byType(PostActionableItem);
     expect(posts, findsNWidgets(2));
-    final cards = find.ancestor(of: posts, matching: find.byType(ExploreCard));
+    final cards = find.ancestor(
+      of: posts,
+      matching: find.byType(PostRowSurface),
+    );
     expect(cards, findsNWidgets(2));
-    final cardWidget = tester.widget<ExploreCard>(cards.first);
-    expect(cardWidget.radius, 20);
+    final rowSurface = tester.widget<PostRowSurface>(cards.first);
+    expect(rowSurface.radius, SolRadius.card);
+    expect(rowSurface.color, isNull, reason: 'the row uses its default tone');
     expect(
       tester
           .widget<Card>(
@@ -586,7 +590,10 @@ void main() {
 
     final posts = find.byType(PostActionableItem);
     expect(posts, findsNWidgets(2));
-    final cards = find.ancestor(of: posts, matching: find.byType(ExploreCard));
+    final cards = find.ancestor(
+      of: posts,
+      matching: find.byType(PostRowSurface),
+    );
     expect(cards, findsNWidgets(2));
 
     final first = tester.getRect(cards.at(0));

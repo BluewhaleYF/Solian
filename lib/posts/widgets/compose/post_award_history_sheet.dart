@@ -8,6 +8,7 @@ import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/theme.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// The kind of post support a user can give.
@@ -341,9 +342,8 @@ class _HistoryOverview extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 4, 20, 2),
       padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withOpacity(0.12)),
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Row(
         children: [
@@ -455,9 +455,8 @@ class PostAwardItem extends StatelessWidget {
     final color = _getAttitudeColor(award.attitude, context);
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.14)),
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
@@ -528,9 +527,8 @@ class PostSponsorBidItem extends StatelessWidget {
     final color = colorScheme.tertiary;
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.14)),
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: SolRadius.cardRadius,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

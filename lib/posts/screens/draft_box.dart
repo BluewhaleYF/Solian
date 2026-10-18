@@ -7,7 +7,7 @@ import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/posts/compose_storage_db.dart';
 import 'package:island/posts/pods/draft_box.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
@@ -94,7 +94,7 @@ class DraftBoxTile extends ConsumerWidget {
   Future<void> _openComposer(BuildContext context, WidgetRef ref) async {
     final post = entry.post;
     if (!entry.isLocalOnly) {
-      await PostComposeDialog.show(context, originalPost: post);
+      await PostComposeScreen.show(context, originalPost: post);
       return;
     }
 
@@ -110,7 +110,7 @@ class DraftBoxTile extends ConsumerWidget {
           ref,
         );
         if (!context.mounted) return;
-        await PostComposeDialog.show(
+        await PostComposeScreen.show(
           context,
           originalPost: post,
           replyingTo: repliedPost,

@@ -21,6 +21,7 @@ import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/core/utils/text.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
@@ -413,10 +414,9 @@ class _PostsSearchTab extends HookConsumerWidget {
     }, [searchQuery.value]);
 
     Widget buildPostRow(SnPost post) {
-      return ExploreCard(
+      return PostRowSurface(
         child: PostActionableItem(
           item: post,
-          borderRadius: SolRadius.card,
           padding: const EdgeInsets.fromLTRB(
             SolSpace.lg,
             SolSpace.md + 2,
@@ -970,7 +970,7 @@ class SearchResultCard extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
-        child: ExploreCard(child: child),
+        child: PostRowSurface(child: child),
       ),
     );
   }

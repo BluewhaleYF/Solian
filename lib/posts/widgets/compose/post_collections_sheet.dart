@@ -12,11 +12,7 @@ class PostCollectionsSheet extends HookConsumerWidget {
   final SnPost post;
   final VoidCallback? onChanged;
 
-  const PostCollectionsSheet({
-    super.key,
-    required this.post,
-    this.onChanged,
-  });
+  const PostCollectionsSheet({super.key, required this.post, this.onChanged});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,7 +29,9 @@ class PostCollectionsSheet extends HookConsumerWidget {
       try {
         isLoading.value = true;
         final client = ref.read(solarNetworkClientProvider);
-        final items = await client.sphere.listPublisherCollections(publisherName);
+        final items = await client.sphere.listPublisherCollections(
+          publisherName,
+        );
         collections.value = items;
       } catch (err) {
         showErrorAlert(err);

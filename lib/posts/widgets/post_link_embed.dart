@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/core/services/deeplink_service.dart';
 import 'package:island/core/services/time.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/utils/text.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/screens/post_detail.dart';
@@ -165,7 +166,6 @@ class PostLinkEmbed extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        border: Border.all(color: scheme.outlineVariant),
         borderRadius: _borderRadius,
       ),
       clipBehavior: Clip.antiAlias,
@@ -226,7 +226,7 @@ class PostLinkEmbed extends ConsumerWidget {
   }
 }
 
-const BorderRadius _borderRadius = BorderRadius.all(Radius.circular(12));
+const BorderRadius _borderRadius = SolRadius.cardRadius;
 
 /// Author, handle and age of the embedded post, with the affordance that says
 /// the card opens.
@@ -379,7 +379,7 @@ class _PostLinkEmbedSkeleton extends StatelessWidget {
       containersColor: scheme.surfaceContainerLow,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: scheme.outlineVariant),
+          color: scheme.surfaceContainerLow,
           borderRadius: _borderRadius,
         ),
         padding: const EdgeInsets.all(12),
@@ -394,7 +394,10 @@ class _PostLinkEmbedSkeleton extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 4,
-                  children: [box(width: 120, height: 11), box(width: 80, height: 9)],
+                  children: [
+                    box(width: 120, height: 11),
+                    box(width: 80, height: 9),
+                  ],
                 ),
               ],
             ),
@@ -424,7 +427,7 @@ class _UnavailablePostLink extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: scheme.outlineVariant),
+        color: scheme.surfaceContainerLow,
         borderRadius: _borderRadius,
       ),
       clipBehavior: Clip.antiAlias,
@@ -453,10 +456,7 @@ class _UnavailablePostLink extends ConsumerWidget {
                           href,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: scheme.primary,
-                          ),
+                          style: TextStyle(fontSize: 13, color: scheme.primary),
                         ),
                       ),
                     ],

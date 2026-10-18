@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
+import 'package:island/core/theme.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// A reusable widget for displaying info banners in compose screens.
@@ -206,9 +207,8 @@ class CompactReferencePost extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: SolRadius.cardRadius,
         ),
         child: Row(
           children: [

@@ -92,7 +92,9 @@ class SliverFriendPresenceStrip extends StatelessWidget {
 }
 
 /// Active friends first, then online, then the most recently seen offline ones.
-List<SnFriendOverviewItem> _orderByPresence(List<SnFriendOverviewItem> friends) {
+List<SnFriendOverviewItem> _orderByPresence(
+  List<SnFriendOverviewItem> friends,
+) {
   final ordered = [...friends];
   ordered.sort((a, b) {
     final byActivity = (b.activities.isNotEmpty ? 1 : 0).compareTo(

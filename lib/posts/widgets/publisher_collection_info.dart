@@ -8,6 +8,7 @@ import 'package:island/core/network.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/attention_modal_scaffold.dart';
@@ -369,14 +370,13 @@ class PublisherCollectionDetailSheet extends ConsumerWidget {
           : Column(
               children: [
                 for (final post in result.items)
-                  Card(
+                  PostRowSurface(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: PostActionableItem(
                       onTap: () {
                         onDismiss();
                         context.router.push(PostDetailRoute(id: post.id));
                       },
-                      borderRadius: 8,
                       item: post,
                       isFullPost: false,
                       isEmbedReply: false,

@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
 
 class EmbedViewRenderer extends HookConsumerWidget {
   final SnPostEmbedView embedView;
@@ -33,15 +34,11 @@ class EmbedViewRenderer extends HookConsumerWidget {
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight ?? 400),
       decoration: BoxDecoration(
-        borderRadius: borderRadius ?? BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.3),
-          width: 1,
-        ),
-        color: colorScheme.surfaceContainerLowest,
+        borderRadius: borderRadius ?? SolRadius.cardRadius,
+        color: colorScheme.surfaceContainerLow,
       ),
       child: ClipRRect(
-        borderRadius: borderRadius ?? BorderRadius.circular(12),
+        borderRadius: borderRadius ?? SolRadius.cardRadius,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -50,12 +47,6 @@ class EmbedViewRenderer extends HookConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHigh,
-                border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
               ),
               child: Row(
                 children: [
@@ -108,61 +99,61 @@ class EmbedViewRenderer extends HookConsumerWidget {
               child: AspectRatio(
                 aspectRatio: embedView.aspectRatio ?? 1,
                 child: shouldLoad.value
-                  ? Stack(
-                      children: [
-                        InAppWebView(
-                          gestureRecognizers: {
-                            Factory<VerticalDragGestureRecognizer>(
-                              () => VerticalDragGestureRecognizer(),
+                    ? Stack(
+                        children: [
+                          InAppWebView(
+                            gestureRecognizers: {
+                              Factory<VerticalDragGestureRecognizer>(
+                                () => VerticalDragGestureRecognizer(),
+                              ),
+                              Factory<HorizontalDragGestureRecognizer>(
+                                () => HorizontalDragGestureRecognizer(),
+                              ),
+                              Factory<ScaleGestureRecognizer>(
+                                () => ScaleGestureRecognizer(),
+                              ),
+                              Factory<TapGestureRecognizer>(
+                                () => TapGestureRecognizer(),
+                              ),
+                            },
+                            initialUrlRequest: URLRequest(
+                              url: WebUri(embedView.uri),
                             ),
-                            Factory<HorizontalDragGestureRecognizer>(
-                              () => HorizontalDragGestureRecognizer(),
+                            initialSettings: InAppWebViewSettings(
+                              javaScriptEnabled: true,
+                              mediaPlaybackRequiresUserGesture: false,
+                              allowsInlineMediaPlayback: true,
+                              useShouldOverrideUrlLoading: true,
+                              useOnLoadResource: true,
+                              supportZoom: false,
+                              useWideViewPort: false,
+                              loadWithOverviewMode: true,
+                              builtInZoomControls: false,
+                              displayZoomControls: false,
+                              minimumFontSize: 12,
+                              preferredContentMode:
+                                  UserPreferredContentMode.RECOMMENDED,
+                              allowsBackForwardNavigationGestures: false,
+                              allowsLinkPreview: false,
+                              isInspectable: false,
                             ),
-                            Factory<ScaleGestureRecognizer>(
-                              () => ScaleGestureRecognizer(),
-                            ),
-                            Factory<TapGestureRecognizer>(
-                              () => TapGestureRecognizer(),
-                            ),
-                          },
-                          initialUrlRequest: URLRequest(
-                            url: WebUri(embedView.uri),
-                          ),
-                          initialSettings: InAppWebViewSettings(
-                            javaScriptEnabled: true,
-                            mediaPlaybackRequiresUserGesture: false,
-                            allowsInlineMediaPlayback: true,
-                            useShouldOverrideUrlLoading: true,
-                            useOnLoadResource: true,
-                            supportZoom: false,
-                            useWideViewPort: false,
-                            loadWithOverviewMode: true,
-                            builtInZoomControls: false,
-                            displayZoomControls: false,
-                            minimumFontSize: 12,
-                            preferredContentMode:
-                                UserPreferredContentMode.RECOMMENDED,
-                            allowsBackForwardNavigationGestures: false,
-                            allowsLinkPreview: false,
-                            isInspectable: false,
-                          ),
-                          onWebViewCreated: (controller) {
-                            // Configure webview settings
-                            controller.addJavaScriptHandler(
-                              handlerName: 'onHeightChanged',
-                              callback: (args) {
-                                // Handle dynamic height changes if needed
-                              },
-                            );
-                          },
-                          onLoadStart: (controller, url) {
-                            isLoading.value = true;
-                          },
-                          onLoadStop: (controller, url) async {
-                            isLoading.value = false;
-                            // Inject CSS to improve mobile display and remove borders
-                            await controller.evaluateJavascript(
-                              source: '''
+                            onWebViewCreated: (controller) {
+                              // Configure webview settings
+                              controller.addJavaScriptHandler(
+                                handlerName: 'onHeightChanged',
+                                callback: (args) {
+                                  // Handle dynamic height changes if needed
+                                },
+                              );
+                            },
+                            onLoadStart: (controller, url) {
+                              isLoading.value = true;
+                            },
+                            onLoadStop: (controller, url) async {
+                              isLoading.value = false;
+                              // Inject CSS to improve mobile display and remove borders
+                              await controller.evaluateJavascript(
+                                source: '''
                             // Remove unwanted elements
                             var elements = document.querySelectorAll('nav, header, footer, .ads, .advertisement, .sidebar');
                             for (var i = 0; i < elements.length; i++) {
@@ -219,74 +210,73 @@ class EmbedViewRenderer extends HookConsumerWidget {
                             });
                             observer.observe(document.body, { childList: true, subtree: true });
                           ''',
-                            );
-                          },
-                          onLoadError: (controller, url, code, message) {
-                            isLoading.value = false;
-                          },
-                          onLoadHttpError:
-                              (controller, url, statusCode, description) {
-                                isLoading.value = false;
-                              },
-                          shouldOverrideUrlLoading:
-                              (controller, navigationAction) async {
-                                final uri = navigationAction.request.url;
-                                if (uri != null &&
-                                    uri.toString() != embedView.uri) {
-                                  // Open external links in browser
-                                  // You might want to use url_launcher here
-                                  return NavigationActionPolicy.CANCEL;
-                                }
-                                return NavigationActionPolicy.ALLOW;
-                              },
-                          onProgressChanged: (controller, progress) {
-                            // Handle progress changes if needed
-                          },
-                          onConsoleMessage: (controller, consoleMessage) {
-                            // Handle console messages for debugging
-                            debugPrint(
-                              'WebView Console: ${consoleMessage.message}',
-                            );
-                          },
-                        ),
-                        if (isLoading.value)
-                          Container(
-                            color: colorScheme.surfaceContainerLowest,
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
+                              );
+                            },
+                            onLoadError: (controller, url, code, message) {
+                              isLoading.value = false;
+                            },
+                            onLoadHttpError:
+                                (controller, url, statusCode, description) {
+                                  isLoading.value = false;
+                                },
+                            shouldOverrideUrlLoading:
+                                (controller, navigationAction) async {
+                                  final uri = navigationAction.request.url;
+                                  if (uri != null &&
+                                      uri.toString() != embedView.uri) {
+                                    // Open external links in browser
+                                    // You might want to use url_launcher here
+                                    return NavigationActionPolicy.CANCEL;
+                                  }
+                                  return NavigationActionPolicy.ALLOW;
+                                },
+                            onProgressChanged: (controller, progress) {
+                              // Handle progress changes if needed
+                            },
+                            onConsoleMessage: (controller, consoleMessage) {
+                              // Handle console messages for debugging
+                              debugPrint(
+                                'WebView Console: ${consoleMessage.message}',
+                              );
+                            },
                           ),
-                      ],
-                    )
-                  : GestureDetector(
-                      onTap: () {
-                        shouldLoad.value = true;
-                      },
-                      child: Container(
-                        color: colorScheme.surfaceContainerLowest,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Symbols.play_arrow,
-                              fill: 1,
-                              size: 48,
-                              color: colorScheme.onSurfaceVariant.withOpacity(
-                                0.6,
+                          if (isLoading.value)
+                            Container(
+                              color: colorScheme.surfaceContainerLowest,
+                              child: const Center(
+                                child: CircularProgressIndicator(),
                               ),
                             ),
-                            Text(
-                              'viewEmbedLoadHint'.tr(),
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                        ],
+                      )
+                    : GestureDetector(
+                        onTap: () {
+                          shouldLoad.value = true;
+                        },
+                        child: Container(
+                          color: colorScheme.surfaceContainerLowest,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Symbols.play_arrow,
+                                fill: 1,
+                                size: 48,
                                 color: colorScheme.onSurfaceVariant.withOpacity(
                                   0.6,
                                 ),
                               ),
-                            ),
-                          ],
+                              Text(
+                                'viewEmbedLoadHint'.tr(),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant
+                                      .withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
               ),
             ),
           ],

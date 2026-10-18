@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
+import 'package:island/core/theme.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/screens/me/account_settings.dart';
 import 'package:island/core/network.dart';
@@ -16,7 +17,7 @@ import 'package:island/accounts/account_pod.dart';
 import 'package:island/posts/pods/bookmarks.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/discovery/discovery_feedback_service.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/posts/compose.dart';
 import 'package:island/core/utils/share_utils.dart';
@@ -57,7 +58,6 @@ class PostActionableItem extends HookConsumerWidget {
   /// the default now that cards use generous rounded geometry; pass false only
   /// for an edge-to-edge host.
   final bool containAttachments;
-  final double? borderRadius;
   final VoidCallback? onRefresh;
   final Function(SnPost)? onUpdate;
   final VoidCallback? onOpen;
@@ -75,7 +75,6 @@ class PostActionableItem extends HookConsumerWidget {
     this.hideAvatar = false,
     this.hideAttachments = false,
     this.containAttachments = true,
-    this.borderRadius,
     this.onRefresh,
     this.onUpdate,
     this.onOpen,
@@ -100,7 +99,7 @@ class PostActionableItem extends HookConsumerWidget {
       switch (action) {
         case 'edit':
           return () async {
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               originalPost: item,
             );
@@ -147,7 +146,7 @@ class PostActionableItem extends HookConsumerWidget {
                 return;
               }
             }
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               initialState: PostComposeInitialState(replyingTo: item),
             );
@@ -157,7 +156,7 @@ class PostActionableItem extends HookConsumerWidget {
           };
         case 'chain':
           return () async {
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               initialState: PostComposeInitialState(chainingTo: item),
             );
@@ -177,7 +176,7 @@ class PostActionableItem extends HookConsumerWidget {
                 return;
               }
             }
-            final result = await PostComposeDialog.show(
+            final result = await PostComposeScreen.show(
               context,
               initialState: PostComposeInitialState(forwardingTo: item),
             );
@@ -930,7 +929,7 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: SolRadius.cardRadius,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -1321,8 +1320,8 @@ class _PostActionSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       child: Material(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: SolRadius.cardRadius,
         clipBehavior: Clip.antiAlias,
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
       ),
@@ -1352,7 +1351,7 @@ class _PostActionListTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: SolRadius.cardRadius,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: DefaultTextStyle.merge(

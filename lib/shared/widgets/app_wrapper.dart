@@ -30,7 +30,7 @@ import 'package:island/chat/widgets/call_overlay.dart';
 import 'package:island/chat/widgets/call_window.dart';
 import 'package:island/chat/widgets/pending_join_sheet.dart';
 import 'package:island/notifications/notification.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/payments/payment_overlay.dart';
 import 'package:island/route.dart';
 import 'package:island/route.gr.dart';
@@ -940,7 +940,7 @@ class AppWrapper extends HookConsumerWidget {
   }
 
   void _showPostCompose(BuildContext context) {
-    PostComposeDialog.show(context);
+    PostComposeScreen.show(context);
   }
 
   void _showNotificationModal() {

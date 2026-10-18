@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
+import 'package:island/core/theme.dart';
 
 class PostFilterWidget extends HookConsumerWidget {
   final TabController categoryTabController;
@@ -202,7 +203,9 @@ class PostFilterWidget extends HookConsumerWidget {
                     decoration: InputDecoration(
                       labelText: 'search'.tr(),
                       hintText: 'searchPosts'.tr(),
-                      prefixIcon: const Icon(Symbols.search).padding(left: 16, right: 8),
+                      prefixIcon: const Icon(
+                        Symbols.search,
+                      ).padding(left: 16, right: 8),
                       suffixIcon: (queryTerm.value?.isNotEmpty ?? false)
                           ? IconButton(
                               visualDensity: const VisualDensity(
@@ -314,10 +317,7 @@ class PostFilterWidget extends HookConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerLowest,
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withOpacity(0.5),
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: SolRadius.cardRadius,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

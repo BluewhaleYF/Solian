@@ -8,9 +8,10 @@ import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/core/utils/share_utils.dart';
 import 'package:island/posts/screens/compose_blog.dart';
-import 'package:island/posts/widgets/compose/compose_dialog.dart';
+import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -18,8 +19,12 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:super_context_menu/super_context_menu.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
+/// One row in the creator's own post list: the post as readers see it, plus
+/// the analytics block the author needs.
+///
+/// Like every post row this paints no surface — [PostRowSurface] on the host
+/// supplies the card, so the row's ink and menu keep the same geometry.
 class PostItemCreator extends HookConsumerWidget {
-  final Color? backgroundColor;
   final SnPost item;
   final EdgeInsets? padding;
   final bool isOpenable;
@@ -31,7 +36,6 @@ class PostItemCreator extends HookConsumerWidget {
   const PostItemCreator({
     super.key,
     required this.item,
-    this.backgroundColor,
     this.padding,
     this.isOpenable = true,
     this.onRefresh,
@@ -71,7 +75,7 @@ class PostItemCreator extends HookConsumerWidget {
                     }
                   });
                 } else {
-                  PostComposeDialog.show(context, originalPost: item).then((
+                  PostComposeScreen.show(context, originalPost: item).then((
                     value,
                   ) {
                     if (value == true) {
@@ -119,9 +123,9 @@ class PostItemCreator extends HookConsumerWidget {
         );
       },
       child: Material(
-        color: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: SolRadius.cardRadius,
           onTap: () {
             if (onTap != null) {
               onTap!();
@@ -142,9 +146,7 @@ class PostItemCreator extends HookConsumerWidget {
               PostHeader(item: item, renderingPadding: renderingPadding),
               PostBody(item: item, renderingPadding: renderingPadding),
               const Gap(16),
-              _buildAnalyticsSection(
-                context,
-              ).padding(
+              _buildAnalyticsSection(context).padding(
                 left: renderingPadding.left,
                 right: renderingPadding.right,
               ),
@@ -163,13 +165,10 @@ class PostItemCreator extends HookConsumerWidget {
         Text('Analytics', style: Theme.of(context).textTheme.titleSmall),
         const Gap(8),
         Card(
-          elevation: 1,
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-            ),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          shape: const RoundedRectangleBorder(
+            borderRadius: SolRadius.cardRadius,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -302,13 +301,8 @@ class PostItemCreator extends HookConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceVariant.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-            ),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: SolRadius.cardRadius,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

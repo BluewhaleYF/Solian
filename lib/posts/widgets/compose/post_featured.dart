@@ -429,7 +429,6 @@ class _FeaturedPostCard extends StatelessWidget {
           child: PostActionableItem(
             item: post,
             isCompact: compact,
-            borderRadius: _radius,
             containAttachments: true,
           ),
         ),
