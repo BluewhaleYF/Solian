@@ -1,12 +1,15 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/discovery/search_navigation.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/realms/widgets/realm_list_tile.dart';
 import 'package:island/realms/widgets/realm_tile.dart';
 import 'package:island/realms/widgets/realm_form_content.dart';
@@ -51,57 +54,82 @@ class RealmListScreen extends HookConsumerWidget {
       appSettingsProvider.select((settings) => settings.realmDisplayMode),
     );
     final isCardMode = realmDisplayMode == kRealmDisplayModeCard;
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The list sliding under the pill is what drives its glass; at rest the
+    // capsule is invisible and the page is just its content.
+    final fade = useValueNotifier(0.0);
 
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('realms').tr(),
-        leading: const SolDrawerButton(),
-        actions: [
-          IconButton(
-            icon: Icon(isCardMode ? Symbols.view_list : Symbols.grid_view),
-            tooltip:
-                (isCardMode ? 'realmSwitchToListView' : 'realmSwitchToCardView')
-                    .tr(),
-            onPressed: () {
-              ref
-                  .read(appSettingsProvider.notifier)
-                  .setRealmDisplayMode(
-                    isCardMode ? kRealmDisplayModeList : kRealmDisplayModeCard,
-                  );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Symbols.travel_explore),
-            onPressed: () =>
-                openUniversalSearch(context, tab: SearchTab.realms),
-          ),
-          IconButton(
-            icon: Badge(
-              label: Text(
-                realmInvites.when(
-                  data: (invites) => invites.length.toString(),
-                  error: (_, _) => '0',
-                  loading: () => '0',
-                ),
+      // The list runs the full height of the pane and the bar floats its glass
+      // over the top of it, instead of a solid band eating into the list.
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const SolDrawerButton(),
+            const Gap(SolSpace.sm),
+            // Same placement as the other root tabs: the title takes the brand
+            // slot and the actions stay flush right.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'realms',
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ).tr(),
               ),
-              isLabelVisible: realmInvites.when(
-                data: (invites) => invites.isNotEmpty,
-                error: (_, _) => false,
-                loading: () => false,
-              ),
-              child: const Icon(Symbols.email),
             ),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                useRootNavigator: true,
-                builder: (_) => const _RealmInviteSheet(),
-              );
-            },
-          ),
-          const Gap(8),
-        ],
+            IconButton(
+              icon: Icon(isCardMode ? Symbols.view_list : Symbols.grid_view),
+              tooltip:
+                  (isCardMode
+                          ? 'realmSwitchToListView'
+                          : 'realmSwitchToCardView')
+                      .tr(),
+              onPressed: () {
+                ref
+                    .read(appSettingsProvider.notifier)
+                    .setRealmDisplayMode(
+                      isCardMode
+                          ? kRealmDisplayModeList
+                          : kRealmDisplayModeCard,
+                    );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Symbols.travel_explore),
+              onPressed: () =>
+                  openUniversalSearch(context, tab: SearchTab.realms),
+            ),
+            IconButton(
+              icon: Badge(
+                label: Text(
+                  realmInvites.when(
+                    data: (invites) => invites.length.toString(),
+                    error: (_, _) => '0',
+                    loading: () => '0',
+                  ),
+                ),
+                isLabelVisible: realmInvites.when(
+                  data: (invites) => invites.isNotEmpty,
+                  error: (_, _) => false,
+                  loading: () => false,
+                ),
+                child: const Icon(Symbols.email),
+              ),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  useRootNavigator: true,
+                  builder: (_) => const _RealmInviteSheet(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
       floatingActionButton: userInfo.value != null
           ? FloatingActionButton(
@@ -118,37 +146,46 @@ class RealmListScreen extends HookConsumerWidget {
           : null,
       body: userInfo.value == null
           ? const ResponseUnauthorizedWidget()
-          : ExtendedRefreshIndicator(
-              child: realms.when(
-                data: (value) => Column(
-                  children: [
-                    Expanded(
-                      child: ListView.separated(
-                        padding: EdgeInsets.only(
-                          top: 8,
-                          bottom: MediaQuery.of(context).padding.bottom + 8,
-                        ),
-                        itemCount: value.length,
-                        itemBuilder: (context, item) {
-                          return ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 540),
-                            child: isCardMode
-                                ? RealmListTile(realm: value[item])
-                                : RealmTile(realm: value[item]),
-                          ).padding(horizontal: 8).center();
-                        },
-                        separatorBuilder: (_, _) => const Gap(8),
-                      ),
+          : NotificationListener<ScrollNotification>(
+              // The list drives the pill's fade off its own scroll offset.
+              onNotification: (notification) =>
+                  updatePillFade(notification, fade),
+              child: ExtendedRefreshIndicator(
+                // The hover chip has to clear the bar itself plus the pill's
+                // top margin, exactly as the bar measures itself.
+                leadingEdgeInset: statusTop + kPillAppBarHeight,
+                hoverRefreshLabel: 'refresh'.tr(),
+                onRefresh: () => ref.refresh(realmsJoinedProvider.future),
+                child: realms.when(
+                  data: (value) => ListView.separated(
+                    // The pill floats over the list rather than occupying a row
+                    // of its own, so its band is reserved as leading padding:
+                    // the first realm starts below the capsule and travels up
+                    // underneath the glass as the user scrolls.
+                    padding: EdgeInsets.only(
+                      top: statusTop + kPillAppBarHeight + SolSpace.sm,
+                      bottom:
+                          MediaQuery.paddingOf(context).bottom + SolSpace.sm,
                     ),
-                  ],
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => ResponseErrorWidget(
-                  error: e,
-                  onRetry: () => ref.invalidate(realmsJoinedProvider),
+                    itemCount: value.length,
+                    itemBuilder: (context, item) {
+                      return ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 540),
+                        child: isCardMode
+                            ? RealmListTile(realm: value[item])
+                            : RealmTile(realm: value[item]),
+                      ).padding(horizontal: 8).center();
+                    },
+                    separatorBuilder: (_, _) => const Gap(8),
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => ResponseErrorWidget(
+                    error: e,
+                    onRetry: () => ref.invalidate(realmsJoinedProvider),
+                  ),
                 ),
               ),
-              onRefresh: () => ref.refresh(realmsJoinedProvider.future),
             ),
     );
   }

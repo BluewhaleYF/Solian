@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:island/shared/hooks/material_hooks.dart';
@@ -11,7 +13,10 @@ import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/accounts/widgets/account/account_picker.dart';
 import 'package:island/chat/widgets/chat_search_screen.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/discovery/search_navigation.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -22,19 +27,21 @@ import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/realms/widgets/realm_list.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
-import 'package:island/shared/widgets/app_scaffold.dart';
-import 'package:island/shared/widgets/page_app_bar.dart';
 import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/extended_refresh_indicator.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
+import 'package:island_ui_foundation/island_ui_foundation.dart'
+    hide isWideScreen;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 const kSearchPostListId = 'search';
 
-/// Wide-screen posts search: the results card and the side pane both start this
-/// far below the tab bar, so their top edges line up across the gutter.
+/// Step between two floating result cards, matching the explore feed.
+const _kResultGap = kExploreCardGap;
+
+/// Extra gutter the wide result panes add on top of [explorePageGutter].
 const _kWidePaneInset = 12.0;
 
 enum SearchScope { local, remote }
@@ -46,10 +53,6 @@ class UniversalSearchScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTab = ref.watch(searchTabProvider);
-    final tabController = useMaterialTabController(
-      initialLength: SearchTab.values.length,
-      initialIndex: selectedTab.index,
-    );
     final searchQuery = useState<String>('');
     final debouncedSearchQuery = useState<String>('');
     final searchController = useTextEditingController();
@@ -58,7 +61,13 @@ class UniversalSearchScreen extends HookConsumerWidget {
     // Filter panel visibility, driven solely by the app bar action so it can
     // stay in sync across the sections that expose filters.
     final filtersVisible = useState(false);
+    // Which section the results below the bar are drawn from. The sections
+    // show the same kinds of rows, so they swap in place instead of sliding
+    // in a new page.
+    final activeTab = useState(selectedTab);
     const debounce = Duration(milliseconds: 450);
+    final fade = useValueNotifier(0.0);
+    final statusTop = MediaQuery.paddingOf(context).top;
 
     // A query handed over by an outside entry point (the command palette) lands
     // in the field and runs straight away.
@@ -94,124 +103,249 @@ class UniversalSearchScreen extends HookConsumerWidget {
 
     // Follow section requests from outside the page (chat list, realms...).
     useEffect(() {
-      if (tabController.index != selectedTab.index) {
-        tabController.animateTo(selectedTab.index);
-      }
+      if (activeTab.value != selectedTab) activeTab.value = selectedTab;
       return null;
     }, [selectedTab]);
 
-    // Publish section switches so they survive leaving the tab.
-    useEffect(() {
-      void onTabChanged() {
-        final tab = SearchTab.values[tabController.index];
-        if (ref.read(searchTabProvider) != tab) {
-          ref.read(searchTabProvider.notifier).select(tab);
-        }
-      }
-
-      tabController.addListener(onTabChanged);
-      return () => tabController.removeListener(onTabChanged);
-    }, [tabController]);
-
-    return AppScaffold(
-      isNoBackground: false,
-      appBar: PageAppBar(
-        title: SearchBar(
-          controller: searchController,
-          focusNode: searchFocusNode,
-          constraints: const BoxConstraints(maxWidth: 400, minHeight: 32),
-          hintText: 'search'.tr(),
-          hintStyle: WidgetStatePropertyAll(TextStyle(fontSize: 14)),
-          textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 14)),
-          onTapOutside: (_) => searchFocusNode.unfocus(),
-          trailing: [
-            if (searchController.text.isNotEmpty)
-              IconButton(
-                onPressed: () {
-                  debounceTimer.value?.cancel();
-                  searchController.clear();
-                  searchQuery.value = '';
-                  debouncedSearchQuery.value = '';
-                  searchFocusNode.unfocus();
-                },
-                icon: Icon(
-                  Symbols.close,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                visualDensity: VisualDensity.compact,
-              ),
-          ],
-          onChanged: (value) {
-            searchQuery.value = value;
-          },
-          onSubmitted: (value) {
-            debounceTimer.value?.cancel();
-            searchQuery.value = value;
-            debouncedSearchQuery.value = value;
-            searchFocusNode.unfocus();
-          },
-          leading: Icon(
-            Symbols.search,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        actions: [
-          ValueListenableBuilder<bool>(
-            valueListenable: filtersVisible,
-            builder: (context, visible, _) {
-              final supported =
-                  selectedTab == SearchTab.posts ||
-                  selectedTab == SearchTab.messages;
-              return IconButton(
-                onPressed: supported
-                    ? () => filtersVisible.value = !filtersVisible.value
-                    : null,
-                icon: Icon(
-                  visible ? Symbols.filter_list_off : Symbols.filter_list,
-                ),
-                tooltip: visible ? 'hideFilters'.tr() : 'showFilters'.tr(),
-              );
-            },
-          ),
-          const Gap(8),
-        ],
+    // The sections below the bar; each is handed the page's live notifiers, so
+    // switching swaps which one the viewport shows without rebuilding the
+    // bar or re-running the query.
+    Widget buildResults(SearchTab tab) => switch (tab) {
+      SearchTab.posts => _PostsSearchTab(
+        searchQuery: debouncedSearchQuery,
+        filtersVisible: filtersVisible,
       ),
-      body: Column(
-        children: [
-          TabBar(
-            controller: tabController,
-            tabs: [
-              Tab(text: 'posts'.tr()),
-              Tab(text: 'accounts'.tr()),
-              Tab(text: 'realms'.tr()),
-              Tab(text: 'messages'.tr()),
+      SearchTab.accounts => _AccountSearchTab(
+        searchQuery: debouncedSearchQuery,
+      ),
+      SearchTab.realms => _RealmsSearchTab(searchQuery: debouncedSearchQuery),
+      SearchTab.messages => ChatMessageSearchView(
+        searchQuery: debouncedSearchQuery,
+        filtersVisible: filtersVisible,
+      ),
+    };
+
+    // `extendBodyBehindAppBar` puts the results under the pill, which is what
+    // lets them slide beneath it and fade its surface in; the background comes
+    // from [AppBackground], the same one the old scaffold wrapper painted.
+    return AppBackground(
+      isRoot: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
+        // The results fade the bar's surface in as they slide under it, the same
+        // way the explore feed drives its own header.
+        body: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            updatePillFade(notification, fade);
+            return false;
+          },
+          // The pill's band, plus the one card gap every feed leaves under it:
+          // the sections own fixed chrome (the filter panel, the scope switch)
+          // above their own lists, so the band is reserved once here rather
+          // than repeated inside each scroll view.
+          child: Column(
+            children: [
+              Gap(statusTop + kPillAppBarHeight + _kResultGap),
+              Expanded(child: buildResults(activeTab.value)),
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              controller: tabController,
-              children: [
-                _PostsSearchTab(
-                  searchQuery: debouncedSearchQuery,
-                  filtersVisible: filtersVisible,
+        ),
+        appBar: PillAppBar(
+          fade: fade,
+          statusTop: statusTop,
+          child: Row(
+            children: [
+              // The same leading the explore bar uses, so both root tabs open
+              // the drawer from the same spot.
+              const SolDrawerButton(),
+              const Gap(SolSpace.sm),
+              Expanded(
+                child: SearchBar(
+                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                  overlayColor: WidgetStatePropertyAll(Colors.transparent),
+                  controller: searchController,
+                  focusNode: searchFocusNode,
+                  // The same control height the explore pill's row uses, so the
+                  // two bars line up when switching pages.
+                  constraints: const BoxConstraints(
+                    minHeight: SolSpace.control,
+                  ),
+                  // Only the trailing edge is inset: the leading slot holds the
+                  // section picker, which carries the explore picker's own
+                  // inset so it lands on the same x as the bar it mirrors.
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.only(right: SolSpace.sm),
+                  ),
+                  hintText: 'search'.tr(),
+                  hintStyle: const WidgetStatePropertyAll(
+                    TextStyle(fontSize: 14),
+                  ),
+                  textStyle: const WidgetStatePropertyAll(
+                    TextStyle(fontSize: 14),
+                  ),
+                  onTapOutside: (_) => searchFocusNode.unfocus(),
+                  trailing: [
+                    if (searchController.text.isNotEmpty)
+                      IconButton(
+                        onPressed: () {
+                          debounceTimer.value?.cancel();
+                          searchController.clear();
+                          searchQuery.value = '';
+                          debouncedSearchQuery.value = '';
+                          searchFocusNode.unfocus();
+                        },
+                        icon: Icon(
+                          Symbols.close,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                  onChanged: (value) {
+                    searchQuery.value = value;
+                  },
+                  onSubmitted: (value) {
+                    debounceTimer.value?.cancel();
+                    searchQuery.value = value;
+                    debouncedSearchQuery.value = value;
+                    searchFocusNode.unfocus();
+                  },
+                  // The section picker takes the search icon's slot, so the
+                  // result kind is chosen at the field itself rather than from
+                  // a second row of tabs under the bar.
+                  leading: _SearchSectionButton(
+                    tab: activeTab.value,
+                    onSelected: (tab) {
+                      activeTab.value = tab;
+                      ref.read(searchTabProvider.notifier).select(tab);
+                    },
+                  ),
                 ),
-                _AccountSearchTab(searchQuery: debouncedSearchQuery),
-                _RealmsSearchTab(searchQuery: debouncedSearchQuery),
-                ChatMessageSearchView(
-                  searchQuery: debouncedSearchQuery,
-                  filtersVisible: filtersVisible,
-                ),
-              ],
-            ),
+              ),
+              ValueListenableBuilder<bool>(
+                valueListenable: filtersVisible,
+                builder: (context, visible, _) {
+                  final supported =
+                      activeTab.value == SearchTab.posts ||
+                      activeTab.value == SearchTab.messages;
+                  return IconButton(
+                    onPressed: supported
+                        ? () => filtersVisible.value = !filtersVisible.value
+                        : null,
+                    icon: Icon(
+                      visible ? Symbols.filter_list_off : Symbols.filter_list,
+                    ),
+                    tooltip: visible ? 'hideFilters'.tr() : 'showFilters'.tr(),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
+
+/// Section picker for the search bar's leading slot.
+///
+/// Shows the active section's icon and label where the search icon used to
+/// sit, so the result kind is chosen at the field itself: the trigger paints
+/// no surface of its own and floats directly on the bar's pill. It reads the
+/// same `null`-free [SearchTab] vocabulary the rest of the page uses.
+class _SearchSectionButton extends StatelessWidget {
+  final SearchTab tab;
+  final ValueChanged<SearchTab> onSelected;
+
+  const _SearchSectionButton({required this.tab, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selected = _searchSections.firstWhere(
+      (section) => section.tab == tab,
+      orElse: () => _searchSections.first,
+    );
+
+    return MenuAnchor(
+      animated: true,
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          colorScheme.surfaceContainerHigh,
+        ),
+        shape: const WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: SolRadius.menuRadius),
+        ),
+      ),
+      builder: (context, controller, child) {
+        return InkWell(
+          borderRadius: SolRadius.pillRadius,
+          onTap: () =>
+              controller.isOpen ? controller.close() : controller.open(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SolSpace.sm,
+              vertical: SolSpace.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: SolSpace.sm,
+              children: [
+                Icon(selected.icon, size: 20, color: colorScheme.onSurface),
+                Text(
+                  selected.label.tr(),
+                  style: theme.appBarTheme.titleTextStyle,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      menuChildren: [
+        for (final section in _searchSections)
+          MenuItemButton(
+            leadingIcon: Icon(section.icon, size: 20),
+            trailingIcon: tab == section.tab
+                ? const Icon(Symbols.check, size: 18)
+                : null,
+            onPressed: () => onSelected(section.tab),
+            child: Text(section.label.tr()),
+          ),
+      ],
+    );
+  }
+}
+
+class _SearchSection {
+  final SearchTab tab;
+  final String label;
+  final IconData icon;
+
+  const _SearchSection({
+    required this.tab,
+    required this.label,
+    required this.icon,
+  });
+}
+
+const _searchSections = <_SearchSection>[
+  _SearchSection(tab: SearchTab.posts, label: 'posts', icon: Symbols.article),
+  _SearchSection(
+    tab: SearchTab.accounts,
+    label: 'accounts',
+    icon: Symbols.person,
+  ),
+  _SearchSection(tab: SearchTab.realms, label: 'realms', icon: Symbols.public),
+  _SearchSection(
+    tab: SearchTab.messages,
+    label: 'messages',
+    icon: Symbols.chat,
+  ),
+];
 
 class _RealmsSearchTab extends HookConsumerWidget {
   final ValueNotifier<String> searchQuery;
@@ -220,18 +354,18 @@ class _RealmsSearchTab extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Stack(
-      children: [
-        CustomScrollView(
-          slivers: [
-            const SliverGap(8),
-            SliverRealmList(
-              query: searchQuery.value,
-              key: ValueKey(searchQuery.value),
-            ),
-            SliverGap(MediaQuery.of(context).padding.bottom + 16),
-          ],
+    return CustomScrollView(
+      slivers: [
+        // The same gutter the posts rows and the explore feed use, so a card
+        // keeps one edge across the sections.
+        SliverPadding(
+          padding: explorePageGutter(context),
+          sliver: SliverRealmList(
+            query: searchQuery.value,
+            key: ValueKey(searchQuery.value),
+          ),
         ),
+        SliverGap(MediaQuery.of(context).padding.bottom + _kResultGap),
       ],
     );
   }
@@ -248,8 +382,6 @@ class _PostsSearchTab extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showFilters = useValueListenable(filtersVisible);
-
     final categoryTabController = useMaterialTabController(initialLength: 3);
     final queryState = useState(const PostListQuery(includeReplies: false));
 
@@ -260,10 +392,6 @@ class _PostsSearchTab extends HookConsumerWidget {
     void onSearchChanged(String query) {
       queryState.value = queryState.value.copyWith(queryTerm: query);
       noti.applyFilter(queryState.value);
-    }
-
-    void toggleFilterDisplay() {
-      filtersVisible.value = !filtersVisible.value;
     }
 
     Widget buildFilterPanel() {
@@ -284,192 +412,154 @@ class _PostsSearchTab extends HookConsumerWidget {
       return null;
     }, [searchQuery.value]);
 
-    return Consumer(
-      builder: (context, ref, child) {
-        final searchState = ref.watch(
-          postListProvider(PostListQueryConfig(id: kSearchPostListId)),
-        );
+    Widget buildPostRow(SnPost post) {
+      return ExploreCard(
+        child: PostActionableItem(
+          item: post,
+          borderRadius: SolRadius.card,
+          padding: const EdgeInsets.fromLTRB(
+            SolSpace.lg,
+            SolSpace.md + 2,
+            SolSpace.lg,
+            SolSpace.md,
+          ),
+        ),
+      );
+    }
 
-        return isWideScreen(context)
-            ? Row(
-                children: [
-                  Flexible(
-                    flex: 4,
-                    child: Card(
-                      margin: const EdgeInsets.fromLTRB(
-                        _kWidePaneInset,
-                        _kWidePaneInset,
+    final filterSidebarContent = buildFilterPanel();
+
+    Widget buildMainContent() {
+      return Consumer(
+        builder: (context, ref, child) {
+          final searchState = ref.watch(
+            postListProvider(PostListQueryConfig(id: kSearchPostListId)),
+          );
+          return ExtendedRefreshIndicator(
+            onRefresh: noti.refresh,
+            child: CustomScrollView(
+              slivers: [
+                PaginationList(
+                  provider: postListProvider(
+                    PostListQueryConfig(id: kSearchPostListId),
+                  ),
+                  notifier: postListProvider(
+                    PostListQueryConfig(id: kSearchPostListId),
+                  ).notifier,
+                  isSliver: true,
+                  isRefreshable: false,
+                  seperatorBuilder: (context, index, post) =>
+                      const SizedBox(height: _kResultGap),
+                  footerSkeletonChild: const PostItemSkeleton(
+                    maxWidth: double.infinity,
+                    showCard: false,
+                  ),
+                  itemBuilder: (context, index, post) => buildPostRow(post),
+                ),
+                if (searchState.value?.items.isEmpty == true &&
+                    searchQuery.value.isNotEmpty &&
+                    !searchState.isLoading)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      key: const Key('postSearchEmpty'),
+                      icon: Symbols.search_off,
+                      title: 'noResultsFound'.tr(),
+                      description: 'tryDifferentKeywords'.tr(),
+                    ),
+                  ),
+                SliverGap(MediaQuery.of(context).padding.bottom + _kResultGap),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    if (isWideScreen(context)) {
+      // The rows keep the explore feed's own reading column and gutter, so a
+      // card sits on the same measure in either tab; the filter content is
+      // inset inside the sliding panel so it does not sit flush against its
+      // edge.
+      return ResponsiveSidebar(
+        showSidebar: filtersVisible,
+        sidebarWidth: 320,
+        sidebarBackgroundColor: Theme.of(context).colorScheme.surface,
+        sidebarContent: Padding(
+          padding: const EdgeInsets.all(_kWidePaneInset),
+          child: filterSidebarContent,
+        ),
+        mainContent: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: kDiscoveryWideColumnWidth,
+            ),
+            child: Padding(
+              padding: explorePageGutter(context),
+              child: buildMainContent(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        AnimatedSlide(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          offset: filtersVisible.value ? Offset.zero : const Offset(0, -0.08),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: filtersVisible.value
+                  ? Padding(
+                      key: const ValueKey('filters-visible'),
+                      // The feed's gutter, and no top inset: the page column
+                      // already leaves one card gap under the pill.
+                      padding: const EdgeInsets.fromLTRB(
+                        SolSpace.md,
                         0,
-                        0,
+                        SolSpace.md,
+                        _kResultGap,
                       ),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: ExtendedRefreshIndicator(
-                        onRefresh: noti.refresh,
-                        child: CustomScrollView(
-                          slivers: [
-                            const SliverGap(4),
-                            PaginationList(
-                              provider: postListProvider(
-                                PostListQueryConfig(id: kSearchPostListId),
-                              ),
-                              notifier: postListProvider(
-                                PostListQueryConfig(id: kSearchPostListId),
-                              ).notifier,
-                              isSliver: true,
-                              isRefreshable: false,
-                              seperatorBuilder: (context, index, post) =>
-                                  const Divider(height: 1),
-                              footerSkeletonChild: const PostItemSkeleton(
-                                maxWidth: double.infinity,
-                                showCard: false,
-                              ),
-                              itemBuilder: (context, index, post) {
-                                return PostActionableItem(
-                                  item: post,
-                                  borderRadius: 8,
-                                );
-                              },
-                            ),
-                            if (searchState.value?.items.isEmpty == true &&
-                                searchQuery.value.isNotEmpty &&
-                                !searchState.isLoading)
-                              SliverFillRemaining(
-                                hasScrollBody: false,
-                                child: EmptyState(
-                                  key: const Key('postSearchEmpty'),
-                                  icon: Symbols.search_off,
-                                  title: 'noResultsFound'.tr(),
-                                  description: 'tryDifferentKeywords'.tr(),
-                                ),
-                              ),
-                            SliverGap(
-                              MediaQuery.of(context).padding.bottom + 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    flex: 3,
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Gap(_kWidePaneInset),
-                            Card(
-                              margin: EdgeInsets.only(left: 16, right: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Symbols.tune,
-                                    ).padding(horizontal: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'filters'.tr(),
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Symbols.filter_alt,
-                                        fill: showFilters ? 1 : null,
-                                      ),
-                                      onPressed: toggleFilterDisplay,
-                                      tooltip: 'toggleFilters'.tr(),
-                                    ),
-                                    const Gap(4),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (showFilters) ...[
-                              const Gap(8),
-                              buildFilterPanel().padding(horizontal: 8),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                children: [
-                  AnimatedSlide(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    offset: showFilters ? Offset.zero : const Offset(0, -0.08),
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment.topCenter,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: showFilters
-                            ? Padding(
-                                key: const ValueKey('filters-visible'),
-                                padding: const EdgeInsets.fromLTRB(
-                                  8,
-                                  12,
-                                  8,
-                                  12,
-                                ),
-                                child: buildFilterPanel().padding(
-                                  horizontal: 8,
-                                ),
-                              )
-                            : const SizedBox(key: ValueKey('filters-hidden')),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: PaginationList(
-                      provider: postListProvider(
-                        PostListQueryConfig(id: kSearchPostListId),
-                      ),
-                      notifier: postListProvider(
-                        PostListQueryConfig(id: kSearchPostListId),
-                      ).notifier,
-                      // Bottom-only padding: null would also pull the status
-                      // bar inset in as a top gap, and the tab shell's
-                      // extendBody leaves the last row under the bottom bar
-                      // without the hint.
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.paddingOf(context).bottom + 16,
-                      ),
-                      seperatorBuilder: (context, index, post) =>
-                          const Divider(height: 1),
-                      footerSkeletonChild: const PostItemSkeleton(
-                        maxWidth: double.infinity,
-                        showCard: false,
-                      ),
-                      itemBuilder: (context, index, post) {
-                        return PostActionableItem(item: post, borderRadius: 8);
-                      },
-                    ),
-                  ),
-                ],
-              );
-      },
+                      child: buildFilterPanel(),
+                    )
+                  : const SizedBox(key: ValueKey('filters-hidden')),
+            ),
+          ),
+        ),
+        Expanded(
+          child: PaginationList(
+            provider: postListProvider(
+              PostListQueryConfig(id: kSearchPostListId),
+            ),
+            notifier: postListProvider(
+              PostListQueryConfig(id: kSearchPostListId),
+            ).notifier,
+            // The feed's own gutter plus the card gap; the bottom stays
+            // clear of the tab shell's bottom bar.
+            padding: EdgeInsets.fromLTRB(
+              SolSpace.md,
+              0,
+              SolSpace.md,
+              MediaQuery.of(context).padding.bottom + _kResultGap,
+            ),
+            seperatorBuilder: (context, index, post) =>
+                const SizedBox(height: _kResultGap),
+            footerSkeletonChild: const PostItemSkeleton(
+              maxWidth: double.infinity,
+              showCard: false,
+            ),
+            itemBuilder: (context, index, post) => buildPostRow(post),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -574,7 +664,14 @@ class _AccountSearchTab extends HookConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              // The feed's gutter; the page column already leaves the card
+              // gap under the pill, so only the row's own breathing room below.
+              padding: const EdgeInsets.fromLTRB(
+                SolSpace.md,
+                0,
+                SolSpace.md,
+                SolSpace.sm,
+              ),
               child: SegmentedButton<SearchScope>(
                 segments: [
                   ButtonSegment(
@@ -616,96 +713,96 @@ class _AccountSearchTab extends HookConsumerWidget {
               : ExtendedRefreshIndicator(
                   onRefresh: () => performSearch(searchQuery.value),
                   child: ListView.separated(
-                    // Keep the last row clear of the tab shell's bottom bar.
+                    // The feed's gutter, with the last card clear of the tab
+                    // shell's bottom bar.
                     padding: EdgeInsets.only(
-                      top: 8,
-                      bottom: 8 + MediaQuery.paddingOf(context).bottom,
+                      left: SolSpace.md,
+                      right: SolSpace.md,
+                      top: 0,
+                      bottom:
+                          MediaQuery.paddingOf(context).bottom + _kResultGap,
                     ),
                     itemCount: allResults.length,
-                    separatorBuilder: (context, index) => const Gap(8),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: _kResultGap),
                     itemBuilder: (context, index) {
                       final result = allResults[index];
                       if (result['type'] == 'publisher') {
                         final publisher = result['data'] as SnPublisher;
-                        return Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 560),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.only(
-                                left: 16,
-                                right: 12,
-                              ),
-                              onTap: () {
-                                context.router.push(
-                                  PublisherProfileRoute(name: publisher.name),
-                                );
-                              },
-                              leading: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  ProfilePictureWidget(
-                                    file: publisher.picture,
-                                    fallbackName: publisher.nick,
-                                    borderRadius: publisher.type == 0
-                                        ? null
-                                        : 6,
-                                  ),
-                                  Positioned(
-                                    right: -2,
-                                    bottom: -2,
-                                    child: Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: BoxDecoration(
+                        return SearchResultCard(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.only(
+                              left: 16,
+                              right: 12,
+                            ),
+                            onTap: () {
+                              context.router.push(
+                                PublisherProfileRoute(name: publisher.name),
+                              );
+                            },
+                            leading: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                ProfilePictureWidget(
+                                  file: publisher.picture,
+                                  fallbackName: publisher.nick,
+                                  borderRadius: publisher.type == 0 ? null : 6,
+                                ),
+                                Positioned(
+                                  right: -2,
+                                  bottom: -2,
+                                  child: Container(
+                                    width: 16,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
                                         color: Theme.of(
                                           context,
-                                        ).colorScheme.primaryContainer,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surface,
-                                          width: 1.5,
-                                        ),
+                                        ).colorScheme.surface,
+                                        width: 1.5,
                                       ),
-                                      child: publisher.account != null
-                                          ? ProfilePictureWidget(
-                                              file: publisher
-                                                  .account
-                                                  ?.profile
-                                                  .picture,
-                                              fallbackName:
-                                                  publisher.account?.nick,
-                                            )
-                                          : Icon(
-                                              publisher.type == 0
-                                                  ? Symbols.person
-                                                  : Symbols.corporate_fare,
-                                              size: 10,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                            ),
                                     ),
+                                    child: publisher.account != null
+                                        ? ProfilePictureWidget(
+                                            file: publisher
+                                                .account
+                                                ?.profile
+                                                .picture,
+                                            fallbackName:
+                                                publisher.account?.nick,
+                                          )
+                                        : Icon(
+                                            publisher.type == 0
+                                                ? Symbols.person
+                                                : Symbols.corporate_fare,
+                                            size: 10,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                          ),
                                   ),
-                                ],
-                              ),
-                              title: Text(
-                                publisher.nick.isNotEmpty
-                                    ? publisher.nick
-                                    : publisher.name,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Text(
-                                publisher.bio,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: const Icon(
-                                Symbols.chevron_right,
-                              ).padding(right: 12),
+                                ),
+                              ],
                             ),
+                            title: Text(
+                              publisher.nick.isNotEmpty
+                                  ? publisher.nick
+                                  : publisher.name,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            subtitle: Text(
+                              publisher.bio,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            trailing: const Icon(
+                              Symbols.chevron_right,
+                            ).padding(right: 12),
                           ),
                         );
                       } else if (result['type'] == 'fediverse') {
@@ -714,147 +811,139 @@ class _AccountSearchTab extends HookConsumerWidget {
                         // shows the plain-text excerpt.
                         final actorBio = actor.bio.htmlToPlainText();
                         final actorAvatar = actor.picture?.storageUrl;
-                        return Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 560),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.only(
-                                left: 16,
-                                right: 12,
-                              ),
-                              onTap: () {
-                                context.router.push(
-                                  FediverseActorProfileRoute(
-                                    id: actor.id,
-                                    fullHandle: actor.activitypub?.fullHandle,
-                                  ),
-                                );
-                              },
-                              leading: Stack(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundImage: actorAvatar != null
-                                        ? CachedNetworkImageProvider(
-                                            actorAvatar,
-                                          )
-                                        : null,
-                                    radius: 24,
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainer,
-                                    child: actorAvatar == null
-                                        ? Icon(Symbols.person)
-                                        : null,
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.tertiary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Symbols.public,
-                                        size: 12,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onTertiary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              title: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      actor.effectiveName,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
+                        return SearchResultCard(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.only(
+                              left: 16,
+                              right: 12,
+                            ),
+                            onTap: () {
+                              context.router.push(
+                                FediverseActorProfileRoute(
+                                  id: actor.id,
+                                  fullHandle: actor.activitypub?.fullHandle,
+                                ),
+                              );
+                            },
+                            leading: Stack(
+                              children: [
+                                CircleAvatar(
+                                  backgroundImage: actorAvatar != null
+                                      ? CachedNetworkImageProvider(actorAvatar)
+                                      : null,
+                                  radius: 24,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
+                                  child: actorAvatar == null
+                                      ? Icon(Symbols.person)
+                                      : null,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
                                       color: Theme.of(
                                         context,
-                                      ).colorScheme.secondaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
+                                      ).colorScheme.tertiary,
+                                      shape: BoxShape.circle,
                                     ),
-                                    child: Text(
-                                      actor.domain ?? '',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSecondaryContainer,
-                                      ),
+                                    child: Icon(
+                                      Symbols.public,
+                                      size: 12,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onTertiary,
                                     ),
                                   ),
-                                ],
-                              ),
-                              subtitle: actorBio.isNotEmpty
-                                  ? Text(
-                                      actorBio,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                    )
-                                  : null,
-                              trailing: const Icon(
-                                Symbols.chevron_right,
-                              ).padding(right: 12),
+                                ),
+                              ],
                             ),
+                            title: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    actor.effectiveName,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    actor.domain ?? '',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: actorBio.isNotEmpty
+                                ? Text(
+                                    actorBio,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  )
+                                : null,
+                            trailing: const Icon(
+                              Symbols.chevron_right,
+                            ).padding(right: 12),
                           ),
                         );
                       } else {
                         final account = result['data'] as SnAccount;
-                        return Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 560),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.only(
-                                left: 16,
-                                right: 12,
-                              ),
-                              onTap: () {
-                                context.router.push(
-                                  AccountProfileRoute(name: account.name),
-                                );
-                              },
-                              leading: Stack(
-                                children: [
-                                  ProfilePictureWidget(
-                                    file: account.profile.picture,
-                                    fallbackName: account.nick,
-                                  ),
-                                ],
-                              ),
-                              title: AccountName(
-                                account: account,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Text(
-                                account.profile.bio,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: const Icon(
-                                Symbols.chevron_right,
-                              ).padding(right: 12),
+                        return SearchResultCard(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.only(
+                              left: 16,
+                              right: 12,
                             ),
+                            onTap: () {
+                              context.router.push(
+                                AccountProfileRoute(name: account.name),
+                              );
+                            },
+                            leading: Stack(
+                              children: [
+                                ProfilePictureWidget(
+                                  file: account.profile.picture,
+                                  fallbackName: account.nick,
+                                ),
+                              ],
+                            ),
+                            title: AccountName(
+                              account: account,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            subtitle: Text(
+                              account.profile.bio,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            trailing: const Icon(
+                              Symbols.chevron_right,
+                            ).padding(right: 12),
                           ),
                         );
                       }
@@ -863,6 +952,26 @@ class _AccountSearchTab extends HookConsumerWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// One account, publisher or fediverse hit: its own floating card.
+///
+/// All three results draw the same row, so they share the explore feed's
+/// card surface instead of sitting in a divider-separated list.
+class SearchResultCard extends StatelessWidget {
+  final Widget child;
+
+  const SearchResultCard({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: ExploreCard(child: child),
+      ),
     );
   }
 }

@@ -27,6 +27,7 @@ import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/discovery/widgets/discovery_feedback_widget.dart';
 import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/discovery/widgets/friend_presence_strip.dart';
 import 'package:island/discovery/widgets/friend_presence_widgets.dart';
 import 'package:island/discovery/widgets/subscribed_publishers_strip.dart';
@@ -75,11 +76,11 @@ class ExploreScreen extends HookConsumerWidget {
           );
     }
 
-    // Drives the header's morph on a 0..1 scale: 0 is the flush, square band
-    // at the top of the feed, 1 the fully inset pill after scrolling. A
-    // notifier rather than setState so a scroll tick repaints the header only,
-    // never the whole timeline.
-    final morph = useValueNotifier(0.0);
+    // Drives the header's glass on a 0..1 scale: 0 the transparent bar at the
+    // top of the feed, 1 the fully surfaced pill after scrolling. A notifier
+    // rather than setState so a scroll tick repaints the header only, never the
+    // whole timeline.
+    final fade = useValueNotifier(0.0);
 
     final isWide = isWideScreen(context);
 
@@ -93,7 +94,7 @@ class ExploreScreen extends HookConsumerWidget {
     final feed = _buildFeed(
       context,
       ref,
-      morph: morph,
+      fade: fade,
       selectedPublisherNames: selectedPublisherNames,
       onPublishersChanged: handlePublishersChanged,
       hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
@@ -112,13 +113,38 @@ class ExploreScreen extends HookConsumerWidget {
         isNoBackground: false,
         appBar: null,
         floatingActionButton: composeFab,
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: _kWideTimelineMaxWidth,
+        // The pill spans the whole window instead of the reading column, so it
+        // floats over the feed rather than being one of its slivers. The feed
+        // still drives `fade`, so its rows slide underneath and the surface
+        // glassies in exactly as it does on narrow.
+        body: Stack(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: kDiscoveryWideColumnWidth,
+                ),
+                child: SizedBox.expand(child: feed),
+              ),
             ),
-            child: SizedBox.expand(child: feed),
-          ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              // The same measurement the sliver's toolbar height gives it, so
+              // the capsule is exactly one control row tall either way.
+              height: MediaQuery.paddingOf(context).top + kPillAppBarHeight,
+              child: PillAppBar(
+                fade: fade,
+                statusTop: MediaQuery.paddingOf(context).top,
+                child: _buildExploreBarControls(
+                  currentFilter: exploreSettings.filter,
+                  hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+                  handleFilterChange: handleFilterChange,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -186,94 +212,62 @@ class ExploreScreen extends HookConsumerWidget {
     ).padding(bottom: MediaQuery.of(context).padding.bottom);
   }
 
-  /// Header of the explore feed.
+  /// The pill's single row of controls: the drawer toggle and the section
+  /// picker, which replaced the tab strip that used to be the bar's `bottom`
+  /// row.
   ///
-  /// The bar morphs continuously with [morph] (0..1):
-  ///
-  /// * At 0 it is flush and square: it reads as the top of the page, not as a
-  ///   card floating over it.
-  /// * At 1 it is a capsule inset 12px left/right and 12px below the status
-  ///   bar, so it keeps breathing room instead of clipping against it.
-  ///
-  /// Intermediate values lerp the margin and radius, so the transition tracks
-  /// the drag rather than snapping.
-  ///
-  /// The pill paints a tonal surface (`surfaceContainerLow`): the page has one
-  /// accent vocabulary — cards — and a saturated primary band would compete
-  /// with every card in the stack. The section picker replaced the tab strip
-  /// that used to be the bar's `bottom` row, so the bar is a single compact
-  /// row. The shape follows the scroll offset, not the bar's attachment: it
-  /// returns to the flush band as the feed comes back to the top.
-  Widget _buildExploreSliverAppBar({
-    required BuildContext context,
-    required ValueNotifier<double> morph,
+  /// Shared by both layouts so the controls never move between them: narrow
+  /// pins this row inside the feed, wide floats it over the reading column.
+  Widget _buildExploreBarControls({
     required String? currentFilter,
     required bool hasSubscriptionFiltersApplied,
     required void Function(String?) handleFilterChange,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    // With `primary: false` the bar does not add the status-bar inset itself.
-    // The inset has to live *inside* the bar's box: a `SliverPadding` above
-    // the bar scrolls away with the content, which let the pill ride up to
-    // y=0 and collide with the status bar. Reserving it here keeps the
-    // surface below the status bar in both the flush and the pill state.
-    final statusTop = MediaQuery.paddingOf(context).top;
+    return Row(
+      children: [
+        // The section picker takes the brand mark's place, so the bar holds
+        // exactly two things: the drawer toggle and the dropdown.
+        const SolDrawerButton(),
+        const Gap(8),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _ExploreSectionButton(
+              filter: currentFilter,
+              hasFiltersApplied: hasSubscriptionFiltersApplied,
+              onSelected: handleFilterChange,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-    // Bar geometry never changes; only what is painted inside `flexibleSpace`
-    // morphs. Rebuilding the sliver from the `slivers` list on every scroll
-    // tick would unmount it and the bar would vanish mid-scroll.
-    return SliverAppBar(
-      primary: false,
-      automaticallyImplyLeading: false,
-      // Status bar + one control row + the collapsed pill's top margin, so
-      // the box can host both states without resizing the sliver.
-      toolbarHeight: statusTop + SolSpace.control + SolSpace.md,
-      backgroundColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: 0,
-      elevation: 0,
-      floating: true,
-      snap: true,
-      flexibleSpace: ValueListenableBuilder<double>(
-        valueListenable: morph,
-        builder: (context, t, _) {
-          // Margin and radius lerp with the scroll offset, so the band visibly
-          // contracts into the capsule as the feed leaves the top instead of
-          // popping at the first scrolled pixel.
-          return Container(
-            margin: EdgeInsets.fromLTRB(
-              SolSpace.md * t,
-              statusTop + SolSpace.md * t,
-              SolSpace.md * t,
-              0,
-            ),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(SolRadius.pill * t),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: Row(
-                children: [
-                  // The section picker takes the brand mark's place, so the
-                  // bar holds exactly two things: the drawer toggle and the
-                  // dropdown.
-                  const SolDrawerButton(),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _ExploreSectionButton(
-                        filter: currentFilter,
-                        hasFiltersApplied: hasSubscriptionFiltersApplied,
-                        onSelected: handleFilterChange,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+  /// Header of the narrow feed: a pinned sliver inside the feed's own scroll
+  /// view.
+  ///
+  /// The bar never moves within the viewport: a capsule inset 12px left/right
+  /// and 12px below the status bar at every scroll offset, so the drawer toggle
+  /// and the section picker stay under the same spot of the user's thumb.
+  /// Scrolling only fades the pill's glass in and raises its shadow
+  /// ([PillSliverAppBar]).
+  ///
+  /// The wide layout does not pin the bar inside the feed: its pill spans the
+  /// window instead (see [ExploreScreen.build]).
+  Widget _buildExploreSliverAppBar({
+    required BuildContext context,
+    required ValueNotifier<double> fade,
+    required String? currentFilter,
+    required bool hasSubscriptionFiltersApplied,
+    required void Function(String?) handleFilterChange,
+  }) {
+    return PillSliverAppBar(
+      fade: fade,
+      statusTop: MediaQuery.paddingOf(context).top,
+      child: _buildExploreBarControls(
+        currentFilter: currentFilter,
+        hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+        handleFilterChange: handleFilterChange,
       ),
     );
   }
@@ -292,11 +286,8 @@ class ExploreScreen extends HookConsumerWidget {
         height: 64,
         child: Center(child: ConfuseSpinner(size: 40, speed: 6)),
       ),
-      contentBuilder: (data, footer) => _ActivityListView(
-        data: data,
-        footer: footer,
-        onOpenPost: onOpenPost,
-      ),
+      contentBuilder: (data, footer) =>
+          _ActivityListView(data: data, footer: footer, onOpenPost: onOpenPost),
     );
   }
 
@@ -324,8 +315,7 @@ class ExploreScreen extends HookConsumerWidget {
       ),
       onOpenPost: onOpenPost,
       itemWrapper: (context, index, post, child) => ExploreCard(child: child),
-      separatorBuilder: (context, index, post) =>
-          const Gap(kExploreCardGap),
+      separatorBuilder: (context, index, post) => const Gap(kExploreCardGap),
     );
   }
 
@@ -339,7 +329,7 @@ class ExploreScreen extends HookConsumerWidget {
   Widget _buildFeed(
     BuildContext context,
     WidgetRef ref, {
-    required ValueNotifier<double> morph,
+    required ValueNotifier<double> fade,
     required ValueNotifier<List<String>> selectedPublisherNames,
     required ValueChanged<List<String>> onPublishersChanged,
     required bool hasSubscriptionFiltersApplied,
@@ -351,10 +341,11 @@ class ExploreScreen extends HookConsumerWidget {
     final appSettings = ref.watch(appSettingsProvider);
     final exploreSettings = appSettings.exploreSettings;
     final gutter = explorePageGutter(context);
-    // The header is a single toolbar row; the old 48px tab strip is gone, so
-    // the refresh indicator only has to clear the bar itself.
+    // The header is a single pinned toolbar row: the refresh indicator has to
+    // clear the bar itself plus the pill's top margin, exactly as the bar
+    // measures itself.
     final sliverRefreshInset =
-        MediaQuery.paddingOf(context).top + SolSpace.md + SolSpace.control;
+        MediaQuery.paddingOf(context).top + kPillAppBarHeight;
     final usePostList =
         selectedPublisherNames.value.isNotEmpty ||
         exploreSettings.selectedCategoryIds.isNotEmpty ||
@@ -384,90 +375,99 @@ class ExploreScreen extends HookConsumerWidget {
       }
     }
 
-    // The morph is driven off the scroll offset itself, on a 0..1 ramp, so it
-    // interpolates with the drag instead of snapping at the first pixel. A
-    // feed that is still at its origin is flush; once it has moved a full
-    // header height it is the fully inset pill. Because the bar is
-    // `floating` + `snap`, scrolling back brings it in again at the same
-    // offset, so the inverse plays as the feed returns to the top.
+    // The glass fade is driven off the scroll offset itself (see
+    // [updatePillFade]), so it interpolates with the drag instead of snapping
+    // at the first pixel. A feed at its origin leaves the bar invisible;
+    // once it has moved ~96px the pill is fully glassed.
+    // The bar is pinned, so scrolling back plays the inverse as the feed
+    // returns to the top.
     return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        final metrics = notification.metrics;
-        if (metrics.axis != Axis.vertical) return false;
-        final ramp = (metrics.pixels / _kHeaderMorphDistance).clamp(0.0, 1.0);
-        if (morph.value != ramp) morph.value = ramp;
-        return false;
-      },
+      onNotification: (notification) => updatePillFade(notification, fade),
       child: ExtendedRefreshIndicator(
         leadingEdgeInset: sliverRefreshInset,
         hoverRefreshLabel: 'refresh'.tr(),
         onRefresh: refreshTimeline,
         child: CustomScrollView(
           slivers: [
-            _buildExploreSliverAppBar(
-              context: context,
-              morph: morph,
-              currentFilter: currentFilter,
-              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-              handleFilterChange: handleFilterChange,
-            ),
-          const SliverGap(kExploreCardGap),
-          // The Subscriptions tab keeps the publisher quick pick; Explore and
-          // Friends show the friend presence strip in the same floating slot.
-          if (isSubscriptionsTab)
-            SliverSubscribedPublishersStrip(
-              selectedPublisherNames: selectedPublisherNames.value,
-              onSelectedPublishersChanged: onPublishersChanged,
-            )
-          else
-            const SliverFriendPresenceStrip(),
-          const SliverGap(kExploreCardGap),
-          // Explore only, and only once the carousel has something to show.
-          if (hasFeaturedPosts) ...[
-            SliverPadding(
-              padding: gutter,
-              sliver: SliverToBoxAdapter(
-                child: ExploreCard(
-                  child: const PostFeaturedList(flush: true),
-                ),
+            // Wide lifts the bar out of the feed and spans it across the
+            // window, so the pinned sliver only exists in the narrow layout.
+            if (!isWide) ...[
+              _buildExploreSliverAppBar(
+                context: context,
+                fade: fade,
+                currentFilter: currentFilter,
+                hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+                handleFilterChange: handleFilterChange,
               ),
-            ),
+              const SliverGap(kExploreCardGap),
+            ],
+            // The wide pill floats over the feed instead of being a sliver of
+            // it, so the column has to reserve the bar's own height (plus the
+            // status inset the pill's margin already carries) before its first
+            // card. The gap is the scroll distance the rows travel under the
+            // glass.
+            if (isWide)
+              SliverGap(
+                MediaQuery.paddingOf(context).top +
+                    kPillAppBarHeight +
+                    kExploreCardGap,
+              ),
+            // The Subscriptions tab keeps the publisher quick pick; Explore and
+            // Friends show the friend presence strip in the same floating slot.
+            if (isSubscriptionsTab)
+              SliverSubscribedPublishersStrip(
+                selectedPublisherNames: selectedPublisherNames.value,
+                onSelectedPublishersChanged: onPublishersChanged,
+              )
+            else
+              const SliverFriendPresenceStrip(),
             const SliverGap(kExploreCardGap),
-          ],
-          if (usePostList)
-            SliverPadding(
-              padding: gutter,
-              sliver: _buildPostList(
-                context,
-                ref,
-                selectedPublisherNames.value,
-                exploreSettings.selectedCategoryIds,
-                exploreSettings.selectedTagIds,
-                onOpenPost: onOpenPost,
-              ),
-            )
-          else if (isListInitialLoading)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: ConfuseSpinner(
-                  speed: 7,
-                  size: 72,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant.withOpacity(0.65),
+            // Explore only, and only once the carousel has something to show.
+            if (hasFeaturedPosts) ...[
+              SliverPadding(
+                padding: gutter,
+                sliver: SliverToBoxAdapter(
+                  child: ExploreCard(
+                    child: const PostFeaturedList(flush: true),
+                  ),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: gutter,
-              sliver: _buildActivityList(
-                context,
-                ref,
-                onOpenPost: onOpenPost,
+              const SliverGap(kExploreCardGap),
+            ],
+            if (usePostList)
+              SliverPadding(
+                padding: gutter,
+                sliver: _buildPostList(
+                  context,
+                  ref,
+                  selectedPublisherNames.value,
+                  exploreSettings.selectedCategoryIds,
+                  exploreSettings.selectedTagIds,
+                  onOpenPost: onOpenPost,
+                ),
+              )
+            else if (isListInitialLoading)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: ConfuseSpinner(
+                    speed: 7,
+                    size: 72,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withOpacity(0.65),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: gutter,
+                sliver: _buildActivityList(
+                  context,
+                  ref,
+                  onOpenPost: onOpenPost,
+                ),
               ),
-            ),
             // The tab shell floats the NavigationBar over the page, so reserve
             // its height or the last card stays underneath the bar.
             SliverGap(MediaQuery.paddingOf(context).bottom + kExploreCardGap),
@@ -477,10 +477,6 @@ class ExploreScreen extends HookConsumerWidget {
     );
   }
 }
-
-/// Reading measure of the wide explore timeline. A single column spanning the
-/// whole window reads as a stretched feed, so the pane is centred instead.
-const _kWideTimelineMaxWidth = 720.0;
 
 class _DiscoveryActivityItem extends ConsumerWidget {
   final Map<String, dynamic> data;
@@ -750,11 +746,7 @@ class _DiscoveryActivityItem extends ConsumerWidget {
           SizedBox(
             height: height,
             child: contentWidget,
-          ).padding(
-            left: SolSpace.md,
-            right: SolSpace.md,
-            bottom: SolSpace.md,
-          ),
+          ).padding(left: SolSpace.md, right: SolSpace.md, bottom: SolSpace.md),
         ],
       ),
     );
@@ -1021,10 +1013,7 @@ class _ActivityListView extends HookConsumerWidget {
             );
             final activity = SnPresenceActivity.fromJson(activityJson);
             itemWidget = ExploreCard(
-              child: FriendPresenceItem(
-                activity: activity,
-                rawData: rawData,
-              ),
+              child: FriendPresenceItem(activity: activity, rawData: rawData),
             );
             break;
           case 'status.friend':
@@ -1078,6 +1067,7 @@ class _ExploreSectionButton extends StatelessWidget {
     );
 
     return MenuAnchor(
+      animated: true,
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(
           colorScheme.surfaceContainerHigh,
@@ -1089,9 +1079,8 @@ class _ExploreSectionButton extends StatelessWidget {
       builder: (context, controller, child) {
         return InkWell(
           borderRadius: SolRadius.pillRadius,
-          onTap: () => controller.isOpen
-              ? controller.close()
-              : controller.open(),
+          onTap: () =>
+              controller.isOpen ? controller.close() : controller.open(),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: SolSpace.sm,
@@ -1099,20 +1088,12 @@ class _ExploreSectionButton extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              spacing: 6,
+              spacing: 8,
               children: [
                 Icon(selected.icon, size: 20, color: colorScheme.onSurface),
                 Text(
                   selected.label.tr(),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Icon(
-                  Symbols.arrow_drop_down,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant,
+                  style: theme.appBarTheme.titleTextStyle,
                 ),
               ],
             ),
@@ -1149,11 +1130,7 @@ class _ExploreSection {
 }
 
 const _sections = <_ExploreSection>[
-  _ExploreSection(
-    filter: null,
-    label: 'explore',
-    icon: Symbols.explore,
-  ),
+  _ExploreSection(filter: null, label: 'explore', icon: Symbols.explore),
   _ExploreSection(
     filter: 'subscriptions',
     label: 'exploreFilterSubscriptions',
@@ -1165,8 +1142,3 @@ const _sections = <_ExploreSection>[
     icon: Symbols.people,
   ),
 ];
-
-/// Scroll distance over which the explore header completes its morph into the
-/// pill state. Tied to roughly one header height: by the time the bar has
-/// scrolled out of the way, it is fully a capsule.
-const _kHeaderMorphDistance = 96.0;

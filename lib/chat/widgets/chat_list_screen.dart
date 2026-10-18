@@ -31,6 +31,8 @@ import 'package:island/core/database.dart';
 import 'package:island/core/lifecycle.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/event_bus.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/core/utils/share_utils.dart';
 import 'package:island/data/database.dart';
@@ -608,9 +610,24 @@ class ChatListBodyWidget extends HookConsumerWidget {
   final Future<void> Function() onChatGroupsChanged;
   final String? accountId;
 
+  /// Blank space held above the first room, in logical pixels.
+  ///
+  /// The pill floats over the list instead of occupying a row of its own, and a
+  /// [CustomScrollView] ignores MediaQuery padding — only the box scroll views
+  /// consume it — so the bar's band has to be reserved as a leading sliver. The
+  /// caller passes `statusTop + kPillAppBarHeight`, or just the bar's height
+  /// where the page has no status-bar inset to add.
+  final double headerGap;
+
+  /// Forwarded to a [NotificationListener] around the list so the enclosing
+  /// view can drive the pill's fade off this list's own scroll.
+  final bool Function(ScrollNotification notification)? onScroll;
+
   const ChatListBodyWidget({
     super.key,
     this.isFloating = false,
+    this.headerGap = 0,
+    this.onScroll,
     required this.tabController,
     required this.selectedTab,
     required this.chatGroups,
@@ -739,352 +756,361 @@ class ChatListBodyWidget extends HookConsumerWidget {
                   data: Theme.of(
                     context,
                   ).copyWith(dividerColor: Colors.transparent),
-                  child: Column(
-                    children: [
+                  child: CustomScrollView(
+                    slivers: [
+                      // The bar floats over this list, so its band has to be
+                      // reserved here: a CustomScrollView ignores MediaQuery
+                      // padding, so nothing else pushes the first room below the
+                      // capsule.
+                      if (headerGap > 0)
+                        SliverToBoxAdapter(child: SizedBox(height: headerGap)),
                       // Global notification status indicator
                       if (accountStatus
                               .whenData((data) => data)
                               .value
                               ?.pushNotificationsMaySendForUnsubscribedRooms ==
                           false)
-                        Material(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.errorContainer.withOpacity(0.35),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Symbols.notifications_off,
-                                  size: 18,
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Limited Notifications',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelLarge
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.error,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Push notifications are disabled for unsubscribed rooms',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                              height: 1.25,
-                                            ),
-                                      ),
-                                    ],
+                        SliverToBoxAdapter(
+                          child: Material(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.errorContainer.withOpacity(0.35),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                10,
+                                14,
+                                10,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Symbols.notifications_off,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.error,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Limited Notifications',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelLarge
+                                              ?.copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.error,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Push notifications are disabled for unsubscribed rooms',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                                height: 1.25,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       // Always show pinned chats in horizontal scrollable section
                       if (pinnedItems.isNotEmpty)
-                        Material(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerLow.withOpacity(0.65),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Height: 8 top + 48 avatar + 4 gap + ~14 label + 6 bottom
-                              SizedBox(
-                                height: 80,
-                                child: _HoverHorizontalScrollList(
-                                  // Left inset 6 + tile centers avatar in 64 → avatar at ~14,
-                                  // matching ChatRoomListTile horizontal padding.
-                                  padding: const EdgeInsets.fromLTRB(
-                                    6,
-                                    8,
-                                    6,
-                                    6,
+                        SliverToBoxAdapter(
+                          child: Material(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLow.withOpacity(0.65),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Height: 8 top + 48 avatar + 4 gap + ~14 label + 6 bottom
+                                SizedBox(
+                                  height: 80,
+                                  child: _HoverHorizontalScrollList(
+                                    // Left inset 6 + tile centers avatar in 64 → avatar at ~14,
+                                    // matching ChatRoomListTile horizontal padding.
+                                    padding: const EdgeInsets.fromLTRB(
+                                      6,
+                                      8,
+                                      6,
+                                      6,
+                                    ),
+                                    itemCount: pinnedItems.length,
+                                    separatorWidth: 2,
+                                    itemBuilder: (context, index) {
+                                      final room = pinnedItems[index];
+                                      return Align(
+                                        alignment: Alignment.topCenter,
+                                        child: _PinnedChatRoomTile(
+                                          room: room,
+                                          isActive: activeChatId == room.id,
+                                          isDirect: room.type == 1,
+                                          onTap: () {
+                                            ref
+                                                .read(
+                                                  chatSummaryProvider.future,
+                                                )
+                                                .then((summary) {
+                                                  if (summary[room.id]
+                                                          ?.hasUnread ??
+                                                      false) {
+                                                    ref
+                                                        .read(
+                                                          chatSummaryProvider
+                                                              .notifier,
+                                                        )
+                                                        .clearUnreadCount(
+                                                          room.id,
+                                                        );
+                                                  }
+                                                });
+                                            if (isWideScreen(context)) {
+                                              context.router.navigate(
+                                                ChatRoomRoute(id: room.id),
+                                              );
+                                            } else {
+                                              context.router.push(
+                                                ChatRoomRoute(id: room.id),
+                                              );
+                                            }
+                                          },
+                                          chatGroups: chatGroups,
+                                          onChatGroupsChanged:
+                                              onChatGroupsChanged,
+                                          accountId: accountId,
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  itemCount: pinnedItems.length,
-                                  separatorWidth: 2,
-                                  itemBuilder: (context, index) {
-                                    final room = pinnedItems[index];
-                                    return Align(
-                                      alignment: Alignment.topCenter,
-                                      child: _PinnedChatRoomTile(
-                                        room: room,
-                                        isActive: activeChatId == room.id,
-                                        isDirect: room.type == 1,
-                                        onTap: () {
-                                          ref
-                                              .read(chatSummaryProvider.future)
-                                              .then((summary) {
-                                                if (summary[room.id]
-                                                        ?.hasUnread ??
-                                                    false) {
-                                                  ref
-                                                      .read(
-                                                        chatSummaryProvider
-                                                            .notifier,
-                                                      )
-                                                      .clearUnreadCount(
-                                                        room.id,
-                                                      );
-                                                }
-                                              });
-                                          if (isWideScreen(context)) {
-                                            context.router.navigate(
-                                              ChatRoomRoute(id: room.id),
-                                            );
-                                          } else {
-                                            context.router.push(
-                                              ChatRoomRoute(id: room.id),
-                                            );
-                                          }
-                                        },
-                                        chatGroups: chatGroups,
-                                        onChatGroupsChanged:
-                                            onChatGroupsChanged,
-                                        accountId: accountId,
-                                      ),
-                                    );
-                                  },
                                 ),
-                              ),
-                              Divider(height: 1),
-                            ],
+                                Divider(height: 1),
+                              ],
+                            ),
                           ),
                         ),
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            final theme = Theme.of(context);
-                            final colorScheme = theme.colorScheme;
+                      Builder(
+                        builder: (context) {
+                          final theme = Theme.of(context);
+                          final colorScheme = theme.colorScheme;
 
-                            Widget buildSectionHeader({
-                              required Widget leading,
-                              required String title,
-                              required int totalUnread,
-                            }) {
-                              return Row(
-                                children: [
-                                  leading,
-                                  const SizedBox(width: 12),
-                                  Expanded(
+                          Widget buildSectionHeader({
+                            required Widget leading,
+                            required String title,
+                            required int totalUnread,
+                          }) {
+                            return Row(
+                              children: [
+                                leading,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                                ),
+                                if (totalUnread > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                     child: Text(
-                                      title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleSmall
+                                      totalUnread > 99
+                                          ? '99+'
+                                          : totalUnread.toString(),
+                                      style: theme.textTheme.labelSmall
                                           ?.copyWith(
+                                            color: colorScheme.onPrimary,
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.1,
+                                          ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          }
+
+                          if (settings.groupedChatList &&
+                              selectedTabValue == 0) {
+                            final children = <Widget>[];
+
+                            for (final section
+                                in groupedSections.customGroups) {
+                              final rooms = section.rooms;
+                              final totalUnread = _totalUnreadForRooms(
+                                rooms,
+                                summariesData,
+                              );
+                              final groupColor =
+                                  chatGroupColorFromHex(section.group.color) ??
+                                  colorScheme.primary;
+
+                              children.add(
+                                Theme(
+                                  data: theme.copyWith(
+                                    dividerColor: Colors.transparent,
+                                  ),
+                                  child: ExpansionTile(
+                                    backgroundColor: colorScheme
+                                        .surfaceContainerHighest
+                                        .withOpacity(0.28),
+                                    collapsedBackgroundColor:
+                                        Colors.transparent,
+                                    collapsedShape:
+                                        const RoundedRectangleBorder(),
+                                    shape: const RoundedRectangleBorder(),
+                                    tilePadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 2,
+                                    ),
+                                    childrenPadding: EdgeInsets.zero,
+                                    title: buildSectionHeader(
+                                      leading: CircleAvatar(
+                                        radius: 15,
+                                        backgroundColor: groupColor.withOpacity(
+                                          0.14,
+                                        ),
+                                        foregroundColor: groupColor,
+                                        child: buildChatGroupIconWidget(
+                                          section.group.icon,
+                                          color: groupColor,
+                                        ),
+                                      ),
+                                      title: section.group.name,
+                                      totalUnread: totalUnread,
+                                    ),
+                                    children: [
+                                      for (final room in rooms)
+                                        buildRoomTile(room),
+                                      if (rooms.isEmpty)
+                                        const EmptyState(
+                                          icon: Symbols.inbox,
+                                          title: 'No rooms assigned yet',
+                                          compact: true,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            for (final section in groupedSections.realmGroups) {
+                              final realm = section.realm;
+                              final rooms = section.rooms;
+                              final realmName = realm?.name ?? 'Unknown Realm';
+                              final totalUnread = _totalUnreadForRooms(
+                                rooms,
+                                summariesData,
+                              );
+
+                              children.add(
+                                Theme(
+                                  data: theme.copyWith(
+                                    dividerColor: Colors.transparent,
+                                  ),
+                                  child: ExpansionTile(
+                                    backgroundColor: colorScheme
+                                        .surfaceContainerHighest
+                                        .withOpacity(0.28),
+                                    collapsedBackgroundColor:
+                                        Colors.transparent,
+                                    collapsedShape:
+                                        const RoundedRectangleBorder(),
+                                    shape: const RoundedRectangleBorder(),
+                                    tilePadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 2,
+                                    ),
+                                    childrenPadding: EdgeInsets.zero,
+                                    title: buildSectionHeader(
+                                      leading: ProfilePictureWidget(
+                                        file: realm?.picture,
+                                        fallbackName: realm?.name,
+                                        radius: 15,
+                                      ),
+                                      title: realmName,
+                                      totalUnread: totalUnread,
+                                    ),
+                                    children: [
+                                      for (final room in rooms)
+                                        buildRoomTile(room),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (groupedSections.ungroupedRooms.isNotEmpty) {
+                              if (children.isNotEmpty) {
+                                children.add(
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      16,
+                                      4,
+                                    ),
+                                    child: Text(
+                                      'Other chats',
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant
+                                                .withOpacity(0.8),
                                             fontWeight: FontWeight.w600,
-                                            letterSpacing: -0.1,
+                                            letterSpacing: 0.2,
                                           ),
                                     ),
                                   ),
-                                  if (totalUnread > 0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        totalUnread > 99
-                                            ? '99+'
-                                            : totalUnread.toString(),
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color: colorScheme.onPrimary,
-                                              fontWeight: FontWeight.w700,
-                                              height: 1.1,
-                                            ),
-                                      ),
-                                    ),
-                                ],
+                                );
+                              }
+                              children.addAll(
+                                groupedSections.ungroupedRooms.map(
+                                  buildRoomTile,
+                                ),
                               );
                             }
 
-                            if (settings.groupedChatList &&
-                                selectedTabValue == 0) {
-                              final children = <Widget>[];
-
-                              for (final section
-                                  in groupedSections.customGroups) {
-                                final rooms = section.rooms;
-                                final totalUnread = _totalUnreadForRooms(
-                                  rooms,
-                                  summariesData,
-                                );
-                                final groupColor =
-                                    chatGroupColorFromHex(
-                                      section.group.color,
-                                    ) ??
-                                    colorScheme.primary;
-
-                                children.add(
-                                  Theme(
-                                    data: theme.copyWith(
-                                      dividerColor: Colors.transparent,
-                                    ),
-                                    child: ExpansionTile(
-                                      backgroundColor: colorScheme
-                                          .surfaceContainerHighest
-                                          .withOpacity(0.28),
-                                      collapsedBackgroundColor:
-                                          Colors.transparent,
-                                      collapsedShape:
-                                          const RoundedRectangleBorder(),
-                                      shape: const RoundedRectangleBorder(),
-                                      tilePadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 2,
-                                      ),
-                                      childrenPadding: EdgeInsets.zero,
-                                      title: buildSectionHeader(
-                                        leading: CircleAvatar(
-                                          radius: 15,
-                                          backgroundColor: groupColor
-                                              .withOpacity(0.14),
-                                          foregroundColor: groupColor,
-                                          child: buildChatGroupIconWidget(
-                                            section.group.icon,
-                                            color: groupColor,
-                                          ),
-                                        ),
-                                        title: section.group.name,
-                                        totalUnread: totalUnread,
-                                      ),
-                                      children: [
-                                        for (final room in rooms)
-                                          buildRoomTile(room),
-                                        if (rooms.isEmpty)
-                                          const EmptyState(
-                                            icon: Symbols.inbox,
-                                            title: 'No rooms assigned yet',
-                                            compact: true,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              for (final section
-                                  in groupedSections.realmGroups) {
-                                final realm = section.realm;
-                                final rooms = section.rooms;
-                                final realmName =
-                                    realm?.name ?? 'Unknown Realm';
-                                final totalUnread = _totalUnreadForRooms(
-                                  rooms,
-                                  summariesData,
-                                );
-
-                                children.add(
-                                  Theme(
-                                    data: theme.copyWith(
-                                      dividerColor: Colors.transparent,
-                                    ),
-                                    child: ExpansionTile(
-                                      backgroundColor: colorScheme
-                                          .surfaceContainerHighest
-                                          .withOpacity(0.28),
-                                      collapsedBackgroundColor:
-                                          Colors.transparent,
-                                      collapsedShape:
-                                          const RoundedRectangleBorder(),
-                                      shape: const RoundedRectangleBorder(),
-                                      tilePadding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 2,
-                                      ),
-                                      childrenPadding: EdgeInsets.zero,
-                                      title: buildSectionHeader(
-                                        leading: ProfilePictureWidget(
-                                          file: realm?.picture,
-                                          fallbackName: realm?.name,
-                                          radius: 15,
-                                        ),
-                                        title: realmName,
-                                        totalUnread: totalUnread,
-                                      ),
-                                      children: [
-                                        for (final room in rooms)
-                                          buildRoomTile(room),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              if (groupedSections.ungroupedRooms.isNotEmpty) {
-                                if (children.isNotEmpty) {
-                                  children.add(
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        12,
-                                        16,
-                                        4,
-                                      ),
-                                      child: Text(
-                                        'Other chats',
-                                        style: theme.textTheme.labelMedium
-                                            ?.copyWith(
-                                              color: colorScheme
-                                                  .onSurfaceVariant
-                                                  .withOpacity(0.8),
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.2,
-                                            ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                children.addAll(
-                                  groupedSections.ungroupedRooms.map(
-                                    buildRoomTile,
-                                  ),
-                                );
-                              }
-
-                              return ListView(
-                                padding: const EdgeInsets.only(bottom: 96),
-                                children: children,
-                              );
-                            } else {
-                              return SuperListView.builder(
-                                padding: const EdgeInsets.only(bottom: 96),
-                                itemCount: filteredItems.length,
-                                itemBuilder: (context, index) {
-                                  final item = filteredItems[index];
-                                  return buildRoomTile(item);
-                                },
-                              );
-                            }
-                          },
-                        ),
+                            return SliverList(
+                              delegate: SliverChildListDelegate(children),
+                            );
+                          } else {
+                            return SuperSliverList.builder(
+                              itemCount: filteredItems.length,
+                              itemBuilder: (context, index) {
+                                final item = filteredItems[index];
+                                return buildRoomTile(item);
+                              },
+                            );
+                          }
+                        },
                       ),
+                      const SliverGap(96),
                     ],
                   ),
                 ),
@@ -1110,7 +1136,14 @@ class ChatListBodyWidget extends HookConsumerWidget {
       ],
     );
 
-    return isFloating ? Card(child: bodyWidget) : bodyWidget;
+    // The pill floats over this body, so the scroll has to reach its fade.
+    // The reserved band is a leading sliver *inside* the viewport, not padding
+    // around it: content clears the capsule when the list is at its origin and
+    // then travels up underneath the glass as the user scrolls.
+    return NotificationListener<ScrollNotification>(
+      onNotification: onScroll ?? (_) => false,
+      child: isFloating ? Card(child: bodyWidget) : bodyWidget,
+    );
   }
 }
 
@@ -1285,45 +1318,92 @@ class ChatFabWidget extends HookConsumerWidget {
   }
 }
 
-/// The three chat filters (all / direct / groups) rendered as an app bar
-/// title, so the leading drawer button and the trailing actions stay in the
-/// bar's own layout instead of a hand-built overlay row.
-class _ChatListTabBar extends StatelessWidget {
+/// The three chat filters (all / direct / groups) as one dropdown, in the same
+/// shape as the explore page's section picker: the current filter's icon and
+/// label as the trigger, the alternatives in the menu.
+///
+/// It drives the page's [TabController] instead of replacing it, so the list
+/// below stays a tab view and the switcher stays the bar's title.
+class _ChatSectionButton extends StatelessWidget {
   final TabController tabController;
-  final Color foreground;
 
-  const _ChatListTabBar({required this.tabController, required this.foreground});
+  const _ChatSectionButton({required this.tabController});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      spacing: 4,
-      children: [
-        IconButton(
-          icon: Icon(Symbols.inbox, fill: tabController.index == 0 ? 1 : 0),
-          color: foreground,
-          visualDensity: VisualDensity.compact,
-          onPressed: () => tabController.animateTo(0),
-          tooltip: 'chatTabAll'.tr(),
-        ),
-        IconButton(
-          icon: Icon(Symbols.person, fill: tabController.index == 1 ? 1 : 0),
-          color: foreground,
-          visualDensity: VisualDensity.compact,
-          onPressed: () => tabController.animateTo(1),
-          tooltip: 'chatTabDirect'.tr(),
-        ),
-        IconButton(
-          icon: Icon(Symbols.group, fill: tabController.index == 2 ? 1 : 0),
-          color: foreground,
-          visualDensity: VisualDensity.compact,
-          onPressed: () => tabController.animateTo(2),
-          tooltip: 'chatTabGroup'.tr(),
-        ),
-      ],
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // The controller is the source of truth, and a swipe on the tab view moves
+    // it without rebuilding this widget, so listen rather than read once.
+    return AnimatedBuilder(
+      animation: tabController,
+      builder: (context, _) {
+        final selected = _chatSections[tabController.index];
+        return MenuAnchor(
+          animated: true,
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(
+              colorScheme.surfaceContainerHigh,
+            ),
+            shape: const WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: SolRadius.menuRadius),
+            ),
+          ),
+          builder: (context, controller, child) {
+            return InkWell(
+              borderRadius: SolRadius.pillRadius,
+              onTap: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SolSpace.sm,
+                  vertical: SolSpace.xs,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: SolSpace.sm,
+                  children: [
+                    Icon(selected.icon, size: 20, color: colorScheme.onSurface),
+                    Text(
+                      selected.label.tr(),
+                      style: theme.appBarTheme.titleTextStyle,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          menuChildren: [
+            for (final (index, section) in _chatSections.indexed)
+              MenuItemButton(
+                leadingIcon: Icon(section.icon, size: 20),
+                trailingIcon: tabController.index == index
+                    ? const Icon(Symbols.check, size: 18)
+                    : null,
+                onPressed: () => tabController.animateTo(index),
+                child: Text(section.label.tr()),
+              ),
+          ],
+        );
+      },
     );
   }
 }
+
+class _ChatSection {
+  final String label;
+  final IconData icon;
+
+  const _ChatSection({required this.label, required this.icon});
+}
+
+/// Ordered to match the page's three tabs.
+const _chatSections = <_ChatSection>[
+  _ChatSection(label: 'chatTabAll', icon: Symbols.inbox),
+  _ChatSection(label: 'chatTabDirect', icon: Symbols.person),
+  _ChatSection(label: 'chatTabGroup', icon: Symbols.group),
+];
 
 /// Chat invite action moved from the old inline header into the app bar's
 /// trailing actions.
@@ -1826,6 +1906,9 @@ class ChatListWidget extends HookConsumerWidget {
     final accountId = userInfo.value?.id;
     final chatGroups =
         ref.watch(chatGroupsProvider).value ?? const <SnChatGroup>[];
+    // Drives the pill's glass the same way the explore and search pages do: a
+    // notifier rather than setState, so a scroll tick repaints the bar only.
+    final fade = useValueNotifier(0.0);
 
     Future<void> refreshChatGroups() async {
       ref.invalidate(chatGroupsProvider);
@@ -1915,176 +1998,170 @@ class ChatListWidget extends HookConsumerWidget {
           : sidebarWidth.value;
       final chatInvites = ref.watch(chatroomInvitesProvider);
 
+      // No outer card: the pane floats on the page background, so only the pill
+      // header carries a surface.
       return SizedBox(
         width: currentWidth,
-        child: Card(
-          margin: EdgeInsets.zero,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topRight: Radius.circular(8),
-              topLeft: Radius.circular(8),
-            ),
-          ),
-          child: MouseRegion(
-            onEnter: (_) => isSidebarHovering.value = true,
-            onExit: (_) => isSidebarHovering.value = false,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              child: Stack(
-                children: [
-                  if (isCollapsed.value)
-                    Column(
-                      children: [
-                        Expanded(
-                          child: _CollapsedChatListBody(
-                            selectedTab: selectedTab,
-                            chatGroups: chatGroups,
-                            onChatGroupsChanged: refreshChatGroups,
-                            accountId: accountId,
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        Row(
+        child: MouseRegion(
+          onEnter: (_) => isSidebarHovering.value = true,
+          onExit: (_) => isSidebarHovering.value = false,
+          child: Stack(
+            children: [
+              if (isCollapsed.value)
+                Column(
+                  children: [
+                    Expanded(
+                      child: _CollapsedChatListBody(
+                        selectedTab: selectedTab,
+                        chatGroups: chatGroups,
+                        onChatGroupsChanged: refreshChatGroups,
+                        accountId: accountId,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                // Same pill as the narrow page: the room list runs the full
+                // height of the pane and the bar floats its glass over the
+                // top of it, instead of a solid row eating into the list.
+                Stack(
+                  children: [
+                    ChatListBodyWidget(
+                      isFloating: false,
+                      tabController: tabController,
+                      selectedTab: selectedTab,
+                      chatGroups: chatGroups,
+                      onChatGroupsChanged: refreshChatGroups,
+                      accountId: accountId,
+                      headerGap: kPillAppBarHeight,
+                      onScroll: (notification) =>
+                          updatePillFade(notification, fade),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: PillAppBar(
+                        fade: fade,
+                        statusTop: 0,
+                        child: Row(
                           children: [
                             Expanded(
-                              child: TabBar(
-                                dividerColor: Colors.transparent,
-                                controller: tabController,
-                                tabAlignment: TabAlignment.start,
-                                isScrollable: true,
-                                tabs: [
-                                  const Tab(icon: Icon(Symbols.chat)),
-                                  const Tab(icon: Icon(Symbols.person)),
-                                  const Tab(icon: Icon(Symbols.group)),
-                                ],
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: _ChatSectionButton(
+                                  tabController: tabController,
+                                ),
                               ),
                             ),
                             const _MarkAllReadButton(),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: IconButton(
-                                tooltip: 'invites'.tr(),
-                                onPressed: openInvitesSheet,
-                                icon: Badge(
-                                  label: Text(
-                                    chatInvites.when(
-                                      data: (invites) =>
-                                          invites.length.toString(),
-                                      error: (_, _) => '0',
-                                      loading: () => '0',
-                                    ),
+                            IconButton(
+                              tooltip: 'invites'.tr(),
+                              onPressed: openInvitesSheet,
+                              icon: Badge(
+                                label: Text(
+                                  chatInvites.when(
+                                    data: (invites) =>
+                                        invites.length.toString(),
+                                    error: (_, _) => '0',
+                                    loading: () => '0',
                                   ),
-                                  isLabelVisible: chatInvites.when(
-                                    data: (invites) => invites.isNotEmpty,
-                                    error: (_, _) => false,
-                                    loading: () => false,
-                                  ),
-                                  child: const Icon(Symbols.mail),
                                 ),
+                                isLabelVisible: chatInvites.when(
+                                  data: (invites) => invites.isNotEmpty,
+                                  error: (_, _) => false,
+                                  loading: () => false,
+                                ),
+                                child: const Icon(Symbols.mail),
                               ),
                             ),
                           ],
-                        ).padding(horizontal: 8),
-                        const Divider(height: 1),
-                        Expanded(
-                          child: ChatListBodyWidget(
-                            isFloating: false,
-                            tabController: tabController,
-                            selectedTab: selectedTab,
-                            chatGroups: chatGroups,
-                            onChatGroupsChanged: refreshChatGroups,
-                            accountId: accountId,
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (!isCollapsed.value)
-                    Positioned(
-                      bottom: 0,
-                      right: 6,
-                      child: ChatFabWidget().padding(bottom: 16, right: 8),
-                    ),
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    right: 0,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.resizeColumn,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onHorizontalDragEnd: (_) {
-                          if (sidebarWidth.value <= collapseThreshold) {
-                            isCollapsed.value = true;
-                            sidebarWidth.value = minSidebarWidth;
-                          }
-                        },
-                        onHorizontalDragUpdate: (details) {
-                          if (isCollapsed.value) {
-                            isCollapsed.value = false;
-                            sidebarWidth.value = minSidebarWidth;
-                          }
-                          final next = (sidebarWidth.value + details.delta.dx)
-                              .clamp(collapseThreshold, maxSidebarWidth);
-                          sidebarWidth.value = next;
-                        },
-                        child: const SizedBox(width: 10),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: IgnorePointer(
-                      ignoring: !isSidebarHovering.value,
-                      child: AnimatedOpacity(
-                        opacity: isSidebarHovering.value ? 1 : 0,
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        child: AnimatedSlide(
-                          offset: isSidebarHovering.value
-                              ? Offset.zero
-                              : const Offset(0.25, 0),
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          child: Center(
-                            child: Material(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: const BorderRadius.horizontal(
-                                left: Radius.circular(10),
-                              ),
-                              child: IconButton(
-                                constraints: const BoxConstraints.tightFor(
-                                  width: 36,
-                                  height: 36,
-                                ),
-                                padding: EdgeInsets.zero,
-                                tooltip: isCollapsed.value
-                                    ? 'expand'.tr()
-                                    : 'collapse'.tr(),
-                                icon: Icon(
-                                  isCollapsed.value
-                                      ? Symbols.left_panel_open
-                                      : Symbols.left_panel_close,
-                                ),
-                                onPressed: () =>
-                                    isCollapsed.value = !isCollapsed.value,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     ),
+                  ],
+                ),
+              if (!isCollapsed.value)
+                Positioned(
+                  bottom: 0,
+                  right: 6,
+                  child: ChatFabWidget().padding(bottom: 16, right: 8),
+                ),
+              Positioned(
+                top: 0,
+                bottom: 0,
+                right: 0,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.resizeColumn,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd: (_) {
+                      if (sidebarWidth.value <= collapseThreshold) {
+                        isCollapsed.value = true;
+                        sidebarWidth.value = minSidebarWidth;
+                      }
+                    },
+                    onHorizontalDragUpdate: (details) {
+                      if (isCollapsed.value) {
+                        isCollapsed.value = false;
+                        sidebarWidth.value = minSidebarWidth;
+                      }
+                      final next = (sidebarWidth.value + details.delta.dx)
+                          .clamp(collapseThreshold, maxSidebarWidth);
+                      sidebarWidth.value = next;
+                    },
+                    child: const SizedBox(width: 10),
                   ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  ignoring: !isSidebarHovering.value,
+                  child: AnimatedOpacity(
+                    opacity: isSidebarHovering.value ? 1 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    child: AnimatedSlide(
+                      offset: isSidebarHovering.value
+                          ? Offset.zero
+                          : const Offset(0.25, 0),
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      child: Center(
+                        child: Material(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: const BorderRadius.horizontal(
+                            left: Radius.circular(10),
+                          ),
+                          child: IconButton(
+                            constraints: const BoxConstraints.tightFor(
+                              width: 36,
+                              height: 36,
+                            ),
+                            padding: EdgeInsets.zero,
+                            tooltip: isCollapsed.value
+                                ? 'expand'.tr()
+                                : 'collapse'.tr(),
+                            icon: Icon(
+                              isCollapsed.value
+                                  ? Symbols.left_panel_open
+                                  : Symbols.left_panel_close,
+                            ),
+                            onPressed: () =>
+                                isCollapsed.value = !isCollapsed.value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -2097,42 +2174,51 @@ class ChatListWidget extends HookConsumerWidget {
     // foreground `IconTheme`.
     final appBarForeground = colorScheme.onSurface;
     final isSyncing = ref.watch(chatSyncingProvider);
+    // Same band the explore and search pages reserve for their pills, so the
+    // first room tile clears the capsule instead of starting under it.
+    final statusTop = MediaQuery.paddingOf(context).top;
 
     return AppScaffold(
       extendBody: false,
+      // The list scrolls under the pill and drives its glass, instead of being
+      // pushed below a solid band.
+      appBarOverContent: true,
       floatingActionButton: const ChatFabWidget().padding(
         bottom: MediaQuery.paddingOf(context).bottom,
       ),
-      appBar: AppBar(
-        leading: const SolDrawerButton(),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surfaceContainerLow,
-        foregroundColor: appBarForeground,
-        title: _ChatListTabBar(
-          tabController: tabController,
-          foreground: appBarForeground,
-        ),
-        titleSpacing: 0,
-        actions: [
-          if (isSyncing)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: ConfuseSpinner(
-                  size: 24,
-                  speed: 7,
-                  fontSize: 12,
-                  color: appBarForeground.withOpacity(0.65),
-                ),
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const SolDrawerButton(),
+            const Gap(SolSpace.sm),
+            // Same placement as the explore bar: the picker takes the title
+            // slot and the actions stay flush right.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _ChatSectionButton(tabController: tabController),
               ),
             ),
-          _MarkAllReadButton(color: appBarForeground),
-          _ChatInviteButton(foreground: appBarForeground),
-          const Gap(8),
-        ],
+            if (isSyncing)
+              Padding(
+                padding: const EdgeInsets.only(right: SolSpace.sm),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: ConfuseSpinner(
+                    size: 24,
+                    speed: 7,
+                    fontSize: 12,
+                    color: appBarForeground.withOpacity(0.65),
+                  ),
+                ),
+              ),
+            _MarkAllReadButton(color: appBarForeground),
+            _ChatInviteButton(foreground: appBarForeground),
+          ],
+        ),
       ),
       body: userInfo.value == null
           ? const ResponseUnauthorizedWidget()
@@ -2146,6 +2232,9 @@ class ChatListWidget extends HookConsumerWidget {
                     chatGroups: chatGroups,
                     onChatGroupsChanged: refreshChatGroups,
                     accountId: accountId,
+                    headerGap: statusTop + kPillAppBarHeight,
+                    onScroll: (notification) =>
+                        updatePillFade(notification, fade),
                   ),
                 ),
               ],

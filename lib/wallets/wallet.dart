@@ -11,6 +11,8 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/widgets/account/account_picker.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/page_app_bar.dart';
@@ -2917,6 +2919,12 @@ class WalletScreen extends HookConsumerWidget {
 
     final isWide = isWideScreen(context);
     const walletContentMaxWidth = 600.0;
+    // The pill's band, reserved by the header slivers below: measured here so
+    // the capsule and the content it floats over agree on one number.
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The header sliding under the pill is what drives its glass; at rest the
+    // capsule is invisible and the page is just its content.
+    final fade = useValueNotifier(0.0);
 
     Widget buildBody() {
       return wallets.when(
@@ -2944,10 +2952,21 @@ class WalletScreen extends HookConsumerWidget {
 
           final allPockets = getAllCurrencies(selectedWallet.pockets);
 
-          return NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-              SliverToBoxAdapter(
-                child: Column(
+          return NotificationListener<ScrollNotification>(
+            // Only the outer scrollable counts: the tab lists inside report a
+            // deeper `depth` and restart at 0 whenever the header re-expands.
+            onNotification: (notification) => updatePillFade(notification, fade),
+            child: NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                // The pill floats over this list rather than occupying a row of
+                // its own, so its band is reserved as a leading sliver: the
+                // wallet switcher starts below the capsule and travels up
+                // underneath the glass as the user scrolls.
+                SliverToBoxAdapter(
+                  child: SizedBox(height: statusTop + kPillAppBarHeight),
+                ),
+                SliverToBoxAdapter(
+                  child: Column(
                   children: [
                     _buildWalletSwitcher(
                       context,
@@ -2975,9 +2994,9 @@ class WalletScreen extends HookConsumerWidget {
                       selectedWallet,
                       selectedCurrency,
                     ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
               SliverToBoxAdapter(
                 child: _buildQuickActionsGrid(
@@ -3047,6 +3066,7 @@ class WalletScreen extends HookConsumerWidget {
                 ),
               ],
             ),
+            ),
           );
         },
         error: (error, stackTrace) => ResponseErrorWidget(
@@ -3058,17 +3078,34 @@ class WalletScreen extends HookConsumerWidget {
     }
 
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('wallet').tr(),
-        leading: const SolDrawerButton(),
-        actions: [
-          IconButton(
-            icon: const Icon(Symbols.add),
-            onPressed: createWallet,
-            tooltip: 'walletCreateNew'.tr(),
-          ),
-          const Gap(8),
-        ],
+      // The header scrolls under the pill and drives its glass, instead of
+      // being pushed below a solid band.
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const SolDrawerButton(),
+            const Gap(SolSpace.sm),
+            // Same placement as the other root tabs: the title takes the brand
+            // slot and the actions stay flush right.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'wallet',
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ).tr(),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Symbols.add),
+              onPressed: createWallet,
+              tooltip: 'walletCreateNew'.tr(),
+            ),
+          ],
+        ),
       ),
       body: isWide
           ? Row(
@@ -3082,16 +3119,26 @@ class WalletScreen extends HookConsumerWidget {
                   child: buildBody(),
                 ),
                 const Gap(16),
-                // Right column - Transaction detail or placeholder
+                // Right column - Transaction detail or placeholder.
+                //
+                // The left column reserves the pill's band inside its own
+                // header slivers so it can slide under the glass; this pane is
+                // a separate scrollable, so it keeps the band as plain padding
+                // instead of starting underneath the capsule.
                 Expanded(
-                  child: selectedOrderId.value != null
-                      ? WalletOrderDetailView(orderId: selectedOrderId.value!)
-                      : selectedTransactionId.value != null
-                          ? TransactionDetailEmbedded(
-                              transactionId: selectedTransactionId.value!,
-                              currentWalletId: selectedWalletId.value,
-                            )
-                          : _buildEmptyDetailPlaceholder(),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: statusTop + kPillAppBarHeight,
+                    ),
+                    child: selectedOrderId.value != null
+                        ? WalletOrderDetailView(orderId: selectedOrderId.value!)
+                        : selectedTransactionId.value != null
+                            ? TransactionDetailEmbedded(
+                                transactionId: selectedTransactionId.value!,
+                                currentWalletId: selectedWalletId.value,
+                              )
+                            : _buildEmptyDetailPlaceholder(),
+                  ),
                 ),
               ],
             )

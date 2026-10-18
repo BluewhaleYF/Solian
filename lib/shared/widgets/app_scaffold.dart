@@ -190,6 +190,19 @@ class AppScaffold extends HookConsumerWidget {
   final bool? isNoBackground;
   final bool? extendBody;
 
+  /// Let the body extend behind [appBar] instead of being pushed below it.
+  ///
+  /// With this off (the default) the scaffold reserves the bar's whole band, so
+  /// nothing ever slides underneath it. With it on the content starts at the
+  /// top of the viewport and scrolls under the bar — which is what a
+  /// transparent, blur-backed bar like [PillAppBar] samples, and why those
+  /// pages add their own `statusTop + kPillAppBarHeight` gap to their first
+  /// sliver so their content still starts below the pill.
+  ///
+  /// Only the scrollable case makes sense: a page whose body does not scroll
+  /// has nothing to slide under the bar and would just paint beneath it.
+  final bool appBarOverContent;
+
   const AppScaffold({
     super.key,
     this.appBar,
@@ -205,6 +218,7 @@ class AppScaffold extends HookConsumerWidget {
     this.onEndDrawerChanged,
     this.isNoBackground,
     this.extendBody,
+    this.appBarOverContent = false,
   });
 
   @override
@@ -212,7 +226,9 @@ class AppScaffold extends HookConsumerWidget {
     final appBarHeight = appBar?.preferredSize.height ?? 0;
     final safeTop = MediaQuery.of(context).padding.top;
     final keyboardFocusNode = useFocusNode();
-    final topReservedHeight = appBar != null ? appBarHeight + safeTop : 0.0;
+    final topReservedHeight = appBar != null && !appBarOverContent
+        ? appBarHeight + safeTop
+        : 0.0;
 
     // Request focus to capture keyboard events
     useEffect(() {

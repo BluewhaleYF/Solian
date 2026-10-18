@@ -7,10 +7,13 @@ import 'package:material_ui/material_ui.dart' as mui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
-/// Guards the multi-image carousel layout: the configured padding must live on
-/// the attachment scrollable itself (CarouselView.padding) so items snap in
-/// order with consistent margins — not on an outer wrapper that shrinks the
-/// scroll viewport and dead-ends the swipe edges.
+/// `CarouselView.padding` wraps every card from outside its surface, so a
+/// horizontal h both insets the leading edge by h and doubles into a 2h gap
+/// between neighbours. A caller that hands over its whole gutter therefore
+/// either gets an inflated gap (16) or, after halving the gutter to fix the
+/// gap, an image that no longer lines up with the body text (8 instead of 16).
+/// `CloudFileList.itemGap` splits the difference: half the gap to the view, the
+/// rest of the gutter outside the viewport. These tests pin that geometry.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -18,6 +21,8 @@ void main() {
     WidgetTester tester, {
     bool isFullBleed = false,
     double fullBleedFraction = 0.9,
+    EdgeInsets? padding,
+    double? itemGap,
     ValueChanged<int>? onIndexChanged,
   }) async {
     SharedPreferences.setMockInitialValues({});
@@ -44,9 +49,10 @@ void main() {
           home: Scaffold(
             body: CloudFileList(
               files: files,
-              padding: const EdgeInsets.all(8),
+              padding: padding,
               isFullBleed: isFullBleed,
               fullBleedFraction: fullBleedFraction,
+              itemGap: itemGap,
               onIndexChanged: onIndexChanged,
             ),
           ),
@@ -56,47 +62,73 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('carousel padding is applied on the scrollable, not a wrapper', (
+  // One Hero per rendered card: the artwork itself, not the card's chrome.
+  List<Rect> cardRects(WidgetTester tester, Finder carouselFinder) {
+    final heroes = find.descendant(
+      of: carouselFinder,
+      matching: find.byType(Hero),
+    );
+    final seen = <double>{};
+    final rects = <Rect>[];
+    for (final entity in heroes.evaluate()) {
+      final rect = tester.getRect(find.byWidget(entity.widget));
+      if (seen.add(rect.left)) rects.add(rect);
+    }
+    return rects..sort((a, b) => a.left.compareTo(b.left));
+  }
+
+  testWidgets('itemGap aligns the leading card with the gutter it was given', (
     tester,
   ) async {
-    await pumpCarousel(tester);
+    await pumpCarousel(
+      tester,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      itemGap: 8,
+    );
 
     final carouselFinder = find.byType(mui.CarouselView);
     expect(carouselFinder, findsOneWidget);
 
-    final carousel = tester.widget<mui.CarouselView>(carouselFinder);
+    final cards = cardRects(tester, carouselFinder);
+    expect(cards.length, greaterThanOrEqualTo(2));
     expect(
-      carousel.padding,
-      const EdgeInsets.all(8),
-      reason: 'padding must be owned by the attachment scrollable itself',
+      cards.first.left,
+      16,
+      reason: 'the first image must sit on the body gutter, not half of it',
     );
-
-    // No outer Padding wrapper may sit between the scrollable and its
-    // LayoutBuilder: the viewport must measure the full container width.
-    var foundPadding = false;
-    tester.element(carouselFinder).visitAncestorElements((ancestor) {
-      if (ancestor.widget is Padding) {
-        foundPadding = true;
-        return false;
-      }
-      if (ancestor.widget is LayoutBuilder) return false;
-      return true;
-    });
     expect(
-      foundPadding,
-      isFalse,
-      reason: 'padding must not wrap the scrollable from the outside',
+      cards[1].left - cards.first.right,
+      8,
+      reason: 'two images sit itemGap apart, not 2×itemGap',
     );
   });
 
-  testWidgets('post-item multi-attachment carousel peeks next item, sharp', (
+  testWidgets('a wider gap still starts on the same gutter', (tester) async {
+    await pumpCarousel(
+      tester,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      itemGap: 4,
+    );
+
+    final cards = cardRects(tester, find.byType(mui.CarouselView));
+    expect(cards.first.left, 16);
+    expect(
+      cards[1].left - cards.first.right,
+      4,
+      reason: 'the leading inset must not drift when the gap changes',
+    );
+  });
+
+  testWidgets('the peeking full-bleed strip keeps its card-side gap', (
     tester,
   ) async {
-    await pumpCarousel(tester, isFullBleed: true);
+    await pumpCarousel(
+      tester,
+      isFullBleed: true,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+    );
 
     final carouselFinder = find.byType(mui.CarouselView);
-    expect(carouselFinder, findsOneWidget);
-
     final carousel = tester.widget<mui.CarouselView>(carouselFinder);
     final viewportWidth = tester.getSize(carouselFinder).width;
 
@@ -105,24 +137,23 @@ void main() {
       closeTo(viewportWidth * 0.9, 0.001),
       reason: 'each item takes 90% of the width so the next one peeks',
     );
-    final shape = carousel.shape as RoundedRectangleBorder;
     expect(
-      shape.borderRadius,
+      (carousel.shape as RoundedRectangleBorder).borderRadius,
       BorderRadius.zero,
       reason: 'multi-attachment items must have sharp borders',
     );
     expect(
       carousel.padding,
       const EdgeInsets.symmetric(vertical: 8),
-      reason: 'gap must not come from uniform CarouselView padding, or the '
-          'last page would carry a trailing inset',
+      reason: 'the bleed reaches the host edges, so nothing horizontally '
+          'insets it',
     );
+
     final children = carousel.children;
     expect(children.length, 3);
     for (final child in children.take(children.length - 1)) {
-      final padding = child as Padding;
       expect(
-        padding.padding,
+        (child as Padding).padding,
         const EdgeInsets.only(right: 8),
         reason: 'inter-item gap lives on each card',
       );
@@ -130,7 +161,7 @@ void main() {
     expect(
       children.last,
       isNot(isA<Padding>()),
-      reason: 'last card is ungapped so the final page snaps flush to the '
+      reason: 'the last card is ungapped so the final page snaps flush to the '
           'right border',
     );
   });
@@ -143,12 +174,11 @@ void main() {
       tester,
       isFullBleed: true,
       fullBleedFraction: 1.0,
+      padding: EdgeInsets.zero,
       onIndexChanged: changed.add,
     );
 
     final carouselFinder = find.byType(mui.CarouselView);
-    expect(carouselFinder, findsOneWidget);
-
     final carousel = tester.widget<mui.CarouselView>(carouselFinder);
     final viewportWidth = tester.getSize(carouselFinder).width;
 
@@ -171,6 +201,24 @@ void main() {
       changed,
       contains(1),
       reason: 'the viewer must learn the current page index',
+    );
+  });
+
+  testWidgets('callers without an itemGap keep the padding they passed in', (
+    tester,
+  ) async {
+    await pumpCarousel(tester, padding: EdgeInsets.zero);
+
+    final carouselFinder = find.byType(mui.CarouselView);
+    expect(
+      tester.widget<mui.CarouselView>(carouselFinder).padding,
+      EdgeInsets.zero,
+      reason: 'chat bubbles rely on the explicit zero to keep cards touching',
+    );
+    expect(
+      tester.getRect(carouselFinder).left,
+      0,
+      reason: 'no outer inset may appear for a caller that asked for none',
     );
   });
 }

@@ -42,6 +42,13 @@ const kMessageEnableEmbedTypes = ['text', 'messages.new'];
 const kPostThreadingLineWidth = 1.0;
 const kChainedRowGap = 8.0;
 
+/// Space between two images in a post's contained attachment carousel.
+const kAttachmentCarouselGap = 8.0;
+
+/// Extra horizontal inset for the post metadata rows (tags, categories,
+/// awards, view counts), so they sit slightly inboard of the body text.
+const kPostMetadataInsetNudge = 2.0;
+
 class SponsoredBadge extends StatelessWidget {
   final bool compact;
 
@@ -1935,15 +1942,11 @@ class PostBody extends ConsumerWidget {
       fontSize:
           Theme.of(context).textTheme.bodyMedium!.fontSize! * (textScale ?? 1),
     );
-    // The attachment carousel is a `CarouselView`, whose padding is applied to
-    // every item — so passing the body gutter verbatim also made it the gap
-    // between two images (an 8px gutter became a 16px gap). Halve it for the
-    // horizontal carousel so images sit 8px apart while the edge still roughly
-    // matches the body text; the column layout keeps the full gutter because
-    // its spacing comes from the column itself.
-    final containedAttachmentInset = isInteractive
-        ? renderingPadding.left / 2
-        : renderingPadding.left;
+    // The attachment carousel splits its gutter: `CarouselView` wraps every
+    // card, so half of [CloudFileList.itemGap] goes to the view and the rest of
+    // the body gutter is inset outside the viewport. Handing over the full
+    // gutter therefore lines the leading image up with the body text while two
+    // images sit [CloudFileList.itemGap] apart.
 
     if (item.debugRank != null && kDebugMode) {
       metadataChildren.add(
@@ -2271,11 +2274,14 @@ class PostBody extends ConsumerWidget {
                   isColumn: !isInteractive,
                   isFullBleed: !useContainedAttachments,
                   padding: EdgeInsets.fromLTRB(
-                    useContainedAttachments ? containedAttachmentInset : 0,
+                    useContainedAttachments ? renderingPadding.left : 0,
                     8,
-                    useContainedAttachments ? containedAttachmentInset : 0,
+                    useContainedAttachments ? renderingPadding.right : 0,
                     8,
                   ),
+                  itemGap: useContainedAttachments
+                      ? kAttachmentCarouselGap
+                      : null,
                   borderRadius: useContainedAttachments ? 16 : 8,
                 ),
         if (forwardedCard != null)
@@ -2286,7 +2292,11 @@ class PostBody extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 2,
             children: metadataChildren,
-          ).padding(left: renderingPadding.left, right: renderingPadding.right, top: 4),
+          ).padding(
+            left: renderingPadding.left + kPostMetadataInsetNudge,
+            right: renderingPadding.right + kPostMetadataInsetNudge,
+            top: 4,
+          ),
         if (visibleEmbeds.isNotEmpty)
           EmbedListWidget(
             embeds: visibleEmbeds,

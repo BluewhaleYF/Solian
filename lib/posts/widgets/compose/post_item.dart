@@ -488,41 +488,41 @@ class PostActionableItem extends HookConsumerWidget {
           ],
         );
       },
-      child: InkWell(
-        borderRadius: borderRadius != null
-            ? BorderRadius.all(Radius.circular(borderRadius!))
-            : null,
-        child: PostItem(
-          key: key,
-          item: item,
-          padding: padding,
-          isFullPost: isFullPost,
-          isShowReference: isShowReference,
-          isEmbedReply: isEmbedReply,
-          isEmbedOpenable: isEmbedOpenable,
-          isTextSelectable: false,
-          isCompact: isCompact,
-          hideAvatar: hideAvatar,
-          hideAttachments: hideAttachments,
-          containAttachments: containAttachments,
-          onRefresh: onRefresh,
-          onUpdate: onUpdate,
-          onOpen: onOpen,
-          trailing: trailing,
-          onPostTap: onPostTap,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          child: PostItem(
+            key: key,
+            item: item,
+            padding: padding,
+            isFullPost: isFullPost,
+            isShowReference: isShowReference,
+            isEmbedReply: isEmbedReply,
+            isEmbedOpenable: isEmbedOpenable,
+            isTextSelectable: false,
+            isCompact: isCompact,
+            hideAvatar: hideAvatar,
+            hideAttachments: hideAttachments,
+            containAttachments: containAttachments,
+            onRefresh: onRefresh,
+            onUpdate: onUpdate,
+            onOpen: onOpen,
+            trailing: trailing,
+            onPostTap: onPostTap,
+          ),
+          onTap: () {
+            if (onTap != null) {
+              onTap!();
+              return;
+            }
+            if (onPostTap != null) {
+              onPostTap!(item.id);
+              return;
+            }
+            onOpen?.call();
+            context.router.push(PostDetailRoute(id: item.id));
+          },
         ),
-        onTap: () {
-          if (onTap != null) {
-            onTap!();
-            return;
-          }
-          if (onPostTap != null) {
-            onPostTap!(item.id);
-            return;
-          }
-          onOpen?.call();
-          context.router.push(PostDetailRoute(id: item.id));
-        },
       ),
     );
 
@@ -861,9 +861,7 @@ class PostItem extends HookConsumerWidget {
             if (showChainRail)
               Positioned(
                 left:
-                    renderingPadding.left +
-                    16 -
-                    (kPostThreadingLineWidth / 2),
+                    renderingPadding.left + 16 - (kPostThreadingLineWidth / 2),
                 top: renderingPadding.top + 32,
                 bottom: 0,
                 child: SizedBox(
@@ -920,10 +918,7 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
   final SnPost item;
   final void Function(String)? onPostTap;
 
-  const _ForwardedReferenceCard({
-    required this.item,
-    this.onPostTap,
-  });
+  const _ForwardedReferenceCard({required this.item, this.onPostTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1143,10 +1138,7 @@ Widget buildPostTranslationSection({
   final children = <Widget>[];
   if (translationStatusWidget != null) {
     children.add(
-      Align(
-        alignment: Alignment.centerLeft,
-        child: translationStatusWidget,
-      ),
+      Align(alignment: Alignment.centerLeft, child: translationStatusWidget),
     );
   }
   if (translatedWidget != null) {

@@ -25,12 +25,16 @@ import 'package:island/core/utils/mapping.dart';
 import 'package:island/core/widgets/content/cloud_file_collection.dart';
 import 'package:island/core/widgets/embeds/link.dart';
 import 'package:island/data/message.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/discovery/search_navigation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/services/responsive.dart';
+import 'package:island/shared/widgets/responsive_sidebar.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
@@ -699,111 +703,6 @@ class _DateFieldButton extends StatelessWidget {
   }
 }
 
-/// Footer readout under the results: how many matches, across how many rooms.
-///
-/// The counts are set in the app's data face (the same monospace used for
-/// literals elsewhere), so the footer reads as the index's voice rather than
-/// another line of prose.
-class _SearchStatusBar extends StatelessWidget implements PreferredSizeWidget {
-  final int totalMatches;
-  final bool isSearching;
-
-  /// Rooms the matches belong to. Omitted when the search is confined to one.
-  final int? roomCount;
-
-  /// Optional info tooltip (e.g. global search limitations).
-  final String? infoTooltip;
-
-  const _SearchStatusBar({
-    required this.totalMatches,
-    this.isSearching = false,
-    this.roomCount,
-    this.infoTooltip,
-  });
-
-  @override
-  Size get preferredSize => const Size.fromHeight(40);
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final readout = [
-      'matches'.plural(totalMatches),
-      if ((roomCount ?? 0) > 1) 'chatSearchRoomCount'.plural(roomCount!),
-    ].join('  ·  ');
-
-    return Material(
-      color: colorScheme.surfaceContainer,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: preferredSize.height,
-          width: double.infinity,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              if (infoTooltip != null)
-                Tooltip(
-                  message: infoTooltip!,
-                  preferBelow: false,
-                  waitDuration: const Duration(milliseconds: 200),
-                  showDuration: const Duration(seconds: 6),
-                  triggerMode: TooltipTriggerMode.tap,
-                  child: Icon(
-                    Symbols.info,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (isSearching) ...[
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.6,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      const Gap(10),
-                    ],
-                    Flexible(
-                      child: Text(
-                        readout,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 11.5,
-                          height: 1.2,
-                          letterSpacing: 0.1,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 bool _messageHasLink(LocalChatMessage message) =>
     RegExp(r'https?://', caseSensitive: false).hasMatch(message.content ?? '');
 
@@ -906,7 +805,6 @@ class SearchMessagesScreen extends HookConsumerWidget {
       debounceTimer.value = Timer(const Duration(milliseconds: 300), () async {
         try {
           List<LocalChatMessage> messages = [];
-          var total = 0;
 
           // Cloud path: server indexes plaintext text messages only.
           // Requires a non-empty query per CHAT_MESSAGE_SEARCH.md.
@@ -927,14 +825,12 @@ class SearchMessagesScreen extends HookConsumerWidget {
                 take: 100,
               );
               messages = page.messages;
-              total = page.total;
               if (messages.isNotEmpty) {
                 await database.saveMessagesWithSenders(messages);
               }
               if (withLinks.value) {
                 messages = messages.where(_messageHasLink).toList();
                 // X-Total is pre-filter; prefer filtered length when narrowing.
-                total = messages.length;
               }
             } on DioException {
               // Fall through to local cache.
@@ -950,13 +846,11 @@ class SearchMessagesScreen extends HookConsumerWidget {
             );
             if (!useCloud || messages.isEmpty) {
               messages = local;
-              total = local.length;
             } else if (hasLocalFilters) {
               // Prefer cloud hits that also satisfy local filters; fill gaps.
               final cloudIds = messages.map((m) => m.id).toSet();
               final extra = local.where((m) => !cloudIds.contains(m.id));
               messages = [...messages, ...extra];
-              total = messages.length;
             }
           }
 
@@ -977,14 +871,12 @@ class SearchMessagesScreen extends HookConsumerWidget {
                   .where((m) => m.createdAt.isBefore(before.value!.toUtc()))
                   .toList();
             }
-            total = messages.length;
           }
 
           searchResults.value = AsyncValue.data(messages);
           searchState.value = messages.isEmpty
               ? SearchState.noResults
               : SearchState.results;
-          searchResultCount.value = total;
         } catch (error, stackTrace) {
           searchResults.value = AsyncValue.error(error, stackTrace);
           searchState.value = SearchState.error;
@@ -1011,13 +903,7 @@ class SearchMessagesScreen extends HookConsumerWidget {
       });
       return null;
     }, []);
-
     final hasQuery = searchController.text.isNotEmpty;
-    final showStatusBar =
-        searchState.value == SearchState.results ||
-        searchState.value == SearchState.noResults ||
-        searchState.value == SearchState.searching;
-    final totalMatches = searchResultCount.value ?? 0;
 
     return AppScaffold(
       appBar: AppBar(
@@ -1049,12 +935,6 @@ class SearchMessagesScreen extends HookConsumerWidget {
               )
             : null,
       ),
-      bottomNavigationBar: showStatusBar
-          ? _SearchStatusBar(
-              totalMatches: totalMatches,
-              isSearching: searchState.value == SearchState.searching,
-            )
-          : null,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 960),
@@ -1221,7 +1101,6 @@ class ChatMessageSearchView extends HookConsumerWidget {
     final after = useState<DateTime?>(null);
     final before = useState<DateTime?>(null);
     final groups = useState<List<_SearchRoomGroup>>([]);
-    final totalMatches = useState(0);
     final isSearching = useState(false);
     final hasSearched = useState(false);
     final error = useState<Object?>(null);
@@ -1237,7 +1116,6 @@ class ChatMessageSearchView extends HookConsumerWidget {
 
       if (query.isEmpty && !hasLocalFilters && !hasCloudFilters) {
         groups.value = [];
-        totalMatches.value = 0;
         hasSearched.value = false;
         error.value = null;
         return;
@@ -1250,7 +1128,6 @@ class ChatMessageSearchView extends HookConsumerWidget {
 
       try {
         List<_SearchRoomGroup> nextGroups = [];
-        var total = 0;
 
         final useCloud =
             cloudSearch.value && query.isNotEmpty && !withAttachments.value;
@@ -1266,26 +1143,10 @@ class ChatMessageSearchView extends HookConsumerWidget {
               take: 100,
             );
             nextGroups = page.groups;
-            total = page.total;
 
             final flat = page.messages;
             if (flat.isNotEmpty) {
               await database.saveMessagesWithSenders(flat);
-            }
-
-            if (withLinks.value) {
-              nextGroups = [
-                for (final g in nextGroups)
-                  _SearchRoomGroup(
-                    roomId: g.roomId,
-                    room: g.room,
-                    messages: g.messages.where(_messageHasLink).toList(),
-                  ),
-              ].where((g) => g.messages.isNotEmpty).toList();
-              total = nextGroups.fold<int>(
-                0,
-                (sum, g) => sum + g.messages.length,
-              );
             }
           } on DioException catch (exception) {
             // Fall back to local cache when cloud fails.
@@ -1324,7 +1185,6 @@ class ChatMessageSearchView extends HookConsumerWidget {
               ref.read(chatRoomJoinedProvider).value ?? const <SnChatRoom>[];
           final roomsById = {for (final room in rooms) room.id: room};
           nextGroups = _groupMessagesByRoom(local, roomsById);
-          total = local.length;
 
           // Local succeeded — clear cloud error if we have results.
           if (local.isNotEmpty) error.value = null;
@@ -1332,14 +1192,10 @@ class ChatMessageSearchView extends HookConsumerWidget {
 
         if (currentRequest != request.value) return;
         groups.value = nextGroups;
-        totalMatches.value = total;
         if (nextGroups.isNotEmpty) error.value = null;
       } catch (exception) {
         if (currentRequest == request.value) {
           error.value = exception;
-          if (groups.value.isEmpty) {
-            totalMatches.value = 0;
-          }
         }
       } finally {
         if (currentRequest == request.value) isSearching.value = false;
@@ -1368,6 +1224,92 @@ class ChatMessageSearchView extends HookConsumerWidget {
       ];
     }, [groups.value, joinedRooms]);
 
+    final filterBar = _ChatSearchFilterBar(
+      cloudSearch: cloudSearch.value,
+      onCloudSearchChanged: (value) => cloudSearch.value = value,
+      withLinks: withLinks.value,
+      withAttachments: withAttachments.value,
+      onLinksChanged: (value) => withLinks.value = value,
+      onAttachmentsChanged: (value) => withAttachments.value = value,
+      sender: sender.value,
+      onSenderChanged: (value) => sender.value = value,
+      after: after.value,
+      before: before.value,
+      onAfterChanged: (value) => after.value = value,
+      onBeforeChanged: (value) => before.value = value,
+      onFiltersChanged: () => search(query),
+    );
+
+    final results = Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kChatSearchLedgerWidth),
+        child: !hasSearched.value
+            ? EmptyState(
+                key: const Key('chatSearchIdle'),
+                icon: Symbols.search,
+                title: 'chatSearchIdleTitle'.tr(),
+                description: 'chatSearchIdleBody'.tr(),
+              )
+            : error.value != null && displayGroups.isEmpty
+            ? EmptyState(
+                key: const Key('chatSearchError'),
+                icon: Symbols.error_outline,
+                iconColor: Theme.of(context).colorScheme.error,
+                title: 'searchError'.tr(),
+              )
+            : displayGroups.isEmpty && !isSearching.value
+            ? EmptyState(
+                key: const Key('chatSearchNoResults'),
+                icon: Symbols.search_off,
+                title: 'noMessagesFound'.tr(),
+                description: 'chatSearchNoResultsBody'.tr(),
+              )
+            : SuperListView.separated(
+                // The card stack's own gutter, with the last card clear
+                // of the shell's bottom bar.
+                padding: EdgeInsets.only(
+                  left: SolSpace.md,
+                  right: SolSpace.md,
+                  bottom:
+                      MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+                ),
+                itemCount: displayGroups.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: kExploreCardGap),
+                itemBuilder: (context, index) {
+                  final group = displayGroups[index];
+                  return _SearchRoomSection(
+                    group: group,
+                    query: query,
+                    onOpenRoom: () => context.router.navigate(
+                      ChatRoomRoute(id: group.roomId),
+                    ),
+                    onJumpMessage: (messageId) => context.router.navigate(
+                      ChatRoomRoute(
+                        id: group.roomId,
+                        initialMessageId: messageId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+
+    if (isWideScreen(context)) {
+      return ResponsiveSidebar(
+        showSidebar: filtersVisible,
+        isLeft: false,
+        sidebarWidth: 320,
+        sidebarBackgroundColor: Theme.of(context).colorScheme.surface,
+        sidebarContent: SingleChildScrollView(
+          padding: const EdgeInsets.all(SolSpace.md),
+          child: filterBar,
+        ),
+        mainContent: results,
+      );
+    }
+
     return Column(
       children: [
         Center(
@@ -1375,81 +1317,11 @@ class ChatMessageSearchView extends HookConsumerWidget {
             constraints: const BoxConstraints(maxWidth: kChatSearchLedgerWidth),
             child: _CollapsibleFilterHeader(
               visible: filterVisible,
-              child: _ChatSearchFilterBar(
-                cloudSearch: cloudSearch.value,
-                onCloudSearchChanged: (value) => cloudSearch.value = value,
-                withLinks: withLinks.value,
-                withAttachments: withAttachments.value,
-                onLinksChanged: (value) => withLinks.value = value,
-                onAttachmentsChanged: (value) => withAttachments.value = value,
-                sender: sender.value,
-                onSenderChanged: (value) => sender.value = value,
-                after: after.value,
-                before: before.value,
-                onAfterChanged: (value) => after.value = value,
-                onBeforeChanged: (value) => before.value = value,
-                onFiltersChanged: () => search(query),
-              ),
+              child: filterBar,
             ),
           ),
         ),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: kChatSearchLedgerWidth,
-              ),
-              child: !hasSearched.value
-                  ? EmptyState(
-                      key: const Key('chatSearchIdle'),
-                      icon: Symbols.search,
-                      title: 'chatSearchIdleTitle'.tr(),
-                      description: 'chatSearchIdleBody'.tr(),
-                    )
-                  : error.value != null && displayGroups.isEmpty
-                  ? EmptyState(
-                      key: const Key('chatSearchError'),
-                      icon: Symbols.error_outline,
-                      iconColor: Theme.of(context).colorScheme.error,
-                      title: 'searchError'.tr(),
-                    )
-                  : displayGroups.isEmpty && !isSearching.value
-                  ? EmptyState(
-                      key: const Key('chatSearchNoResults'),
-                      icon: Symbols.search_off,
-                      title: 'noMessagesFound'.tr(),
-                      description: 'chatSearchNoResultsBody'.tr(),
-                    )
-                  : SuperListView.builder(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: displayGroups.length,
-                      itemBuilder: (context, index) {
-                        final group = displayGroups[index];
-                        return _SearchRoomSection(
-                          group: group,
-                          query: query,
-                          onOpenRoom: () => context.router.navigate(
-                            ChatRoomRoute(id: group.roomId),
-                          ),
-                          onJumpMessage: (messageId) => context.router.navigate(
-                            ChatRoomRoute(
-                              id: group.roomId,
-                              initialMessageId: messageId,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ),
-        ),
-        if (hasSearched.value)
-          _SearchStatusBar(
-            totalMatches: totalMatches.value,
-            roomCount: displayGroups.length,
-            isSearching: isSearching.value,
-            infoTooltip: 'chatGlobalSearchHint'.tr(),
-          ),
+        Expanded(child: results),
       ],
     );
   }
@@ -1553,32 +1425,37 @@ class _SearchRoomSection extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     // The spine is a painted edge, not a stretched child: a sliver hands its
     // items an unbounded height, which a stretched Row would try to fill.
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(
-            width: 2,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+    //
+    // One room is one card: its band and hits share a single floating surface,
+    // the way an explore card owns its section.
+    return ExploreCard(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              width: 2,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _SearchRoomHeader(
-            roomId: group.roomId,
-            room: group.room,
-            messages: group.messages,
-            onTap: onOpenRoom,
-          ),
-          for (final message in group.messages)
-            _ChatSearchMatchTile(
-              message: message,
-              query: query,
-              onJump: onJumpMessage,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SearchRoomHeader(
+              roomId: group.roomId,
+              room: group.room,
+              messages: group.messages,
+              onTap: onOpenRoom,
             ),
-          const SizedBox(height: 10),
-        ],
+            for (final message in group.messages)
+              _ChatSearchMatchTile(
+                message: message,
+                query: query,
+                onJump: onJumpMessage,
+              ),
+            const SizedBox(height: SolSpace.md),
+          ],
+        ),
       ),
     );
   }

@@ -49,7 +49,7 @@ final friendsOverviewExpandedProvider =
       ref.onDispose(subscription.cancel);
 
       final response = await apiClient.get(
-        '/passport/friends/overview',
+        '/stargate/friends/overview',
         queryParameters: {'includeOffline': true},
       );
 

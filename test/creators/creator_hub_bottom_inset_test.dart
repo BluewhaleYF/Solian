@@ -6,17 +6,22 @@ import 'package:island/creators/models/pub_quota_info.dart';
 import 'package:island/creators/screens/hub.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/core/config.dart';
+import 'package:island/core/navigation/pill_bottom_nav.dart';
+import 'package:island/misc/tabs_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 /// Height of the app's floating tab bar on a device with a home indicator:
-/// `NavigationBar(height: 56)` plus a 34px bottom safe area. The tab shell
-/// runs `Scaffold(extendBody: true)` with the bar in `bottomNavigationBar`, so
-/// Flutter injects exactly this value as the page's `MediaQuery.padding.bottom`
-/// (see `_BodyBuilder` in the framework's `scaffold.dart`).
-const double _tabBarHeight = 90;
+/// `NavigationBar(height: kBottomNavHeight)` inside a `PillBottomNav` capsule,
+/// so the pill's own vertical gutters plus the 34px bottom safe area. The tab
+/// shell runs `Scaffold(extendBody: true)` with the bar in
+/// `bottomNavigationBar`, and Flutter injects exactly this value as the page's
+/// `MediaQuery.padding.bottom` (see `_BodyBuilder` in the framework's
+/// `scaffold.dart`).
+const double _tabBarHeight =
+    kBottomNavHeight + kBottomNavPillInset + 34;
 
 Widget _wrap({required double bottomBarHeight}) {
   return EasyLocalization(

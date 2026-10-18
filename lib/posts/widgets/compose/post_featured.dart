@@ -202,7 +202,7 @@ class PostFeaturedList extends HookConsumerWidget {
               ).padding(
                 // The flush strip sits in the host's own surface, so it keeps a
                 // tighter gutter than the carded variant.
-                horizontal: flush ? _kFeaturedCarouselGap : 16,
+                horizontal: flush ? _kFeaturedCarouselGap * 1.5 : 16,
                 vertical: 8,
               ),
         ),

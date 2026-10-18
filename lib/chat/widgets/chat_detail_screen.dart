@@ -16,6 +16,8 @@ import 'package:island/chat/widgets/chat_search_screen.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/services/deeplink_service.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/e2ee/mls_client.dart';
@@ -368,6 +370,9 @@ class ChatDetailScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final roomState = ref.watch(chatRoomProvider(id));
+    // Drives the pill's glass off the settings list's own scroll, the same way
+    // the explore and chat-list headers do.
+    final fade = useValueNotifier(0.0);
     final roomIdentity = ref.watch(chatRoomIdentityProvider(id));
     final totalMessages = ref.watch(totalMessagesCountProvider(id));
 
@@ -454,271 +459,306 @@ class ChatDetailScreen extends HookConsumerWidget {
     }
 
     return AppScaffold(
-      appBar: AppBar(
-        leading: AutoLeadingButton(),
-        title: roomState.when(
-          data: (currentRoom) => Text(
-            (currentRoom?.type == 1 && currentRoom?.name == null)
-                ? currentRoom?.members?.map((e) => e.account.nick).join(', ') ??
-                      'Chat'
-                : currentRoom?.name ?? 'Chat',
-          ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
+      // The settings list scrolls under the pill and drives its glass.
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: MediaQuery.paddingOf(context).top,
+        child: Row(
+          children: [
+            AutoLeadingButton(),
+            const Gap(SolSpace.sm),
+            Expanded(
+              child: roomState.when(
+                data: (currentRoom) => Text(
+                  (currentRoom?.type == 1 && currentRoom?.name == null)
+                      ? currentRoom?.members
+                                ?.map((e) => e.account.nick)
+                                .join(', ') ??
+                            'Chat'
+                      : currentRoom?.name ?? 'Chat',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.people),
+              onPressed: () {
+                showModalBottomSheet(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (context) => _ChatMemberListSheet(roomId: id),
+                );
+              },
+            ),
+            _ChatRoomActionMenu(id: id),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.people),
-            onPressed: () {
-              showModalBottomSheet(
-                isScrollControlled: true,
-                context: context,
-                builder: (context) => _ChatMemberListSheet(roomId: id),
-              );
-            },
-          ),
-          _ChatRoomActionMenu(id: id),
-          const Gap(8),
-        ],
       ),
       body: roomState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
             Center(child: Text('errorGeneric'.tr(args: [error.toString()]))),
-        data: (currentRoom) => CustomScrollView(
-          slivers: [
-            const SliverGap(12),
-            SliverToBoxAdapter(
-              child: _ChatBasisWidget(
-                data: currentRoom!,
-                roomId: id,
-              ).padding(horizontal: 12),
-            ),
-            const SliverGap(12),
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Pin/Unpin Switch
-                  if (isPinned.value != null)
+        data: (currentRoom) => NotificationListener<ScrollNotification>(
+          onNotification: (n) => updatePillFade(n, fade),
+          child: CustomScrollView(
+            slivers: [
+              // The pill floats over this list, and a CustomScrollView ignores
+              // MediaQuery padding, so the bar's band is reserved as the first
+              // sliver: the section starts below the capsule and scrolls up
+              // underneath the glass.
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.paddingOf(context).top + kPillAppBarHeight,
+                ),
+              ),
+              const SliverGap(12),
+              SliverToBoxAdapter(
+                child: _ChatBasisWidget(
+                  data: currentRoom!,
+                  roomId: id,
+                ).padding(horizontal: 12),
+              ),
+              const SliverGap(12),
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Pin/Unpin Switch
+                    if (isPinned.value != null)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 24),
+                        secondary: Icon(
+                          Symbols.push_pin,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        title: const Text('pinChatRoom').tr(),
+                        subtitle: const Text('pinChatRoomDescription').tr(),
+                        value: isPinned.value!,
+                        onChanged: (value) async {
+                          // Update local state immediately for instant UI feedback
+                          isPinned.value = value;
+                          final db = ref.read(databaseProvider);
+                          await db.toggleChatRoomPinned(id);
+                          // Re-verify the state from database in case of error
+                          final room = await db.getChatRoomById(id);
+                          final actualPinned = room?.isPinned ?? false;
+                          if (actualPinned != value) {
+                            // Revert if database operation failed
+                            isPinned.value = actualPinned;
+                          }
+                          showSnackBar(
+                            value
+                                ? 'chatRoomPinned'.tr()
+                                : 'chatRoomUnpinned'.tr(),
+                          );
+                        },
+                      ),
+                    // Read receipts visibility toggle
                     SwitchListTile(
                       contentPadding: EdgeInsets.symmetric(horizontal: 24),
                       secondary: Icon(
-                        Symbols.push_pin,
+                        Symbols.done_all,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      title: const Text('pinChatRoom').tr(),
-                      subtitle: const Text('pinChatRoomDescription').tr(),
-                      value: isPinned.value!,
+                      title: const Text('readReceiptsPublic').tr(),
+                      subtitle: const Text(
+                        'readReceiptsPublicDescription',
+                      ).tr(),
+                      value: currentRoom.isReadReceiptsPublic,
                       onChanged: (value) async {
-                        // Update local state immediately for instant UI feedback
-                        isPinned.value = value;
-                        final db = ref.read(databaseProvider);
-                        await db.toggleChatRoomPinned(id);
-                        // Re-verify the state from database in case of error
-                        final room = await db.getChatRoomById(id);
-                        final actualPinned = room?.isPinned ?? false;
-                        if (actualPinned != value) {
-                          // Revert if database operation failed
-                          isPinned.value = actualPinned;
+                        try {
+                          final client = ref.read(apiClientProvider);
+                          await client.patch(
+                            '/messager/chat/$id',
+                            data: {'is_read_receipts_public': value},
+                          );
+                          ref.invalidate(chatRoomProvider(id));
+                          final db = ref.read(databaseProvider);
+                          final local = await db.getChatRoomById(id);
+                          if (local != null) {
+                            await db.saveChatRooms([
+                              local.copyWith(isReadReceiptsPublic: value),
+                            ]);
+                          }
+                          showSnackBar(
+                            value
+                                ? 'readReceiptsPublicEnabled'.tr()
+                                : 'readReceiptsPublicDisabled'.tr(),
+                          );
+                        } catch (err) {
+                          showErrorAlert(err);
                         }
-                        showSnackBar(
-                          value
-                              ? 'chatRoomPinned'.tr()
-                              : 'chatRoomUnpinned'.tr(),
-                        );
                       },
                     ),
-                  // Read receipts visibility toggle
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                    secondary: Icon(
-                      Symbols.done_all,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    title: const Text('readReceiptsPublic').tr(),
-                    subtitle: const Text('readReceiptsPublicDescription').tr(),
-                    value: currentRoom.isReadReceiptsPublic,
-                    onChanged: (value) async {
-                      try {
-                        final client = ref.read(apiClientProvider);
-                        await client.patch(
-                          '/messager/chat/$id',
-                          data: {'is_read_receipts_public': value},
-                        );
-                        ref.invalidate(chatRoomProvider(id));
-                        final db = ref.read(databaseProvider);
-                        final local = await db.getChatRoomById(id);
-                        if (local != null) {
-                          await db.saveChatRooms([
-                            local.copyWith(isReadReceiptsPublic: value),
-                          ]);
-                        }
-                        showSnackBar(
-                          value
-                              ? 'readReceiptsPublicEnabled'.tr()
-                              : 'readReceiptsPublicDisabled'.tr(),
-                        );
-                      } catch (err) {
-                        showErrorAlert(err);
-                      }
-                    },
-                  ),
-                  // Share room via slug link and QR code
-                  if (currentRoom.type == 0 &&
-                      currentRoom.isPublic &&
-                      currentRoom.slug != null)
-                    Builder(
-                      builder: (context) {
-                        final scope = _chatRoomShareScope(currentRoom);
-                        if (scope == null) return const SizedBox.shrink();
-                        final shareUrl = buildChatRoomShareUrl(
-                          scope: scope,
-                          slug: currentRoom.slug!,
-                        ).toString();
-                        return ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                          leading: const Icon(Symbols.qr_code_2),
-                          trailing: const Icon(Symbols.chevron_right),
-                          title: const Text('shareChatRoom').tr(),
-                          subtitle: Text(
-                            shareUrl,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (context) => _ChatRoomShareSheet(
-                                url: shareUrl,
-                                picture: currentRoom.picture,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  roomIdentity.when(
-                    data: (identity) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (identity != null) ...[
-                          ListTile(
+                    // Share room via slug link and QR code
+                    if (currentRoom.type == 0 &&
+                        currentRoom.isPublic &&
+                        currentRoom.slug != null)
+                      Builder(
+                        builder: (context) {
+                          final scope = _chatRoomShareScope(currentRoom);
+                          if (scope == null) return const SizedBox.shrink();
+                          final shareUrl = buildChatRoomShareUrl(
+                            scope: scope,
+                            slug: currentRoom.slug!,
+                          ).toString();
+                          return ListTile(
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 24,
                             ),
-                            leading: const Icon(Symbols.edit),
+                            leading: const Icon(Symbols.qr_code_2),
                             trailing: const Icon(Symbols.chevron_right),
-                            title: const Text('nickname').tr(),
+                            title: const Text('shareChatRoom').tr(),
                             subtitle: Text(
-                              identity.nick?.isNotEmpty ?? false
-                                  ? identity.nick!
-                                  : 'No chat-specific nick set yet.',
+                              shareUrl,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
-                                useRootNavigator: true,
-                                builder: (_) => _ChatIdentityEditorSheet(
-                                  roomId: identity.chatRoomId,
-                                  identity: identity,
+                                builder: (context) => _ChatRoomShareSheet(
+                                  url: shareUrl,
+                                  picture: currentRoom.picture,
                                 ),
                               );
+                            },
+                          );
+                        },
+                      ),
+                    roomIdentity.when(
+                      data: (identity) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (identity != null) ...[
+                            ListTile(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              leading: const Icon(Symbols.edit),
+                              trailing: const Icon(Symbols.chevron_right),
+                              title: const Text('nickname').tr(),
+                              subtitle: Text(
+                                identity.nick?.isNotEmpty ?? false
+                                    ? identity.nick!
+                                    : 'No chat-specific nick set yet.',
+                              ),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  useRootNavigator: true,
+                                  builder: (_) => _ChatIdentityEditorSheet(
+                                    roomId: identity.chatRoomId,
+                                    identity: identity,
+                                  ),
+                                );
+                              },
+                            ),
+                            ListTile(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              leading: const Icon(Symbols.notifications),
+                              trailing: const Icon(Symbols.chevron_right),
+                              title: const Text('chatNotifyLevel').tr(),
+                              subtitle: Text(
+                                kNotifyLevelText[identity.notify].tr(),
+                              ),
+                              onTap: () => showNotifyLevelBottomSheet(identity),
+                            ),
+                            ListTile(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              leading: const Icon(Icons.timer),
+                              trailing: const Icon(Symbols.chevron_right),
+                              title: const Text('chatBreak').tr(),
+                              subtitle:
+                                  identity.breakUntil != null &&
+                                      identity.breakUntil!.isAfter(
+                                        DateTime.now(),
+                                      )
+                                  ? Text(
+                                      DateFormat(
+                                        'yyyy-MM-dd HH:mm',
+                                      ).format(identity.breakUntil!),
+                                    )
+                                  : const Text('chatBreakNone').tr(),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => _ChatBreakSheet(
+                                    roomId: id,
+                                    currentBreakUntil: identity.breakUntil,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          ListTile(
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 24,
+                            ),
+                            leading: const Icon(Icons.search),
+                            trailing: const Icon(Symbols.chevron_right),
+                            title: const Text('searchMessages').tr(),
+                            subtitle: totalMessages.when(
+                              data: (count) => Text(
+                                'messagesCount'.tr(args: [count.toString()]),
+                              ),
+                              loading: () => const CircularProgressIndicator(),
+                              error: (err, stack) => Text(
+                                'errorGeneric'.tr(args: [err.toString()]),
+                              ),
+                            ),
+                            onTap: () async {
+                              final result = await context.router.push(
+                                SearchMessagesRoute(roomId: id),
+                              );
+                              if (result is SearchMessagesResult) {
+                                // Navigate back to room screen with message to jump to
+                                if (context.mounted) {
+                                  context.pop(result);
+                                }
+                              }
                             },
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 24,
                             ),
-                            leading: const Icon(Symbols.notifications),
+                            leading: const Icon(Symbols.cloud_download),
                             trailing: const Icon(Symbols.chevron_right),
-                            title: const Text('chatNotifyLevel').tr(),
-                            subtitle: Text(
-                              kNotifyLevelText[identity.notify].tr(),
-                            ),
-                            onTap: () => showNotifyLevelBottomSheet(identity),
-                          ),
-                          ListTile(
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 24,
-                            ),
-                            leading: const Icon(Icons.timer),
-                            trailing: const Icon(Symbols.chevron_right),
-                            title: const Text('chatBreak').tr(),
-                            subtitle:
-                                identity.breakUntil != null &&
-                                    identity.breakUntil!.isAfter(DateTime.now())
-                                ? Text(
-                                    DateFormat(
-                                      'yyyy-MM-dd HH:mm',
-                                    ).format(identity.breakUntil!),
-                                  )
-                                : const Text('chatBreakNone').tr(),
+                            title: const Text('downloadMoreMessages').tr(),
+                            subtitle: const Text(
+                              'downloadMoreMessagesDescription',
+                            ).tr(),
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
-                                builder: (context) => _ChatBreakSheet(
-                                  roomId: id,
-                                  currentBreakUntil: identity.breakUntil,
-                                ),
+                                builder: (context) =>
+                                    _DownloadMessagesSheet(roomId: id),
                               );
                             },
                           ),
                         ],
-                        ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                          leading: const Icon(Icons.search),
-                          trailing: const Icon(Symbols.chevron_right),
-                          title: const Text('searchMessages').tr(),
-                          subtitle: totalMessages.when(
-                            data: (count) => Text(
-                              'messagesCount'.tr(args: [count.toString()]),
-                            ),
-                            loading: () => const CircularProgressIndicator(),
-                            error: (err, stack) =>
-                                Text('errorGeneric'.tr(args: [err.toString()])),
-                          ),
-                          onTap: () async {
-                            final result = await context.router.push(
-                              SearchMessagesRoute(roomId: id),
-                            );
-                            if (result is SearchMessagesResult) {
-                              // Navigate back to room screen with message to jump to
-                              if (context.mounted) {
-                                context.pop(result);
-                              }
-                            }
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                          leading: const Icon(Symbols.cloud_download),
-                          trailing: const Icon(Symbols.chevron_right),
-                          title: const Text('downloadMoreMessages').tr(),
-                          subtitle: const Text(
-                            'downloadMoreMessagesDescription',
-                          ).tr(),
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (context) =>
-                                  _DownloadMessagesSheet(roomId: id),
-                            );
-                          },
-                        ),
-                      ],
+                      ),
+                      error: (_, _) => const SizedBox.shrink(),
+                      loading: () => const SizedBox.shrink(),
                     ),
-                    error: (_, _) => const SizedBox.shrink(),
-                    loading: () => const SizedBox.shrink(),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

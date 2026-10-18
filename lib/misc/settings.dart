@@ -208,7 +208,6 @@ class SettingsScreen extends HookConsumerWidget {
           'settingsWindowOpacity',
           'settingsCustomFonts',
           'settingsLinkCollapseMode',
-          'settingsTransparentAppBar',
           'settingsBackgroundImage',
           'settingsBackgroundImageEnable',
           'settingsBackgroundImageClear',
@@ -730,21 +729,6 @@ class SettingsScreen extends HookConsumerWidget {
                   width: 140,
                 ),
               ),
-            ),
-          ),
-          const Divider(height: 24),
-          ListTile(
-            minLeadingWidth: 48,
-            title: Text('settingsTransparentAppBar').tr(),
-            contentPadding: _kSettingsTilePadding,
-            leading: const Icon(Symbols.blur_on),
-            trailing: Switch(
-              value: settings.appBarTransparent,
-              onChanged: (value) {
-                ref
-                    .read(appSettingsProvider.notifier)
-                    .setAppBarTransparent(value);
-              },
             ),
           ),
           if (!isWide)

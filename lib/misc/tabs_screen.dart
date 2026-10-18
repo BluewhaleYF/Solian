@@ -11,6 +11,7 @@ import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/core/navigation/pill_bottom_nav.dart';
 import 'package:island/core/navigation/conditional_bottom_nav.dart';
 import 'package:island/notifications/notification.dart';
 import 'package:island/route.gr.dart';
@@ -19,6 +20,8 @@ import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/chat/pods/chat_summary.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const double kBottomNavHeight = 56.0;
 
 @RoutePage()
 class TabsScreen extends StatelessWidget {
@@ -590,11 +593,12 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       );
     }
 
-    // `extendBody: true` makes Scaffold inject the tab bar's full height
-    // (NavigationBar height + bottom safe area) as `MediaQuery.padding.bottom`
-    // here, which is exactly the clearance a tab page needs. Do not add the
-    // device safe area on top of it: that double counts the home indicator and
-    // leaves pages hovering above the tab bar.
+    // `extendBody: true` makes Scaffold inject the floating bar's full slot
+    // height (`NavigationBar` + the `PillBottomNav` gutters + the bottom safe
+    // area) as `MediaQuery.padding.bottom` here, which is exactly the
+    // clearance a tab page needs. Do not add the device safe area on top of
+    // it: that double counts the home indicator and leaves pages hovering
+    // above the tab bar.
     final mobileTabBody = ClipRRect(
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(16),
@@ -617,25 +621,30 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
         routes: bottomNavRoutes,
         // The drawer's only entry point is the app bar's leading slot, so the
         // tab bar no longer carries a leading menu destination.
-        child: NavigationBar(
-          height: 56,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          selectedIndex: bottomNavCurrentIndex,
-          onDestinationSelected: (index) {
-            onBottomNavDestinationSelected(index);
-          },
-          destinations: bottomNavDestinations.mapIndexed((idx, destination) {
-            return NavigationDestination(
-              icon: withEntranceMenu(
-                destination.iconBuilder(bottomNavCurrentIndex == idx),
-                destination,
-              ),
-              label: destination.label,
-              // Suppress the built-in long-press tooltip: that gesture is the
-              // explore entrance menu now.
-              tooltip: '',
-            );
-          }).toList(),
+        child: PillBottomNav(
+          child: NavigationBar(
+            // Icons only: the destinations are already distinguished by the
+            // selection indicator, and the band is 56px tall.
+            height: kBottomNavHeight,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+            selectedIndex: bottomNavCurrentIndex,
+            onDestinationSelected: (index) {
+              onBottomNavDestinationSelected(index);
+            },
+            destinations: bottomNavDestinations.mapIndexed((idx, destination) {
+              return NavigationDestination(
+                // `label` still feeds semantics ("Home, Tab 1 of 3"), so only
+                // the paint is suppressed — here and in the tooltip, whose
+                // long-press gesture the entrance menu owns.
+                tooltip: '',
+                icon: withEntranceMenu(
+                  destination.iconBuilder(bottomNavCurrentIndex == idx),
+                  destination,
+                ),
+                label: destination.label,
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

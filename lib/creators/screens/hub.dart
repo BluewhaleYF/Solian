@@ -11,6 +11,8 @@ import 'package:island/accounts/widgets/activitypub/actor_profile.dart';
 import 'package:island/creators/models/pub_quota_info.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -990,35 +992,66 @@ class CreatorHubContentWidget extends HookConsumerWidget {
       );
     }
 
+    // The pill's band, reserved by the body below so its first card starts
+    // under the capsule. Read from this context, which sits outside the
+    // scaffold: on the narrow tab shell it is the status-bar inset, and on the
+    // wide layout the shell's `SafeArea` has already spent it, leaving 0.
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The list sliding under the pill is what drives its glass; at rest the
+    // capsule is invisible and the page is just its content.
+    final fade = useValueNotifier(0.0);
+
     return AppScaffold(
       isNoBackground: true,
-      appBar: AppBar(
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        leading: const SolDrawerButton(),
-        title: Text('creatorHub').tr(),
-        actions: [
-          PublisherSelector(
-            currentPublisher: currentPublisher.value,
-            publishersMenu: publishersMenu,
-            onChanged: (value) {
-              // Close all nested routes when switching publishers
-              context.router.navigate(const CreatorHubListRoute());
-              currentPublisher.value = value;
-            },
-          ),
-          const Gap(8),
-        ],
+      // The cards run the full height of the pane and the bar floats its glass
+      // over the top of them, instead of a solid band eating into the page.
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const SolDrawerButton(),
+            const Gap(SolSpace.sm),
+            // Same placement as the other root tabs: the title takes the brand
+            // slot and the publisher picker stays flush right.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'creatorHub',
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ).tr(),
+              ),
+            ),
+            PublisherSelector(
+              currentPublisher: currentPublisher.value,
+              publishersMenu: publishersMenu,
+              onChanged: (value) {
+                // Close all nested routes when switching publishers
+                context.router.navigate(const CreatorHubListRoute());
+                currentPublisher.value = value;
+              },
+            ),
+          ],
+        ),
       ),
       body: publisherStats.when(
-        data: (stats) => SingleChildScrollView(
-          // The tab shell floats the NavigationBar over the page
-          // (`extendBody`), so reserve its height plus the bottom safe area or
-          // the last card ends up underneath the bar.
-          padding: EdgeInsets.only(
-            top: 24,
-            bottom: 24 + MediaQuery.paddingOf(context).bottom,
-          ),
+        data: (stats) => NotificationListener<ScrollNotification>(
+          onNotification: (notification) =>
+              updatePillFade(notification, fade),
+          child: SingleChildScrollView(
+            // The pill floats over the page rather than occupying a row of its
+            // own, so its band is reserved as leading padding: the first card
+            // starts below the capsule and travels up underneath the glass.
+            //
+            // The tab shell floats the NavigationBar over the page
+            // (`extendBody`), so reserve its height too or the last card ends
+            // up underneath the bar.
+            padding: EdgeInsets.only(
+              top: statusTop + kPillAppBarHeight + 16,
+              bottom: 24 + MediaQuery.paddingOf(context).bottom,
+            ),
           child: currentPublisher.value == null
               ? ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: 640),
@@ -1044,6 +1077,7 @@ class CreatorHubContentWidget extends HookConsumerWidget {
                     buildNavigationWidget(),
                   ],
                 ),
+        ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => const SizedBox.shrink(),

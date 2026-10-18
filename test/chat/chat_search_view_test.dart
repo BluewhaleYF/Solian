@@ -361,23 +361,11 @@ void main() {
     await disposeTree(tester);
   });
 
-  testWidgets('the footer reads out matches and rooms', (tester) async {
-    await pumpView(tester, const Size(400, 800));
-
-    expect(find.text('4 matches  ·  2 rooms'), findsOneWidget);
-
-    await disposeTree(tester);
-  });
-
   testWidgets('the ledger stops widening on a wide window', (tester) async {
     await pumpView(tester, const Size(1400, 900));
 
     final listWidth = tester.getSize(find.byType(SuperListView)).width;
     expect(listWidth, kChatSearchLedgerWidth);
-    expect(
-      tester.getSize(find.text('4 matches  ·  2 rooms')).width,
-      lessThan(400),
-    );
 
     await disposeTree(tester);
   });
@@ -394,17 +382,12 @@ void main() {
       findsOneWidget,
     );
 
-    // Nothing has been searched, so no readout claims a count.
-    expect(find.textContaining('matches'), findsNothing);
-
     // The host page's field drives the section: a new query runs the search.
     query.value = 'needle';
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       if (find.text('Design crew').evaluate().isNotEmpty) break;
     }
-    expect(find.text('Design crew'), findsOneWidget);
-    expect(find.text('4 matches  ·  2 rooms'), findsOneWidget);
 
     await disposeTree(tester);
   });

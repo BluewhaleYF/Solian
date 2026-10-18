@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show ImageFilter;
 
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/accounts/widgets/account/friends_overview.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
 import 'package:island/discovery/explore.dart';
 import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/discovery/widgets/friend_presence_strip.dart';
 import 'package:island/discovery/widgets/subscribed_publishers_strip.dart';
 import 'package:island/posts/posts_pod.dart';
@@ -342,18 +345,23 @@ void main() {
     final paneRect = tester.getRect(pane.first);
     expect(paneRect.width, closeTo(720, 1));
     expect(paneRect.left, closeTo((windowWidth - paneRect.width) / 2, 1));
-    // The header is the first sliver: a `SliverAppBar` whose geometry never
-    // changes. The flush/inset pill morph happens inside its `flexibleSpace`,
-    // so the sliver topology does not change with scrolling.
-    expect(scrollView.slivers.first, isA<SliverAppBar>());
+    // The wide header is no longer a sliver: it floats over the pane at the
+    // window's full width, so the feed starts with the gap that reserves its
+    // height and the quick pick is the first content sliver.
+    expect(
+      find.ancestor(of: strip, matching: find.byType(PillSliverAppBar)),
+      findsNothing,
+      reason: 'the wide pill is not pinned inside the feed',
+    );
+    expect(find.byType(PillAppBar), findsOneWidget);
 
     final sliverWidget = tester.widget(sliver);
     expect(
       scrollView.slivers.indexWhere(
         (s) => s.runtimeType == sliverWidget.runtimeType,
       ),
-      2,
-      reason: 'the strip sits right below the app bar sliver',
+      1,
+      reason: 'the strip is the first content sliver under the floating pill',
     );
 
     // Painted, not merely present: the strip occupies its full height at the
@@ -415,7 +423,8 @@ void main() {
     );
     expect(
       scrollView.slivers.indexWhere((s) => s is SliverFriendPresenceStrip),
-      2,
+      1,
+      reason: 'only the gap reserving the pill height precedes it',
     );
     expect(
       tester.getTopLeft(featured).dy,
@@ -524,19 +533,14 @@ void main() {
     await pumpExplore(
       tester,
       const Size(1400, 900),
-      feed: () => _TwoPostFeed([
-        _smallPost(id: 'post-a'),
-        _smallPost(id: 'post-b'),
-      ]),
+      feed: () =>
+          _TwoPostFeed([_smallPost(id: 'post-a'), _smallPost(id: 'post-b')]),
       featuredPosts: const <SnPost>[],
     );
 
     final posts = find.byType(PostActionableItem);
     expect(posts, findsNWidgets(2));
-    final cards = find.ancestor(
-      of: posts,
-      matching: find.byType(ExploreCard),
-    );
+    final cards = find.ancestor(of: posts, matching: find.byType(ExploreCard));
     expect(cards, findsNWidgets(2));
     final cardWidget = tester.widget<ExploreCard>(cards.first);
     expect(cardWidget.radius, 20);
@@ -575,19 +579,14 @@ void main() {
     await pumpExplore(
       tester,
       const Size(420, 900),
-      feed: () => _TwoPostFeed([
-        _smallPost(id: 'post-a'),
-        _smallPost(id: 'post-b'),
-      ]),
+      feed: () =>
+          _TwoPostFeed([_smallPost(id: 'post-a'), _smallPost(id: 'post-b')]),
       featuredPosts: const <SnPost>[],
     );
 
     final posts = find.byType(PostActionableItem);
     expect(posts, findsNWidgets(2));
-    final cards = find.ancestor(
-      of: posts,
-      matching: find.byType(ExploreCard),
-    );
+    final cards = find.ancestor(of: posts, matching: find.byType(ExploreCard));
     expect(cards, findsNWidgets(2));
 
     final first = tester.getRect(cards.at(0));
@@ -595,6 +594,123 @@ void main() {
     expect(first.left, closeTo(12, 1));
     expect(first.width, closeTo(420 - 24, 1));
     expect(second.top - first.bottom, closeTo(kExploreCardGap, 1));
+
+    await disposeTree(tester);
+  });
+  testWidgets('the header stays put and only fades its surface in', (
+    tester,
+  ) async {
+    // A feed tall enough to hold the drag below: with only a couple of short
+    // posts the scroll bounces straight back to the origin, and the fill
+    // would never get a chance to fade in.
+    await pumpExplore(
+      tester,
+      const Size(1400, 900),
+      feed: () =>
+          _TwoPostFeed([for (var i = 0; i < 8; i++) _smallPost(id: 'post-$i')]),
+      featuredPosts: const <SnPost>[],
+    );
+
+    // The pill's own box is the only container inside the surface chrome that
+    // carries an outer margin.
+    Container barContainer() => tester
+        .widgetList<Container>(
+          find.descendant(
+            of: find.byType(PillBarSurface),
+            matching: find.byType(Container),
+          ),
+        )
+        .firstWhere((container) => container.margin != null);
+
+    // The painted glass: the pill's own [DecoratedBox], which is the first one
+    // in the surface — the controls inside it come after.
+    BoxDecoration barDecoration() =>
+        (tester
+                .widgetList<DecoratedBox>(
+                  find.descendant(
+                    of: find.byType(PillBarSurface),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .first
+                .decoration
+            as BoxDecoration);
+
+    BackdropFilter? glass() => tester
+        .widgetList<BackdropFilter>(find.byType(BackdropFilter))
+        .firstOrNull;
+
+    // The bar's own geometry never changes with the scroll: the container
+    // keeps the same height, margins and capsule at every offset. On wide it
+    // spans the whole window, so the pill is as wide as the viewport minus its
+    // own 12px margins.
+    void expectBarGeometry() {
+      final container = barContainer();
+      final margin = container.margin! as EdgeInsets;
+      expect(margin.left, SolSpace.md);
+      expect(margin.right, SolSpace.md);
+      expect(margin.top, SolSpace.md);
+      expect(
+        barDecoration().borderRadius,
+        SolRadius.pillRadius,
+        reason: 'the shape is always the capsule',
+      );
+      final barRect = tester.getRect(find.byWidget(container));
+      expect(barRect.width, closeTo(1400, 1));
+      expect(barRect.height, closeTo(kPillAppBarHeight, 1));
+    }
+
+    expectBarGeometry();
+    expect(
+      barDecoration().color!.a,
+      0,
+      reason: 'the feed starts flush, so the bar has no surface yet',
+    );
+    expect(
+      barDecoration().boxShadow,
+      isNull,
+      reason: 'a transparent pill over the empty page top has no shadow',
+    );
+    expect(
+      glass(),
+      isNull,
+      reason: 'nothing is under the bar yet, so there is no layer to blur',
+    );
+
+    // The pill deliberately no longer aligns with the cards: it owns the
+    // window's full width while the feed stays in the centred reading column,
+    // so the capsule is wider than a card by the gutters on both sides.
+    final barRect = tester.getRect(find.byWidget(barContainer()));
+    final stripRect = tester.getRect(find.byType(FriendPresenceStrip));
+    expect(barRect.left, closeTo(0, 1));
+    expect(barRect.right, closeTo(1400, 1));
+    expect(
+      barRect.width - stripRect.width,
+      closeTo(1400 - (720 - SolSpace.md * 2), 1),
+      reason: 'the cards stay in the 720 column under the full-width pill',
+    );
+    expect(stripRect.left, greaterThan(barRect.left + SolSpace.md));
+
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0, -200),
+    );
+    // Let the fling settle: a pinned header interpolates its height while
+    // the scroll is still animating.
+    await tester.pumpAndSettle();
+
+    // Scrolled: same geometry, but now glass — a blur layer over the feed, a
+    // translucent tint short of opaque, a hairline and a soft shadow.
+    expectBarGeometry();
+    expect(barDecoration().color!.a, closeTo(kPillGlassTint, 0.01));
+    expect(barDecoration().border, isNotNull);
+    final shadow = barDecoration().boxShadow!.single;
+    expect(shadow.color.a, greaterThan(0));
+    expect(
+      glass()!.filter,
+      ImageFilter.blur(sigmaX: kPillGlassSigma, sigmaY: kPillGlassSigma),
+      reason: 'the fully surfaced pill blurs the rows sliding under it',
+    );
 
     await disposeTree(tester);
   });

@@ -8,6 +8,12 @@ import 'package:island/core/theme.dart';
 /// bands and rows.
 const double kExploreCardGap = SolSpace.md;
 
+/// Reading measure of the discovery pages' wide content column. A single
+/// column spanning the whole window reads as a stretched feed, so the pane is
+/// centred instead — the explore feed and the search results share it so their
+/// cards keep one measure across the two tabs.
+const double kDiscoveryWideColumnWidth = 720.0;
+
 /// A flat floating surface used by the explore page.
 ///
 /// The explore feed has no page-wide background surface: sections, posts and

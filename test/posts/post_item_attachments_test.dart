@@ -35,25 +35,27 @@ SnPost _postWithAttachment() {
   });
 }
 
-SnPost _postWithTwoAttachments() {
+SnPost _postWithTwoImages() {
   return SnPost.fromJson({
-    'id': 'post-with-two-attachments',
+    'id': 'post-with-two-images',
     'type': 0,
     'content': 'caption',
     'chained_posts': const [],
     'publisher': {'id': 'publisher-1', 'name': 'alice', 'nick': 'Alice'},
     'attachments': [
       {
-        'id': 'file-1',
-        'name': 'report.pdf',
-        'mime_type': 'application/pdf',
-        'size': 2048,
+        'id': 'img-1',
+        'name': 'a.png',
+        'mime_type': 'image/png',
+        'width': 400,
+        'height': 300,
       },
       {
-        'id': 'file-2',
-        'name': 'invoice.pdf',
-        'mime_type': 'application/pdf',
-        'size': 4096,
+        'id': 'img-2',
+        'name': 'b.png',
+        'mime_type': 'image/png',
+        'width': 400,
+        'height': 300,
       },
     ],
     'created_at': '2026-01-01T00:00:00Z',
@@ -157,7 +159,7 @@ void main() {
     await pumpPostItem(
       tester,
       PostItem(
-        item: _postWithTwoAttachments(),
+        item: _postWithTwoImages(),
         isTranslatable: false,
         padding: const EdgeInsets.all(12),
       ),
@@ -166,7 +168,52 @@ void main() {
     final list = tester.widget<CloudFileList>(find.byType(CloudFileList));
     expect(list.isFullBleed, isFalse);
     expect(list.borderRadius, 16);
-    expect(list.padding!.left, greaterThan(0));
-    expect(list.padding!.right, greaterThan(0));
+    expect(
+      list.itemGap,
+      kAttachmentCarouselGap,
+      reason: 'the gap is declared explicitly, not derived from the gutter',
+    );
+  });
+
+  testWidgets('a contained carousel gets the whole body gutter, not half', (
+    tester,
+  ) async {
+    await pumpPostItem(
+      tester,
+      PostItem(
+        item: _postWithTwoImages(),
+        isTranslatable: false,
+        padding: const EdgeInsets.all(12),
+      ),
+    );
+
+    final list = tester.widget<CloudFileList>(find.byType(CloudFileList));
+    // Halving this inset was how the gap used to be kept at 8; it also moved
+    // the leading image off the body text column. CloudFileList now splits the
+    // gutter itself, so the post hands over the inset its other rows use.
+    expect(list.padding, const EdgeInsets.fromLTRB(12, 8, 12, 8));
+  });
+
+  testWidgets('an edge-to-edge host keeps its own gutter split', (
+    tester,
+  ) async {
+    await pumpPostItem(
+      tester,
+      PostItem(
+        item: _postWithTwoImages(),
+        isTranslatable: false,
+        containAttachments: false,
+        padding: const EdgeInsets.all(12),
+      ),
+    );
+
+    final list = tester.widget<CloudFileList>(find.byType(CloudFileList));
+    expect(list.isFullBleed, isTrue);
+    expect(list.padding!.horizontal, 0);
+    expect(
+      list.itemGap,
+      isNull,
+      reason: 'the bleeding strip carries its gap on the cards',
+    );
   });
 }

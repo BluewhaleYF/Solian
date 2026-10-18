@@ -10,7 +10,10 @@ import 'package:island/core/config.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/data/database.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/discovery/search.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -45,7 +48,9 @@ class _ScriptedAdapter implements HttpClientAdapter {
       return ResponseBody.fromString(
         jsonEncode(<String, dynamic>{}),
         200,
-        headers: {Headers.contentTypeHeader: ['application/json']},
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
       );
     }
     await until;
@@ -141,79 +146,117 @@ void main() {
   /// pending-timer invariant at teardown.
   Future<void> disposeTree(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox());
-    await tester.pump(const Duration(seconds: 1));
-    while (tester.takeException() != null) {}
+    // VisibilityDetector re-schedules a 500ms update from its paint/detach
+    // callbacks; pump long enough for the chain to die out before teardown
+    // trips the binding's pending-timer invariant.
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(seconds: 1));
+      while (tester.takeException() != null) {}
+    }
   }
 
-  testWidgets('wide: rows sit inside one top-rounded card wrapper', (
-    tester,
-  ) async {
+  testWidgets('wide: every row is its own floating card', (tester) async {
     await pumpSearch(tester, const Size(1400, 900));
 
     final items = find.byType(PostActionableItem);
     expect(items, findsNWidgets(3));
 
-    // Every row's only Card ancestor is the shared pane wrapper.
-    final resultsCard = find.ancestor(
-      of: items.first,
-      matching: find.byType(Card),
-    );
-    for (var i = 0; i < 3; i++) {
-      final cardFinder = find.ancestor(
-        of: items.at(i),
-        matching: find.byType(Card),
-      );
-      expect(cardFinder, findsOneWidget);
-      if (i == 0) {
-        expect(
-          tester.widget<Card>(cardFinder).shape,
-          isA<RoundedRectangleBorder>().having(
-            (s) => s.borderRadius,
-            'borderRadius',
-            const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-          ),
-        );
-        // The wrapper spans the pane rather than shrink-wrapping the rows.
-        expect(tester.getSize(cardFinder).height, greaterThan(500));
-      }
-    }
-    expect(find.byType(Divider), findsAtLeastNWidgets(2));
+    // One card per row, each the full reading measure of the pane.
+    final cards = find.ancestor(of: items, matching: find.byType(Card));
+    expect(cards, findsNWidgets(3));
 
-    // The side pane's filter card starts on the same line as the results card
-    // rather than floating above it.
-    Rect surfaceOf(Finder card) => tester.getRect(
-      find.descendant(of: card, matching: find.byType(Material)).first,
+    final firstCard = tester.widget<Card>(cards.at(0));
+    expect(
+      firstCard.shape,
+      isA<RoundedRectangleBorder>().having(
+        (s) => s.borderRadius,
+        'borderRadius',
+        const BorderRadius.all(Radius.circular(SolRadius.card)),
+      ),
     );
-    final filterHeaderCard = find.ancestor(
-      of: find.byIcon(Symbols.filter_alt),
-      matching: find.byType(Card),
+    expect(firstCard.margin, EdgeInsets.zero);
+
+    // Rows share one left edge and step down by a single card gap.
+    final firstRect = tester.getRect(items.at(0));
+    final secondRect = tester.getRect(items.at(1));
+    expect(secondRect.left, firstRect.left);
+    expect(
+      tester.getTopLeft(cards.at(1)).dy - tester.getBottomLeft(cards.at(0)).dy,
+      closeTo(kExploreCardGap, 1),
     );
-    expect(filterHeaderCard, findsOneWidget);
-    expect(surfaceOf(filterHeaderCard).top, surfaceOf(resultsCard).top);
+    // No more dividers: the gap does the separating.
+    expect(find.byType(Divider), findsNothing);
 
     await disposeTree(tester);
   });
 
-  testWidgets('narrow: rows render straight onto the background', (
+  testWidgets('narrow: rows are floating cards on the page background', (
     tester,
   ) async {
     await pumpSearch(tester, const Size(400, 800));
 
     final items = find.byType(PostActionableItem);
     expect(items, findsNWidgets(3));
-    for (var i = 0; i < 3; i++) {
-      expect(
-        find.ancestor(of: items.at(i), matching: find.byType(Card)),
-        findsNothing,
-      );
-    }
+    final cards = find.ancestor(of: items, matching: find.byType(Card));
+    expect(cards, findsNWidgets(3));
 
-    // Gutters come from PostItem, so the rows sit right under the app bar.
-    expect(tester.getTopLeft(items.first).dy, lessThan(220));
-    expect(find.byType(Divider), findsAtLeastNWidgets(2));
+    // The cards carry the page's own gutter.
+    expect(tester.getRect(cards.at(0)).left, closeTo(12, 1));
+    expect(tester.getRect(cards.at(0)).width, closeTo(400 - 24, 1));
+    expect(find.byType(Divider), findsNothing);
+    // The field fills the pill's control row exactly — the same height the
+    // explore bar's row uses, so the two headers line up.
+    expect(
+      tester.getSize(find.byType(SearchBar)).height,
+      closeTo(SolSpace.control, 1),
+    );
+    await disposeTree(tester);
+  });
+
+  testWidgets('the app bar carries the drawer toggle the explore bar uses', (
+    tester,
+  ) async {
+    await pumpSearch(tester, const Size(400, 800));
+
+    // The leading slot is the same SolDrawerButton every root tab uses, so the
+    // drawer opens from the same spot on either tab.
+    expect(
+      find.descendant(
+        of: find.byType(PillAppBar),
+        matching: find.byIcon(Symbols.menu_rounded),
+      ),
+      findsOneWidget,
+    );
+
+    // Its icon sits at the capsule's left inset, and the section picker starts
+    // at the same x as the explore bar's picker: drawer box 36..60, picker
+    // icon 88..108 — one control row apart, matching explore exactly.
+    expect(
+      tester.getRect(find.byIcon(Symbols.menu_rounded)).left,
+      closeTo(36, 1),
+    );
+    final pickerIcon = find.descendant(
+      of: find.byType(PillAppBar),
+      matching: find.byIcon(Symbols.article),
+    );
+    expect(tester.getRect(pickerIcon).left, closeTo(88, 1));
+
+    await disposeTree(tester);
+  });
+
+  testWidgets('wide: the results keep the explore column measure', (
+    tester,
+  ) async {
+    await pumpSearch(tester, const Size(1400, 900));
+
+    final items = find.byType(PostActionableItem);
+    final cards = find.ancestor(of: items, matching: find.byType(Card));
+    final rect = tester.getRect(cards.at(0));
+    // The same centred reading measure the wide explore feed uses, so a card
+    // sits on one column across the two tabs.
+    expect(rect.width, closeTo(kDiscoveryWideColumnWidth - 24, 1));
+    expect(rect.left, closeTo((1400 - kDiscoveryWideColumnWidth) / 2 + 12, 1));
+
     await disposeTree(tester);
   });
 
@@ -222,9 +265,8 @@ void main() {
   /// and content inset, or the list jumps the moment the page lands.
   Future<void> expectPlaceholderMatchesRows(
     WidgetTester tester,
-    Size size, {
-    required int cardAncestors,
-  }) async {
+    Size size,
+  ) async {
     final page = Completer<void>();
     addTearDown(() {
       if (!page.isCompleted) page.complete();
@@ -235,16 +277,15 @@ void main() {
     final placeholder = find.byType(PostItemSkeleton).first;
     expect(placeholder, findsOneWidget);
     expect(find.byType(PostActionableItem), findsNothing);
-    // Placeholders never bring a card surface of their own: the only card they
-    // may sit in is the pane wrapper their rows share.
+    // Placeholders render straight on the background: each row owns its card,
+    // and the shimmer is not one of them.
     expect(
       find.ancestor(of: placeholder, matching: find.byType(Card)),
-      findsNWidgets(cardAncestors),
+      findsNothing,
     );
     expect(
       find.descendant(of: placeholder, matching: find.byType(Card)),
       findsNothing,
-      reason: 'the rows render straight on the background',
     );
 
     final placeholderBox = tester.getRect(placeholder);
@@ -257,10 +298,8 @@ void main() {
 
     final row = find.byType(PostActionableItem).first;
     expect(row, findsOneWidget);
-    expect(
-      find.ancestor(of: row, matching: find.byType(Card)),
-      findsNWidgets(cardAncestors),
-    );
+    // Every landed row sits in exactly its own card.
+    expect(find.ancestor(of: row, matching: find.byType(Card)), findsOneWidget);
     final rowBox = tester.getRect(row);
     final rowAvatar = tester.getRect(
       find
@@ -279,26 +318,31 @@ void main() {
   testWidgets('narrow: the loading placeholder matches the row layout', (
     tester,
   ) async {
-    await expectPlaceholderMatchesRows(
-      tester,
-      const Size(400, 800),
-      cardAncestors: 0,
-    );
+    await expectPlaceholderMatchesRows(tester, const Size(400, 800));
   });
 
   testWidgets('wide: the loading placeholder matches the row layout', (
     tester,
   ) async {
-    await expectPlaceholderMatchesRows(
-      tester,
-      const Size(1400, 900),
-      cardAncestors: 1,
-    );
+    await expectPlaceholderMatchesRows(tester, const Size(1400, 900));
   });
+
+  /// Opens the section picker in the search bar's leading slot and switches
+  /// to the section named [label].
+  Future<void> selectSection(WidgetTester tester, String label) async {
+    // The trigger shows the current section's label ('Posts' at launch). The
+    // menu animates open, so let it settle before tapping an item: taps land
+    // through the transparent overlay while it plays.
+    await tester.tap(find.text('Posts'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MenuItemButton), findsWidgets, reason: 'menu open');
+    await tester.tap(find.widgetWithText(MenuItemButton, label));
+    await tester.pumpAndSettle();
+  }
 
   /// The single app bar filter action (icon-only [IconButton]).
   Finder filterAction() => find.descendant(
-    of: find.byType(AppBar),
+    of: find.byType(PillAppBar),
     matching: find.byWidgetPredicate(
       (w) =>
           w is IconButton &&
@@ -340,6 +384,8 @@ void main() {
   ) async {
     await pumpSearch(tester, const Size(1400, 900));
 
+    // The sidebar is closed at rest, so the filter panel is not mounted; the
+    // action slides it in.
     expect(find.byType(PostFilterWidget), findsNothing);
     await tester.tap(filterAction());
     await tester.pump(const Duration(milliseconds: 300));
@@ -384,8 +430,7 @@ void main() {
 
     expect(tester.widget<IconButton>(filterAction()).onPressed, isNotNull);
 
-    await tester.tap(find.text('Accounts'));
-    await tester.pump(const Duration(milliseconds: 500));
+    await selectSection(tester, 'Accounts');
     expect(tester.widget<IconButton>(filterAction()).onPressed, isNull);
 
     await disposeTree(tester);
@@ -394,14 +439,10 @@ void main() {
   testWidgets('the messages section reuses the app bar filter action', (
     tester,
   ) async {
-    await pumpSearch(
-      tester,
-      const Size(400, 800),
-      database: AppDatabase.web(),
-    );
+    await pumpSearch(tester, const Size(400, 800), database: AppDatabase.web());
 
-    await tester.tap(find.text('Messages'));
-    await tester.pump(const Duration(milliseconds: 800));
+    await selectSection(tester, 'Messages');
+    await tester.pump(const Duration(milliseconds: 300));
 
     // No per-view trigger remains, and the filter bar starts collapsed.
     expect(find.byIcon(Symbols.filter_list), findsOneWidget);

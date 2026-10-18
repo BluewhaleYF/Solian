@@ -30,6 +30,15 @@ class CloudFileList extends HookConsumerWidget {
   final bool isColumn;
   final bool isFullBleed;
   final double fullBleedFraction;
+  /// Gap between two adjacent carousel cards.
+  ///
+  /// `CarouselView.padding` wraps every card from outside its surface, so a
+  /// horizontal h yields a 1× leading inset but a 2× gap between neighbours.
+  /// When set, half of it goes to the view and the rest of the caller's gutter
+  /// is inset outside the viewport, putting the first card exactly on the body
+  /// gutter. Left null, the full-bleed strip keeps its card-side 8px inset and
+  /// a contained carousel keeps the padding it was given.
+  final double? itemGap;
   final ValueChanged<int>? onIndexChanged;
   final bool initiallyCollapsed;
   final String heroTagPrefix;
@@ -47,6 +56,7 @@ class CloudFileList extends HookConsumerWidget {
     this.isColumn = false,
     this.isFullBleed = false,
     this.fullBleedFraction = 0.9,
+    this.itemGap,
     this.onIndexChanged,
     this.initiallyCollapsed = true,
     this.heroTagPrefix = 'cloud-file',
@@ -418,62 +428,88 @@ class CloudFileList extends HookConsumerWidget {
     final allLightboxMedia = files.every(isLightboxMedia);
 
     if (allLightboxMedia) {
-      return ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight, minWidth: maxWidth),
-        child: AspectRatio(
-          aspectRatio: calculateAspectRatio(),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.maxWidth.isFinite
-                  ? constraints.maxWidth
-                  : MediaQuery.of(context).size.width;
-              // Keep a peek of the next attachment: each page takes
-              // [fullBleedFraction] of the viewport (1.0 = full width). The
-              // inter-item gap is applied on the cards themselves — never the
-              // CarouselView padding, which is uniform per card and would
-              // leave a permanent edge gap.
-              final itemExtent = isFullBleed
-                  ? availableWidth * fullBleedFraction
-                  : math.min(
-                      math.min(availableWidth * 0.75, maxWidth * 0.75)
-                          .toDouble(),
-                      640.0,
-                    );
+      // `CarouselView.padding` wraps every card from outside its surface, so a
+      // horizontal h both insets the leading edge by h and doubles into a 2h
+      // gap between neighbours. With an explicit [itemGap], half of the gap is
+      // fed to the view and the rest of the caller's gutter is inset outside
+      // the viewport: the first card lands exactly on the body gutter while two
+      // images sit [itemGap] apart.
+      final gutter = padding ?? EdgeInsets.zero;
+      final gap = itemGap;
+      EdgeInsets? itemPadding = padding;
+      var edgePadding = EdgeInsets.zero;
+      if (isFullBleed) {
+        // The bleed reaches the host's edges, so its gap rides on the cards.
+        itemPadding = gutter.copyWith(left: 0, right: 0);
+      } else if (gap != null) {
+        final halfGap = gap / 2;
+        itemPadding = EdgeInsets.fromLTRB(
+          halfGap,
+          gutter.top,
+          halfGap,
+          gutter.bottom,
+        );
+        edgePadding = EdgeInsets.only(
+          left: math.max(gutter.left - halfGap, 0),
+          right: math.max(gutter.right - halfGap, 0),
+        );
+      }
 
-              final itemPadding = isFullBleed
-                  ? (padding ?? EdgeInsets.zero).copyWith(left: 0, right: 0)
-                  : padding;
+      return Padding(
+        padding: edgePadding,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: maxHeight,
+            minWidth: maxWidth,
+          ),
+          child: AspectRatio(
+            aspectRatio: calculateAspectRatio(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final availableWidth = constraints.maxWidth.isFinite
+                    ? constraints.maxWidth
+                    : MediaQuery.of(context).size.width;
+                // Keep a peek of the next attachment: each page takes
+                // [fullBleedFraction] of the viewport (1.0 = full width).
+                final itemExtent = isFullBleed
+                    ? availableWidth * fullBleedFraction
+                    : math.min(
+                        math.min(availableWidth * 0.75, maxWidth * 0.75)
+                            .toDouble(),
+                        640.0,
+                      );
 
-              return _HoverCarouselGallery(
-                itemExtent: itemExtent,
-                itemCount: files.length,
-                borderRadius: isFullBleed ? 0 : borderRadius,
-                padding: itemPadding,
-                onIndexChanged: onIndexChanged,
-                children: [
-                  for (var i = 0; i < files.length; i++)
-                    _buildCarouselEntry(i),
-                ],
-                onTap: (index) {
-                  if (files[index].isFolder) {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => FolderContentsSheet(
-                        folderId: files[index].id,
-                        folderName: files[index].name,
-                      ),
-                    );
-                    return;
-                  }
-                  if (isLightboxMedia(files[index])) {
-                    openLightbox(index);
-                    return;
-                  }
-                  _openFileDetail(context, files[index].id);
-                },
-              );
-            },
+                return _HoverCarouselGallery(
+                  itemExtent: itemExtent,
+                  itemCount: files.length,
+                  borderRadius: isFullBleed ? 0 : borderRadius,
+                  padding: itemPadding,
+                  onIndexChanged: onIndexChanged,
+                  children: [
+                    for (var i = 0; i < files.length; i++)
+                      _buildCarouselEntry(i),
+                  ],
+                  onTap: (index) {
+                    if (files[index].isFolder) {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => FolderContentsSheet(
+                          folderId: files[index].id,
+                          folderName: files[index].name,
+                        ),
+                      );
+                      return;
+                    }
+                    if (isLightboxMedia(files[index])) {
+                      openLightbox(index);
+                      return;
+                    }
+                    _openFileDetail(context, files[index].id);
+                  },
+                );
+              },
+            ),
           ),
         ),
       );

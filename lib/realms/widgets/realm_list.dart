@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/realms/widgets/realm_list_tile.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
-import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 final realmListNotifierProvider = AsyncNotifierProvider.autoDispose.family(
@@ -65,13 +65,17 @@ class SliverRealmList extends HookConsumerWidget {
       notifier: provider.notifier,
       isSliver: true,
       isRefreshable: false,
-      spacing: 8,
       itemBuilder: (context, index, realm) {
-        return ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 540),
-          child: RealmListTile(realm: realm).padding(horizontal: 8),
-        ).center();
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 540),
+            child: ExploreCard(child: RealmListTile(realm: realm)),
+          ),
+        );
       },
+      // One uniform gap, the same one the explore feed uses between cards.
+      seperatorBuilder: (context, index, realm) =>
+          const SizedBox(height: kExploreCardGap),
     );
   }
 }

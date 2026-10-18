@@ -44,7 +44,6 @@ const kNotificationTenantAppId = kProductTenantId;
 /// from other first-party clients (e.g. SolWatt).
 const kWebsocketNamespace = kProductTenantId;
 
-const kAppbarTransparentStoreKey = 'app_bar_transparent';
 const kAppBackgroundStoreKey = 'app_has_background';
 const kAppShowBackgroundImage = 'app_show_background_image';
 const kAppColorSchemeStoreKey = 'app_color_scheme';
@@ -442,7 +441,6 @@ sealed class AppSettings with _$AppSettings {
     required bool soundEffects,
     required bool festivalFeatures,
     required bool enterToSend,
-    required bool appBarTransparent,
     required bool showBackgroundImage,
     required bool notifyWithHaptic,
     required String? customFonts,
@@ -504,7 +502,6 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       soundEffects: prefs.getBool(kAppSoundEffects) ?? true,
       festivalFeatures: prefs.getBool(kAppFestivalFeatures) ?? true,
       enterToSend: prefs.getBool(kAppEnterToSend) ?? true,
-      appBarTransparent: prefs.getBool(kAppbarTransparentStoreKey) ?? false,
       showBackgroundImage: prefs.getBool(kAppShowBackgroundImage) ?? true,
       notifyWithHaptic: prefs.getBool(kAppNotifyWithHaptic) ?? true,
       customFonts: prefs.getString(kAppCustomFonts),
@@ -544,8 +541,7 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
           prefs.getBool(kAppFriendStatusDesktopNotification) ?? true,
       outgoingCallKitEnabled: prefs.getBool(kAppOutgoingCallKitEnabled) ?? true,
       weatherNoGeolocation: prefs.getBool(kAppWeatherNoGeolocation) ?? true,
-      autoUploadAttachments:
-          prefs.getBool(kAppAutoUploadAttachments) ?? true,
+      autoUploadAttachments: prefs.getBool(kAppAutoUploadAttachments) ?? true,
     );
   }
 
@@ -685,12 +681,6 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
     final prefs = ref.read(sharedPreferencesProvider);
     prefs.setBool(kAppEnterToSend, value);
     state = state.copyWith(enterToSend: value);
-  }
-
-  void setAppBarTransparent(bool value) {
-    final prefs = ref.read(sharedPreferencesProvider);
-    prefs.setBool(kAppbarTransparentStoreKey, value);
-    state = state.copyWith(appBarTransparent: value);
   }
 
   void setShowBackgroundImage(bool value) {

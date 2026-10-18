@@ -102,6 +102,7 @@ abstract final class SolRadius {
   static const BorderRadius dialogRadius = BorderRadius.all(
     Radius.circular(dialog),
   );
+
   /// Fully rounded capsule: any height collapses to a pill, never a squircle.
   static const BorderRadius pillRadius = BorderRadius.all(
     Radius.circular(pill),
@@ -210,8 +211,6 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
     );
   }
 
-  final hasAppBarTransparent = settings.appBarTransparent;
-
   final inUseFonts = (settings.customFonts ?? '')
       .split(',')
       .map((font) => font.trim())
@@ -266,11 +265,11 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
   // instead of collapsing into a sharp rectangle.
   final inputBorder = OutlineInputBorder(
     borderRadius: SolRadius.inputRadius,
-    borderSide: BorderSide.none,
+    borderSide: .none,
   );
   final focusedInputBorder = OutlineInputBorder(
     borderRadius: SolRadius.inputRadius,
-    borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+    borderSide: .none,
   );
   final errorInputBorder = OutlineInputBorder(
     borderRadius: SolRadius.inputRadius,
@@ -285,12 +284,12 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       // Titles read left aligned, like a document: the leading icon occupies
       // the left edge and the title starts right of it.
       centerTitle: false,
-      elevation: hasAppBarTransparent ? 0 : null,
+      // App bars are always transparent; content shows through them. Bars
+      // that need a backdrop paint their own surface (e.g. the explore pill).
+      elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
-      backgroundColor: hasAppBarTransparent
-          ? Colors.transparent
-          : colorScheme.surface,
+      backgroundColor: Colors.transparent,
       foregroundColor: appBarForeground,
       iconTheme: IconThemeData(color: appBarForeground),
       actionsIconTheme: IconThemeData(color: appBarForeground),
@@ -317,11 +316,14 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       shape: _cardShape,
       clipBehavior: Clip.antiAlias,
     ),
+    // No `minTileHeight`: material_ui resolves a tile's target height as
+    // `minTileHeight ?? default`, where the Material 3 defaults are already
+    // 56/72/88 for one/two/three-line tiles and 48/64/76 when `dense`. Pinning
+    // a global floor overrides those: one-line dense rows are forced up to
+    // the floor, while multi-line rows fall into the renderer's "compact"
+    // branch and collapse to their content height. Leaving it unset keeps
+    // `dense: true` meaning what it says.
     listTileTheme: ListTileThemeData(
-      contentPadding: const EdgeInsets.symmetric(horizontal: SolSpace.xl),
-      minVerticalPadding: SolSpace.sm,
-      minTileHeight: 56,
-      horizontalTitleGap: 14,
       minLeadingWidth: 40,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SolRadius.sm),
@@ -417,15 +419,6 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
         minimumSize: const WidgetStatePropertyAll(Size(64, 44)),
         textStyle: WidgetStatePropertyAll(
           textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ),
-    ),
-    iconButtonTheme: IconButtonThemeData(
-      style: const ButtonStyle(
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(SolRadius.md)),
-          ),
         ),
       ),
     ),
@@ -566,8 +559,9 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: colorScheme.surfaceContainer,
-      elevation: 0,
+      // The tab bar floats inside a glass capsule (see `PillBottomNav`), so
+      // the bar itself paints no surface of its own.
+      backgroundColor: Colors.transparent,
       indicatorColor: colorScheme.secondaryContainer,
       indicatorShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SolRadius.md),
@@ -643,10 +637,10 @@ ThemeData createAppTheme(Brightness brightness, AppSettings settings) {
         borderRadius: BorderRadius.circular(SolRadius.sm),
       ),
       padding: const EdgeInsets.symmetric(
-        horizontal: SolSpace.md,
-        vertical: SolSpace.sm,
+        horizontal: SolSpace.sm,
+        vertical: SolSpace.xs,
       ),
-      textStyle: textTheme.bodySmall?.copyWith(
+      textStyle: textTheme.labelSmall?.copyWith(
         color: colorScheme.onInverseSurface,
       ),
       waitDuration: const Duration(milliseconds: 400),
