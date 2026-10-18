@@ -18,7 +18,9 @@ UninstallDisplayName=Solian
 UninstallDisplayIcon={app}\Solian.exe
 
 DefaultDirName={commonpf}\Solian
-UsePreviousAppDir=no
+; Reuse the directory of an existing installation so an unattended update
+; (/SILENT) replaces the same files the running build came from.
+UsePreviousAppDir=yes
 
 OutputDir=.\Installer
 OutputBaseFilename=windows-x86_64-setup
@@ -45,6 +47,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Run]
 Filename: "{app}\Solian.exe"; Description: "Launch Solian"; Flags: nowait postinstall skipifsilent
+; The updater runs this installer with /SILENT, and Setup closes the running
+; Solian through the Restart Manager before replacing its files. Nothing is
+; left on screen afterwards and RestartApplications cannot bring it back
+; (Flutter's Windows runner never calls RegisterApplicationRestart), so relaunch
+; the installed build with the original, non-elevated user token.
+Filename: "{app}\Solian.exe"; Flags: nowait runasoriginaluser skipifnotsilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{userappdata}\dev.solsynth\Solian"
