@@ -118,7 +118,9 @@ class ChatRoomListTile extends HookConsumerWidget {
       onSecondaryTapDown: onSecondaryTapDown,
       child: Material(
         color: backgroundColor,
+        borderRadius: BorderRadius.all(Radius.circular(SolRadius.control)),
         child: InkWell(
+          borderRadius: BorderRadius.all(Radius.circular(SolRadius.control)),
           onLongPress: onLongPress,
           onTap: () async {
             ref.read(chatSummaryProvider.future).then((summaryMap) {

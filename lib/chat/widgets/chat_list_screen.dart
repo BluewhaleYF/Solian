@@ -1222,17 +1222,29 @@ class ChatScreen extends HookConsumerWidget {
           ? SafeArea(
               child: Row(
                 children: [
-                  const ChatListWidget(
-                    isAside: true,
-                  ).padding(left: 16, top: 16),
+                  const ChatListWidget(isAside: true).padding(left: 16),
                   const Gap(8),
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        topRight: Radius.circular(8),
+                        topLeft: Radius.circular(SolRadius.card),
+                        topRight: Radius.circular(SolRadius.card),
                       ),
-                      child: const AutoRouter(),
+                      child: AutoRouter(
+                        builder: (context, child) {
+                          return Card(
+                            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                            margin: .zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(SolRadius.card),
+                                topRight: Radius.circular(SolRadius.card),
+                              ),
+                            ),
+                            child: child,
+                          );
+                        },
+                      ),
                     ).padding(top: 16, right: 16),
                   ),
                 ],
