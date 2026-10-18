@@ -51,6 +51,7 @@ class AppRouter extends RootStackRouter {
     ),
     AutoRoute(page: PostDetailRoute.page, path: '/posts/:id'),
     AutoRoute(page: DraftBoxRoute.page, path: '/drafts'),
+    AutoRoute(page: BookmarksRoute.page, path: '/bookmarks'),
     AutoRoute(page: PublisherProfileRoute.page, path: '/publishers/:name'),
     AutoRoute(
       page: FediverseActorProfileRoute.page,
@@ -146,7 +147,6 @@ class AppRouter extends RootStackRouter {
             AutoRoute(page: AccountSettingsRoute.page, path: 'me/settings'),
             AutoRoute(page: AccountQrRoute.page, path: 'me/qr'),
             AutoRoute(page: ProgressRoute.page, path: 'me/progress'),
-            AutoRoute(page: BookmarksRoute.page, path: 'me/bookmarks'),
             AutoRoute(page: MeetRoute.page, path: 'me/meet'),
             AutoRoute(page: MeetDetailRoute.page, path: 'me/meet/:id'),
             AutoRoute(page: ActionLogsRoute.page, path: 'me/action-logs'),

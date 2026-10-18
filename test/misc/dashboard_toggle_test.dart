@@ -194,12 +194,67 @@ void main() {
     await tester.longPress(find.byIcon(Symbols.explore_rounded));
     await tester.pumpAndSettle();
 
-    // The two icons that used to sit in the explore app bar now live in the
-    // long-press sheet.
+    // The entrances that used to sit in the explore app bar and in the account
+    // menu / creator hub now live in the long-press sheet.
     expect(find.byIcon(Symbols.category), findsOneWidget);
     expect(find.byIcon(Symbols.shuffle), findsOneWidget);
+    expect(find.byIcon(Symbols.footprint), findsOneWidget);
+    expect(find.byIcon(Symbols.drafts), findsOneWidget);
+
+    // The draft box entry resolves: it is a top-level route.
+    await tester.tap(find.byIcon(Symbols.drafts));
+    await tester.pumpAndSettle();
+    expect(_router.currentPath, '/drafts');
 
     await _teardown(tester);
+  });
+
+  testWidgets('the footprints entrance pushes the bookmarks page', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpApp(tester, const {'app_dashboard_enabled': false});
+    await tester.longPress(find.byIcon(Symbols.explore_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.footprint));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(_router.currentPath, '/bookmarks');
+
+    await _teardown(tester);
+  });
+
+  testWidgets('long-pressing Explore in the rail opens its entrance sheet', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpApp(tester, const {'app_dashboard_enabled': false});
+    expect(find.byType(NavigationRail), findsOneWidget);
+
+    final railExplore = find.descendant(
+      of: find.byType(NavigationRail),
+      matching: find.byIcon(Symbols.explore_rounded),
+    );
+    expect(railExplore, findsOneWidget);
+    await tester.longPress(railExplore);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.category), findsOneWidget);
+    expect(find.byIcon(Symbols.shuffle), findsOneWidget);
+    expect(find.byIcon(Symbols.footprint), findsOneWidget);
+    expect(find.byIcon(Symbols.drafts), findsOneWidget);
+
+    await _teardown(tester);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('long-pressing Explore in the drawer opens its entrance sheet', (
@@ -227,6 +282,8 @@ void main() {
 
     expect(find.byIcon(Symbols.category), findsOneWidget);
     expect(find.byIcon(Symbols.shuffle), findsOneWidget);
+    expect(find.byIcon(Symbols.footprint), findsOneWidget);
+    expect(find.byIcon(Symbols.drafts), findsOneWidget);
 
     await _teardown(tester);
     debugDefaultTargetPlatformOverride = null;

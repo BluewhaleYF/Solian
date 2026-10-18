@@ -370,8 +370,11 @@ class PaginationListFooter<T> extends HookConsumerWidget {
     return VisibilityDetector(
       key: Key("pagination-list-${noti.hashCode}"),
       onVisibilityChanged: (VisibilityInfo info) {
-        hasBeenVisible.value = true;
+        // The detector can fire after the page is disposed (fast tab/page
+        // switches), and the state setter would then write to a disposed
+        // hook state.
         if (!context.mounted) return;
+        hasBeenVisible.value = true;
         if (!noti.fetchedAll &&
             !(data.isLoading || data.value?.isLoading == true) &&
             !data.hasError) {

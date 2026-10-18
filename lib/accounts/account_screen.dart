@@ -350,13 +350,6 @@ class AccountFeatureWidget extends HookConsumerWidget {
                           context.router.push(const StickerMarketplaceRoute());
                         },
                       },
-                      {
-                        'icon': Symbols.footprint,
-                        'title': 'browseFootprints',
-                        'onTap': () {
-                          context.router.push(const BookmarksRoute());
-                        },
-                      },
                     ];
                     return Column(
                       children: menuItems.map((item) {

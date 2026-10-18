@@ -1223,7 +1223,7 @@ class ChatScreen extends HookConsumerWidget {
               child: Row(
                 children: [
                   const ChatListWidget(isAside: true).padding(left: 16),
-                  const Gap(8),
+                  const Gap(SolSpace.card),
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(

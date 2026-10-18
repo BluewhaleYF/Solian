@@ -318,11 +318,12 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       );
     }
 
-    /// Opens the per-tab entrances that used to live in the page app bar.
+    /// Opens the per-tab entrances that used to live elsewhere in the UI.
     ///
-    /// Only Explore has entrances today (category/tag browsing and shuffle).
+    /// Only Explore has entrances today: category/tag browsing, shuffle, the
+    /// post footprints (bookmarks and reactions) and the draft box.
     /// Long-pressing its destination in the bottom bar, drawer or rail is the
-    /// replacement for the two app-bar icons.
+    /// replacement for the app-bar icons and list rows these used to have.
     void showDestinationEntrances(_TabDestination destination) {
       if (destination.id != 'explore') return;
       HapticFeedback.mediumImpact();
@@ -361,6 +362,24 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     context.router.push(const PostShuffleRoute());
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: const Icon(Symbols.footprint),
+                  title: Text('browseFootprints'.tr()),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.router.push(const BookmarksRoute());
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: const Icon(Symbols.drafts),
+                  title: Text('draftBox').tr(),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.router.push(const DraftBoxRoute());
                   },
                 ),
               ],
@@ -573,7 +592,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                       d.iconBuilder(railCurrentIndex == idx),
                       d,
                     ),
-                    label: Text(d.label),
+                    label: withEntranceMenu(Text(d.label), d),
                   );
                 }).toList(),
                 selectedIndex: railCurrentIndex,
