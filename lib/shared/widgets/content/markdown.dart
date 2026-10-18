@@ -221,6 +221,17 @@ class MarkdownTextContent extends HookConsumerWidget {
   final TextStyle? textStyle;
   final TextStyle? linkStyle;
   final EdgeInsets? linesMargin;
+
+  /// Whether the body responds to text selection.
+  ///
+  /// Selection is one region over the whole body, not one per block:
+  /// `MarkdownBody`'s own `selectable` mode builds a separate
+  /// `SelectableText` per paragraph/heading/list item, and a drag stops at the
+  /// edge of each of those. The body is therefore always rendered
+  /// non-selectable and wrapped in a single [SelectionArea], so a drag that
+  /// starts in one paragraph runs through the next. When an ancestor already
+  /// selects (a quoted post inside a card that is itself selectable), the body
+  /// joins that region instead of nesting a second one.
   final bool isSelectable;
   final List<IDisplayableCloudFile>? attachments;
   final List<markdown.InlineSyntax> extraInlineSyntaxList;
@@ -314,9 +325,11 @@ class MarkdownTextContent extends HookConsumerWidget {
       }
     }
 
-    return MarkdownBody(
+    final body = MarkdownBody(
       data: content,
-      selectable: isSelectable,
+      // Per-block `SelectableText`s cannot be dragged across; the wrapping
+      // [SelectionArea] below supplies one region for the whole body.
+      selectable: false,
       softLineBreak: true,
       styleSheet: baseStyle.copyWith(
         a: linkStyle ?? baseStyle.a?.copyWith(color: scheme.primary),
@@ -417,6 +430,11 @@ class MarkdownTextContent extends HookConsumerWidget {
         return MarkdownRemoteImage(uri: uri);
       },
     );
+
+    if (!isSelectable || SelectionContainer.maybeOf(context) != null) {
+      return body;
+    }
+    return SelectionArea(child: body);
   }
 
   void _showBrokenLinkSnackBar(BuildContext context, String href) {
