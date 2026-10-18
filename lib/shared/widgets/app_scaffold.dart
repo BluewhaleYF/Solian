@@ -84,7 +84,7 @@ class WindowScaffold extends HookConsumerWidget {
     }, [shakeEnabled]);
 
     final overlays = <Widget>[
-      const _WebSocketIndicator(),
+      const WebSocketIndicator(),
       const SnNotificationOverlay(),
       const PluginPaneLayer(),
     ];
@@ -426,8 +426,8 @@ class EmptyPageHolder extends HookConsumerWidget {
   }
 }
 
-class _WebSocketIndicator extends HookConsumerWidget {
-  const _WebSocketIndicator();
+class WebSocketIndicator extends HookConsumerWidget {
+  const WebSocketIndicator({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -489,48 +489,91 @@ class _WebSocketIndicator extends HookConsumerWidget {
       opacity = 0.0;
     }
 
-    return Positioned(
-      top: devicePadding.top + (isDesktop ? 27.5 : 25),
+    const animationDuration = Duration(milliseconds: 320);
+    final visible = opacity > 0;
+    final anchorTop = devicePadding.top + (isDesktop ? 27.5 : 25);
+
+    final animationController = useAnimationController(
+      duration: animationDuration,
+      initialValue: visible ? 1 : 0,
+    );
+    useEffect(() {
+      if (visible) {
+        animationController.forward();
+      } else {
+        animationController.reverse();
+      }
+      return null;
+    }, [visible, animationController]);
+    final animation = CurvedAnimation(
+      parent: animationController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    // Park the pill above the viewport edge when hidden; the Stack clips it,
+    // so it genuinely slides in from beyond the top of the screen rather than
+    // fading in place. The offset clears the tallest status-bar inset plus the
+    // pill's own height.
+    const hiddenTop = -100.0;
+
+    return AnimatedPositioned(
+      duration: animationDuration,
+      curve: Curves.easeOutCubic,
+      top: visible ? anchorTop : hiddenTop,
       left: 0,
       right: 0,
       child: IgnorePointer(
-        ignoring: !isInteractive,
+        ignoring: !isInteractive || !visible,
         child: Align(
           alignment: Alignment.topCenter,
-          child: AnimatedOpacity(
-            duration: Duration(milliseconds: 300),
-            opacity: opacity,
-            child: Material(
-              elevation:
-                  user.value == null ||
-                      websocketState == WebSocketState.connected()
-                  ? 0
-                  : 4,
-              borderRadius: BorderRadius.circular(999),
-              child: GestureDetector(
-                onTap: () {
-                  ref.read(websocketStateProvider.notifier).manualReconnect();
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: indicatorColor,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 8,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: Duration(milliseconds: 300),
-                        child: indicatorIcon,
+          // Uniform scale, not a clip or a horizontal stretch: those cut or
+          // smear the elevation shadow into a hard edge mid-flight. Growing
+          // from a smaller pill keeps the shadow's rounded silhouette.
+          child: FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.6, end: 1.0).animate(animation),
+              alignment: Alignment.topCenter,
+              child: AnimatedSize(
+                duration: animationDuration,
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(999),
+                  clipBehavior: Clip.antiAlias,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(websocketStateProvider.notifier)
+                          .manualReconnect();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      Text(
-                        indicatorText,
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ).tr(),
-                    ],
+                      decoration: BoxDecoration(
+                        color: indicatorColor,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 8,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: Duration(milliseconds: 300),
+                            child: indicatorIcon,
+                          ),
+                          Text(
+                            indicatorText,
+                            style: TextStyle(color: Colors.white, fontSize: 13),
+                          ).tr(),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
