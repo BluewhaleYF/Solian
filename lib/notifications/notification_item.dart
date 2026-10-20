@@ -29,75 +29,18 @@ class NotificationItemWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (item.type == NotificationItemType.friendStatus) {
       final event = item.friendStatusEvent!;
+      // The capsule carries its own countdown along the outline, so this item
+      // contributes no card, close button or progress bar of its own.
       return GestureDetector(
         onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity! > 100) {
-            onDismiss();
-          }
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() > 100) onDismiss();
         },
-        onVerticalDragEnd: !isDesktop
-            ? (details) {
-                if (details.primaryVelocity! < -100) {
-                  onDismiss();
-                }
-              }
-            : null,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: double.infinity),
-          child: Stack(
-            children: [
-              Card(
-                elevation: 0,
-                margin: EdgeInsets.zero,
-                color: Colors.transparent,
-                shadowColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(kNotificationBorderRadius),
-                  ),
-                ),
-                child: FriendStatusToast(
-                  event: event,
-                  onDismiss: onDismiss,
-                  autoDismissDuration: item.duration,
-                  embedded: true,
-                  showCloseButton: false,
-                  showProgress: false,
-                ),
-              ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: IconButton(
-                  icon: Icon(
-                    Symbols.close,
-                    size: 20,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: onDismiss,
-                  padding: const EdgeInsets.all(4),
-                  constraints: const BoxConstraints(),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: AnimatedBuilder(
-                  animation: progress,
-                  builder: (context, child) => LinearProgressIndicator(
-                    value: progress.value,
-                    minHeight: 2,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ).clipRRect(all: kNotificationBorderRadius),
+        child: FriendStatusToast(
+          event: event,
+          onDismiss: onDismiss,
+          progress: progress,
+          isDesktop: isDesktop,
         ),
       );
     }
