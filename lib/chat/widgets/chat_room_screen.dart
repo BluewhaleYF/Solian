@@ -52,6 +52,7 @@ import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/attachment_uploader.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
+import 'package:island/shared/widgets/measure_height.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -465,6 +466,12 @@ class ChatRoomScreen extends HookConsumerWidget {
     final savedLastReadAt = useState<DateTime?>(chatIdentity.value?.lastReadAt);
     final pinnedPins = useState<List<SnChatMessagePin>>([]);
     final isPinnedBarCollapsed = useState(false);
+    // Heights of the chrome painted over the timeline, measured from the
+    // laid-out widgets rather than guessed: banners appearing, the composer
+    // growing to five lines, or the keyboard opening all change what the list
+    // has to clear.
+    final topChromeHeight = useState(0.0);
+    final composerHeight = useState(0.0);
 
     useEffect(() {
       final payload = pendingSharePayload;
@@ -1098,49 +1105,15 @@ class ChatRoomScreen extends HookConsumerWidget {
                     }
                   },
                 ),
-          body: Column(
+          // The timeline owns the whole page: the pill header, the banners
+          // and the composer are painted over it, and the list pads itself
+          // clear of both chrome bands. At rest nothing hides behind chrome;
+          // while scrolling, rows slide under it.
+          body: Stack(
             children: [
-              if (!isSelectionMode) _roomHeaderBand(context),
-              if (currentRoom != null &&
-                  currentIdentity != null &&
-                  currentRoom.type == 1 &&
-                  currentIdentity.joinedAt != null &&
-                  currentIdentity.confirmedAt == null)
-                _DirectMessageConfirmationBanner(
-                  chatRoom: currentRoom,
-                  identity: currentIdentity,
-                  isBlocked: currentIdentity.leaveAt != null,
-                  onBlocked: () async {
-                    if (context.mounted) {
-                      context.router.maybePop();
-                    }
-                  },
-                ),
-              if (pinnedPins.value.isNotEmpty)
-                PinnedMessagesBar(
-                  pins: pinnedPins.value,
-                  isCollapsed: isPinnedBarCollapsed.value,
-                  onToggleCollapse: () {
-                    isPinnedBarCollapsed.value = !isPinnedBarCollapsed.value;
-                  },
-                  onTapPin: (pin) {
-                    if (pin.messageId.isNotEmpty) {
-                      jumpAndRevealMessage(pin.messageId);
-                    }
-                  },
-                  onViewAll: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => PinnedMessagesSheet(
-                        roomId: id,
-                        onJumpToMessage: jumpAndRevealMessage,
-                      ),
-                    );
-                  },
-                  fetchMessageById: messagesNotifier.fetchMessageById,
-                ),
-              Expanded(
+              // The timeline owns the whole page and paints first; every
+              // other band below is chrome floating over it.
+              Positioned.fill(
                 child: Stack(
                   children: [
                     AnimatedSwitcher(
@@ -1173,6 +1146,8 @@ class ChatRoomScreen extends HookConsumerWidget {
                                 chatIdentity: chatIdentity,
                                 onJump: onJump,
                                 onLoadMessageGap: loadMessageGap,
+                                topInset: topChromeHeight.value,
+                                bottomInset: composerHeight.value,
                               ),
                         loading: () => Center(
                           key: const ValueKey('messages-loading'),
@@ -1196,7 +1171,7 @@ class ChatRoomScreen extends HookConsumerWidget {
                     ),
                     // Follow Back FAB - top right, small circular, ignores safe area
                     Positioned(
-                      top: 12,
+                      top: topChromeHeight.value + 12,
                       right: 12,
                       child: SafeArea(
                         top: false,
@@ -1236,7 +1211,7 @@ class ChatRoomScreen extends HookConsumerWidget {
 
                     // Back to Bottom FAB - bottom right, with new message badge, ignores safe area
                     Positioned(
-                      bottom: 16,
+                      bottom: composerHeight.value + 16,
                       right: 12,
                       child: AnimatedOpacity(
                         opacity:
@@ -1320,7 +1295,7 @@ class ChatRoomScreen extends HookConsumerWidget {
                     if (messagesNotifier.e2eeRecoveryState ==
                         E2eeRecoveryState.failed)
                       Positioned(
-                        top: 0,
+                        top: topChromeHeight.value,
                         left: 0,
                         right: 0,
                         child: Material(
@@ -1361,152 +1336,255 @@ class ChatRoomScreen extends HookConsumerWidget {
                   ],
                 ),
               ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.08),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: isSelectionMode
-                    ? RoomSelectionMode(
-                        key: const ValueKey('selection-bar'),
-                        visible: true,
-                        selectedCount: selectedMessageIds.length,
-                        onClose: chatStateNotifier.exitSelectionMode,
-                        onRedirect: openRedirectSheet,
-                        onRedirectToCurrentChat: redirectToCurrentChat,
-                      )
-                    : chatRoom.when(
-                        data: (room) => room != null
-                            ? Align(
-                                key: const ValueKey('chat-input'),
-                                alignment: Alignment.bottomCenter,
-                                child: Consumer(
-                                  builder: (context, ref, _) {
-                                    final inputState = ref.watch(
-                                      chatRoomStateProvider(id).select(
-                                        (state) => (
-                                          attachments: state.attachments,
-                                          attachmentProgress:
-                                              state.attachmentProgress,
-                                          editingTo: state.messageEditingTo,
-                                          replyingTo: state.messageReplyingTo,
-                                          forwardingTo:
-                                              state.messageForwardingTo,
-                                          embeds: state.embeds,
-                                        ),
-                                      ),
-                                    );
-
-                                    return ChatInput(
-                                      key: inputKey,
-                                      messageController:
-                                          chatStateNotifier.messageController,
-                                      chatRoom: room,
-                                      onSend: chatStateNotifier.sendMessage,
-                                      onClear: () {
-                                        if (inputState.editingTo != null) {
-                                          chatStateNotifier
-                                              .clearAttachmentsOnly();
-                                        }
-                                        chatStateNotifier.setEditingTo(null);
-                                        chatStateNotifier.setReplyingTo(null);
-                                        chatStateNotifier.setForwardingTo(null);
-                                        chatStateNotifier.clearInput();
-                                      },
-                                      messageEditingTo: inputState.editingTo,
-                                      messageReplyingTo: inputState.replyingTo,
-                                      messageForwardingTo:
-                                          inputState.forwardingTo,
-                                      embeds: inputState.embeds,
-                                      onEmbedsChanged:
-                                          chatStateNotifier.setEmbeds,
-                                      isMessageListScrolling:
-                                          !isAtLatestMessages.value,
-                                      onPickFile: (isPhoto) {
-                                        if (isPhoto) {
-                                          chatStateNotifier.pickPhotos();
-                                        } else {
-                                          chatStateNotifier.pickVideos();
-                                        }
-                                      },
-                                      onPickAudio: chatStateNotifier.pickAudio,
-                                      onPickGeneralFile:
-                                          chatStateNotifier.pickFiles,
-                                      onLinkAttachment: () => chatStateNotifier
-                                          .linkAttachment(context),
-                                      attachments: inputState.attachments,
-                                      onUploadAttachment: uploadAttachment,
-                                      onCancelUploadAttachment: (index) =>
-                                          chatStateNotifier
-                                              .cancelAttachmentUpload(index),
-                                      onDeleteAttachment: (index) async {
-                                        final attachment =
-                                            inputState.attachments[index];
-                                        // Stop the upload that is running for
-                                        // this attachment, if any.
-                                        chatStateNotifier
-                                            .cancelAttachmentUpload(index);
-                                        if (attachment.isOnCloud &&
-                                            !attachment.isLink) {
-                                          final client = ref.read(
-                                            apiClientProvider,
-                                          );
-                                          await client.delete(
-                                            '/fs/files/${attachment.data.id}',
-                                          );
-                                        }
-                                        final clone = List.of(
-                                          inputState.attachments,
-                                        );
-                                        clone.removeAt(index);
-                                        chatStateNotifier.updateAttachments(
-                                          clone,
-                                        );
-                                      },
-                                      onMoveAttachment: (idx, delta) {
-                                        if (idx + delta < 0 ||
-                                            idx + delta >=
-                                                inputState.attachments.length) {
-                                          return;
-                                        }
-                                        final clone = List.of(
-                                          inputState.attachments,
-                                        );
-                                        clone.insert(
-                                          idx + delta,
-                                          clone.removeAt(idx),
-                                        );
-                                        chatStateNotifier.updateAttachments(
-                                          clone,
-                                        );
-                                      },
-                                      onAttachmentsChanged:
-                                          chatStateNotifier.updateAttachments,
-                                      attachmentProgress:
-                                          inputState.attachmentProgress,
-                                    );
-                                  },
-                                ),
-                              )
-                            : const SizedBox.shrink(key: ValueKey('no-input')),
-                        error: (_, _) =>
-                            const SizedBox.shrink(key: ValueKey('input-error')),
-                        loading: () => const SizedBox.shrink(
-                          key: ValueKey('input-loading'),
+              // Floating header band: the pill's own gap, then any banner the
+              // room is showing. Measured, so the timeline's padding tracks
+              // the banners coming and going.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: MeasureHeight(
+                  onHeight: (height) => topChromeHeight.value = height,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Transparent gap for the floating pill. The screen's
+                      // own context only carries the status-bar inset — the
+                      // scaffold injects its reserved app-bar band into the
+                      // body subtree — so the pill's full band comes from
+                      // [_roomHeaderBand], the same helper the non-overlay
+                      // branches use. Ignored for pointers: the gap only
+                      // clears the pill, so drags must fall through to the
+                      // timeline behind it.
+                      if (!isSelectionMode)
+                        IgnorePointer(child: _roomHeaderBand(context)),
+                      if (currentRoom != null &&
+                          currentIdentity != null &&
+                          currentRoom.type == 1 &&
+                          currentIdentity.joinedAt != null &&
+                          currentIdentity.confirmedAt == null)
+                        _DirectMessageConfirmationBanner(
+                          chatRoom: currentRoom,
+                          identity: currentIdentity,
+                          isBlocked: currentIdentity.leaveAt != null,
+                          onBlocked: () async {
+                            if (context.mounted) {
+                              context.router.maybePop();
+                            }
+                          },
                         ),
-                      ),
+                      if (pinnedPins.value.isNotEmpty)
+                        PinnedMessagesBar(
+                          pins: pinnedPins.value,
+                          isCollapsed: isPinnedBarCollapsed.value,
+                          onToggleCollapse: () {
+                            isPinnedBarCollapsed.value =
+                                !isPinnedBarCollapsed.value;
+                          },
+                          onTapPin: (pin) {
+                            if (pin.messageId.isNotEmpty) {
+                              jumpAndRevealMessage(pin.messageId);
+                            }
+                          },
+                          onViewAll: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => PinnedMessagesSheet(
+                                roomId: id,
+                                onJumpToMessage: jumpAndRevealMessage,
+                              ),
+                            );
+                          },
+                          fetchMessageById: messagesNotifier.fetchMessageById,
+                        ),
+                    ],
+                  ),
+                ),
               ),
+              // Floating composer band. It is measured for the same reason
+              // the header is: the list pads its newest end by exactly this
+              // height, so the latest message rests just above the composer
+              // even as the composer grows with attachments or wraps to five
+              // lines.
+              // Bottom-only offset on purpose: it leaves the band's height
+              // free, so the band shrink-wraps the composer. Filling the
+              // Stack instead would hand the composer a tight height and
+              // stretch it to the whole page.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MeasureHeight(
+                  onHeight: (height) => composerHeight.value = height,
+                  child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.08),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: isSelectionMode
+                          ? RoomSelectionMode(
+                              key: const ValueKey('selection-bar'),
+                              visible: true,
+                              selectedCount: selectedMessageIds.length,
+                              onClose: chatStateNotifier.exitSelectionMode,
+                              onRedirect: openRedirectSheet,
+                              onRedirectToCurrentChat: redirectToCurrentChat,
+                            )
+                          : chatRoom.when(
+                              data: (room) => room != null
+                                  ? KeyedSubtree(
+                                      key: const ValueKey('chat-input'),
+                                      child: Consumer(
+                                        builder: (context, ref, _) {
+                                          final inputState = ref.watch(
+                                            chatRoomStateProvider(id).select(
+                                              (state) => (
+                                                attachments: state.attachments,
+                                                attachmentProgress:
+                                                    state.attachmentProgress,
+                                                editingTo:
+                                                    state.messageEditingTo,
+                                                replyingTo:
+                                                    state.messageReplyingTo,
+                                                forwardingTo:
+                                                    state.messageForwardingTo,
+                                                embeds: state.embeds,
+                                              ),
+                                            ),
+                                          );
+
+                                          return ChatInput(
+                                            key: inputKey,
+                                            messageController: chatStateNotifier
+                                                .messageController,
+                                            chatRoom: room,
+                                            onSend:
+                                                chatStateNotifier.sendMessage,
+                                            onClear: () {
+                                              if (inputState.editingTo !=
+                                                  null) {
+                                                chatStateNotifier
+                                                    .clearAttachmentsOnly();
+                                              }
+                                              chatStateNotifier.setEditingTo(
+                                                null,
+                                              );
+                                              chatStateNotifier.setReplyingTo(
+                                                null,
+                                              );
+                                              chatStateNotifier.setForwardingTo(
+                                                null,
+                                              );
+                                              chatStateNotifier.clearInput();
+                                            },
+                                            messageEditingTo:
+                                                inputState.editingTo,
+                                            messageReplyingTo:
+                                                inputState.replyingTo,
+                                            messageForwardingTo:
+                                                inputState.forwardingTo,
+                                            embeds: inputState.embeds,
+                                            onEmbedsChanged:
+                                                chatStateNotifier.setEmbeds,
+                                            onPickFile: (isPhoto) {
+                                              if (isPhoto) {
+                                                chatStateNotifier.pickPhotos();
+                                              } else {
+                                                chatStateNotifier.pickVideos();
+                                              }
+                                            },
+                                            onPickAudio:
+                                                chatStateNotifier.pickAudio,
+                                            onPickGeneralFile:
+                                                chatStateNotifier.pickFiles,
+                                            onLinkAttachment: () =>
+                                                chatStateNotifier
+                                                    .linkAttachment(context),
+                                            attachments: inputState.attachments,
+                                            onUploadAttachment:
+                                                uploadAttachment,
+                                            onCancelUploadAttachment: (index) =>
+                                                chatStateNotifier
+                                                    .cancelAttachmentUpload(
+                                                      index,
+                                                    ),
+                                            onDeleteAttachment: (index) async {
+                                              final attachment =
+                                                  inputState.attachments[index];
+                                              // Stop the upload that is running for
+                                              // this attachment, if any.
+                                              chatStateNotifier
+                                                  .cancelAttachmentUpload(
+                                                    index,
+                                                  );
+                                              if (attachment.isOnCloud &&
+                                                  !attachment.isLink) {
+                                                final client = ref.read(
+                                                  apiClientProvider,
+                                                );
+                                                await client.delete(
+                                                  '/fs/files/${attachment.data.id}',
+                                                );
+                                              }
+                                              final clone = List.of(
+                                                inputState.attachments,
+                                              );
+                                              clone.removeAt(index);
+                                              chatStateNotifier
+                                                  .updateAttachments(clone);
+                                            },
+                                            onMoveAttachment: (idx, delta) {
+                                              if (idx + delta < 0 ||
+                                                  idx + delta >=
+                                                      inputState
+                                                          .attachments
+                                                          .length) {
+                                                return;
+                                              }
+                                              final clone = List.of(
+                                                inputState.attachments,
+                                              );
+                                              clone.insert(
+                                                idx + delta,
+                                                clone.removeAt(idx),
+                                              );
+                                              chatStateNotifier
+                                                  .updateAttachments(clone);
+                                            },
+                                            onAttachmentsChanged:
+                                                chatStateNotifier
+                                                    .updateAttachments,
+                                            attachmentProgress:
+                                                inputState.attachmentProgress,
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('no-input'),
+                                    ),
+                              error: (_, _) => const SizedBox.shrink(
+                                key: ValueKey('input-error'),
+                              ),
+                              loading: () => const SizedBox.shrink(
+                                key: ValueKey('input-loading'),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

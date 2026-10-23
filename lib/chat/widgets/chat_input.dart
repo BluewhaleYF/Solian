@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:ui" show ImageFilter;
 import "package:desktop_drop/desktop_drop.dart";
 import "package:easy_localization/easy_localization.dart";
 import "package:flutter/foundation.dart";
@@ -36,6 +37,7 @@ import "package:pasteboard/pasteboard.dart";
 import "package:path_provider/path_provider.dart";
 import "package:record/record.dart" as rec;
 import "package:island/shared/widgets/alert.dart";
+import "package:island/shared/widgets/pill_surface.dart";
 import "package:island/shared/widgets/typeahead_enter_handler.dart";
 import "package:styled_widget/styled_widget.dart";
 import "package:material_symbols_icons/symbols.dart";
@@ -1270,7 +1272,6 @@ class ChatInput extends HookConsumerWidget {
   // Unified embeds list (surveys, funds, locations, meets, calendar events)
   final List<Map<String, dynamic>> embeds;
   final Function(List<Map<String, dynamic>>) onEmbedsChanged;
-  final bool isMessageListScrolling;
 
   const ChatInput({
     super.key,
@@ -1294,7 +1295,6 @@ class ChatInput extends HookConsumerWidget {
     required this.attachmentProgress,
     required this.embeds,
     required this.onEmbedsChanged,
-    required this.isMessageListScrolling,
   });
 
   @override
@@ -1618,60 +1618,27 @@ class ChatInput extends HookConsumerWidget {
         isDraggingOver.value = false;
         await handleDroppedFiles(details);
       },
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            top: 0,
-            child: AnimatedContainer(
-              decoration: BoxDecoration(
-                boxShadow: [
-                  if (isMessageListScrolling)
-                    BoxShadow(
-                      color: Theme.of(context).shadowColor.withOpacity(0.25),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                      offset: const Offset(0, -4),
-                    ),
-                ],
-                borderRadius: BorderRadius.vertical(
-                  top: inputBorderRadius.topLeft,
-                ),
-                color: isMessageListScrolling
-                    ? Theme.of(context).colorScheme.surfaceContainer
-                    : Colors.transparent,
-              ),
-              duration: const Duration(milliseconds: 300),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(
-              top: 10,
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-            ),
-            child: Material(
-              elevation: 2,
-              color: isDraggingOver.value
-                  ? Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest.withOpacity(0.8)
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
-              shape: RoundedRectangleBorder(
-                borderRadius: inputBorderRadius,
-                side: isDraggingOver.value
-                    ? BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5,
-                      )
-                    : BorderSide.none,
-              ),
-              child: Padding(
+      // No scroll-aware backdrop band any more: the composer is glass over
+      // the timeline, so there is nothing to fade in behind it. The old band
+      // also swallowed the pointer over the whole strip, which would stop taps
+      // from reaching the messages the composer floats above.
+      child: Container(
+        margin: EdgeInsets.only(
+          top: 10,
+          left: leftMargin,
+          right: rightMargin,
+          bottom: bottomMargin,
+        ),
+        child: _GlassComposerSurface(
+          radius: inputBorderRadius,
+          highlight: isDraggingOver.value,
+          child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                // `min`: the composer now floats in a band with loose height,
+                // so a stretching Column would grow to the whole page and take
+                // the glass with it.
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _DirectMessageStatusBanner(
                       chatRoom: chatRoom,
@@ -2809,8 +2776,73 @@ class ChatInput extends HookConsumerWidget {
                 ),
               ),
             ),
+        ),
+    );
+  }
+}
+
+/// The composer's frosted shell: the same recipe as the room's floating pill
+/// header — a real [BackdropFilter] over the timeline, tinted towards the page
+/// surface, with a hairline edge and a soft shadow.
+///
+/// A pill fades its glass in only once content slides under it. The composer
+/// never has that resting state: it is the page's primary control and always
+/// floats over the messages being answered, so its glass is always on.
+class _GlassComposerSurface extends StatelessWidget {
+  final BorderRadius radius;
+  final Widget child;
+
+  /// The composer is receiving a dragged file: the edge turns primary, the
+  /// same signal the previous solid surface gave.
+  final bool highlight;
+
+  const _GlassComposerSurface({
+    required this.radius,
+    required this.child,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: ClipRRect(
+        // Load-bearing clip: it bounds the blur's save layer, so the filter
+        // stays inside the composer instead of smearing the page around it.
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: kPillGlassSigma,
+            sigmaY: kPillGlassSigma,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow.withValues(
+                alpha: kPillGlassTint,
+              ),
+              borderRadius: radius,
+              border: Border.all(
+                color: highlight
+                    ? colorScheme.primary
+                    : colorScheme.outlineVariant.withValues(
+                        alpha: kPillBorderOpacity,
+                      ),
+                width: highlight ? 1.5 : 1,
+              ),
+            ),
+            child: Material(type: MaterialType.transparency, child: child),
+          ),
+        ),
       ),
     );
   }

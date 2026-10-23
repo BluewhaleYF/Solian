@@ -156,6 +156,16 @@ class RoomMessageList extends HookConsumerWidget {
   final void Function(String messageId) onJump;
   final Future<void> Function(MessageLoadGap gap) onLoadMessageGap;
 
+  /// Height of the chrome painted above the list. The list pads its oldest
+  /// end by this much, so the first rows clear the floating header instead of
+  /// hiding under it.
+  final double topInset;
+
+  /// Height of the chrome painted below the list. In a `reverse: true` list
+  /// the newest rows sit at the viewport's bottom edge, so this keeps them
+  /// clear of the composer.
+  final double bottomInset;
+
   const RoomMessageList({
     super.key,
     required this.roomId,
@@ -164,6 +174,8 @@ class RoomMessageList extends HookConsumerWidget {
     required this.chatIdentity,
     required this.onJump,
     required this.onLoadMessageGap,
+    this.topInset = 0,
+    this.bottomInset = 0,
   });
 
   @override
@@ -288,7 +300,13 @@ class RoomMessageList extends HookConsumerWidget {
       listController: chatStateNotifier.listController,
       controller: chatStateNotifier.scrollController,
       reverse: true,
-      padding: const EdgeInsets.only(top: 8),
+      // Padding is visual, not scroll-relative: even with `reverse: true` the
+      // `top` inset sits above the newest rows and the `bottom` inset below
+      // the oldest. The floating header covers the top band and the composer
+      // the bottom one, so each side pads by the height the page measured for
+      // that chrome. Without it the newest message would rest under the
+      // composer, and scrolled-to-the-top rows under the header.
+      padding: EdgeInsets.only(top: topInset, bottom: bottomInset + 8),
       itemCount: displayMessages.length,
       findChildIndexCallback: (key) {
         if (displayMessages.isEmpty) return null;
@@ -452,6 +470,9 @@ class RoomMessageList extends HookConsumerWidget {
                 avatarRadius: useColumnDisplay ? 12 : 16,
                 avatarAnchorKey: groupAvatarAnchorKey,
                 stickyEnabled: !disableAnimationSetting,
+                // The header floats over the list, so a pinned avatar has to
+                // stop below it instead of under it.
+                stickyTopMargin: topInset + _StickyBubbleMessageGroup.kRestGap,
                 children: groupChildren,
               )
             : buildMessage(
@@ -609,13 +630,16 @@ class _LastReadMarker extends StatelessWidget {
 }
 
 class _StickyBubbleMessageGroup extends StatelessWidget {
-  static const double _viewportTopMargin = 12;
+  /// Distance from the viewport top a pinned avatar rests at, before the
+  /// floating header's own height is added.
+  static const double kRestGap = 12;
 
   final String roomId;
   final SnChatMember sender;
   final double avatarRadius;
   final GlobalKey? avatarAnchorKey;
   final bool stickyEnabled;
+  final double stickyTopMargin;
   final List<Widget> children;
 
   const _StickyBubbleMessageGroup({
@@ -625,6 +649,7 @@ class _StickyBubbleMessageGroup extends StatelessWidget {
     required this.avatarRadius,
     required this.avatarAnchorKey,
     required this.stickyEnabled,
+    required this.stickyTopMargin,
     required this.children,
   });
 
@@ -645,7 +670,7 @@ class _StickyBubbleMessageGroup extends StatelessWidget {
           top: 0,
           child: StickyAvatarBox(
             anchorKey: avatarAnchorKey,
-            topMargin: _viewportTopMargin,
+            topMargin: stickyTopMargin,
             enabled: stickyEnabled,
             child: RepaintBoundary(
               child: ChatRoomMemberRegion(

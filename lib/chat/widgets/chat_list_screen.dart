@@ -1250,9 +1250,19 @@ class ChatFabWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userInfo = ref.watch(userInfoProvider);
+    final chatInvites = ref.watch(chatroomInvitesProvider);
 
     if (userInfo.value == null) {
       return const SizedBox.shrink();
+    }
+
+    Future<void> openInvites() async {
+      await showModalBottomSheet(
+        useRootNavigator: true,
+        isScrollControlled: true,
+        context: context,
+        builder: (context) => const ChatInvitesSheet(),
+      );
     }
 
     return FloatingActionButton(
@@ -1309,6 +1319,26 @@ class ChatFabWidget extends HookConsumerWidget {
                     showErrorAlert(err);
                   }
                 },
+              ),
+              ListTile(
+                title: const Text('invites').tr(),
+                leading: const Icon(Symbols.mail),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                trailing: Badge(
+                  label: Text(
+                    chatInvites.when(
+                      data: (invites) => invites.length.toString(),
+                      error: (_, _) => '0',
+                      loading: () => '0',
+                    ),
+                  ),
+                  isLabelVisible: chatInvites.when(
+                    data: (invites) => invites.isNotEmpty,
+                    error: (_, _) => false,
+                    loading: () => false,
+                  ),
+                ),
+                onTap: openInvites,
               ),
               const Gap(16),
             ],
@@ -1406,49 +1436,6 @@ const _chatSections = <_ChatSection>[
   _ChatSection(label: 'chatTabGroup', icon: Symbols.group),
 ];
 
-/// Chat invite action moved from the old inline header into the app bar's
-/// trailing actions.
-class _ChatInviteButton extends HookConsumerWidget {
-  final Color foreground;
-
-  const _ChatInviteButton({required this.foreground});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chatInvites = ref.watch(chatroomInvitesProvider);
-
-    Future<void> openInvites() async {
-      await showModalBottomSheet(
-        useRootNavigator: true,
-        isScrollControlled: true,
-        context: context,
-        builder: (context) => const ChatInvitesSheet(),
-      );
-    }
-
-    return IconButton(
-      tooltip: 'Chat Invites',
-      color: foreground,
-      onPressed: openInvites,
-      icon: Badge(
-        label: Text(
-          chatInvites.when(
-            data: (invites) => invites.length.toString(),
-            error: (_, _) => '0',
-            loading: () => '0',
-          ),
-        ),
-        isLabelVisible: chatInvites.when(
-          data: (invites) => invites.isNotEmpty,
-          error: (_, _) => false,
-          loading: () => false,
-        ),
-        child: Icon(Symbols.email),
-      ),
-    );
-  }
-}
-
 class _MarkAllReadButton extends ConsumerWidget {
   final Color? color;
 
@@ -1511,14 +1498,6 @@ class ChatListWidget extends HookConsumerWidget {
       ref.invalidate(chatGroupsProvider);
     }
 
-    Future<void> openInvitesSheet() async {
-      await showModalBottomSheet(
-        useRootNavigator: true,
-        isScrollControlled: true,
-        context: context,
-        builder: (context) => const ChatInvitesSheet(),
-      );
-    }
 
     useEffect(() {
       tabController.addListener(() {
@@ -1586,8 +1565,6 @@ class ChatListWidget extends HookConsumerWidget {
     const maxSidebarWidth = 520.0;
 
     if (asideLayout) {
-      final chatInvites = ref.watch(chatroomInvitesProvider);
-
       // No outer card: the pane floats on the page background, so only the pill
       // header carries a surface.
       return SizedBox(
@@ -1628,25 +1605,6 @@ class ChatListWidget extends HookConsumerWidget {
                       ),
                     ),
                     const _MarkAllReadButton(),
-                    IconButton(
-                      tooltip: 'invites'.tr(),
-                      onPressed: openInvitesSheet,
-                      icon: Badge(
-                        label: Text(
-                          chatInvites.when(
-                            data: (invites) => invites.length.toString(),
-                            error: (_, _) => '0',
-                            loading: () => '0',
-                          ),
-                        ),
-                        isLabelVisible: chatInvites.when(
-                          data: (invites) => invites.isNotEmpty,
-                          error: (_, _) => false,
-                          loading: () => false,
-                        ),
-                        child: const Icon(Symbols.mail),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -1729,7 +1687,6 @@ class ChatListWidget extends HookConsumerWidget {
                 ),
               ),
             _MarkAllReadButton(color: appBarForeground),
-            _ChatInviteButton(foreground: appBarForeground),
           ],
         ),
       ),

@@ -22,7 +22,10 @@ const double kPillGlassSigma = 14.0;
 const double kPillGlassTint = 0.4;
 
 /// Alpha of the hairline outlining the glass once it is fully surfaced.
-const double _kPillBorderOpacity = 0.5;
+///
+/// Public so other floating chrome built from the same glass recipe — the chat
+/// composer, for one — draws an edge of the same weight as the pills.
+const double kPillBorderOpacity = 0.5;
 
 /// Stroke of the ring a loading pill paints along its own edge.
 const double _kPillRingStroke = 2.0;
@@ -136,7 +139,7 @@ class PillSurface extends StatelessWidget {
                   ? null
                   : Border.all(
                       color: colorScheme.outlineVariant.withValues(
-                        alpha: _kPillBorderOpacity * t,
+                        alpha: kPillBorderOpacity * t,
                       ),
                     ),
               boxShadow: t == 0

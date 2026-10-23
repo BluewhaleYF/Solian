@@ -546,7 +546,6 @@ class _ThreadComposer extends StatelessWidget {
       attachmentProgress: attachmentProgress,
       embeds: const [],
       onEmbedsChanged: (_) {},
-      isMessageListScrolling: false,
     );
   }
 }
