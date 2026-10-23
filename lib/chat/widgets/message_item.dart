@@ -84,11 +84,18 @@ Map<String, bool> getMessageReactionsMade(LocalChatMessage message) {
   return raw.map((key, value) => MapEntry(key.toString(), value == true));
 }
 
+/// Left inset of the accessories that hang below a message row (reaction
+/// chips, thread chip, pinned label).
+///
+/// Bubble mode aligns them with the bubble's own left edge, which is the row
+/// inset plus the avatar gutter. That offset is owned by
+/// [MessageItemDisplayBubble.contentOffset]; hardcoding a copy of it here is
+/// how the chips drift left as soon as the avatar changes size.
 double _messageAccessoryLeftPadding(String displayStyle) {
   return switch (displayStyle) {
     'compact' => 12,
     'column' => 44,
-    _ => 52,
+    _ => 12 + MessageItemDisplayBubble.contentOffset,
   };
 }
 
@@ -1500,10 +1507,7 @@ class MessageReactionChips extends HookConsumerWidget {
       );
 
     final sectionPadding = insideBubble
-        // Matches the bubble body's own horizontal inset so chips line up
-        // with the text above them, and keeps a full 10px below so the chips
-        // sit inside the bubble rather than on its edge.
-        ? const EdgeInsets.fromLTRB(14, 4, 14, 10)
+        ? const EdgeInsets.only(left: 10, right: 10, bottom: 6)
         : EdgeInsets.only(
             left: _messageAccessoryLeftPadding(displayStyle),
             right: 12,
@@ -1605,13 +1609,18 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
   static const double _avatarSize = _avatarRadius * 2;
   static const double _avatarGap = 8;
 
+  /// Radius of the sender avatar drawn in the row's gutter. Public because
+  /// the grouped layout draws the same avatar from the list, outside this
+  /// widget; a second copy of the number there would drift.
+  static const double avatarRadius = _avatarRadius;
+
   /// Distance from the row's left edge to the bubble's left edge: the avatar
   /// plus the gap that separates it from the bubble.
   static const double contentOffset = _avatarSize + _avatarGap;
 
-  /// Inset inside the bubble. Enough that the text never touches the edge,
-  /// tight enough that a one-line message stays a bubble and not a bar.
-  static const EdgeInsets _bodyPadding = EdgeInsets.fromLTRB(12, 8, 12, 8);
+  /// Inset inside the bubble. Same numbers as before the redesign: the text
+  /// block is what the reader scans, so its rhythm is left alone.
+  static const EdgeInsets _bodyPadding = EdgeInsets.fromLTRB(10, 6, 10, 6);
 
   /// Vertical gap between two bubbles of the same sender group. Small enough
   /// that the squared corners still read as one connected block.
@@ -1751,7 +1760,7 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
       final showsForward =
           remoteMessage.forwardedMessageId != null && !isRedirect;
       final topCorners = BorderRadius.only(
-        topLeft: Radius.circular(connectsAbove ? 0 : bubbleShape.tailRadius),
+        topLeft: Radius.circular(connectsAbove ? 0 : bubbleShape.radius),
         topRight: Radius.circular(bubbleShape.radius),
       );
 
@@ -1794,14 +1803,8 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
               ),
             if (hasBodyContent || hasProgress)
               Padding(
-                // The bottom inset collapses when something follows the text
-                // inside the bubble (reactions, the mention hint): those
-                // children carry their own leading gap, and doubling it would
-                // reopen the cramped look this padding exists to fix.
                 padding: _bodyPadding.copyWith(
-                  bottom: (reactions != null || isMentioningCurrentUser)
-                      ? 6
-                      : _bodyPadding.bottom,
+                  bottom: isMentioningCurrentUser ? 2 : _bodyPadding.bottom,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2611,7 +2614,9 @@ class MessageQuoteWidget extends HookConsumerWidget {
         child: InkWell(
           onTap: jumpToQuoted,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            // Same inset as the bubble body, so the band's text and the
+            // message text below it start on the same left edge.
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
             child: body,
           ),
         ),
@@ -2629,7 +2634,7 @@ class MessageQuoteWidget extends HookConsumerWidget {
         child: InkWell(
           onTap: jumpToQuoted,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
             child: body,
           ),
         ),

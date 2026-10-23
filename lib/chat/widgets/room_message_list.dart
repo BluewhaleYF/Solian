@@ -9,6 +9,7 @@ import 'package:island/chat/widgets/chat_room_member_card.dart';
 import 'package:island/chat/pods/chat_room_state.dart';
 import 'package:island/chat/widgets/message_item_wrapper.dart';
 import 'package:island/chat/widgets/online_avatar_badge.dart';
+import 'package:island/chat/widgets/message_item.dart';
 import 'package:island/chat/widgets/sticky_avatar_box.dart';
 import 'package:island/core/config.dart';
 import 'package:island/data/message.dart';
@@ -467,7 +468,13 @@ class RoomMessageList extends HookConsumerWidget {
                 ),
                 roomId: roomId,
                 sender: message.toRemoteMessage().sender,
-                avatarRadius: useColumnDisplay ? 12 : 16,
+                // The grouped overlay draws the same avatar the row would,
+                // so it has to take the radius from the renderer rather than
+                // its own copy: a mismatch shows up as the avatar jumping
+                // size when a group gains its second message.
+                avatarRadius: useColumnDisplay
+                    ? 12
+                    : MessageItemDisplayBubble.avatarRadius,
                 avatarAnchorKey: groupAvatarAnchorKey,
                 stickyEnabled: !disableAnimationSetting,
                 // The header floats over the list, so a pinned avatar has to
