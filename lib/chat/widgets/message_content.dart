@@ -32,11 +32,17 @@ class MessageContent extends StatelessWidget {
   final String? translatedText;
   final bool isSelectable;
 
+  /// Body type for the message text. Chat sets a slightly larger, looser
+  /// body than the app default: a message is read in a narrow column at a
+  /// glance, not as a paragraph in a document.
+  final TextStyle? textStyle;
+
   const MessageContent({
     super.key,
     required this.item,
     this.translatedText,
     this.isSelectable = true,
+    this.textStyle,
   });
 
   @override
@@ -287,6 +293,7 @@ class MessageContent extends StatelessWidget {
                   content: resolvedContent ?? '*${item.type} has no content*',
                   isSelectable: isSelectable,
                   linesMargin: EdgeInsets.zero,
+                  textStyle: textStyle,
                   // A message that is only a post link carries the post itself:
                   // pasting a link into chat is how it gets shared.
                   embedPostLinks: true,
@@ -317,6 +324,7 @@ class MessageContent extends StatelessWidget {
                     content: translatedText!,
                     isSelectable: isSelectable,
                     linesMargin: EdgeInsets.zero,
+                    textStyle: textStyle,
                   ),
                 ),
               ]),
@@ -576,18 +584,15 @@ class _VoiceMessageContent extends HookConsumerWidget {
             onPressed: mediaUrl == null
                 ? null
                 : () async {
-                    final controller = ref.read(
-                      mediaPlaybackProvider.notifier,
-                    );
+                    final controller = ref.read(mediaPlaybackProvider.notifier);
                     if (isActive) {
                       if (isPlaying) {
                         await controller.player.pause();
                       } else {
                         final replayFromStart =
                             total.inMilliseconds > 0 &&
-                            position >= total - const Duration(
-                              milliseconds: 250,
-                            );
+                            position >=
+                                total - const Duration(milliseconds: 250);
                         if (replayFromStart) {
                           await controller.player.seek(Duration.zero);
                         }
@@ -649,9 +654,7 @@ class _VoiceMessageContent extends HookConsumerWidget {
                                 source: 'chat:${item.chatRoomId}',
                               );
                             }
-                            await controller.player.seek(
-                              scrubPosition.value,
-                            );
+                            await controller.player.seek(scrubPosition.value);
                             isScrubbing.value = false;
                           },
                   ),

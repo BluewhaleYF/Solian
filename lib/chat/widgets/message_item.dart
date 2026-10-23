@@ -27,6 +27,7 @@ import 'package:island/core/utils/share_utils.dart';
 import 'package:island/data/message.dart';
 import 'package:island/chat/pods/chat_room.dart';
 import 'package:island/core/translate.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -43,6 +44,18 @@ import 'package:super_context_menu/super_context_menu.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 final kTextSelectable = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+/// Body type for a message in every display style.
+///
+/// The size is the app's own body scale: chat reads at the same size as the
+/// rest of the app. Only the leading is loosened slightly, because a message
+/// column is narrow and lines wrap often. The colour is passed in because it
+/// differs per style and per direction.
+TextStyle chatMessageBodyStyle(BuildContext context, Color color) {
+  return Theme.of(
+    context,
+  ).textTheme.bodyMedium!.copyWith(height: 1.45, color: color);
+}
 
 class MessageItemAction {
   static const String edit = "edit";
@@ -643,7 +656,9 @@ class MessageItem extends HookConsumerWidget {
                                 translating: translating.value,
                                 // Bubble mode carries the chips inside the
                                 // bubble; the other styles keep them below.
-                                reactions: buildReactionChips(insideBubble: true),
+                                reactions: buildReactionChips(
+                                  insideBubble: true,
+                                ),
                               ),
                             },
                             if (settings.messageDisplayStyle == 'compact' ||
@@ -1031,10 +1046,15 @@ class _ActionSection extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      padding: const EdgeInsets.fromLTRB(
+        SolSpace.md,
+        SolSpace.sm,
+        SolSpace.md,
+        0,
+      ),
       child: Material(
         color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: SolRadius.cardRadius,
         clipBehavior: Clip.antiAlias,
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
       ),
@@ -1064,9 +1084,14 @@ class _ActionListTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: SolRadius.controlRadius,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // 12px vertical keeps the row a comfortable target without the
+        // stretch that makes a six-item sheet feel like a settings page.
+        padding: const EdgeInsets.symmetric(
+          horizontal: SolSpace.lg,
+          vertical: SolSpace.md,
+        ),
         child: DefaultTextStyle.merge(
           style: TextStyle(color: foreground),
           child: IconTheme.merge(
@@ -1074,12 +1099,14 @@ class _ActionListTile extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(width: 24, height: 24, child: leading),
-                const Gap(12),
+                const Gap(SolSpace.md),
                 Expanded(child: title),
                 Icon(
                   Symbols.chevron_right,
                   size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -1113,41 +1140,48 @@ class _QuickReactionChip extends StatelessWidget {
         ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurface;
     final borderColor = isMade
-        ? theme.colorScheme.primary.withOpacity(0.4)
-        : theme.colorScheme.outlineVariant.withOpacity(0.4);
+        ? theme.colorScheme.primary.withValues(alpha: 0.4)
+        : Colors.transparent;
+    final label = ReactInfo.getTranslationKey(symbol).tr();
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildReactionIcon(symbol, 22, iconSize: 16),
-            const Gap(6),
-            Text(
-              ReactInfo.getTranslationKey(symbol),
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: foregroundColor,
-              ),
-            ).tr(),
-            if (count > 0) ...[
-              const Gap(6),
-              Text(
-                count.toString(),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: foregroundColor.withOpacity(0.8),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ],
+    // Icon and tally only. Spelling out "Thumbs Up" on six chips turned the
+    // reaction row into a sentence; the glyph is the label, and the name is
+    // kept for screen readers and the long-press tooltip.
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        label: label,
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: SolRadius.pillRadius,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: count > 0 ? 12 : 10,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: SolRadius.pillRadius,
+              border: Border.all(color: borderColor),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                buildReactionIcon(symbol, 22, iconSize: 18),
+                if (count > 0) ...[
+                  const Gap(6),
+                  Text(
+                    count.toString(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: foregroundColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1466,7 +1500,10 @@ class MessageReactionChips extends HookConsumerWidget {
       );
 
     final sectionPadding = insideBubble
-        ? const EdgeInsets.only(left: 10, right: 10, bottom: 6)
+        // Matches the bubble body's own horizontal inset so chips line up
+        // with the text above them, and keeps a full 10px below so the chips
+        // sit inside the bubble rather than on its edge.
+        ? const EdgeInsets.fromLTRB(14, 4, 14, 10)
         : EdgeInsets.only(
             left: _messageAccessoryLeftPadding(displayStyle),
             right: 12,
@@ -1501,8 +1538,8 @@ class MessageReactionChips extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(999),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: reactionsMade[symbol] == true
@@ -1522,22 +1559,34 @@ class MessageReactionChips extends HookConsumerWidget {
                           children: [
                             if (symbol.contains('+'))
                               SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 18,
+                                height: 18,
                                 child: UniversalImage(
                                   uri:
                                       '$baseUrl/sphere/stickers/lookup/$symbol/open',
-                                  width: 20,
-                                  height: 20,
+                                  width: 18,
+                                  height: 18,
                                   fit: BoxFit.contain,
                                 ),
                               )
                             else
-                              buildReactionIcon(symbol, 20, iconSize: 14),
-                            const SizedBox(width: 6),
+                              buildReactionIcon(symbol, 18, iconSize: 13),
+                            const SizedBox(width: 5),
+                            // The count alone: "x3" adds a glyph that reads as
+                            // syntax. A number next to a reaction is already
+                            // understood as its tally.
                             Text(
-                              'x${reactionsCount[symbol] ?? 0}',
-                              style: Theme.of(context).textTheme.labelMedium,
+                              '${reactionsCount[symbol] ?? 0}',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: reactionsMade[symbol] == true
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -1552,10 +1601,24 @@ class MessageReactionChips extends HookConsumerWidget {
 }
 
 class MessageItemDisplayBubble extends HookConsumerWidget {
-  static const double _avatarRadius = 16;
+  static const double _avatarRadius = 18;
   static const double _avatarSize = _avatarRadius * 2;
   static const double _avatarGap = 8;
-  static const double _contentOffset = _avatarSize + _avatarGap;
+
+  /// Distance from the row's left edge to the bubble's left edge: the avatar
+  /// plus the gap that separates it from the bubble.
+  static const double contentOffset = _avatarSize + _avatarGap;
+
+  /// Inset inside the bubble. Enough that the text never touches the edge,
+  /// tight enough that a one-line message stays a bubble and not a bar.
+  static const EdgeInsets _bodyPadding = EdgeInsets.fromLTRB(12, 8, 12, 8);
+
+  /// Vertical gap between two bubbles of the same sender group. Small enough
+  /// that the squared corners still read as one connected block.
+  static const double _groupGap = 1;
+
+  /// Vertical gap around a sender group.
+  static const double _groupOuterGap = 5;
 
   final LocalChatMessage message;
   final bool isCurrentUser;
@@ -1595,12 +1658,23 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    // Body text is the message: it sits at full contrast in both directions.
+    // The previous `onSurfaceVariant` greyed every incoming message by a step,
+    // which read as "disabled" next to the outgoing bubbles.
     final textColor = isCurrentUser
-        ? Theme.of(context).colorScheme.onPrimaryContainer
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+        ? colorScheme.onPrimaryContainer
+        : colorScheme.onSurface;
+    // Both directions are one tonal step above the page: incoming on the
+    // higher surface so it lifts off the paper, outgoing in the accent
+    // container held back from full saturation so a long thread of your own
+    // messages does not shout.
     final containerColor = isCurrentUser
-        ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5)
-        : Theme.of(context).colorScheme.surfaceContainer;
+        ? colorScheme.primaryContainer.withValues(alpha: 0.72)
+        : colorScheme.surfaceContainerHigh;
+
+    final bodyStyle = chatMessageBodyStyle(context, textColor);
 
     // Group geometry: the avatar sits at the top of the group, so the corner
     // closest to it is the top-left of the oldest bubble. The corners where
@@ -1649,23 +1723,15 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
             'small'
         ? 200.0
         : 560.0;
+    // The reference bands (reply, forward) are full-bleed children of the
+    // bubble, not body content: counting them here would leave an empty
+    // padded strip under a quote-only message.
     final hasBodyContent =
-        remoteMessage.repliedMessageId != null ||
         remoteMessage.meta['redirect'] is Map ||
-        (remoteMessage.forwardedMessageId != null && !isRedirect) ||
         (!isRedirect && MessageContent.hasContent(remoteMessage)) ||
         (remoteMessage.meta['embeds'] != null &&
             kMessageEnableEmbedTypes.contains(message.type));
     final hasProgress = progress != null && progress!.isNotEmpty;
-    // The attachment sits at the top of the bubble, so its corners must
-    // follow the group connection state: squared where a bubble of the same
-    // group meets, rounded elsewhere.
-    final attachmentBorderRadius = hasBodyContent || hasProgress
-        ? BorderRadius.only(
-            topLeft: Radius.circular(connectsAbove ? 0 : 16),
-            topRight: const Radius.circular(16),
-          )
-        : bubbleShape.borderRadius;
     // Files are clipped a second time inside [CloudFileList]. That inner
     // rounding must never round a corner the block keeps square: the notch
     // would expose the bubble fill exactly where the block meets the body or
@@ -1674,9 +1740,21 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
     final attachmentItemBorderRadius =
         hasBodyContent || hasProgress || connectsAbove || connectsBelow
         ? 0.0
-        : 16.0;
+        : bubbleShape.radius;
 
     Widget buildMessageBody() {
+      // The reference band owns the bubble's top edge when present: it is
+      // drawn full-bleed with the bubble's own top corners, so the quote and
+      // the message read as one sheet with a seam instead of a card pasted
+      // inside a bubble. Attachments follow the same rule.
+      final showsReply = remoteMessage.repliedMessageId != null;
+      final showsForward =
+          remoteMessage.forwardedMessageId != null && !isRedirect;
+      final topCorners = BorderRadius.only(
+        topLeft: Radius.circular(connectsAbove ? 0 : bubbleShape.tailRadius),
+        topRight: Radius.circular(bubbleShape.radius),
+      );
+
       return Container(
         decoration: BoxDecoration(
           color: containerColor,
@@ -1687,9 +1765,25 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (showsReply)
+              MessageQuoteWidget(
+                message: message,
+                textColor: textColor,
+                isReply: true,
+                borderRadius: topCorners,
+              ),
+            if (showsForward)
+              MessageQuoteWidget(
+                message: message,
+                textColor: textColor,
+                isReply: false,
+                borderRadius: showsReply ? BorderRadius.zero : topCorners,
+              ),
             if (!isRedirect && remoteMessage.attachments.isNotEmpty)
               ClipRRect(
-                borderRadius: attachmentBorderRadius,
+                borderRadius: (showsReply || showsForward || hasBodyContent)
+                    ? BorderRadius.zero
+                    : bubbleShape.borderRadius,
                 child: CloudFileList(
                   files: remoteMessage.attachments,
                   maxHeight: attachmentMaxH,
@@ -1700,22 +1794,19 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
               ),
             if (hasBodyContent || hasProgress)
               Padding(
-                padding: EdgeInsets.only(
-                  left: 10,
-                  right: 10,
-                  top: 6,
-                  bottom: isMentioningCurrentUser ? 2 : 6,
+                // The bottom inset collapses when something follows the text
+                // inside the bubble (reactions, the mention hint): those
+                // children carry their own leading gap, and doubling it would
+                // reopen the cramped look this padding exists to fix.
+                padding: _bodyPadding.copyWith(
+                  bottom: (reactions != null || isMentioningCurrentUser)
+                      ? 6
+                      : _bodyPadding.bottom,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (remoteMessage.repliedMessageId != null)
-                      MessageQuoteWidget(
-                        message: message,
-                        textColor: textColor,
-                        isReply: true,
-                      ).padding(vertical: 4),
                     if (remoteMessage.meta['redirect'] is Map)
                       (() {
                         final data = SnRedirectData.fromJson(
@@ -1727,23 +1818,18 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
                           historySegment: (_) => RedirectMessageCard(
                             redirect: data,
                             textColor: textColor,
-                          ).padding(vertical: 4),
+                          ),
                           singleMessage: (_) => RedirectInlineContent(
                             redirect: data,
                             textColor: textColor,
-                          ).padding(vertical: 4),
+                          ),
                         );
                       })(),
-                    if (remoteMessage.forwardedMessageId != null && !isRedirect)
-                      MessageQuoteWidget(
-                        message: message,
-                        textColor: textColor,
-                        isReply: false,
-                      ).padding(vertical: 4),
                     if (!isRedirect && MessageContent.hasContent(remoteMessage))
                       MessageContent(
                         item: remoteMessage,
                         translatedText: translatedText,
+                        textStyle: bodyStyle,
                       ),
                     if (remoteMessage.meta['embeds'] != null &&
                         kMessageEnableEmbedTypes.contains(message.type))
@@ -1765,7 +1851,7 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
             ?reactions,
             if (isMentioningCurrentUser)
               Padding(
-                padding: const EdgeInsets.only(left: 10, right: 10, bottom: 6),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                 child: _MentionHint(textColor: textColor),
               ),
           ],
@@ -1776,14 +1862,14 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: Padding(
-        // Group members sit close together (2px total gap) so the squared
-        // corners read as connected; the group's outer edges keep the
-        // standard 5px breathing room.
+        // Group members sit [_groupGap] apart so the squared corners still
+        // read as one connected block; the group's outer edges get the wider
+        // [_groupOuterGap].
         padding: EdgeInsets.only(
           left: 12,
           right: 12,
-          top: isLastInGroup ? 5 : 1,
-          bottom: isFirstInGroup ? 5 : 1,
+          top: isLastInGroup ? _groupOuterGap : _groupGap,
+          bottom: isFirstInGroup ? _groupOuterGap : _groupGap,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1791,7 +1877,7 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
           children: [
             if (showAvatar)
               Padding(
-                padding: const EdgeInsets.only(left: _contentOffset, bottom: 4),
+                padding: const EdgeInsets.only(left: contentOffset, bottom: 4),
                 child: header,
               ),
             _StickyAvatarMessageRow(
@@ -1830,7 +1916,7 @@ class MessageItemDisplayBubble extends HookConsumerWidget {
 /// avatar, so a long message keeps a visible sender.
 class _StickyAvatarMessageRow extends StatelessWidget {
   static const double _size = MessageItemDisplayBubble._avatarSize;
-  static const double _contentOffset = MessageItemDisplayBubble._contentOffset;
+  static const double _contentOffset = MessageItemDisplayBubble.contentOffset;
   static const double _viewportTopMargin = 12;
 
   final bool showAvatar;
@@ -1902,7 +1988,8 @@ class MessageItemDisplayIRC extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final remoteMessage = message.toRemoteMessage();
     final sender = remoteMessage.sender;
-    final textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = colorScheme.onSurface;
     final isRedirect = remoteMessage.meta['redirect'] is Map;
     final currentUserId = ref.watch(userInfoProvider).value?.id;
     final isMentioningCurrentUser =
@@ -1915,7 +2002,10 @@ class MessageItemDisplayIRC extends HookConsumerWidget {
         message.forwardedMessageId != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      // Compact is a dense style by definition, but the previous 2px vertical
+      // left consecutive rows touching. 4px is the smallest gap that still
+      // reads as separate messages without turning into the bubble style.
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         crossAxisAlignment: isMultiline
             ? CrossAxisAlignment.start
@@ -2018,6 +2108,10 @@ class MessageItemDisplayIRC extends HookConsumerWidget {
                             MessageContent(
                               item: remoteMessage,
                               translatedText: translatedText,
+                              textStyle: chatMessageBodyStyle(
+                                context,
+                                textColor,
+                              ),
                             ),
                           if (remoteMessage.meta['embeds'] != null &&
                               kMessageEnableEmbedTypes.contains(message.type))
@@ -2090,7 +2184,8 @@ class MessageItemDisplayDiscord extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = colorScheme.onSurface;
     final remoteMessage = message.toRemoteMessage();
     final sender = remoteMessage.sender;
     final isRedirect = remoteMessage.meta['redirect'] is Map;
@@ -2102,7 +2197,10 @@ class MessageItemDisplayDiscord extends HookConsumerWidget {
     const kAvatarRadius = 12.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      // Column style keeps its airy gutter, but consecutive rows need a
+      // visible break: the body text of one row must not read as the header of
+      // the next.
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: showAvatar
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2205,6 +2303,10 @@ class MessageItemDisplayDiscord extends HookConsumerWidget {
                             MessageContent(
                               item: remoteMessage,
                               translatedText: translatedText,
+                              textStyle: chatMessageBodyStyle(
+                                context,
+                                textColor,
+                              ),
                             ),
                           if (remoteMessage.meta['embeds'] != null &&
                               kMessageEnableEmbedTypes.contains(message.type))
@@ -2317,6 +2419,10 @@ class MessageItemDisplayDiscord extends HookConsumerWidget {
                               MessageContent(
                                 item: remoteMessage,
                                 translatedText: translatedText,
+                                textStyle: chatMessageBodyStyle(
+                                  context,
+                                  textColor,
+                                ),
                               ),
                             if (remoteMessage.meta['embeds'] != null &&
                                 kMessageEnableEmbedTypes.contains(message.type))
@@ -2398,11 +2504,17 @@ class MessageQuoteWidget extends HookConsumerWidget {
   final Color textColor;
   final bool isReply;
 
+  /// When set, the quote is drawn as a full-bleed band with these corner
+  /// radii instead of a floating card: the bubble passes its own top corners
+  /// so the band merges into the bubble the way an attachment does.
+  final BorderRadius? borderRadius;
+
   const MessageQuoteWidget({
     super.key,
     required this.message,
     required this.textColor,
     required this.isReply,
+    this.borderRadius,
   });
 
   @override
@@ -2429,61 +2541,100 @@ class MessageQuoteWidget extends HookConsumerWidget {
     final remoteMessage = cachedQuote?.value?.toRemoteMessage();
     if (remoteMessage == null) return const SizedBox.shrink();
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
-      child: GestureDetector(
-        onTap: () {
-          final ancestor = context.findAncestorWidgetOfExactType<MessageItem>();
-          ancestor?.onJump(quotedMessageId);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-          color: Theme.of(context).colorScheme.primaryFixedDim.withOpacity(0.4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isReply)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 4,
-                  children: [
-                    Icon(Symbols.reply, size: 16, color: textColor),
-                    Text(
-                      '${'repliedTo'.tr()} ${remoteMessage.sender.account.nick}',
-                    ).textColor(textColor).bold(),
-                  ],
-                ).padding(right: 8)
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 4,
-                  children: [
-                    Icon(Symbols.forward, size: 16, color: textColor),
-                    Text(
-                      '${'forwarded'.tr()} ${remoteMessage.sender.account.nick}',
-                    ).textColor(textColor).bold(),
-                  ],
-                ).padding(right: 8),
-              if (MessageContent.hasContent(remoteMessage))
-                MessageContent(item: remoteMessage),
-              if (remoteMessage.attachments.isNotEmpty)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 180),
-                  child: CloudFileList(
-                    files: remoteMessage.attachments,
-                    maxWidth: 180,
-                    maxHeight: 96,
-                    minWidth: 120,
-                    initiallyCollapsed: false,
-                    heroTagPrefix: 'cloud-file-quote-${message.id}',
-                    padding: const EdgeInsets.only(top: 4),
-                  ),
+    final merged = borderRadius;
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isReply ? Symbols.reply : Symbols.forward,
+              size: 14,
+              color: textColor.withValues(alpha: 0.75),
+            ),
+            const Gap(6),
+            Flexible(
+              child: Text(
+                '${isReply ? 'repliedTo'.tr() : 'forwarded'.tr()} '
+                '${remoteMessage.sender.account.nick}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: textColor.withValues(alpha: 0.85),
                 ),
-            ],
+              ),
+            ),
+          ],
+        ),
+        if (MessageContent.hasContent(remoteMessage))
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Opacity(
+              opacity: 0.85,
+              child: MessageContent(item: remoteMessage, isSelectable: false),
+            ),
+          ),
+        if (remoteMessage.attachments.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: CloudFileList(
+              files: remoteMessage.attachments,
+              maxWidth: 180,
+              maxHeight: 96,
+              minWidth: 120,
+              initiallyCollapsed: false,
+              heroTagPrefix: 'cloud-file-quote-${message.id}',
+              padding: const EdgeInsets.only(top: 6),
+            ),
+          ),
+      ],
+    );
+
+    void jumpToQuoted() {
+      final ancestor = context.findAncestorWidgetOfExactType<MessageItem>();
+      ancestor?.onJump(quotedMessageId);
+    }
+
+    if (merged != null) {
+      // Merged: a full-bleed band at the top of the bubble, painted as a
+      // wash of the bubble's own surface rather than a second colour.
+      // `onSurface` is near-black in light mode and near-white in dark mode,
+      // so the band always reads as one step away from the bubble it sits in.
+      // The bubble clips it to its own outline, so the band and the body read
+      // as one sheet with a seam — the same construction the attachment block
+      // uses above the text.
+      return Material(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        borderRadius: merged,
+        child: InkWell(
+          onTap: jumpToQuoted,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: body,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryFixedDim.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(SolRadius.sm),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: jumpToQuoted,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            child: body,
           ),
         ),
       ),
-    ).padding(bottom: 4);
+    );
   }
 }
 
