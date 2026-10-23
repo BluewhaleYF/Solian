@@ -21,6 +21,7 @@ import 'package:image_picker_android/image_picker_android.dart';
 import 'package:island/core/log_recorder.dart';
 import 'package:island/core/services/analytics_service.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/session_cookie.dart';
 import 'package:island/core/network/relay.dart';
 import 'package:island/shared/services/location_search_service.dart';
 import 'package:island/shared/widgets/app_wrapper.dart';
@@ -191,6 +192,16 @@ void main(List<String> args) async {
 
   Future<void> appRunner() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // A browser that just came back from the console's shared sign-in page
+    // holds its session cookie but no token pair yet. Trading the cookie for a
+    // pair here — before anything reads the store — means the app boots signed
+    // in, instead of showing the login screen to someone who just signed in.
+    // Native builds have no cookie jar; the helper is a no-op there.
+    await adoptSharedSession(
+      prefs: prefs,
+      serverUrl: prefs.getString(kNetworkServerStoreKey) ?? kNetworkServerDefault,
+    );
 
     try {
       await EasyLocalization.ensureInitialized();

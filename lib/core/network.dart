@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network/api_error.dart';
+import 'package:island/core/session_cookie.dart';
 import 'package:island/core/network/media_proxy_server.dart';
 import 'package:island/core/network/relay.dart';
 import 'package:logging/logging.dart';
@@ -797,6 +798,12 @@ final stargateApiClientProvider = Provider<Dio>((ref) {
     ),
   ]);
 
+  // A browser only sends the shared session cookie when asked to; on the web
+  // this makes the cookie a fallback for every request, which is what lets a
+  // page that just came back from the console read its own account before any
+  // token pair exists.
+  enableSharedCookieCredentials(dio);
+
   return dio;
 });
 
@@ -910,6 +917,11 @@ final apiClientProvider = Provider<Dio>((ref) {
           err.response?.statusCode != 401,
     ),
   ]);
+
+  // The API shares `solian.app` with the identity console, so the session
+  // cookie the console sets is a valid credential for these requests too. The
+  // browser withholds it unless the request opts in.
+  enableSharedCookieCredentials(dio);
 
   return dio;
 });
@@ -1244,6 +1256,26 @@ Future<_StoredTokenPair?> _refreshTokenPairInternal({
   } finally {
     _tokenRefreshInFlight = null;
   }
+}
+
+/// The access token currently on disk.
+///
+/// For callers that hand the session back to the server (sign-out) rather than
+/// merely forgetting it locally.
+String? storedAuthToken(SharedPreferences prefs) =>
+    _readTokenPairFromPrefs(prefs)?.token;
+
+/// Whether the stored pair can still authenticate a request.
+///
+/// A web build checks this before adopting the browser's shared session: a
+/// working local session is the app's own, so there is nothing to replace,
+/// while a missing or expired one is the reason to look for the console's
+/// cookie at all.
+bool hasUsableStoredSession(SharedPreferences prefs) {
+  final tokenPair = _readTokenPairFromPrefs(prefs);
+  if (tokenPair == null) return false;
+  return _isNotExpired(tokenPair.expiresAt) ||
+      _isNotExpired(tokenPair.refreshExpiresAt);
 }
 
 bool _isNotExpired(DateTime? dateTime) {

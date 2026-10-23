@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/session_cookie.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/services/analytics_service.dart';
 import 'package:island/e2ee/mls_storage.dart';
@@ -177,7 +179,17 @@ class UserInfoNotifier extends AsyncNotifier<SnAccount?> {
   Future<void> logOut() async {
     state = const AsyncValue.data(null);
     final prefs = ref.read(sharedPreferencesProvider);
+    final stored = storedAuthToken(prefs);
     await prefs.remove(kTokenPairStoreKey);
+    // The browser shares its session cookie with the console, so clearing only
+    // this app's store would leave the person signed in everywhere else. The
+    // call is best-effort — a failed one still signs out here.
+    unawaited(
+      clearSharedSession(
+        serverUrl: prefs.getString(kNetworkServerStoreKey) ?? kNetworkServerDefault,
+        token: stored,
+      ),
+    );
     ref.invalidate(tokenProvider);
     ref.invalidate(userInfoProvider);
     AnalyticsService().setUserId(null);

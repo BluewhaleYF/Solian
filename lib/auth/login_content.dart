@@ -12,6 +12,7 @@ import 'package:solar_network_foundation/solar_network_foundation.dart';
 import 'package:island/accounts/screens/punishment_user_sheet.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/session_cookie.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/accounts/screens/me/settings_connections.dart';
@@ -30,6 +31,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 import 'captcha.dart';
+import 'widgets/shared_sign_in_card.dart';
 
 /// Performs post-login tasks including fetching user info, subscribing to push
 /// notifications, connecting websocket, and closing the login dialog.
@@ -1143,6 +1145,9 @@ class _LoginLookupScreen extends HookConsumerWidget {
     return AuthFormColumn(
       children: [
         AuthFormHeader(icon: Symbols.login, title: 'loginGreeting'.tr()),
+        // Web only: the same session the console holds in its cookie can sign
+        // this app in, and that page has factors this form does not.
+        if (canUseSharedSignIn) const SharedSignInCard(),
         TextField(
           autocorrect: false,
           enableSuggestions: false,
