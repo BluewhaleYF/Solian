@@ -5,8 +5,8 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 
 class PostFilterWidget extends HookConsumerWidget {
   final TabController categoryTabController;
@@ -131,369 +131,356 @@ class PostFilterWidget extends HookConsumerWidget {
       return () => categoryTabController.removeListener(onTabChanged);
     }, [categoryTabController]);
 
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
+    return ExploreCard(
+      padding: const EdgeInsets.all(SolSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _TypeFilterChip(
-                      value: type.value,
-                      onSelected: (value) {
-                        type.value = value;
-                        final tabIndex = switch (value) {
-                          0 => 1,
-                          1 => 2,
-                          _ => 0,
-                        };
-                        if (categoryTabController.index != tabIndex) {
-                          categoryTabController.animateTo(tabIndex);
-                        } else {
+          Wrap(
+            spacing: SolSpace.sm,
+            runSpacing: SolSpace.sm,
+            children: [
+              _TypeFilterChip(
+                value: type.value,
+                onSelected: (value) {
+                  type.value = value;
+                  final tabIndex = switch (value) {
+                    0 => 1,
+                    1 => 2,
+                    _ => 0,
+                  };
+                  if (categoryTabController.index != tabIndex) {
+                    categoryTabController.animateTo(tabIndex);
+                  } else {
+                    updateQuery();
+                  }
+                },
+              ),
+              _FilterChipButton(
+                icon: Symbols.reply,
+                label: 'reply'.tr(),
+                stateIcon: switch (includeReplies.value) {
+                  true => Symbols.check_circle,
+                  false => Symbols.remove_circle,
+                  null => Symbols.radio_button_unchecked,
+                },
+                emphasized: includeReplies.value != null,
+                onTap: () {
+                  includeReplies.value = switch (includeReplies.value) {
+                    false => null,
+                    null => true,
+                    true => false,
+                  };
+                  updateQuery();
+                },
+              ),
+              _FilterChipButton(
+                icon: Symbols.attachment,
+                label: 'attachments'.tr(),
+                stateIcon: mediaOnly.value
+                    ? Symbols.check_circle
+                    : Symbols.radio_button_unchecked,
+                emphasized: mediaOnly.value,
+                onTap: () {
+                  mediaOnly.value = !mediaOnly.value;
+                  updateQuery();
+                },
+              ),
+            ],
+          ),
+          if (!hideSearch && showSearchAtTop) ...[
+            const Gap(SolSpace.md),
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                labelText: 'search'.tr(),
+                hintText: 'searchPosts'.tr(),
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.only(
+                    left: SolSpace.lg,
+                    right: SolSpace.sm,
+                  ),
+                  child: Icon(Symbols.search),
+                ),
+                suffixIcon: (queryTerm.value?.isNotEmpty ?? false)
+                    ? IconButton(
+                        visualDensity: const VisualDensity(
+                          horizontal: -4,
+                          vertical: -4,
+                        ),
+                        icon: const Icon(Symbols.close, size: 18),
+                        onPressed: () {
+                          searchController.clear();
+                          queryTerm.value = null;
                           updateQuery();
-                        }
-                      },
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (value) {
+                queryTerm.value = value.isEmpty ? null : value;
+                updateQuery();
+              },
+            ),
+          ],
+          const Gap(SolSpace.md),
+          Material(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(SolRadius.md),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(SolRadius.md),
+              onTap: () {
+                showAdvancedFilters.value = !showAdvancedFilters.value;
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SolSpace.md,
+                  vertical: SolSpace.md,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(SolRadius.sm),
+                      ),
+                      child: Icon(
+                        Symbols.tune,
+                        size: 18,
+                        color: colorScheme.onSecondaryContainer,
+                      ),
                     ),
-                    _FilterChipButton(
-                      icon: Symbols.reply,
-                      label: 'reply'.tr(),
-                      stateIcon: switch (includeReplies.value) {
-                        true => Symbols.check_circle,
-                        false => Symbols.remove_circle,
-                        null => Symbols.radio_button_unchecked,
-                      },
-                      emphasized: includeReplies.value != null,
-                      onTap: () {
-                        includeReplies.value = switch (includeReplies.value) {
-                          false => null,
-                          null => true,
-                          true => false,
-                        };
-                        updateQuery();
-                      },
+                    const Gap(SolSpace.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'advancedFilters'.tr(),
+                            style: theme.textTheme.labelLarge,
+                          ),
+                          Text(
+                            'searchPostsDescription'.tr(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
-                    _FilterChipButton(
-                      icon: Symbols.attachment,
-                      label: 'attachments'.tr(),
-                      stateIcon: mediaOnly.value
-                          ? Symbols.check_circle
-                          : Symbols.radio_button_unchecked,
-                      emphasized: mediaOnly.value,
-                      onTap: () {
-                        mediaOnly.value = !mediaOnly.value;
-                        updateQuery();
-                      },
+                    if (activeAdvancedCount > 0) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SolSpace.sm,
+                          vertical: SolSpace.xxs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: SolRadius.pillRadius,
+                        ),
+                        child: Text(
+                          activeAdvancedCount.toString(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const Gap(SolSpace.sm),
+                    ],
+                    Icon(
+                      showAdvancedFilters.value
+                          ? Symbols.expand_less
+                          : Symbols.expand_more,
+                      size: 20,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
-                if (!hideSearch && showSearchAtTop) ...[
-                  const Gap(8),
-                  TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      labelText: 'search'.tr(),
-                      hintText: 'searchPosts'.tr(),
-                      prefixIcon: const Icon(
-                        Symbols.search,
-                      ).padding(left: 16, right: 8),
-                      suffixIcon: (queryTerm.value?.isNotEmpty ?? false)
-                          ? IconButton(
-                              visualDensity: const VisualDensity(
-                                horizontal: -4,
-                                vertical: -4,
-                              ),
-                              icon: const Icon(Symbols.close, size: 18),
-                              onPressed: () {
-                                searchController.clear();
-                                queryTerm.value = null;
-                                updateQuery();
-                              },
-                            )
-                          : null,
-                    ),
-                    onChanged: (value) {
-                      queryTerm.value = value.isEmpty ? null : value;
-                      updateQuery();
-                    },
-                  ),
-                ],
-                const Gap(8),
-                Material(
-                  color: colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () {
-                      showAdvancedFilters.value = !showAdvancedFilters.value;
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondaryContainer,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Symbols.tune,
-                              size: 18,
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                          const Gap(8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'advancedFilters'.tr(),
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                                Text(
-                                  'searchPostsDescription'.tr(),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontSize: 11,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (activeAdvancedCount > 0) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                activeAdvancedCount.toString(),
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            const Gap(6),
-                          ],
-                          Icon(
-                            showAdvancedFilters.value
-                                ? Symbols.expand_less
-                                : Symbols.expand_more,
-                            size: 20,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                AnimatedCrossFade(
-                  firstChild: const SizedBox.shrink(),
-                  secondChild: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerLowest,
-                        borderRadius: SolRadius.cardRadius,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (!hideSearch && !showSearchAtTop) ...[
-                            TextField(
-                              controller: searchController,
-                              decoration: InputDecoration(
-                                labelText: 'search'.tr(),
-                                hintText: 'searchPosts'.tr(),
-                                prefixIcon: const Icon(Symbols.search),
-                                suffixIcon:
-                                    (queryTerm.value?.isNotEmpty ?? false)
-                                    ? IconButton(
-                                        visualDensity: const VisualDensity(
-                                          horizontal: -4,
-                                          vertical: -4,
-                                        ),
-                                        icon: const Icon(
-                                          Symbols.close,
-                                          size: 18,
-                                        ),
-                                        onPressed: () {
-                                          searchController.clear();
-                                          queryTerm.value = null;
-                                          updateQuery();
-                                        },
-                                      )
-                                    : null,
-                              ),
-                              onChanged: (value) {
-                                queryTerm.value = value.isEmpty ? null : value;
-                                updateQuery();
-                              },
-                            ),
-                            const Gap(8),
-                          ],
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<String?>(
-                                  decoration: InputDecoration(
-                                    labelText: 'searchEngine'.tr(),
-                                    prefixIcon: const Icon(
-                                      Symbols.travel_explore,
-                                    ),
-                                  ),
-                                  initialValue: searchEngine.value,
-                                  items: [
-                                    DropdownMenuItem<String?>(
-                                      value: null,
-                                      child: Text('searchEngineDefault'.tr()),
-                                    ),
-                                    DropdownMenuItem<String?>(
-                                      value: 'semantic',
-                                      child: Text('searchEngineSemantic'.tr()),
-                                    ),
-                                    DropdownMenuItem<String?>(
-                                      value: 'fulltext',
-                                      child: Text('searchEngineFulltext'.tr()),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    searchEngine.value = value;
-                                    updateQuery();
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<String?>(
-                                  decoration: InputDecoration(
-                                    labelText: 'sortBy'.tr(),
-                                    isDense: true,
-                                  ),
-                                  initialValue: order.value,
-                                  items: [
-                                    DropdownMenuItem<String?>(
-                                      value: 'date',
-                                      child: Text('date'.tr()),
-                                    ),
-                                    DropdownMenuItem<String?>(
-                                      value: 'popularity',
-                                      child: Text('popularity'.tr()),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    order.value = value;
-                                    updateQuery();
-                                  },
-                                ),
-                              ),
-                              const Gap(8),
-                              Expanded(
-                                child: DropdownButtonFormField<bool>(
-                                  decoration: InputDecoration(
-                                    labelText: 'order'.tr(),
-                                    isDense: true,
-                                  ),
-                                  initialValue: orderDesc.value,
-                                  items: [
-                                    const DropdownMenuItem<bool>(
-                                      value: true,
-                                      child: Text('Descending'),
-                                    ),
-                                    const DropdownMenuItem<bool>(
-                                      value: false,
-                                      child: Text('Ascending'),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    orderDesc.value = value ?? true;
-                                    updateQuery();
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _DateFieldButton(
-                                  label: 'fromDate'.tr(),
-                                  value: periodStart.value,
-                                  onTap: () => pickDate(periodStart),
-                                  onClear: periodStart.value == null
-                                      ? null
-                                      : () {
-                                          periodStart.value = null;
-                                          updateQuery();
-                                        },
-                                ),
-                              ),
-                              const Gap(8),
-                              Expanded(
-                                child: _DateFieldButton(
-                                  label: 'toDate'.tr(),
-                                  value: periodEnd.value,
-                                  onTap: () => pickDate(periodEnd),
-                                  onClear: periodEnd.value == null
-                                      ? null
-                                      : () {
-                                          periodEnd.value = null;
-                                          updateQuery();
-                                        },
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (activeAdvancedCount > 0) ...[
-                            const Gap(6),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: resetAdvancedFilters,
-                                icon: const Icon(Symbols.restart_alt),
-                                label: Text('clear'.tr()),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  crossFadeState: showAdvancedFilters.value
-                      ? CrossFadeState.showSecond
-                      : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 180),
-                ),
-              ],
+              ),
             ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.only(top: SolSpace.md),
+              child: Container(
+                padding: const EdgeInsets.all(SolSpace.lg),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLowest,
+                  borderRadius: SolRadius.cardRadius,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!hideSearch && !showSearchAtTop) ...[
+                      TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          labelText: 'search'.tr(),
+                          hintText: 'searchPosts'.tr(),
+                          prefixIcon: const Icon(Symbols.search),
+                          suffixIcon: (queryTerm.value?.isNotEmpty ?? false)
+                              ? IconButton(
+                                  visualDensity: const VisualDensity(
+                                    horizontal: -4,
+                                    vertical: -4,
+                                  ),
+                                  icon: const Icon(Symbols.close, size: 18),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    queryTerm.value = null;
+                                    updateQuery();
+                                  },
+                                )
+                              : null,
+                        ),
+                        onChanged: (value) {
+                          queryTerm.value = value.isEmpty ? null : value;
+                          updateQuery();
+                        },
+                      ),
+                      const Gap(SolSpace.md),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String?>(
+                            decoration: InputDecoration(
+                              labelText: 'searchEngine'.tr(),
+                              prefixIcon: const Icon(Symbols.travel_explore),
+                            ),
+                            initialValue: searchEngine.value,
+                            items: [
+                              DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('searchEngineDefault'.tr()),
+                              ),
+                              DropdownMenuItem<String?>(
+                                value: 'semantic',
+                                child: Text('searchEngineSemantic'.tr()),
+                              ),
+                              DropdownMenuItem<String?>(
+                                value: 'fulltext',
+                                child: Text('searchEngineFulltext'.tr()),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              searchEngine.value = value;
+                              updateQuery();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(SolSpace.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String?>(
+                            decoration: InputDecoration(
+                              labelText: 'sortBy'.tr(),
+                              isDense: true,
+                            ),
+                            initialValue: order.value,
+                            items: [
+                              DropdownMenuItem<String?>(
+                                value: 'date',
+                                child: Text('date'.tr()),
+                              ),
+                              DropdownMenuItem<String?>(
+                                value: 'popularity',
+                                child: Text('popularity'.tr()),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              order.value = value;
+                              updateQuery();
+                            },
+                          ),
+                        ),
+                        const Gap(SolSpace.md),
+                        Expanded(
+                          child: DropdownButtonFormField<bool>(
+                            decoration: InputDecoration(
+                              labelText: 'order'.tr(),
+                              isDense: true,
+                            ),
+                            initialValue: orderDesc.value,
+                            items: [
+                              const DropdownMenuItem<bool>(
+                                value: true,
+                                child: Text('Descending'),
+                              ),
+                              const DropdownMenuItem<bool>(
+                                value: false,
+                                child: Text('Ascending'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              orderDesc.value = value ?? true;
+                              updateQuery();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(SolSpace.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DateFieldButton(
+                            label: 'fromDate'.tr(),
+                            value: periodStart.value,
+                            onTap: () => pickDate(periodStart),
+                            onClear: periodStart.value == null
+                                ? null
+                                : () {
+                                    periodStart.value = null;
+                                    updateQuery();
+                                  },
+                          ),
+                        ),
+                        const Gap(SolSpace.md),
+                        Expanded(
+                          child: _DateFieldButton(
+                            label: 'toDate'.tr(),
+                            value: periodEnd.value,
+                            onTap: () => pickDate(periodEnd),
+                            onClear: periodEnd.value == null
+                                ? null
+                                : () {
+                                    periodEnd.value = null;
+                                    updateQuery();
+                                  },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (activeAdvancedCount > 0) ...[
+                      const Gap(SolSpace.xs),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: resetAdvancedFilters,
+                          icon: const Icon(Symbols.restart_alt),
+                          label: Text('clear'.tr()),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            crossFadeState: showAdvancedFilters.value
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 180),
           ),
         ],
       ),
@@ -524,12 +511,15 @@ class _FilterChipButton extends StatelessWidget {
       color: emphasized
           ? colorScheme.secondaryContainer
           : colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SolRadius.sm),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SolRadius.sm),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SolSpace.md,
+            vertical: SolSpace.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -540,7 +530,7 @@ class _FilterChipButton extends StatelessWidget {
                     ? colorScheme.onSecondaryContainer
                     : colorScheme.onSurfaceVariant,
               ),
-              const Gap(6),
+              const Gap(SolSpace.xs),
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -550,7 +540,7 @@ class _FilterChipButton extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-              const Gap(6),
+              const Gap(SolSpace.xs),
               Icon(
                 stateIcon,
                 size: 16,
@@ -596,9 +586,12 @@ class _TypeFilterChip extends StatelessWidget {
         color: value != null
             ? colorScheme.secondaryContainer
             : colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SolRadius.sm),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SolSpace.md,
+            vertical: SolSpace.sm,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -609,7 +602,7 @@ class _TypeFilterChip extends StatelessWidget {
                     ? colorScheme.onSecondaryContainer
                     : colorScheme.onSurfaceVariant,
               ),
-              const Gap(6),
+              const Gap(SolSpace.xs),
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -619,7 +612,7 @@ class _TypeFilterChip extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-              const Gap(6),
+              const Gap(SolSpace.xs),
               Icon(
                 Symbols.expand_more,
                 size: 16,
@@ -660,12 +653,15 @@ class _DateFieldButton extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SolRadius.sm),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SolRadius.sm),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SolSpace.md,
+            vertical: SolSpace.sm,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -679,7 +675,7 @@ class _DateFieldButton extends StatelessWidget {
                         fontSize: 11,
                       ),
                     ),
-                    const Gap(2),
+                    const Gap(SolSpace.xxs),
                     Text(
                       formattedDate,
                       style: theme.textTheme.bodyMedium?.copyWith(

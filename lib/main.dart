@@ -50,7 +50,6 @@ import 'package:image_picker_platform_interface/image_picker_platform_interface.
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:protocol_handler/protocol_handler.dart';
-// ponytail: desktop_multi_window for call window support
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:island/chat/widgets/call_window.dart';
 

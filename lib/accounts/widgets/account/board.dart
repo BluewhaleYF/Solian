@@ -15,6 +15,8 @@ import 'package:island/accounts/event_calendar.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/core/utils/text.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/core/widgets/content/cloud_file_collection.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
@@ -525,7 +527,7 @@ class AccountBoard extends StatelessWidget {
     }
 
     return Column(
-      spacing: 12,
+      spacing: kExploreCardGap,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: visibleItems.map((item) => _buildItem(context, item)).toList(),
     );
@@ -696,14 +698,16 @@ class _BoardWidgetCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(SolRadius.card),
+            ),
             child: _BoardImageView(
               source: imageSource,
               fit: BoxFit.cover,
               aspectRatio: 16 / 5,
             ),
           ),
-          Padding(padding: const EdgeInsets.all(16), child: child),
+          Padding(padding: const EdgeInsets.all(SolSpace.lg), child: child),
         ],
       );
     } else {
@@ -715,7 +719,7 @@ class _BoardWidgetCard extends StatelessWidget {
         children: [
           Positioned.fill(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: SolRadius.cardRadius,
               child: _BoardImageView(
                 source: backgroundSource,
                 fit: BoxFit.cover,
@@ -726,21 +730,16 @@ class _BoardWidgetCard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: SolRadius.cardRadius,
               ),
             ),
           ),
-          Card(
-            margin: EdgeInsets.zero,
-            color: Colors.transparent,
-            elevation: 0,
-            child: content,
-          ),
+          ExploreCard(color: Colors.transparent, child: content),
         ],
       );
     }
 
-    return Card(margin: EdgeInsets.zero, child: content);
+    return ExploreCard(child: content);
   }
 }
 

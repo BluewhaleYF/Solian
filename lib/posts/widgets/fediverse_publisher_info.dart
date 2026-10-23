@@ -16,6 +16,7 @@ import 'package:island/shared/widgets/pagination_list.dart';
 
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_item_skeleton.dart';
+import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/core/theme.dart';
 
 /// Relationship the current account has with a remote fediverse actor.
@@ -82,24 +83,29 @@ class FediverseActorPostsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = fediverseActorPostsProvider(actorId);
 
-    // Same presentation as the local publisher timeline: flat rows split by a
-    // divider, so the hosts may render either list flush inside their card.
+    // Same presentation as the local publisher timeline: one floating card per
+    // row, separated by a single gap.
     return PaginationList(
       provider: provider,
       notifier: provider.notifier,
       isRefreshable: false,
       isSliver: true,
       footerSkeletonChild: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: SolSpace.sm,
+          vertical: SolSpace.xs,
+        ),
         child: PostItemSkeleton(maxWidth: double.infinity),
       ),
       seperatorBuilder: (context, index, post) => const Gap(SolSpace.md),
       itemBuilder: (context, index, post) {
-        return PostActionableItem(
-          item: post,
-          onTap: !post.isCached && post.fediverseUri != null
-              ? () => launchUrlString(post.fediverseUri!)
-              : null,
+        return PostRowSurface(
+          child: PostActionableItem(
+            item: post,
+            onTap: !post.isCached && post.fediverseUri != null
+                ? () => launchUrlString(post.fediverseUri!)
+                : null,
+          ),
         );
       },
     );

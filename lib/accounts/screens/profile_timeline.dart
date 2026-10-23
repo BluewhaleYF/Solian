@@ -15,6 +15,8 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:gap/gap.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 
 enum TimelineFilter { all, status, gaming, music, workout, other }
 
@@ -55,13 +57,16 @@ class AccountTimelineList extends HookConsumerWidget {
         }
 
         return SliverPadding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: kExploreCardGap),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               if (index == 0) {
-                return _TimelineFilterBar(
-                  selectedFilter: filter.value,
-                  onFilterChanged: (f) => filter.value = f,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: kExploreCardGap),
+                  child: _TimelineFilterBar(
+                    selectedFilter: filter.value,
+                    onFilterChanged: (f) => filter.value = f,
+                  ),
                 );
               }
 
@@ -77,20 +82,11 @@ class AccountTimelineList extends HookConsumerWidget {
               }
 
               final groupedItem = filteredItems[itemIndex];
-              if (groupedItem.items.length > 1) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
-                  child: AccountTimelineItem(
-                    item: groupedItem.items.first,
-                    duplicateCount: groupedItem.items.length,
-                    duration: groupedItem.duration,
-                  ),
-                );
-              }
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
+                padding: const EdgeInsets.only(bottom: kExploreCardGap),
                 child: AccountTimelineItem(
                   item: groupedItem.items.first,
+                  duplicateCount: groupedItem.items.length,
                   duration: groupedItem.duration,
                 ),
               );
@@ -209,11 +205,14 @@ class _TimelineFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SolSpace.xs,
+        vertical: SolSpace.sm,
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          spacing: 8,
+          spacing: SolSpace.sm,
           children: TimelineFilter.values.map((filter) {
             final isSelected = filter == selectedFilter;
             return ChoiceChip(
@@ -341,194 +340,191 @@ class AccountTimelineItem extends ConsumerWidget {
     switch (item.eventType) {
       case 0:
         final status = item.status!;
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            spacing: 12,
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _getStatusIcon(status),
-                      size: 20,
-                      color: _getStatusColor(status),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
+        return ExploreCard(
+          child: Padding(
+            padding: const EdgeInsets.all(SolSpace.md),
+            child: Row(
+              spacing: SolSpace.md,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: status.isOnline ? Colors.green : Colors.grey,
+                        color: _getStatusColor(status).withOpacity(0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: theme.colorScheme.surface,
-                          width: 2,
+                      ),
+                      child: Icon(
+                        _getStatusIcon(status),
+                        size: 20,
+                        color: _getStatusColor(status),
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: status.isOnline ? Colors.green : Colors.grey,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLow,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        if (status.symbol != null && status.symbol!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
+                  ],
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (status.symbol != null &&
+                              status.symbol!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Text(
+                                status.symbol!,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          Expanded(
                             child: Text(
-                              status.symbol!,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        Expanded(
-                          child: Text(
-                            status.label.isNotEmpty
-                                ? status.label
-                                : 'statusChange'.tr(),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Gap(2),
-                    Row(
-                      spacing: 6,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${createdAt.toLocal().formatRelative(context)} · ${createdAt.toLocal().formatSystem()}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (status.appIdentifier != null &&
-                            status.appIdentifier!.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              status.appIdentifier!,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontSize: 10,
+                              status.label.isNotEmpty
+                                  ? status.label
+                                  : 'statusChange'.tr(),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        if (duration != null)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: 2,
-                            children: [
-                              Icon(
-                                Symbols.schedule,
-                                size: 12,
+                        ],
+                      ),
+                      const Gap(2),
+                      Row(
+                        spacing: 6,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${createdAt.toLocal().formatRelative(context)} · ${createdAt.toLocal().formatSystem()}',
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              Text(
-                                duration!.abs().formatDuration(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (status.appIdentifier != null &&
+                              status.appIdentifier!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                status.appIdentifier!,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                   fontSize: 10,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (status.isAutomated)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 4,
-                    children: [
-                      Icon(
-                        Symbols.smart_toy,
-                        size: 14,
-                        color: theme.colorScheme.onSecondaryContainer,
+                            ),
+                          if (duration != null)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 2,
+                              children: [
+                                Icon(
+                                  Symbols.schedule,
+                                  size: 12,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                Text(
+                                  duration!.abs().formatDuration(),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
-                      Text(
-                        'bot',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                        ),
-                      ).tr(),
                     ],
                   ),
                 ),
-              if (duplicateCount > 1)
-                Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'x$duplicateCount',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
+                if (status.isAutomated)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        Icon(
+                          Symbols.smart_toy,
+                          size: 14,
+                          color: theme.colorScheme.onSecondaryContainer,
+                        ),
+                        Text(
+                          'bot',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSecondaryContainer,
+                          ),
+                        ).tr(),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                if (duplicateCount > 1)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'x$duplicateCount',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       case 1:
         final activity = item.activity!;
         final isSpotify = activity.manualId == 'spotify';
         final isSteam = activity.manualId == 'steam';
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          clipBehavior: Clip.antiAlias,
+        return ExploreCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -537,9 +533,9 @@ class AccountTimelineItem extends ConsumerWidget {
                   meta: activity.meta as Map<String, dynamic>,
                 ),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(SolSpace.md),
                 child: Row(
-                  spacing: 12,
+                  spacing: SolSpace.md,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Stack(

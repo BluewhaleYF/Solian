@@ -928,7 +928,7 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: theme.colorScheme.surfaceContainerHigh,
         borderRadius: SolRadius.cardRadius,
       ),
       clipBehavior: Clip.antiAlias,
@@ -992,7 +992,7 @@ class _ForwardedReferenceCard extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                     child: PostHeader(
                       item: referencePost,
                       isFullPost: false,

@@ -23,7 +23,6 @@ import 'package:island/core/network.dart';
 import 'package:island/posts/widgets/compose/filters/post_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_list.dart';
-import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/posts/widgets/fediverse_publisher_info.dart';
 import 'package:island/posts/widgets/publisher_collection_info.dart';
 import 'package:island/core/services/responsive.dart';
@@ -34,9 +33,14 @@ import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/shared/widgets/content/markdown.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:island/shared/widgets/profile_header_app_bar.dart';
+import 'package:island/shared/widgets/sliver_floating_tab_bar.dart';
 import 'package:island/shared/widgets/response.dart';
 import 'package:island/posts/activity_heatmap.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:super_sliver_list/super_sliver_list.dart';
+import 'package:island/shared/widgets/empty_state.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -62,10 +66,23 @@ void openPublisherProfile(BuildContext context, SnPublisher publisher) {
   context.router.push(PublisherProfileRoute(name: publisher.name));
 }
 
-class _PinnedPostsPageView extends HookConsumerWidget {
+/// The publisher's pinned posts, as an explore-style section card.
+///
+/// Mirrors a discovery section of the explore feed: a floating [ExploreCard]
+/// holding a header band (icon, title, collapse affordance) and, under it, a
+/// horizontally scrolling strip of post cards. Each post sits one tone deeper
+/// than the section — `surfaceContainerLowest` inside `Low` — so the strip
+/// reads as cards on a well rather than a card inside a card.
+class PinnedPostsSection extends HookConsumerWidget {
   final String pubName;
 
-  const _PinnedPostsPageView({required this.pubName});
+  /// Height of one pinned post card in the strip.
+  static const double _stripHeight = 280;
+
+  /// Width of one pinned post card in the strip.
+  static const double _cardWidth = 320;
+
+  const PinnedPostsSection({super.key, required this.pubName});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -76,17 +93,8 @@ class _PinnedPostsPageView extends HookConsumerWidget {
       ),
     );
     final pinnedPosts = ref.watch(provider);
-    final pageController = usePageController();
-    final currentPage = useState(0);
-
-    useEffect(() {
-      void listener() {
-        currentPage.value = pageController.page?.round() ?? 0;
-      }
-
-      pageController.addListener(listener);
-      return () => pageController.removeListener(listener);
-    }, [pageController]);
+    final isExpanded = useState(true);
+    final theme = Theme.of(context);
 
     return pinnedPosts.when(
       data: (data) {
@@ -94,84 +102,89 @@ class _PinnedPostsPageView extends HookConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final contentWidget = Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            initiallyExpanded: true,
-            leading: const Icon(Symbols.push_pin),
-            title: Text('pinnedPosts'.tr()),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            collapsedShape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
+        return ExploreCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 400,
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      controller: pageController,
-                      itemCount: data.items.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: SingleChildScrollView(
-                            child: PostRowSurface(
+              // The whole band toggles the section, so the strip can be put
+              // away without hunting for the chevron.
+              InkWell(
+                onTap: () => isExpanded.value = !isExpanded.value,
+                child:
+                    Row(
+                      children: [
+                        Icon(
+                          Symbols.push_pin,
+                          size: 19,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const Gap(SolSpace.sm),
+                        Expanded(
+                          child: Text(
+                            'pinnedPosts'.tr(),
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                        Icon(
+                          isExpanded.value
+                              ? Symbols.expand_less
+                              : Symbols.expand_more,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ).padding(
+                      horizontal: SolSpace.lg,
+                      top: SolSpace.md + 2,
+                      bottom: SolSpace.sm,
+                    ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeInOut,
+                child: Visibility(
+                  visible: isExpanded.value,
+                  child:
+                      SizedBox(
+                        height: _stripHeight,
+                        child: SuperListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: data.items.length,
+                          separatorBuilder: (context, index) =>
+                              const Gap(SolSpace.md),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: SolSpace.xxs,
+                          ),
+                          itemBuilder: (context, index) => Container(
+                            width: _cardWidth,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerLowest,
+                              borderRadius: SolRadius.cardRadius,
+                            ),
+                            child: SingleChildScrollView(
                               child: PostActionableItem(
                                 item: data.items[index],
+                                isCompact: true,
+                                padding: const EdgeInsets.fromLTRB(
+                                  SolSpace.lg,
+                                  SolSpace.md + 2,
+                                  SolSpace.lg,
+                                  SolSpace.md,
+                                ),
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      bottom: 16,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          data.items.length,
-                          (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: index == currentPage.value
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.5),
-                            ),
-                          ),
                         ),
+                      ).padding(
+                        left: SolSpace.md,
+                        right: SolSpace.md,
+                        bottom: SolSpace.md,
                       ),
-                    ),
-                  ],
                 ),
               ),
             ],
           ),
-        );
-
-        if (!isWideScreen(context)) {
-          return Card(
-            elevation: 0,
-            margin: EdgeInsets.only(top: 16, bottom: 8),
-            child: contentWidget,
-          );
-        }
-
-        return Card(
-          elevation: 0,
-          margin: EdgeInsets.only(bottom: 8),
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          child: contentWidget,
         );
       },
       loading: () => const SizedBox.shrink(),
@@ -249,6 +262,19 @@ String _publisherFullHandle(SnPublisher data) {
   return domain == null ? '@$username' : '@$username@$domain';
 }
 
+/// The local account owning this publisher, or null when it has none.
+///
+/// A publisher handle is not an account name. An individual publisher is
+/// created with a handle of its own — uniqueness is only checked against other
+/// publishers — and organization publishers and mirrored remote actors have no
+/// owning account at all. Every account-keyed lookup (the account profile
+/// route, the account-status endpoint) has to resolve through this, never
+/// through [SnPublisher.name].
+String? _publisherAccountName(SnPublisher data) {
+  final name = data.account?.name;
+  return (name == null || name.isEmpty) ? null : name;
+}
+
 class _PublisherBasisWidget extends HookWidget {
   final SnPublisher data;
   final AsyncValue<SnPublisherSubscriptionStatus?> subStatus;
@@ -297,17 +323,20 @@ class _PublisherBasisWidget extends HookWidget {
     if (domain == null) return const SizedBox.shrink();
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SolRadius.sm),
       child: Container(
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SolSpace.md,
+          vertical: SolSpace.sm,
+        ),
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SolRadius.sm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          spacing: 8,
+          spacing: SolSpace.sm,
           children: [
             Icon(
               Symbols.hub,
@@ -333,19 +362,29 @@ class _PublisherBasisWidget extends HookWidget {
   }
 
   /// Origin row of a local publisher: the account owning it.
-  Widget _accountChip(BuildContext context, ThemeData theme) {
+  ///
+  /// [accountName] is the owning account's handle, which is not the publisher
+  /// handle — see [_publisherAccountName].
+  Widget _accountChip(
+    BuildContext context,
+    ThemeData theme,
+    String accountName,
+  ) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SolRadius.sm),
       child: Container(
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SolSpace.md,
+          vertical: SolSpace.sm,
+        ),
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SolRadius.sm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          spacing: 8,
+          spacing: SolSpace.sm,
           children: [
             Icon(
               Symbols.person,
@@ -355,7 +394,7 @@ class _PublisherBasisWidget extends HookWidget {
             ),
             Flexible(
               child: Text(
-                'publisherBelongsTo'.tr(args: ['@${data.name}']),
+                'publisherBelongsTo'.tr(args: ['@$accountName']),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -367,7 +406,7 @@ class _PublisherBasisWidget extends HookWidget {
         ),
       ),
       onTap: () {
-        context.router.push(AccountProfileRoute(name: data.name));
+        context.router.push(AccountProfileRoute(name: accountName));
       },
     );
   }
@@ -376,20 +415,29 @@ class _PublisherBasisWidget extends HookWidget {
   Widget build(BuildContext context) {
     final isBioExpanded = useState(false);
     final theme = Theme.of(context);
+    // Organization publishers and mirrored remote actors have no owning
+    // account, so the account row and status row are skipped instead of
+    // falling back to the publisher handle (which resolves to nothing).
+    final accountName = _publisherAccountName(data);
 
     Widget avatarWithBorder() {
       final isCircle = data.type == 0 || data.isFediverse;
       return Container(
         decoration: BoxDecoration(
           shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: isCircle ? null : BorderRadius.all(Radius.circular(12)),
-          border: Border.all(color: theme.colorScheme.surface, width: 3),
+          borderRadius: isCircle
+              ? null
+              : const BorderRadius.all(Radius.circular(SolRadius.sm)),
+          border: Border.all(
+            color: theme.colorScheme.surfaceContainerLow,
+            width: 3,
+          ),
         ),
         child: _publisherAvatarImage(
           context,
           data,
           radius: 32,
-          borderRadius: isCircle ? null : 12,
+          borderRadius: isCircle ? null : SolRadius.sm,
         ),
       );
     }
@@ -403,23 +451,27 @@ class _PublisherBasisWidget extends HookWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+                  top: Radius.circular(SolRadius.card),
                 ),
                 child: AspectRatio(
                   aspectRatio: 16 / 7,
                   child: _publisherHeaderImage(context, data),
                 ),
               ),
-              Positioned(bottom: -24, left: 16, child: avatarWithBorder()),
+              Positioned(
+                bottom: -24,
+                left: SolSpace.lg,
+                child: avatarWithBorder(),
+              ),
             ],
           ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showHeaderImage) const Gap(16),
+            if (showHeaderImage) const Gap(SolSpace.lg),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
+              spacing: SolSpace.md,
               children: [
                 if (!showHeaderImage) avatarWithBorder(),
                 Expanded(
@@ -557,7 +609,9 @@ class _PublisherBasisWidget extends HookWidget {
                                             .colorScheme
                                             .surfaceContainerHighest,
                                     },
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                      SolRadius.sm,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -603,19 +657,25 @@ class _PublisherBasisWidget extends HookWidget {
                       // A remote actor has no account-status row under the
                       // chip, so the local rhythm (8/4 around the chip, then a
                       // Gap) would leave the follow button drifting away from
-                      // the name.
-                      Padding(
-                        padding: data.isFediverse
-                            ? const .only(top: 6)
-                            : const .only(top: 8, bottom: 4),
-                        child: data.isFediverse
-                            ? _instanceChip(context, theme)
-                            : _accountChip(context, theme),
-                      ),
-                      if (!data.isFediverse) ...[
-                        const Gap(4),
+                      // the name. An organization publisher has neither an
+                      // instance nor an owning account, so it draws no origin
+                      // row and no padding at all.
+                      if (data.isFediverse)
+                        Padding(
+                          padding: const .only(top: SolSpace.xs),
+                          child: _instanceChip(context, theme),
+                        )
+                      else if (accountName != null) ...[
+                        Padding(
+                          padding: const .only(
+                            top: SolSpace.sm,
+                            bottom: SolSpace.xs,
+                          ),
+                          child: _accountChip(context, theme, accountName),
+                        ),
+                        const Gap(SolSpace.xs),
                         AccountStatusWidget(
-                          uname: data.name,
+                          uname: accountName,
                           padding: EdgeInsets.zero,
                         ),
                       ],
@@ -629,21 +689,21 @@ class _PublisherBasisWidget extends HookWidget {
                 children: [
                   Flexible(
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SolRadius.sm),
                       child: Container(
                         alignment: Alignment.centerLeft,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: SolSpace.md,
+                          vertical: SolSpace.sm,
                         ),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.tertiaryContainer
                               .withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(SolRadius.sm),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          spacing: 8,
+                          spacing: SolSpace.sm,
                           children: [
                             Icon(
                               Symbols.public,
@@ -671,12 +731,12 @@ class _PublisherBasisWidget extends HookWidget {
                           RealmDetailRoute(slug: data.realm!.slug),
                         );
                       },
-                    ).padding(top: 8, bottom: 4),
+                    ).padding(top: SolSpace.sm, bottom: SolSpace.xs),
                   ),
                 ],
               ),
             ],
-            if (!data.isFediverse) const Gap(4),
+            if (!data.isFediverse) const Gap(SolSpace.xs),
             subStatus
                 .when(
                   data: (status) {
@@ -728,7 +788,7 @@ class _PublisherBasisWidget extends HookWidget {
                     final currentNotify = status.subscription?.notify ?? true;
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 8,
+                      spacing: SolSpace.sm,
                       children: [
                         Expanded(
                           child: FilledButton.icon(
@@ -777,7 +837,9 @@ class _PublisherBasisWidget extends HookWidget {
                     ),
                   ),
                 )
-                .padding(vertical: data.isFediverse ? 6 : 12),
+                .padding(
+                  vertical: data.isFediverse ? SolSpace.xs : SolSpace.md,
+                ),
             // Bio section
             if (_publisherBio(data).isNotEmpty) ...[
               Column(
@@ -808,7 +870,9 @@ class _PublisherBasisWidget extends HookWidget {
                           isBioExpanded.value = !isBioExpanded.value;
                         },
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SolSpace.xs,
+                          ),
                           child: Text(
                             isBioExpanded.value
                                 ? 'collapse'.tr()
@@ -825,16 +889,11 @@ class _PublisherBasisWidget extends HookWidget {
               ),
             ],
           ],
-        ).padding(
-          horizontal: showHeaderImage ? 16 : 8,
-          vertical: showHeaderImage ? 16 : 0,
-        ),
+        ).padding(all: SolSpace.lg),
       ],
     );
 
-    return showHeaderImage
-        ? Card(margin: EdgeInsets.zero, child: content)
-        : content;
+    return ExploreCard(child: content);
   }
 }
 
@@ -847,13 +906,9 @@ class _PublisherBadgesWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return (badges.value?.isNotEmpty ?? false)
-        ? Card(
-            elevation: 0,
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: BadgeList(badges: badges.value!),
-            ),
+        ? ExploreCard(
+            padding: const EdgeInsets.all(SolSpace.card),
+            child: BadgeList(badges: badges.value!),
           )
         : const SizedBox.shrink();
   }
@@ -1015,41 +1070,61 @@ class _PublisherTabBar extends StatelessWidget {
       return Tab(
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [Icon(icon, size: 18), const Gap(6), Text(label.tr())],
+          spacing: SolSpace.xs,
+          children: [
+            Icon(icon, size: 18),
+            const Gap(SolSpace.xs),
+            Text(label.tr()),
+          ],
         ),
       );
     }
 
-    return Material(
-      color: Colors.transparent,
-      elevation: 0,
-      child: Padding(
-        padding: const .symmetric(horizontal: 8, vertical: 8),
-        child: TabBar(
-          isScrollable: true,
-          tabAlignment: TabAlignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          indicator: BoxDecoration(
-            color: indicatorColor ?? theme.colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Wide panes have room to divide the strip evenly, which makes each
+        // tab a predictable target. On a phone the four icon+label tabs do not
+        // fit that way, so they stay scrollable rather than clipping.
+        final splitEvenly = constraints.maxWidth >= 380;
+        return Material(
+          color: Colors.transparent,
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: SolSpace.sm,
+              right: SolSpace.sm,
+              top: SolSpace.sm,
+              bottom: SolSpace.xs,
+            ),
+            child: TabBar(
+              isScrollable: !splitEvenly,
+              tabAlignment: splitEvenly
+                  ? TabAlignment.fill
+                  : TabAlignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: SolSpace.sm),
+              indicator: BoxDecoration(
+                color: indicatorColor ?? theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(SolRadius.lg),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerHeight: 0,
+              labelColor: labelColor ?? theme.colorScheme.onSecondaryContainer,
+              unselectedLabelColor:
+                  unselectedLabelColor ?? theme.colorScheme.onSurfaceVariant,
+              splashBorderRadius: BorderRadius.circular(SolRadius.lg),
+              labelStyle: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: [
+                buildLabel('posts', Symbols.notes),
+                buildLabel('collections', Symbols.collections),
+                buildLabel('stickers', Symbols.imagesmode),
+                buildLabel('surveys', Symbols.quiz),
+              ],
+            ),
           ),
-          indicatorSize: TabBarIndicatorSize.tab,
-          dividerHeight: 0,
-          labelColor: labelColor ?? theme.colorScheme.onSecondaryContainer,
-          unselectedLabelColor:
-              unselectedLabelColor ?? theme.colorScheme.onSurfaceVariant,
-          splashBorderRadius: BorderRadius.circular(20),
-          labelStyle: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-          tabs: [
-            buildLabel('posts', Symbols.notes),
-            buildLabel('collections', Symbols.collections),
-            buildLabel('stickers', Symbols.imagesmode),
-            buildLabel('surveys', Symbols.quiz),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -1058,8 +1133,9 @@ class _PublisherTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final Color backgroundColor;
 
-  /// TabBar (~46) + top padding (8).
-  static const double _height = 54;
+  /// TabBar (46) plus the bar's own vertical padding: `SolSpace.sm` above,
+  /// `SolSpace.xs` below.
+  static const double _height = kFloatingTabBarHeight;
 
   _PublisherTabBarHeaderDelegate({
     required this.child,
@@ -1095,24 +1171,7 @@ class _PublisherTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
 class _PublisherPostsTab extends HookWidget {
   final String pubName;
 
-  /// Gutter between the post list and its host edge.
-  ///
-  /// Narrow layouts inset the list from the page edge. The wide layout renders
-  /// it inside the publication card, where the rows stay flush with the card
-  /// edge to match the realm feed.
-  final double horizontalPadding;
-
-  /// Whether the host already draws the list's card. The wide layout renders
-  /// this tab inside the publication card, so the rows must sit flush on it
-  /// rather than lifting a sheet of their own; the narrow layout lays the tab
-  /// straight on the page ground, where each row needs its own card.
-  final bool flush;
-
-  const _PublisherPostsTab({
-    required this.pubName,
-    this.horizontalPadding = 12,
-    this.flush = false,
-  });
+  const _PublisherPostsTab({required this.pubName});
 
   @override
   Widget build(BuildContext context) {
@@ -1143,32 +1202,42 @@ class _PublisherPostsTab extends HookWidget {
       final value => 'type-$value',
     };
 
+    final gutter = explorePageGutter(context);
+
     return CustomScrollView(
       slivers: [
-        const SliverGap(12),
-        SliverToBoxAdapter(
-          child: _PinnedPostsPageView(pubName: pubName).padding(horizontal: 12),
-        ),
-        SliverToBoxAdapter(
-          child: PostFilterWidget(
-            categoryTabController: categoryTabController,
-            initialQuery: queryState.value,
-            onQueryChanged: (newQuery) => queryState.value = newQuery,
-            showSearchAtTop: true,
-          ).padding(horizontal: 12),
-        ),
-        const SliverGap(12),
+        const SliverGap(kExploreCardGap),
         SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          padding: gutter,
+          sliver: SliverToBoxAdapter(
+            child: PinnedPostsSection(pubName: pubName),
+          ),
+        ),
+        // The strip and the filter card are two separate floating cards, so
+        // they need the same one-card gap every other card in the feed uses.
+        const SliverGap(kExploreCardGap),
+        SliverPadding(
+          padding: gutter,
+          sliver: SliverToBoxAdapter(
+            child: PostFilterWidget(
+              categoryTabController: categoryTabController,
+              initialQuery: queryState.value,
+              onQueryChanged: (newQuery) => queryState.value = newQuery,
+              showSearchAtTop: true,
+            ),
+          ),
+        ),
+        const SliverGap(kExploreCardGap),
+        SliverPadding(
+          padding: gutter,
           sliver: SliverPostList(
             key: ValueKey('publisher-$pubName-$queryId'),
             query: queryState.value,
             queryKey: 'publisher-$pubName-$queryId',
             maxWidth: double.infinity,
-            flush: flush,
           ),
         ),
-        SliverGap(MediaQuery.of(context).padding.bottom + 16),
+        SliverGap(MediaQuery.paddingOf(context).bottom + kExploreCardGap),
       ],
     );
   }
@@ -1190,19 +1259,28 @@ class _PublisherCollectionsTab extends HookConsumerWidget {
         data: (items) {
           if (items.isEmpty) {
             return ListView(
+              padding: explorePageGutter(
+                context,
+              ).copyWith(top: kExploreCardGap),
               children: [
                 SizedBox(
                   height: 240,
-                  child: Center(child: Text('dataEmpty').tr()),
+                  child: EmptyState(
+                    icon: Symbols.collections,
+                    title: 'dataEmpty'.tr(),
+                  ),
                 ),
               ],
             );
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(12),
+            padding: explorePageGutter(context).copyWith(
+              top: kExploreCardGap,
+              bottom: MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+            ),
             itemCount: items.length,
-            separatorBuilder: (_, _) => const Gap(12),
+            separatorBuilder: (_, _) => const Gap(kExploreCardGap),
             itemBuilder: (context, index) {
               final collection = items[index];
               return _PublisherCollectionCard(
@@ -1238,10 +1316,9 @@ class _PublisherCollectionCard extends StatelessWidget {
         ? collection.name!
         : collection.slug;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
+    return ExploreCard(
       child: InkWell(
+        borderRadius: SolRadius.cardRadius,
         onTap: () {
           showAttentionModal(
             id: 'publisher-collection:$pubName:${collection.slug}',
@@ -1264,9 +1341,9 @@ class _PublisherCollectionCard extends StatelessWidget {
               else
                 Container(color: theme.colorScheme.surfaceContainerHighest),
               Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
+                left: SolSpace.lg,
+                right: SolSpace.lg,
+                bottom: SolSpace.lg,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -1275,7 +1352,7 @@ class _PublisherCollectionCard extends StatelessWidget {
                       radius: 24,
                       fallbackIcon: Symbols.collections,
                     ),
-                    const Gap(12),
+                    const Gap(SolSpace.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1316,7 +1393,7 @@ class _PublisherCollectionCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Gap(8),
+                    const Gap(SolSpace.sm),
                     const Icon(Symbols.chevron_right, color: Colors.white),
                   ],
                 ),
@@ -1342,34 +1419,40 @@ class _PublisherStickerPacksTab extends HookConsumerWidget {
       contentBuilder: (items, footer) {
         if (items.isEmpty) {
           return ListView(
+            padding: explorePageGutter(context).copyWith(top: kExploreCardGap),
             children: [
               SizedBox(
                 height: 240,
-                child: Center(child: Text('dataEmpty').tr()),
+                child: EmptyState(
+                  icon: Symbols.imagesmode,
+                  title: 'dataEmpty'.tr(),
+                ),
               ),
             ],
           );
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(12),
+          padding: explorePageGutter(context).copyWith(
+            top: kExploreCardGap,
+            bottom: MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+          ),
           itemCount: items.length + 1,
-          separatorBuilder: (_, _) => const Gap(8),
+          separatorBuilder: (_, _) => const Gap(kExploreCardGap),
           itemBuilder: (context, index) {
             if (index == items.length) return footer;
             final pack = items[index];
-            return Card.outlined(
-              margin: EdgeInsets.zero,
+            return ExploreCard(
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: SolSpace.lg,
+                  vertical: SolSpace.sm,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: SolRadius.cardRadius,
                 ),
                 leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(SolRadius.sm),
                   child: SizedBox(
                     width: 48,
                     height: 48,
@@ -1421,38 +1504,41 @@ class _PublisherSurveysTab extends HookConsumerWidget {
       contentBuilder: (items, footer) {
         if (items.isEmpty) {
           return ListView(
+            padding: explorePageGutter(context).copyWith(top: kExploreCardGap),
             children: [
               SizedBox(
                 height: 240,
-                child: Center(child: Text('dataEmpty').tr()),
+                child: EmptyState(icon: Symbols.quiz, title: 'dataEmpty'.tr()),
               ),
             ],
           );
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(12),
+          padding: explorePageGutter(context).copyWith(
+            top: kExploreCardGap,
+            bottom: MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+          ),
           itemCount: items.length + 1,
-          separatorBuilder: (_, _) => const Gap(8),
+          separatorBuilder: (_, _) => const Gap(kExploreCardGap),
           itemBuilder: (context, index) {
             if (index == items.length) return footer;
             final survey = items[index];
-            return Card.outlined(
-              margin: EdgeInsets.zero,
+            return ExploreCard(
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: SolSpace.lg,
+                  vertical: SolSpace.sm,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: SolRadius.cardRadius,
                 ),
                 leading: Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SolRadius.sm),
                   ),
                   child: Icon(
                     Symbols.quiz,
@@ -1649,13 +1735,7 @@ class PublisherProfileContent extends HookConsumerWidget {
                   availableWidth >= _wideLayoutMinWidth;
 
               final publicationViews = [
-                _PublisherPostsTab(
-                  pubName: name,
-                  horizontalPadding: useWideLayout ? 0 : 12,
-                  // Wide layout hosts this tab in the publication card, which
-                  // already draws the row surface.
-                  flush: useWideLayout,
-                ),
+                _PublisherPostsTab(pubName: name),
                 _PublisherCollectionsTab(pubName: name),
                 _PublisherStickerPacksTab(pubName: name),
                 _PublisherSurveysTab(pubName: name),
@@ -1690,9 +1770,9 @@ class PublisherProfileContent extends HookConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Gap(12),
+                          const Gap(kExploreCardGap),
                           Padding(
-                            padding: const .symmetric(horizontal: 8),
+                            padding: explorePageGutter(context),
                             child: _PublisherBasisWidget(
                               data: data,
                               subStatus: subStatus,
@@ -1702,20 +1782,24 @@ class PublisherProfileContent extends HookConsumerWidget {
                               unsubscribe: unsubscribe,
                               toggleNotify: toggleNotify,
                               showHeaderImage: false,
-                            ).padding(horizontal: 12),
+                            ),
                           ),
-                          const Gap(12),
+                          const Gap(kExploreCardGap),
                           if (data.account?.badges.isNotEmpty ?? false) ...[
-                            _PublisherBadgesWidget(
-                              data: data,
-                              badges: badges,
-                            ).padding(horizontal: 12),
-                            const Gap(12),
+                            Padding(
+                              padding: explorePageGutter(context),
+                              child: _PublisherBadgesWidget(
+                                data: data,
+                                badges: badges,
+                              ),
+                            ),
+                            const Gap(kExploreCardGap),
                           ],
-                          _PublisherHeatmapWidget(
-                            heatmap: heatmap,
-                          ).padding(horizontal: 12),
-                          const Gap(4),
+                          Padding(
+                            padding: explorePageGutter(context),
+                            child: _PublisherHeatmapWidget(heatmap: heatmap),
+                          ),
+                          const Gap(kExploreCardGap),
                         ],
                       ),
                     ),
@@ -1754,33 +1838,40 @@ class PublisherProfileContent extends HookConsumerWidget {
               }
 
               return Row(
-                spacing: 12,
+                spacing: SolSpace.sm,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Flexible(
                     flex: 4,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 12, top: 12),
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        clipBehavior: Clip.antiAlias,
-                        child: Column(
-                          children: [
-                            tabBar,
-                            Expanded(
-                              child: TabBarView(children: publicationViews),
-                            ),
-                          ],
-                        ),
+                      padding: EdgeInsets.only(
+                        left: SolSpace.md,
+                        top: kExploreCardGap,
+                      ),
+                      child: NestedScrollView(
+                        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                          SliverFloatingTabBar(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            child: tabBar,
+                          ),
+                        ],
+                        body: TabBarView(children: publicationViews),
                       ),
                     ),
                   ),
                   Flexible(
                     flex: 3,
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+                      padding: EdgeInsets.fromLTRB(
+                        0,
+                        kExploreCardGap,
+                        SolSpace.md,
+                        kExploreCardGap,
+                      ),
                       child: Column(
-                        spacing: 12,
+                        spacing: kExploreCardGap,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _PublisherBasisWidget(
@@ -1831,7 +1922,7 @@ class PublisherProfileContent extends HookConsumerWidget {
     final availableWidth = MediaQuery.of(context).size.width;
     final useWideLayout =
         isWideScreen(context) && availableWidth >= _wideLayoutMinWidth;
-    final bottomInset = MediaQuery.of(context).padding.bottom + 16;
+    final bottomInset = MediaQuery.paddingOf(context).bottom + kExploreCardGap;
     final showHeaderImage = useWideLayout;
     final basis = _PublisherBasisWidget(
       data: data,
@@ -1862,16 +1953,16 @@ class PublisherProfileContent extends HookConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Gap(12),
-                basis.padding(horizontal: 12),
-                const Gap(12),
-                cards.padding(horizontal: 12),
-                const Gap(8),
+                const Gap(kExploreCardGap),
+                Padding(padding: explorePageGutter(context), child: basis),
+                const Gap(kExploreCardGap),
+                Padding(padding: explorePageGutter(context), child: cards),
+                const Gap(kExploreCardGap),
               ],
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: explorePageGutter(context),
             sliver: FediverseActorPostsWidget(actorId: actorId),
           ),
           SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
@@ -1886,31 +1977,32 @@ class PublisherProfileContent extends HookConsumerWidget {
     }
 
     return Row(
-      spacing: 12,
+      spacing: SolSpace.sm,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
           flex: 4,
           child: Padding(
-            padding: const EdgeInsets.only(left: 12, top: 12),
-            child: Card(
-              margin: EdgeInsets.zero,
-              clipBehavior: Clip.antiAlias,
-              child: CustomScrollView(
-                slivers: [
-                  FediverseActorPostsWidget(actorId: actorId),
-                  SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
-                ],
-              ),
+            padding: EdgeInsets.only(left: SolSpace.md, top: kExploreCardGap),
+            child: CustomScrollView(
+              slivers: [
+                FediverseActorPostsWidget(actorId: actorId),
+                SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+              ],
             ),
           ),
         ),
         Flexible(
           flex: 3,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+            padding: EdgeInsets.fromLTRB(
+              0,
+              kExploreCardGap,
+              SolSpace.md,
+              kExploreCardGap,
+            ),
             child: Column(
-              spacing: 12,
+              spacing: kExploreCardGap,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [basis, cards],
             ),

@@ -18,9 +18,12 @@ import 'package:island/core/config.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/responsive.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/explore_card.dart';
 import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/profile_header_app_bar.dart';
+import 'package:island/shared/widgets/sliver_floating_tab_bar.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/content/markdown.dart';
@@ -72,7 +75,12 @@ class _AccountBasicInfo extends HookWidget {
     final avatar = Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: theme.colorScheme.surface, width: 3),
+        // The ring separates the avatar from the card it overlaps, so it takes
+        // the card's own tone rather than the page ground's.
+        border: Border.all(
+          color: theme.colorScheme.surfaceContainerLow,
+          width: 3,
+        ),
       ),
       child: ProfilePictureWidget(
         file: data.profile.picture,
@@ -90,7 +98,7 @@ class _AccountBasicInfo extends HookWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+                  top: Radius.circular(SolRadius.card),
                 ),
                 child: AspectRatio(
                   aspectRatio: 16 / 7,
@@ -101,18 +109,15 @@ class _AccountBasicInfo extends HookWidget {
                   ),
                 ),
               ),
-              Positioned(bottom: -24, left: 16, child: avatar),
+              Positioned(bottom: -24, left: SolSpace.lg, child: avatar),
             ],
           ),
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: showHeaderImage ? 16 : 4,
-            vertical: showHeaderImage ? 16 : 0,
-          ),
+          padding: const EdgeInsets.all(SolSpace.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (showHeaderImage) const Gap(12),
+              if (showHeaderImage) const Gap(SolSpace.md),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 12,
@@ -123,7 +128,7 @@ class _AccountBasicInfo extends HookWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          spacing: 8,
+                          spacing: SolSpace.sm,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Flexible(
@@ -143,13 +148,15 @@ class _AccountBasicInfo extends HookWidget {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
+                                horizontal: SolSpace.sm,
+                                vertical: SolSpace.xxs,
                               ),
                               decoration: BoxDecoration(
                                 color:
                                     theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  SolRadius.chip,
+                                ),
                               ),
                               child: Text(
                                 '@${data.name}',
@@ -160,7 +167,7 @@ class _AccountBasicInfo extends HookWidget {
                             ),
                           ],
                         ),
-                        const Gap(4),
+                        const Gap(SolSpace.xs),
                         AccountStatusWidget(
                           uname: uname,
                           padding: EdgeInsets.zero,
@@ -182,9 +189,9 @@ class _AccountBasicInfo extends HookWidget {
                             value: data.profile.timeZone.trim(),
                           ),
                         if (accountDeveloper.value != null) ...[
-                          const Gap(12),
+                          const Gap(SolSpace.md),
                           InkWell(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(SolRadius.sm),
                             onTap: () {
                               context.router.push(
                                 PublisherProfileRoute(
@@ -194,17 +201,19 @@ class _AccountBasicInfo extends HookWidget {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                                horizontal: SolSpace.md,
+                                vertical: SolSpace.sm,
                               ),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.secondaryContainer
                                     .withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  SolRadius.sm,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                spacing: 8,
+                                spacing: SolSpace.sm,
                                 children: [
                                   Icon(
                                     Symbols.smart_toy,
@@ -237,7 +246,7 @@ class _AccountBasicInfo extends HookWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SolRadius.sm),
                     ),
                     child: IconButton(
                       onPressed: () {
@@ -257,7 +266,7 @@ class _AccountBasicInfo extends HookWidget {
               ),
               // Collapsible Bio Section
               if (data.profile.bio.isNotEmpty) ...[
-                const Gap(12),
+                const Gap(SolSpace.md),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -284,7 +293,9 @@ class _AccountBasicInfo extends HookWidget {
                             isBioExpanded.value = !isBioExpanded.value;
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: SolSpace.xs,
+                            ),
                             child: Text(
                               isBioExpanded.value
                                   ? 'collapse'.tr()
@@ -306,9 +317,7 @@ class _AccountBasicInfo extends HookWidget {
       ],
     );
 
-    return showHeaderImage
-        ? Card(margin: EdgeInsets.zero, child: content)
-        : content;
+    return ExploreCard(child: content);
   }
 }
 
@@ -323,12 +332,12 @@ class _AccountProfileInfoRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: SolSpace.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-          const Gap(6),
+          const Gap(SolSpace.xs + SolSpace.xxs),
           Expanded(
             child: Text(
               value,
@@ -353,13 +362,12 @@ class _AccountPunishment extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return ExploreCard(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SolRadius.cardRadius,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(SolSpace.card),
           child: Row(
             children: [
               Container(
@@ -367,7 +375,7 @@ class _AccountPunishment extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(SolRadius.sm),
                 ),
                 child: Icon(
                   Symbols.warning,
@@ -375,7 +383,7 @@ class _AccountPunishment extends StatelessWidget {
                   size: 20,
                 ),
               ),
-              const Gap(12),
+              const Gap(SolSpace.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,7 +394,7 @@ class _AccountPunishment extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Gap(2),
+                    const Gap(SolSpace.xxs),
                     Text(
                       'tapToViewDetails'.tr(),
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -435,15 +443,14 @@ class _AccountAction extends StatelessWidget {
         accountRelationship.value != null &&
         accountRelationship.value!.status > -100;
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return ExploreCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(SolSpace.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              spacing: 12,
+              spacing: SolSpace.md,
               children: [
                 Expanded(
                   child: isFriend
@@ -451,7 +458,7 @@ class _AccountAction extends StatelessWidget {
                           onPressed: null,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 6,
+                            spacing: SolSpace.xs,
                             children: [
                               const Icon(Symbols.person_check, size: 18),
                               Text('added').tr(),
@@ -462,7 +469,7 @@ class _AccountAction extends StatelessWidget {
                           onPressed: relationshipAction,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 6,
+                            spacing: SolSpace.xs,
                             children: [
                               const Icon(Symbols.person_add, size: 18),
                               Text('addFriendShort').tr(),
@@ -476,7 +483,7 @@ class _AccountAction extends StatelessWidget {
                           onPressed: blockAction,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 6,
+                            spacing: SolSpace.xs,
                             children: [
                               const Icon(Symbols.person_cancel, size: 18),
                               Text('unblockUser').tr(),
@@ -487,7 +494,7 @@ class _AccountAction extends StatelessWidget {
                           onPressed: blockAction,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 6,
+                            spacing: SolSpace.xs,
                             children: [
                               const Icon(Symbols.block, size: 18),
                               Text('blockUser').tr(),
@@ -497,9 +504,9 @@ class _AccountAction extends StatelessWidget {
                 ),
               ],
             ),
-            const Gap(12),
+            const Gap(SolSpace.md),
             Row(
-              spacing: 12,
+              spacing: SolSpace.md,
               children: [
                 Expanded(
                   child: FilledButton(
@@ -520,8 +527,8 @@ class _AccountAction extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                  decoration: const BoxDecoration(
+                    borderRadius: SolRadius.cardRadius,
                   ),
                   child: IconButton.filled(
                     onPressed: () {
@@ -892,12 +899,13 @@ class AccountProfileContent extends HookConsumerWidget {
               onRefresh: refreshProfile,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                padding: explorePageGutter(context).copyWith(
+                  top: kExploreCardGap,
+                  bottom:
+                      MediaQuery.paddingOf(context).bottom + kExploreCardGap,
                 ),
                 child: Column(
-                  spacing: 12,
+                  spacing: kExploreCardGap,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _AccountBasicInfo(
@@ -941,9 +949,12 @@ class AccountProfileContent extends HookConsumerWidget {
             onRefresh: refreshProfile,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: explorePageGutter(context).copyWith(
+                top: kExploreCardGap,
+                bottom: MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+              ),
               child: Column(
-                spacing: 12,
+                spacing: kExploreCardGap,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   AccountBoard(
@@ -962,8 +973,14 @@ class AccountProfileContent extends HookConsumerWidget {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                AccountTimelineList(uname: name),
-                SliverGap(MediaQuery.of(context).padding.bottom + 16),
+                const SliverGap(kExploreCardGap),
+                SliverPadding(
+                  padding: explorePageGutter(context),
+                  sliver: AccountTimelineList(uname: name),
+                ),
+                SliverGap(
+                  MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+                ),
               ],
             ),
           );
@@ -976,48 +993,54 @@ class AccountProfileContent extends HookConsumerWidget {
               final isHeaderCollapsed = !useWide && collapsed.value;
               final headerColors = profileHeaderColors(theme, headerTint.value);
 
-              final tabBar = Material(
-                color: isHeaderCollapsed
-                    ? headerColors.primary
-                    : theme.colorScheme.surface,
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: TabBar(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    indicator: BoxDecoration(
-                      color: isHeaderCollapsed
-                          ? headerColors.onPrimary.withOpacity(0.22)
-                          : theme.colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerHeight: 0,
-                    labelColor: isHeaderCollapsed
-                        ? headerColors.onPrimary
-                        : theme.colorScheme.onSecondaryContainer,
-                    unselectedLabelColor: isHeaderCollapsed
-                        ? headerColors.onPrimary.withOpacity(0.7)
-                        : theme.colorScheme.onSurfaceVariant,
-                    splashBorderRadius: BorderRadius.circular(20),
-                    labelStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text('board'.tr()),
-                        ),
-                      ),
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text('timeline'.tr()),
-                        ),
-                      ),
-                    ],
+              // Two tabs always split the pane's width evenly. The bar paints
+              // nothing itself: the narrow layout pins it on the page ground
+              // through its sliver delegate, while the wide layout keeps it in
+              // the pane's own scroll view so it leaves and returns with the
+              // content.
+              final tabBar = Padding(
+                padding: const EdgeInsets.only(
+                  top: SolSpace.sm,
+                  bottom: SolSpace.xs,
+                ),
+                child: TabBar(
+                  padding: const EdgeInsets.symmetric(horizontal: SolSpace.md),
+                  indicator: BoxDecoration(
+                    color: isHeaderCollapsed
+                        ? headerColors.onPrimary.withOpacity(0.22)
+                        : theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(SolRadius.lg),
                   ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerHeight: 0,
+                  labelColor: isHeaderCollapsed
+                      ? headerColors.onPrimary
+                      : theme.colorScheme.onSecondaryContainer,
+                  unselectedLabelColor: isHeaderCollapsed
+                      ? headerColors.onPrimary.withOpacity(0.7)
+                      : theme.colorScheme.onSurfaceVariant,
+                  splashBorderRadius: BorderRadius.circular(SolRadius.lg),
+                  labelStyle: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabs: [
+                    Tab(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SolSpace.xs,
+                        ),
+                        child: Text('board'.tr()),
+                      ),
+                    ),
+                    Tab(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SolSpace.xs,
+                        ),
+                        child: Text('timeline'.tr()),
+                      ),
+                    ),
+                  ],
                 ),
               );
 
@@ -1047,10 +1070,7 @@ class AccountProfileContent extends HookConsumerWidget {
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _ProfileTabBarHeaderDelegate(
-                          child: Padding(
-                            padding: const .symmetric(vertical: 4),
-                            child: tabBar,
-                          ),
+                          child: tabBar,
                           backgroundColor: isHeaderCollapsed
                               ? headerColors.primary
                               : theme.colorScheme.surface,
@@ -1065,34 +1085,38 @@ class AccountProfileContent extends HookConsumerWidget {
               }
 
               return Row(
-                spacing: 8,
+                spacing: SolSpace.sm,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Flexible(
                     flex: 4,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Column(
-                        children: [
-                          tabBar,
-                          Expanded(
-                            child: TabBarView(
-                              children: [boardContentNoHeader, timelineContent],
-                            ),
+                      padding: EdgeInsets.only(
+                        left: SolSpace.md,
+                        top: kExploreCardGap,
+                      ),
+                      child: NestedScrollView(
+                        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                          SliverFloatingTabBar(
+                            backgroundColor: theme.colorScheme.surface,
+                            child: tabBar,
                           ),
                         ],
+                        body: TabBarView(
+                          children: [boardContentNoHeader, timelineContent],
+                        ),
                       ),
                     ),
                   ),
                   Flexible(
                     flex: 3,
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
+                      padding: EdgeInsets.symmetric(
+                        vertical: kExploreCardGap,
+                        horizontal: SolSpace.md,
                       ),
                       child: Column(
-                        spacing: 12,
+                        spacing: kExploreCardGap,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _AccountBasicInfo(
@@ -1137,8 +1161,9 @@ class _ProfileTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final Color backgroundColor;
 
-  /// TabBar (~48) plus its symmetric vertical padding (8 top + 8 bottom).
-  static const double _height = 64;
+  /// TabBar (46) plus the bar's own vertical padding: `SolSpace.sm` above,
+  /// `SolSpace.xs` below.
+  static const double _height = kFloatingTabBarHeight;
 
   _ProfileTabBarHeaderDelegate({
     required this.child,
