@@ -29,8 +29,9 @@ class NotificationItemWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (item.type == NotificationItemType.friendStatus) {
       final event = item.friendStatusEvent!;
-      // The capsule carries its own countdown along the outline, so this item
-      // contributes no card, close button or progress bar of its own.
+      // The capsule is its own chrome: no card, close button or progress bar.
+      // It retracts to the avatar as soon as the overlay dismisses it, so the
+      // exit flight shows the same bare circle as the entrance.
       return GestureDetector(
         onHorizontalDragEnd: (details) {
           final velocity = details.primaryVelocity ?? 0;
@@ -39,8 +40,7 @@ class NotificationItemWidget extends HookConsumerWidget {
         child: FriendStatusToast(
           event: event,
           onDismiss: onDismiss,
-          progress: progress,
-          isDesktop: isDesktop,
+          dismissed: item.dismissed,
         ),
       );
     }

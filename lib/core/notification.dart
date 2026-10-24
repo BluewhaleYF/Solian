@@ -23,15 +23,15 @@ class NotificationItem implements OverlayNotificationItem {
   @override
   final bool dismissed;
 
-  /// Friend-status notices are capsules that paint their own fill, outline and
-  /// timer, so the overlay must not put a card behind them.
+  /// Friend-status notices are capsules that paint their own fill and shape,
+  /// so the overlay must not put a card behind them.
   @override
   bool get selfSurfaced => type == NotificationItemType.friendStatus;
 
-  /// A capsule is one line plus its own insets; the deck's 20px card overlap
+  /// A capsule is 34px tall plus its own shadow; the deck's 20px card overlap
   /// would swallow that sentence, so it gets a clear slot of its own.
   @override
-  double get stackAdvance => selfSurfaced ? 52 : 0;
+  double get stackAdvance => selfSurfaced ? 42 : 0;
 
   NotificationItem({
     String? id,

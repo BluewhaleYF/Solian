@@ -65,7 +65,7 @@ SnPresenceActivity _activity({String? title, String? subtitle}) {
 Widget _app(
   FriendStatusChangeEvent event,
   SharedPreferences prefs, {
-  Animation<double>? progress,
+  bool dismissed = false,
 }) {
   return ProviderScope(
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -83,7 +83,7 @@ Widget _app(
               alignment: Alignment.topCenter,
               child: FriendStatusToast(
                 event: event,
-                progress: progress,
+                dismissed: dismissed,
                 onDismiss: () {},
               ),
             ),
@@ -99,14 +99,26 @@ Future<void> _pump(
   WidgetTester tester,
   FriendStatusChangeEvent event,
   SharedPreferences prefs, {
-  Animation<double>? progress,
+  bool dismissed = false,
 }) async {
   await tester.runAsync(() async {
-    await tester.pumpWidget(_app(event, prefs, progress: progress));
+    await tester.pumpWidget(_app(event, prefs, dismissed: dismissed));
     // The locale bundle loads through the asset bundle asynchronously; without
     // real async time the first `tr()` in the tree would run against nothing.
     await Future<void>.delayed(const Duration(milliseconds: 100));
   });
+  await tester.pump();
+}
+
+/// The capsule itself, not the full-width lane it is aligned in.
+Finder _capsule() => find.descendant(
+  of: find.byType(FriendStatusToast),
+  matching: find.byType(InkWell),
+);
+
+/// Runs the delayed unfold to completion.
+Future<void> _settleUnfold(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 400));
   await tester.pumpAndSettle();
 }
 
@@ -198,15 +210,43 @@ void main() {
     expect(find.byType(Tooltip), findsOneWidget);
   });
 
-  testWidgets('the capsule keeps one rank while the auto-dismiss runs', (
+  testWidgets('starts as a bare avatar and unfolds the sentence', (
     tester,
   ) async {
-    final controller = AnimationController(
-      vsync: const TestVSync(),
-      duration: const Duration(seconds: 5),
-      value: 1,
+    await _pump(
+      tester,
+      FriendStatusChangeEvent(
+        account: _account('alice', nick: 'Alice'),
+        changeType: FriendStatusChangeType.online,
+      ),
+      prefs,
     );
-    addTearDown(controller.dispose);
+
+    // Nothing but the avatar is inside the pill the moment it lands.
+    final collapsed = tester.getSize(_capsule());
+    expect(collapsed.height, collapsed.width);
+
+    await _settleUnfold(tester);
+    final expanded = tester.getSize(_capsule());
+    expect(expanded.width, greaterThan(collapsed.width));
+    expect(expanded.height, collapsed.height);
+    expect(find.text('Alice came online', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('retracts to the avatar when dismissed, then leaves', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      FriendStatusChangeEvent(
+        account: _account('alice', nick: 'Alice'),
+        changeType: FriendStatusChangeType.online,
+      ),
+      prefs,
+    );
+    await _settleUnfold(tester);
+    final expanded = tester.getSize(_capsule());
+    expect(expanded.width, greaterThan(expanded.height));
 
     await _pump(
       tester,
@@ -215,17 +255,15 @@ void main() {
         changeType: FriendStatusChangeType.online,
       ),
       prefs,
-      progress: controller,
+      dismissed: true,
     );
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
-    final before = tester.getSize(find.byType(FriendStatusToast));
-    controller.value = 0.25;
-    await tester.pump();
-    final midway = tester.getSize(find.byType(FriendStatusToast));
-
-    // The timer is painted on the outline; letting it run must not resize the
-    // capsule or push the lane below it around.
-    expect(midway, before);
+    // Same silhouette the entrance showed: a circle, not a shrinking pill.
+    final retracted = tester.getSize(_capsule());
+    expect(retracted.width, retracted.height);
+    expect(retracted.width, lessThan(expanded.width));
   });
 
   testWidgets('friend-status items declare their own chrome and slot', (

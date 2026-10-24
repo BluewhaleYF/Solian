@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -6,6 +7,7 @@ import 'package:island/accounts/widgets/account/activity_presence.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:island/shared/widgets/unfold_reveal.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
 enum FriendStatusChangeType {
@@ -33,10 +35,11 @@ class FriendStatusChangeEvent {
 
 /// One-line capsule for a friend's presence change.
 ///
-/// Deliberately built like the connection pill rather than the notification
-/// cards: an avatar, a single sentence that holds the whole event, and the
-/// status as a glyph at the end. The capsule owns its surface, so the overlay
-/// must not paint a card behind it.
+/// The capsule travels like the connection pill: it drops in from above the
+/// lane as a bare avatar, and only once it has landed does the sentence grow
+/// out of the avatar's trailing edge. Leaving is the same flight reversed —
+/// the sentence retracts, then the avatar is carried off. There is no
+/// countdown chrome; the pill is the whole notice.
 ///
 /// The body holds the verb ("came online", "started Dyson Sphere Program");
 /// the name is the loud part, the verb the quiet part. Details that would need
@@ -46,22 +49,27 @@ class FriendStatusToast extends HookWidget {
   final FriendStatusChangeEvent event;
   final VoidCallback? onDismiss;
 
-  /// Auto-dismiss timer, 1 → 0. Drives the countdown etched along the capsule's
-  /// own outline. Null renders a static outline (previews, tests).
-  final Animation<double>? progress;
-
-  /// Desktop notices dock against the right edge; phones center them.
-  final bool isDesktop;
+  /// Set by the overlay as soon as the notice is dismissed. The capsule
+  /// retracts to the avatar while the overlay slides it out, so the exit shows
+  /// the same bare avatar as the entrance.
+  final bool dismissed;
 
   const FriendStatusToast({
     super.key,
     required this.event,
     this.onDismiss,
-    this.progress,
-    this.isDesktop = false,
+    this.dismissed = false,
   });
 
-  static const Duration _entranceDuration = Duration(milliseconds: 360);
+  /// Beat between the avatar landing and the sentence unfolding. Matches the
+  /// overlay's own entrance so the widening starts after the drop, not during.
+  static const Duration _expandDelay = Duration(milliseconds: 280);
+
+  static const Duration _expandDuration = Duration(milliseconds: 320);
+
+  /// Shorter than the overlay's exit reverse, so the retraction finishes while
+  /// the item is still on screen instead of being cut off by its removal.
+  static const Duration _collapseDuration = Duration(milliseconds: 160);
 
   static const Duration _contentDuration = Duration(milliseconds: 260);
 
@@ -71,9 +79,8 @@ class FriendStatusToast extends HookWidget {
       ? event.activities.first
       : null;
 
-  String get _name => event.account.nick.isNotEmpty
-      ? event.account.nick
-      : event.account.name;
+  String get _name =>
+      event.account.nick.isNotEmpty ? event.account.nick : event.account.name;
 
   String _message() {
     final activity = _activity;
@@ -143,7 +150,8 @@ class FriendStatusToast extends HookWidget {
       FriendStatusChangeType.doNotDisturb =>
         dark ? Colors.deepOrange.shade300 : Colors.deepOrange.shade700,
       FriendStatusChangeType.activityStarted => theme.colorScheme.primary,
-      FriendStatusChangeType.activityEnded => theme.colorScheme.onSurfaceVariant,
+      FriendStatusChangeType.activityEnded =>
+        theme.colorScheme.onSurfaceVariant,
     };
   }
 
@@ -163,49 +171,37 @@ class FriendStatusToast extends HookWidget {
       theme.colorScheme.surfaceContainerHigh,
     );
 
-    // Entrances are staggered off one controller so the capsule assembles as a
-    // unit: the avatar lands, then the sentence slides in, then the glyph pops.
-    final entrance = useAnimationController(
-      duration: reduceMotion ? Duration.zero : _entranceDuration,
+    // 0 → 1 is the sentence's width: the pill is a bare avatar at 0 and a full
+    // capsule at 1. The overlay owns the vertical flight; this owns the
+    // horizontal unfolding and its retraction on the way out.
+    final unfold = useAnimationController(
+      duration: reduceMotion ? Duration.zero : _expandDuration,
+      reverseDuration: reduceMotion ? Duration.zero : _collapseDuration,
       initialValue: reduceMotion ? 1 : 0,
     );
-    useEffect(() {
-      if (!reduceMotion) entrance.forward();
-      return null;
-    }, [entrance, reduceMotion]);
-
-    final avatarScale = useMemoized(
-      () => Tween<double>(begin: 0.58, end: 1).animate(
-        CurvedAnimation(
-          parent: entrance,
-          curve: const Interval(0, 0.7, curve: Curves.easeOutBack),
-        ),
-      ),
-      [entrance],
-    );
-    final textFade = useMemoized(
+    final unfoldCurve = useMemoized(
       () => CurvedAnimation(
-        parent: entrance,
-        curve: const Interval(0.16, 1, curve: Curves.easeOut),
+        parent: unfold,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
       ),
-      [entrance],
+      [unfold],
     );
-    final textSlide = useMemoized(
-      () => Tween<Offset>(
-        begin: const Offset(-0.08, 0),
-        end: Offset.zero,
-      ).animate(textFade),
-      [textFade],
-    );
-    final glyphScale = useMemoized(
-      () => Tween<double>(begin: 0.4, end: 1).animate(
-        CurvedAnimation(
-          parent: entrance,
-          curve: const Interval(0.28, 1, curve: Curves.easeOutBack),
-        ),
-      ),
-      [entrance],
-    );
+    useEffect(() {
+      if (reduceMotion) return null;
+      var alive = true;
+      final timer = Timer(_expandDelay, () {
+        if (alive) unfold.forward();
+      });
+      return () {
+        alive = false;
+        timer.cancel();
+      };
+    }, [unfold, reduceMotion]);
+    useEffect(() {
+      if (dismissed) unfold.reverse();
+      return null;
+    }, [dismissed, unfold]);
 
     // Leaves room for the avatar, the trailing slot and the capsule's own
     // insets before the sentence starts truncating.
@@ -216,140 +212,91 @@ class FriendStatusToast extends HookWidget {
     final contentDuration = reduceMotion ? Duration.zero : _contentDuration;
     final semanticLabel = [name, message, ?detail].join(' ');
 
-    final capsule = AnimatedSize(
-      duration: contentDuration,
-      curve: Curves.easeOutCubic,
-      alignment: isDesktop ? Alignment.centerRight : Alignment.topCenter,
-      clipBehavior: Clip.none,
-      child: Material(
-        color: fill,
-        elevation: 3,
-        shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.2),
-        surfaceTintColor: Colors.transparent,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onDismiss,
-          customBorder: const StadiumBorder(),
-          child: Stack(
+    final body = Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 0,
+      children: [
+        ProfilePictureWidget(
+          file: event.account.profile.picture,
+          fallbackName: name,
+          radius: 11,
+        ),
+        UnfoldReveal(
+          animation: unfoldCurve,
+          inset: 8,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 8,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(6, 6, 8, 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 8,
-                  children: [
-                    ScaleTransition(
-                      scale: avatarScale,
-                      child: ProfilePictureWidget(
-                        file: event.account.profile.picture,
-                        fallbackName: name,
-                        radius: 11,
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: textMaxWidth),
+                child: AnimatedSwitcher(
+                  duration: contentDuration,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.3),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
                       ),
-                    ),
-                    SlideTransition(
-                      position: textSlide,
-                      child: FadeTransition(
-                        opacity: textFade,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: textMaxWidth),
-                          child: AnimatedSwitcher(
-                            duration: contentDuration,
-                            switchInCurve: Curves.easeOutCubic,
-                            switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0, -0.3),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            layoutBuilder: (current, previous) => Stack(
-                              alignment: isDesktop
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              children: [...previous, ?current],
-                            ),
-                            child: Text.rich(
-                              key: ValueKey<String>(message),
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: name,
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: ' $message',
-                                    style: theme.textTheme.labelLarge
-                                        ?.copyWith(
-                                          color: theme
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                    );
+                  },
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [...previous, ?current],
+                  ),
+                  child: Text.rich(
+                    key: ValueKey<String>(message),
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: name,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
                           ),
                         ),
-                      ),
-                    ),
-                    ScaleTransition(
-                      scale: glyphScale,
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Center(
-                          child: AnimatedSwitcher(
-                            duration: contentDuration,
-                            switchInCurve: Curves.easeOutBack,
-                            switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, animation) =>
-                                ScaleTransition(
-                                  scale: animation,
-                                  child: FadeTransition(
-                                    opacity: animation,
-                                    child: child,
-                                  ),
-                                ),
-                            child: _Trailing(
-                              key: ValueKey<String>(
-                                glyph?.hashCode.toString() ??
-                                    event.changeType.name,
-                              ),
-                              glyph: glyph,
-                              online:
-                                  event.changeType ==
-                                  FriendStatusChangeType.online,
-                              tone: tone,
-                            ),
+                        TextSpan(
+                          text: ' $message',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _CapsuleOutline(
-                      progress: progress,
-                      color: tone,
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: contentDuration,
+                    switchInCurve: Curves.easeOutBack,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                    child: _Trailing(
+                      key: ValueKey<String>(
+                        glyph?.hashCode.toString() ?? event.changeType.name,
+                      ),
+                      glyph: glyph,
+                      online: event.changeType == FriendStatusChangeType.online,
+                      tone: tone,
                     ),
                   ),
                 ),
@@ -357,6 +304,20 @@ class FriendStatusToast extends HookWidget {
             ],
           ),
         ),
+      ],
+    );
+
+    final capsule = Material(
+      color: fill,
+      elevation: 3,
+      shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.2),
+      surfaceTintColor: Colors.transparent,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onDismiss,
+        customBorder: const StadiumBorder(),
+        child: Padding(padding: const EdgeInsets.all(6), child: body),
       ),
     );
 
@@ -368,7 +329,7 @@ class FriendStatusToast extends HookWidget {
     );
 
     return Align(
-      alignment: isDesktop ? Alignment.topRight : Alignment.topCenter,
+      alignment: Alignment.topCenter,
       child: detail == null
           ? labelled
           : Tooltip(
@@ -410,66 +371,4 @@ class _Trailing extends StatelessWidget {
     }
     return Icon(glyph, size: 16, color: tone);
   }
-}
-
-/// The capsule's hairline, with the remaining display time burned along it.
-///
-/// The timer follows the outline itself instead of a bar or a ring, so the pill
-/// keeps one silhouette whether it is counting down or not. The segment starts
-/// at the capsule's top-left corner and is consumed clockwise.
-class _CapsuleOutline extends CustomPainter {
-  final Animation<double>? progress;
-  final Color color;
-
-  _CapsuleOutline({required this.progress, required this.color})
-    : super(repaint: progress);
-
-  static const double _outlineWidth = 1;
-
-  static const double _timerWidth = 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.shortestSide <= 0) return;
-
-    final outline = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _outlineWidth
-      ..color = color.withValues(alpha: 0.22);
-    final inset = (Offset.zero & size).deflate(_outlineWidth / 2);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(inset, Radius.circular(inset.height / 2)),
-      outline,
-    );
-
-    final progress = this.progress;
-    final fraction = progress?.value.clamp(0.0, 1.0) ?? 0.0;
-    if (fraction <= 0) return;
-
-    final timerInset = (Offset.zero & size).deflate(_timerWidth / 2);
-    if (timerInset.width <= 0 || timerInset.height <= 0) return;
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          timerInset,
-          Radius.circular(timerInset.height / 2),
-        ),
-      );
-    // Materialised: a path metric iterable reports emptiness and length
-    // through fresh iterators, and `first` on the lazy one can land on an
-    // exhausted sweep while a resize is in flight.
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) return;
-    final metric = metrics.first;
-    final timer = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _timerWidth
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    canvas.drawPath(metric.extractPath(0, metric.length * fraction), timer);
-  }
-
-  @override
-  bool shouldRepaint(_CapsuleOutline oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.progress != progress;
 }
