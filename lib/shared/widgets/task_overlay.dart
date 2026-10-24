@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -15,8 +14,14 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'task_overlay_state.dart';
+import 'unfold_reveal.dart';
 
-double taskOverlayHeight(bool isDesktop) => isDesktop ? 32 : 56;
+/// Height of the lane the task pill floats in.
+///
+/// The pill is narrower than the lane and centered in it, the way a Live
+/// Activity floats over the content instead of spanning the window edge to
+/// edge; the slack carries its elevation shadow.
+double taskOverlayHeight(bool isDesktop) => isDesktop ? 56 : 64;
 
 /// Toggles the process-wide wakelock while an app task is running.
 ///
@@ -112,54 +117,71 @@ String _taskTypeLabel(String type) {
 
 // --- Overlay ---
 
+/// The floating task pill.
+///
+/// Shaped like a Live Activity: one centered capsule that slides up into its
+/// lane, shows the state as a progress ring, and unfolds the sentence beside
+/// that ring once it has landed. When nothing is left to report it withdraws
+/// into the ring while the lane closes, so the settled pill never resizes
+/// anything above it.
 class TaskOverlay extends HookConsumerWidget {
   const TaskOverlay({super.key});
+
+  /// Beat between the pill landing and the sentence unfolding, matching the
+  /// status capsule so the widen starts after the drop rather than during it.
+  static const Duration _unfoldDelay = Duration(milliseconds: 200);
+
+  static const Duration _unfoldDuration = Duration(milliseconds: 300);
+
+  /// Shorter than the lane's own slide, so the pill is a bare ring again
+  /// before the lane has finished closing.
+  static const Duration _retractDuration = Duration(milliseconds: 160);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allTasks = ref.watch(tasksProvider);
     final snapshot = buildTaskOverlaySnapshot(allTasks, now: DateTime.now());
     final isDesktop = DesktopWindowFrame.isPlatformDesktop;
-    final overlayHeight = taskOverlayHeight(isDesktop);
-    final slideController = useAnimationController(
-      duration: const Duration(milliseconds: 320),
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    // The lane keeps this widget mounted while it closes, so the last pill has
+    // to survive the empty snapshot: without it the exit would clip a blank
+    // lane instead of carrying the ring down out of sight.
+    final retained = useRef<TaskOverlaySnapshot?>(null);
+    if (snapshot.isVisible) retained.value = snapshot;
+    final shown = snapshot.isVisible ? snapshot : retained.value;
+
+    final unfold = useAnimationController(
+      duration: reduceMotion ? Duration.zero : _unfoldDuration,
+      reverseDuration: reduceMotion ? Duration.zero : _retractDuration,
+      initialValue: reduceMotion ? 1 : 0,
     );
 
+    // The lane owns the vertical flight; this owns the sentence. Leaving, the
+    // sentence retracts first so the lane closes around a bare ring, the same
+    // silhouette the entrance showed.
     useEffect(() {
-      if (snapshot.isVisible) {
-        slideController.forward();
-      } else {
-        slideController.reverse();
+      if (!snapshot.isVisible) {
+        unfold.reverse();
+        return null;
       }
-      return null;
-    }, [snapshot.isVisible]);
+      final timer = Timer(_unfoldDelay, () {
+        if (unfold.status == AnimationStatus.dismissed) unfold.forward();
+      });
+      return timer.cancel;
+    }, [snapshot.isVisible, unfold]);
 
-    if (!snapshot.isVisible &&
-        slideController.status == AnimationStatus.dismissed) {
-      return const SizedBox.shrink();
-    }
+    if (shown == null) return const SizedBox.shrink();
 
-    return IgnorePointer(
-      ignoring:
-          !snapshot.isVisible &&
-          slideController.status == AnimationStatus.dismissed,
-      child: AnimatedBuilder(
-        animation: slideController,
-        builder: (context, child) {
-          final offset =
-              Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).evaluate(
-                CurvedAnimation(
-                  parent: slideController,
-                  curve: Curves.easeOutCubic,
-                  reverseCurve: Curves.easeInCubic,
-                ),
-              );
-          return FractionalTranslation(translation: offset, child: child);
-        },
-        child: _TaskOverlayBar(height: overlayHeight, isDesktop: isDesktop),
+    return Center(
+      child: _TaskOverlayPill(
+        snapshot: shown,
+        unfold: CurvedAnimation(
+          parent: unfold,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+        isDesktop: isDesktop,
       ),
     );
   }
@@ -172,13 +194,28 @@ class TaskOverlayHost extends ConsumerStatefulWidget {
   ConsumerState<TaskOverlayHost> createState() => _TaskOverlayHostState();
 }
 
-class _TaskOverlayHostState extends ConsumerState<TaskOverlayHost> {
+class _TaskOverlayHostState extends ConsumerState<TaskOverlayHost>
+    with SingleTickerProviderStateMixin {
+  static const Duration _laneDuration = Duration(milliseconds: 320);
+
+  late final AnimationController _lane = AnimationController(
+    vsync: this,
+    duration: _laneDuration,
+    reverseDuration: const Duration(milliseconds: 260),
+  );
+  late final CurvedAnimation _laneCurve = CurvedAnimation(
+    parent: _lane,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeInCubic,
+  );
   Timer? _clearTimer;
   bool _wakelockHeld = false;
 
   @override
   void dispose() {
     _clearTimer?.cancel();
+    _lane.dispose();
+    _laneCurve.dispose();
     _releaseWakelock();
     super.dispose();
   }
@@ -249,167 +286,188 @@ class _TaskOverlayHostState extends ConsumerState<TaskOverlayHost> {
     final allTasks = ref.watch(tasksProvider);
     final snapshot = buildTaskOverlaySnapshot(allTasks, now: DateTime.now());
     final isDesktop = DesktopWindowFrame.isPlatformDesktop;
+    final laneHeight = taskOverlayHeight(isDesktop);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     _syncWakelock(allTasks);
     _syncAutoClear(allTasks);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-      height: snapshot.isVisible ? taskOverlayHeight(isDesktop) : 0,
-      child: ClipRect(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            height: taskOverlayHeight(isDesktop),
-            child: const TaskOverlay(),
+    // Reduce motion skips the flight instead of racing it: the controller is
+    // left alone and the lane simply is open or shut.
+    if (!reduceMotion) {
+      if (snapshot.isVisible) {
+        if (!_lane.isAnimating && !_lane.isCompleted) _lane.forward();
+      } else if (!_lane.isDismissed) {
+        _lane.reverse();
+      }
+    }
+
+    final shut = reduceMotion ? !snapshot.isVisible : _lane.isDismissed;
+    if (!snapshot.isVisible && shut) return const SizedBox.shrink();
+
+    // The pill is anchored to the lane's bottom edge, which travels under it:
+    // the clip reveals the capsule rising out of the edge while the lane's
+    // height opens up, so nothing below is pushed by a full-height gap.
+    return AnimatedBuilder(
+      animation: _laneCurve,
+      builder: (context, child) {
+        final t = reduceMotion
+            ? (snapshot.isVisible ? 1.0 : 0.0)
+            : _laneCurve.value;
+        return SizedBox(
+          height: laneHeight * t,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.bottomCenter,
+              minHeight: laneHeight,
+              maxHeight: laneHeight,
+              child: Opacity(opacity: t, child: child),
+            ),
           ),
-        ),
-      ),
+        );
+      },
+      child: SizedBox(height: laneHeight, child: const TaskOverlay()),
     );
   }
 }
 
-class _TaskOverlayBar extends ConsumerWidget {
-  final double height;
+/// The capsule itself: a progress ring that always shows, and the sentence
+/// that unfolds beside it.
+///
+/// The ring is the pill's anchor. It carries the status glyph in its hole and
+/// the task's progress on its stroke, so the collapsed pill still says what is
+/// happening; the sentence only adds the name and the detail.
+class _TaskOverlayPill extends ConsumerWidget {
+  final TaskOverlaySnapshot snapshot;
+  final Animation<double> unfold;
   final bool isDesktop;
 
-  const _TaskOverlayBar({required this.height, required this.isDesktop});
+  const _TaskOverlayPill({
+    required this.snapshot,
+    required this.unfold,
+    required this.isDesktop,
+  });
+
+  static const double _ringSize = 36;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allTasks = ref.watch(tasksProvider);
-    final snapshot = buildTaskOverlaySnapshot(allTasks, now: DateTime.now());
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final primaryTask = snapshot.primaryTask;
+    final visibleCount = snapshot.visibleTasks.length;
     final completedCount = snapshot.visibleTasks
         .where((task) => task.status == AppTaskStatus.completed)
         .length;
     final title = _buildTitle(primaryTask);
-    final subtitle = _buildSubtitle(
-      primaryTask,
-      snapshot.visibleTasks.length,
-      completedCount,
-    );
+    final subtitle = _buildSubtitle(primaryTask, visibleCount, completedCount);
     final double? progress = _taskHasIndeterminateProgress(primaryTask)
         ? null
         : snapshot.progress.clamp(0.0, 1.0);
     final statusColor = _taskStatusColor(colorScheme, primaryTask);
-    final progressText = progress == null
-        ? '—'
-        : '${(progress * 100).round()}%';
     final progressLabel = progress == null
         ? ''
         : ', ${(progress * 100).round()}% ${'taskProgress'.tr()}';
     final label = '$title, $subtitle$progressLabel';
-    final Widget progressIndicator = progress == null
-        ? LinearProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-          )
-        : TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: progress),
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return LinearProgressIndicator(
-                value: value,
-                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-              );
-            },
-          );
-    final Widget backgroundProgress = SizedBox(
-      height: 3,
-      width: double.infinity,
-      child: progressIndicator,
+
+    final fill = Color.alphaBlend(
+      statusColor.withValues(
+        alpha: theme.brightness == Brightness.dark ? 0.20 : 0.12,
+      ),
+      colorScheme.surfaceContainerHigh,
     );
 
     return Semantics(
       button: true,
       label: label,
-      child: Material(
-        color: colorScheme.surfaceContainerLow,
-        child: InkWell(
-          onTap: () => _showTaskSheet(context, ref),
-          child: SizedBox(
-            height: height,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Align(alignment: Alignment.topLeft, child: backgroundProgress),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    _contentHorizontalPadding(context),
-                    3,
-                    _contentHorizontalPadding(context),
-                    0,
+      child: ExcludeSemantics(
+        child: Material(
+          color: fill,
+          elevation: 4,
+          shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
+          surfaceTintColor: Colors.transparent,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _showTaskSheet(context, ref),
+            customBorder: const StadiumBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _TaskRing(
+                    task: primaryTask,
+                    progress: progress,
+                    color: statusColor,
+                    size: _ringSize,
                   ),
-                  child: Row(
-                    children: [
-                      _StatusIcon(
-                        icon: _taskStatusIcon(primaryTask),
-                        color: statusColor,
-                        size: isDesktop ? 22 : 34,
-                      ),
-                      SizedBox(width: isDesktop ? 9 : 12),
-                      Expanded(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: isDesktop ? 13 : null,
+                  UnfoldReveal(
+                    animation: unfold,
+                    inset: 10,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isDesktop ? 240 : 190,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                      SizedBox(width: isDesktop ? 10 : 12),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: isDesktop ? 180 : 140,
-                        ),
-                        child: Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          if (progress != null) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              '${(progress * 100).round()}%',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: statusColor,
+                                fontWeight: FontWeight.w800,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 2),
+                          Icon(
+                            Symbols.expand_less,
+                            size: 18,
                             color: colorScheme.onSurfaceVariant,
-                            fontSize: isDesktop ? 11 : null,
                           ),
-                        ),
+                        ],
                       ),
-                      SizedBox(width: isDesktop ? 10 : 12),
-                      Text(
-                        progressText,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w800,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Symbols.expand_less,
-                        size: isDesktop ? 16 : 19,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
-  }
-
-  double _contentHorizontalPadding(BuildContext context) {
-    if (isDesktop) return 16;
-    final mediaQuery = MediaQuery.of(context);
-    return 16 + math.max(mediaQuery.padding.left, mediaQuery.padding.right);
   }
 
   String _buildTitle(AppTask? task) {
@@ -454,6 +512,61 @@ class _TaskOverlayBar extends ConsumerWidget {
       useSafeArea: true,
       useRootNavigator: true,
       builder: (_) => const _TasksSheet(),
+    );
+  }
+}
+
+/// The pill's anchor: a progress ring with the status glyph in its hole.
+///
+/// A determinate task burns its progress along the stroke; a preparation stage
+/// spins instead of claiming a figure it cannot know yet.
+class _TaskRing extends StatelessWidget {
+  final AppTask? task;
+  final double? progress;
+  final Color color;
+  final double size;
+
+  const _TaskRing({
+    required this.task,
+    required this.progress,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final glyph = _taskStatusIcon(task);
+    final progress = this.progress;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox.expand(
+            child: progress == null
+                ? CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  )
+                : TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return CircularProgressIndicator(
+                        value: value,
+                        strokeWidth: 3,
+                        strokeCap: StrokeCap.round,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      );
+                    },
+                  ),
+          ),
+          Icon(glyph, size: size * 0.5, color: color),
+        ],
+      ),
     );
   }
 }

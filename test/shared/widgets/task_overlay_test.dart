@@ -78,24 +78,23 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('top bar shows percentage progress for a running task', (
+  testWidgets('pill ring shows percentage progress for a running task', (
     tester,
   ) async {
     await _pump(tester, [
       _uploadTask(status: AppTaskStatus.inProgress, progress: 0.5),
     ]);
 
-    final indicator = find.byType(mui.LinearProgressIndicator);
+    final indicator = find.byType(mui.CircularProgressIndicator);
     expect(indicator, findsOneWidget);
     expect(
-      tester.widget<mui.LinearProgressIndicator>(indicator).value,
+      tester.widget<mui.CircularProgressIndicator>(indicator).value,
       closeTo(0.5, 0.01),
     );
-    expect(tester.getSize(indicator).height, greaterThan(0));
     expect(find.text('50%'), findsOneWidget);
   });
 
-  testWidgets('top bar stays indeterminate while an upload is preparing', (
+  testWidgets('pill ring stays indeterminate while an upload is preparing', (
     tester,
   ) async {
     await _pump(tester, [
@@ -106,8 +105,11 @@ void main() {
       ),
     ]);
 
-    final indicator = find.byType(mui.LinearProgressIndicator);
+    final indicator = find.byType(mui.CircularProgressIndicator);
     expect(indicator, findsOneWidget);
-    expect(tester.widget<mui.LinearProgressIndicator>(indicator).value, isNull);
+    expect(
+      tester.widget<mui.CircularProgressIndicator>(indicator).value,
+      isNull,
+    );
   });
 }
