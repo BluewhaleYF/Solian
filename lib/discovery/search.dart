@@ -353,9 +353,7 @@ class _RealmsSearchTab extends HookConsumerWidget {
       slivers: [
         // The pill's band lives inside the scroll view, so rows pass under
         // the capsule instead of stopping at it.
-        SliverGap(
-          MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
-        ),
+        SliverGap(kPillAppBarHeight + _kResultGap),
         // The same gutter the posts rows and the explore feed use, so a card
         SliverPadding(
           padding: explorePageGutter(context),
@@ -506,12 +504,7 @@ class _PostsSearchTab extends HookConsumerWidget {
             ),
             child: Padding(
               padding: explorePageGutter(context),
-              child: buildMainContent(
-                topGap:
-                    MediaQuery.paddingOf(context).top +
-                    kPillAppBarHeight +
-                    _kResultGap,
-              ),
+              child: buildMainContent(topGap: kPillAppBarHeight + _kResultGap),
             ),
           ),
         ),
@@ -525,8 +518,7 @@ class _PostsSearchTab extends HookConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SolSpace.md),
       child: buildMainContent(
-        topGap:
-            MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
+        topGap: kPillAppBarHeight + _kResultGap,
         header: AnimatedSlide(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
@@ -655,9 +647,7 @@ class _AccountSearchTab extends HookConsumerWidget {
       onRefresh: () => performSearch(searchQuery.value),
       child: CustomScrollView(
         slivers: [
-          SliverGap(
-            MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
-          ),
+          SliverGap(kPillAppBarHeight + _kResultGap),
           SliverToBoxAdapter(
             child: Center(
               child: ConstrainedBox(

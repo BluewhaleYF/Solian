@@ -252,7 +252,7 @@ class CreatorPostListScreen extends HookConsumerWidget {
                 provider: provider,
                 notifier: provider.notifier,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                spacing: 0,
+                spacing: 12,
                 itemBuilder: (context, index, post) => CreatorPostCardTile(
                   index: index,
                   post: post,

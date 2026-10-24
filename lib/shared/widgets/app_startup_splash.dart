@@ -532,29 +532,12 @@ class _StageInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mutedColor = colorScheme.onSurface.withValues(alpha: 0.5);
-    final dimColor = colorScheme.onSurface.withValues(alpha: 0.3);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (currentIndex > 0)
-            AnimatedOpacity(
-              opacity: 0.8,
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                stages[currentIndex - 1].label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodySmall?.copyWith(
-                  color: dimColor,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          if (currentIndex > 0) const SizedBox(height: 8),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             transitionBuilder: (child, animation) {
@@ -632,23 +615,6 @@ class _StageInfo extends StatelessWidget {
                   )
                 : const SizedBox.shrink(key: ValueKey('empty')),
           ),
-          if (currentIndex < stages.length - 1) ...[
-            const SizedBox(height: 8),
-            AnimatedOpacity(
-              opacity: isBusy ? 0.8 : 0,
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                stages[currentIndex + 1].label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodySmall?.copyWith(
-                  color: dimColor,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ],
           if (isBusy && isCurrentStageSkippable && showSkip) ...[
             const SizedBox(height: 12),
             TextButton(
