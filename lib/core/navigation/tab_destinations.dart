@@ -21,6 +21,11 @@ class TabDestination {
   final IconData navigationIcon;
   final Widget Function(bool selected) iconBuilder;
 
+  /// SF Symbol names for the native iOS glass tab bar, which renders a real
+  /// `UITabBar` and cannot draw [navigationIcon].
+  final String nativeSymbol;
+  final String? nativeSelectedSymbol;
+
   const TabDestination({
     required this.id,
     required this.routeIndex,
@@ -28,6 +33,8 @@ class TabDestination {
     required this.label,
     required this.navigationIcon,
     required this.iconBuilder,
+    required this.nativeSymbol,
+    this.nativeSelectedSymbol,
   });
 }
 
@@ -44,6 +51,8 @@ List<TabDestination> get allTabDestinations => [
     navigationIcon: Symbols.dashboard_rounded,
     iconBuilder: (selected) =>
         Icon(Symbols.dashboard_rounded, fill: selected ? 1 : null),
+    nativeSymbol: 'square.grid.2x2',
+    nativeSelectedSymbol: 'square.grid.2x2.fill',
   ),
   TabDestination(
     id: 'explore',
@@ -53,6 +62,8 @@ List<TabDestination> get allTabDestinations => [
     navigationIcon: Symbols.explore_rounded,
     iconBuilder: (selected) =>
         Icon(Symbols.explore_rounded, fill: selected ? 1 : null),
+    nativeSymbol: 'safari',
+    nativeSelectedSymbol: 'safari.fill',
   ),
   TabDestination(
     id: 'search',
@@ -61,6 +72,7 @@ List<TabDestination> get allTabDestinations => [
     label: 'search'.tr(),
     navigationIcon: Symbols.search,
     iconBuilder: (selected) => Icon(Symbols.search, fill: selected ? 1 : null),
+    nativeSymbol: 'magnifyingglass',
   ),
   TabDestination(
     id: 'chat',
@@ -78,6 +90,8 @@ List<TabDestination> get allTabDestinations => [
         );
       },
     ),
+    nativeSymbol: 'bubble.left.and.bubble.right',
+    nativeSelectedSymbol: 'bubble.left.and.bubble.right.fill',
   ),
   TabDestination(
     id: 'realms',
@@ -86,6 +100,8 @@ List<TabDestination> get allTabDestinations => [
     label: 'realms'.tr(),
     navigationIcon: Symbols.groups_3,
     iconBuilder: (selected) => Icon(Symbols.groups_3, fill: selected ? 1 : null),
+    nativeSymbol: 'person.3',
+    nativeSelectedSymbol: 'person.3.fill',
   ),
   TabDestination(
     id: 'account',
@@ -112,6 +128,8 @@ List<TabDestination> get allTabDestinations => [
         );
       },
     ),
+    nativeSymbol: 'person.crop.circle',
+    nativeSelectedSymbol: 'person.crop.circle.fill',
   ),
   TabDestination(
     id: 'wallet',
@@ -120,6 +138,8 @@ List<TabDestination> get allTabDestinations => [
     label: 'wallet'.tr(),
     navigationIcon: Symbols.wallet,
     iconBuilder: (selected) => Icon(Symbols.wallet, fill: selected ? 1 : null),
+    nativeSymbol: 'creditcard',
+    nativeSelectedSymbol: 'creditcard.fill',
   ),
   TabDestination(
     id: 'creators',
@@ -129,6 +149,8 @@ List<TabDestination> get allTabDestinations => [
     navigationIcon: Symbols.design_services_rounded,
     iconBuilder: (selected) =>
         Icon(Symbols.design_services_rounded, fill: selected ? 1 : null),
+    nativeSymbol: 'paintbrush.pointed',
+    nativeSelectedSymbol: 'paintbrush.pointed.fill',
   ),
 ];
 

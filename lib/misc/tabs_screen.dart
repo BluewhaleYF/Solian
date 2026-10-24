@@ -19,8 +19,13 @@ import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/core/navigation/tab_destinations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/chat/pods/chat_summary.dart';
+import 'package:native_glass_navbar/native_glass_navbar.dart';
 
 const double kBottomNavHeight = 56.0;
+
+/// The native glass bar draws a real `UITabBar`, which accepts at most five
+/// items — wider user-customized layouts keep the Material pill bar.
+const int kNativeGlassMaxTabs = 5;
 
 @RoutePage()
 class TabsScreen extends StatelessWidget {
@@ -118,8 +123,10 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
 
     final token = ref.watch(tokenProvider);
     final userInfo = ref.watch(userInfoProvider);
-    ref.watch(notificationUnreadCountProvider);
-    ref.watch(chatUnreadCountProvider);
+    final notificationUnreadCount = ref.watch(
+      notificationUnreadCountProvider,
+    );
+    final chatUnreadCount = ref.watch(chatUnreadCountProvider);
     final wideScreen = isWideScreen(context);
 
     final dashboardEnabled = ref.watch(
@@ -573,6 +580,66 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       child: widget.child,
     );
 
+    // The Material pill bar: every platform's baseline, and the glass bar's
+    // fallback on non-iOS and pre-Liquid-Glass devices.
+    final pillBar = PillBottomNav(
+      child: NavigationBar(
+        // Icons only: the destinations are already distinguished by the
+        // selection indicator, and the band is 56px tall.
+        height: kBottomNavHeight,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+        selectedIndex: bottomNavCurrentIndex,
+        onDestinationSelected: (index) {
+          onBottomNavDestinationSelected(index);
+        },
+        destinations: bottomNavDestinations.mapIndexed((idx, destination) {
+          return NavigationDestination(
+            // `label` still feeds semantics ("Home, Tab 1 of 3"), so only
+            // the paint is suppressed — here and in the tooltip, whose
+            // long-press gesture the entrance menu owns.
+            tooltip: '',
+            icon: withEntranceMenu(
+              destination.iconBuilder(bottomNavCurrentIndex == idx),
+              destination,
+            ),
+            label: destination.label,
+          );
+        }).toList(),
+      ),
+    );
+
+    // On iOS the glass bar renders a real `UITabBar`; the widget swaps to
+    // [pillBar] itself when the async Liquid Glass support check comes back
+    // negative (older iOS), so an unsupported device just keeps the pill bar.
+    // It also rejects more than five items, so a wider user-customized
+    // layout stays on the pill bar outright.
+    final useGlassBar =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        bottomNavDestinations.length <= kNativeGlassMaxTabs;
+    final bottomBar = useGlassBar
+        ? NativeGlassNavBar(
+            currentIndex: bottomNavCurrentIndex,
+            onTap: onBottomNavDestinationSelected,
+            tabs: [
+              for (final destination in bottomNavDestinations)
+                NativeGlassNavBarItem(
+                  label: destination.label,
+                  symbol: destination.nativeSymbol,
+                  selectedSymbol: destination.nativeSelectedSymbol,
+                  badgeValue: switch (destination.id) {
+                    'chat' when (chatUnreadCount.value ?? 0) > 0 =>
+                      '${chatUnreadCount.value}',
+                    'account' when (notificationUnreadCount.value ?? 0) > 0 =>
+                      '${notificationUnreadCount.value}',
+                    _ => null,
+                  },
+                ),
+            ],
+            fallback: pillBar,
+          )
+        : pillBar;
+
     final scaffold = Scaffold(
       key: rootScaffoldKey,
       backgroundColor: Colors.transparent,
@@ -587,31 +654,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
         routes: bottomNavRoutes,
         // The drawer's only entry point is the app bar's leading slot, so the
         // tab bar no longer carries a leading menu destination.
-        child: PillBottomNav(
-          child: NavigationBar(
-            // Icons only: the destinations are already distinguished by the
-            // selection indicator, and the band is 56px tall.
-            height: kBottomNavHeight,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-            selectedIndex: bottomNavCurrentIndex,
-            onDestinationSelected: (index) {
-              onBottomNavDestinationSelected(index);
-            },
-            destinations: bottomNavDestinations.mapIndexed((idx, destination) {
-              return NavigationDestination(
-                // `label` still feeds semantics ("Home, Tab 1 of 3"), so only
-                // the paint is suppressed — here and in the tooltip, whose
-                // long-press gesture the entrance menu owns.
-                tooltip: '',
-                icon: withEntranceMenu(
-                  destination.iconBuilder(bottomNavCurrentIndex == idx),
-                  destination,
-                ),
-                label: destination.label,
-              );
-            }).toList(),
-          ),
-        ),
+        child: bottomBar,
       ),
     );
 
