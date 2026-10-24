@@ -1,13 +1,15 @@
-import 'package:auto_route/auto_route.dart';
+import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:island/posts/screens/compose_post.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/posts/pods/post_list.dart';
 import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/posts/screens/compose_blog.dart';
-import 'package:island/posts/screens/compose_post.dart';
+import 'package:island/posts/compose.dart';
 import 'package:island/posts/widgets/compose/filters/post_subscription_filter.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/screens/post_detail.dart';
@@ -87,6 +89,68 @@ class ExploreScreen extends HookConsumerWidget {
     // The wide layout's second column: the id of the post open beside the
     // feed, or null while the feed owns the whole window.
     final detailPostId = useState<String?>(null);
+    // Authoring beside the feed: while set, the composer replaces the right
+    // pane instead of pushing a full-page route, so a reply keeps the timeline
+    // in view. A record, not a widget, so a scroll tick on the feed never
+    // rebuilds the composer and drops its focus or half-typed text.
+    final composeRequest =
+        useState<
+          ({
+            SnPost? originalPost,
+            PostComposeInitialState? initialState,
+            SnPost? replyingTo,
+            SnPost? forwardingTo,
+            SnPost? chainingTo,
+          })
+       ?>(null);
+
+    // The pending `PostComposeScreen.show` future, so closing the pane
+    // resolves the awaiting caller exactly as a popped route would.
+    final composeResult = useRef<Completer<bool?>?>(null);
+
+    useEffect(() {
+      return () {
+        final completer = composeResult.value;
+        if (completer != null && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      };
+    }, const []);
+
+    void closeComposePane(bool submitted) {
+      composeRequest.value = null;
+      final completer = composeResult.value;
+      composeResult.value = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(submitted ? true : null);
+      }
+    }
+
+    // The wide layout routes `PostComposeScreen.show` here, so every reply,
+    // forward, chain and edit affordance on the page opens in the pane rather
+    // than covering the feed. Narrow has no host, so it pushes the route.
+    Future<bool?> showComposeInPane({
+      SnPost? originalPost,
+      PostComposeInitialState? initialState,
+      SnPost? replyingTo,
+      SnPost? forwardingTo,
+      SnPost? chainingTo,
+    }) {
+      final completer = Completer<bool?>();
+      final previous = composeResult.value;
+      if (previous != null && !previous.isCompleted) previous.complete(null);
+      composeResult.value = completer;
+      composeRequest.value = (
+        originalPost: originalPost,
+        initialState: initialState,
+        replyingTo: replyingTo,
+        forwardingTo: forwardingTo,
+        chainingTo: chainingTo,
+      );
+      // The composer owns the pane while it is open.
+      detailPostId.value = null;
+      return completer.future;
+    }
 
     // Opens a post the way the wide layout wants it. Articles keep their
     // two-pane reading layout and blogs their webview page — both need the
@@ -134,21 +198,27 @@ class ExploreScreen extends HookConsumerWidget {
         isNoBackground: false,
         appBar: null,
         floatingActionButton: composeFab,
-        body: _WideExploreLayout(
-          fade: fade,
-          detailPostId: detailPostId.value,
-          barControls: _buildExploreBarControls(
-            currentFilter: exploreSettings.filter,
-            hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-            handleFilterChange: handleFilterChange,
+        body: ComposePaneHost(
+          show: showComposeInPane,
+          child: _WideExploreLayout(
+            fade: fade,
+            detailPostId: detailPostId.value,
+            composeRequest: composeRequest.value,
+            barControls: _buildExploreBarControls(
+              currentFilter: exploreSettings.filter,
+              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+              handleFilterChange: handleFilterChange,
+            ),
+            feed: feed,
+            onOpenFullPage: (id) =>
+                context.router.push(PostDetailRoute(id: id)),
+            // Reference posts and replies tapped inside the pane swap the
+            // pane's own content; only the feed's first open picks between
+            // the pane and a full-page article/blog route.
+            onOpenInPane: (id) => detailPostId.value = id,
+            onCloseDetail: () => detailPostId.value = null,
+            onCloseCompose: closeComposePane,
           ),
-          feed: feed,
-          onOpenFullPage: (id) => context.router.push(PostDetailRoute(id: id)),
-          // Reference posts and replies tapped inside the pane swap the
-          // pane's own content; only the feed's first open picks between the
-          // pane and a full-page article/blog route.
-          onOpenInPane: (id) => detailPostId.value = id,
-          onCloseDetail: () => detailPostId.value = null,
         ),
       );
     }
@@ -487,7 +557,21 @@ class _WideExploreLayout extends StatelessWidget {
   /// surfaced once scrolled.
   final ValueNotifier<double> fade;
 
+  /// The post open beside the feed, or null.
   final String? detailPostId;
+
+  /// The composer open in the pane, or null while the pane shows a post (or
+  /// is empty). A record of the request [PostComposeScreen.show] received, so
+  /// the pane rebuilds the composer only when the target actually changes.
+  final ({
+    SnPost? originalPost,
+    PostComposeInitialState? initialState,
+    SnPost? replyingTo,
+    SnPost? forwardingTo,
+    SnPost? chainingTo,
+  })?
+  composeRequest;
+
   final Widget barControls;
   final Widget feed;
   final ValueChanged<String> onOpenFullPage;
@@ -497,20 +581,29 @@ class _WideExploreLayout extends StatelessWidget {
   final ValueChanged<String> onOpenInPane;
   final VoidCallback onCloseDetail;
 
+  /// Closes the composer, resolving the awaiting `show` caller with `true`
+  /// once a post was submitted, `false` on a plain close.
+  final ValueChanged<bool> onCloseCompose;
+
   const _WideExploreLayout({
     required this.fade,
     required this.detailPostId,
+    required this.composeRequest,
     required this.barControls,
     required this.feed,
     required this.onOpenFullPage,
     required this.onOpenInPane,
     required this.onCloseDetail,
+    required this.onCloseCompose,
   });
 
   /// How long the pane takes to slide in or out.
   static const _duration = Duration(milliseconds: 260);
 
+  /// The curve the pane eases along.
   static const _curve = Curves.easeOutCubic;
+  /// Whether either a post or the composer currently occupies the pane.
+  bool get _isPaneOpen => detailPostId != null || composeRequest != null;
 
   @override
   Widget build(BuildContext context) {
@@ -551,20 +644,28 @@ class _WideExploreLayout extends StatelessWidget {
           ),
         ),
         // The pane column: zero width while closed so the feed owns the whole
-        // window, half the window while open. The card inside fades and slides
-        // with the width, and stays mounted through the close animation so the
-        // transition does not flash the empty ground.
+        // window, half the window while open — whether it holds a post or the
+        // composer. The card inside fades and slides with the width, and stays
+        // mounted through the close animation so the transition never flashes
+        // the empty ground. The composer takes the pane while it is open; the
+        // detail card is what remains.
         AnimatedSize(
           duration: _duration,
           curve: _curve,
           alignment: Alignment.centerRight,
           child: SizedBox(
-            width: openId != null ? _paneWidth(context) : 0,
-            child: openId == null
+            width: _isPaneOpen ? _paneWidth(context) : 0,
+            child: !_isPaneOpen
                 ? null
+                : composeRequest != null
+                ? _ComposePaneCard(
+                    request: composeRequest!,
+                    statusTop: statusTop,
+                    onClose: onCloseCompose,
+                  )
                 : _DetailPaneCard(
                     key: ValueKey(openId),
-                    postId: openId,
+                    postId: openId!,
                     statusTop: statusTop,
                     onOpenFullPage: onOpenFullPage,
                     onOpenInPane: onOpenInPane,
@@ -580,6 +681,63 @@ class _WideExploreLayout extends StatelessWidget {
   /// post reads in as much room as the timeline beside it.
   double _paneWidth(BuildContext context) =>
       MediaQuery.sizeOf(context).width / 2;
+}
+
+/// The composer as the wide layout's floating card: the detail pane's surface
+/// tone, radius and inset, so authoring is the same sheet the feed opens to
+/// read a post.
+///
+/// The composer draws its own chrome ([PostComposePane] with a pane pill), so
+/// this card only gives it the ground. The pill's close action reports
+/// [onClose] with `true` after a submit and `false` on a plain close, which
+/// resolves the awaiting caller and tears the composer down.
+class _ComposePaneCard extends StatelessWidget {
+  /// The request the pane is authoring; its targets seed the composer state.
+  final ({
+    SnPost? originalPost,
+    PostComposeInitialState? initialState,
+    SnPost? replyingTo,
+    SnPost? forwardingTo,
+    SnPost? chainingTo,
+  })
+  request;
+
+  final double statusTop;
+
+  /// `true` once a post was submitted, `false` on a plain close.
+  final ValueChanged<bool> onClose;
+
+  const _ComposePaneCard({
+    required this.request,
+    required this.statusTop,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: statusTop + SolSpace.md,
+        bottom: SolSpace.md,
+        right: SolSpace.md,
+      ),
+      child: ClipRRect(
+        borderRadius: SolRadius.cardRadius,
+        child: ColoredBox(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          child: PostComposePane(
+            originalPost: request.originalPost,
+            initialState: request.initialState,
+            replyingTo: request.replyingTo,
+            forwardingTo: request.forwardingTo,
+            chainingTo: request.chainingTo,
+            chrome: PostComposeChrome.pane,
+            onFinished: onClose,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// The detail pane as a floating card: the feed's own surface tone and radius,

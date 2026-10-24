@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/database.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/posts/compose.dart';
@@ -20,6 +21,47 @@ import 'package:island/shared/widgets/empty_state.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+
+/// A request to author a post somewhere other than the composer route.
+///
+/// Wide pages host the composer in a pane beside their content;
+/// [ComposePaneHost] carries that pane's opener down to every reply, forward,
+/// chain and edit affordance in the page, so those keep calling
+/// [PostComposeScreen.show] exactly as they always have.
+typedef ComposePaneRequest =
+    Future<bool?> Function({
+      SnPost? originalPost,
+      PostComposeInitialState? initialState,
+      SnPost? replyingTo,
+      SnPost? forwardingTo,
+      SnPost? chainingTo,
+    });
+
+/// Routes [PostComposeScreen.show] into the enclosing page's own pane.
+///
+/// Subtrees without a host keep pushing the composer route, so only pages that
+/// opt in change where authoring happens.
+class ComposePaneHost extends InheritedWidget {
+  final ComposePaneRequest show;
+
+  const ComposePaneHost({super.key, required this.show, required super.child});
+
+  static ComposePaneHost? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<ComposePaneHost>();
+
+  @override
+  bool updateShouldNotify(ComposePaneHost oldWidget) => show != oldWidget.show;
+}
+
+/// Where a [PostComposePane] draws its own chrome.
+enum PostComposeChrome {
+  /// The composer route: a scaffold app bar over the page's own surface.
+  page,
+
+  /// A pane inside another page: a pill header over the content, inside the
+  /// card the host draws around the pane.
+  pane,
+}
 
 /// The post composer, as a page.
 ///
@@ -69,6 +111,17 @@ class PostComposeScreen extends HookConsumerWidget {
       return true;
     }
 
+    final host = ComposePaneHost.maybeOf(context);
+    if (host != null) {
+      return host.show(
+        originalPost: originalPost,
+        initialState: initialState,
+        replyingTo: replyingTo,
+        forwardingTo: forwardingTo,
+        chainingTo: chainingTo,
+      );
+    }
+
     return context.router.push<bool?>(
       PostComposeRoute(
         originalPost: originalPost,
@@ -79,6 +132,51 @@ class PostComposeScreen extends HookConsumerWidget {
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PostComposePane(
+      originalPost: originalPost,
+      initialState: initialState,
+      replyingTo: replyingTo,
+      forwardingTo: forwardingTo,
+      chainingTo: chainingTo,
+      chrome: PostComposeChrome.page,
+      onFinished: (submitted) {
+        if (submitted && context.mounted) context.router.maybePop(true);
+      },
+    );
+  }
+}
+
+/// The composer itself — draft lifecycle, form, preview and submit — with the
+/// chrome left to whoever hosts it.
+///
+/// The route page wraps it in a scaffold; a wide page's pane wraps it in its
+/// own floating card. Either way the host decides when the form goes away, and
+/// leaving it always saves the draft.
+class PostComposePane extends HookConsumerWidget {
+  final SnPost? originalPost;
+  final PostComposeInitialState? initialState;
+  final SnPost? replyingTo;
+  final SnPost? forwardingTo;
+  final SnPost? chainingTo;
+  final PostComposeChrome chrome;
+
+  /// Told when the host's own dismiss affordance was used. `true` reports a
+  /// submission; `false` a plain close.
+  final ValueChanged<bool> onFinished;
+
+  const PostComposePane({
+    super.key,
+    this.originalPost,
+    this.initialState,
+    this.replyingTo,
+    this.forwardingTo,
+    this.chainingTo,
+    this.chrome = PostComposeChrome.page,
+    required this.onFinished,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -213,47 +311,76 @@ class PostComposeScreen extends HookConsumerWidget {
         chainedPost: chainedPost,
         autoChain: state.chainWithPrevious.value,
         onSubmitted: () {
-          if (context.mounted) context.router.maybePop(true);
+          if (context.mounted) onFinished(true);
         },
       );
     }
 
-    final actions = [
-      IconButton(
-        icon: Icon(showPreview.value ? Symbols.preview_off : Symbols.preview),
-        onPressed: () => showPreview.value = !showPreview.value,
-        tooltip: 'togglePreview'.tr(),
-      ),
-      IconButton(
-        icon: const Icon(Symbols.settings),
-        onPressed: () => showComposeSettingsSheet(context, state),
-        tooltip: 'postSettings'.tr(),
-      ),
-      ValueListenableBuilder<bool>(
-        valueListenable: state.submitting,
-        builder: (context, submitting, _) {
-          return IconButton(
-            onPressed: (submitting || state.currentPublisher.value == null)
-                ? null
-                : performSubmit,
-            icon: submitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+    final title = effectiveOriginalPost != null
+        ? 'postEditing'.tr()
+        : 'postCompose'.tr();
+
+    final previewToggle = IconButton(
+      icon: Icon(showPreview.value ? Symbols.preview_off : Symbols.preview),
+      onPressed: () => showPreview.value = !showPreview.value,
+      tooltip: 'togglePreview'.tr(),
+    );
+    final settingsButton = IconButton(
+      icon: const Icon(Symbols.settings),
+      onPressed: () => showComposeSettingsSheet(context, state),
+      tooltip: 'postSettings'.tr(),
+    );
+    final submitButton = ValueListenableBuilder<bool>(
+      valueListenable: state.submitting,
+      builder: (context, submitting, _) {
+        return IconButton(
+          onPressed: (submitting || state.currentPublisher.value == null)
+              ? null
+              : performSubmit,
+          icon: submitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  effectiveOriginalPost != null
+                      ? Symbols.edit
+                      : Symbols.upload,
+                ),
+          tooltip: effectiveOriginalPost != null
+              ? 'postUpdate'.tr()
+              : 'postPublish'.tr(),
+        );
+      },
+    );
+    final closeButton = IconButton(
+      icon: const Icon(Symbols.close),
+      onPressed: () => onFinished(false),
+      tooltip: 'close'.tr(),
+    );
+
+    final form = Column(
+      children: [
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: showPreview.value
+                ? _ComposePreviewPane(
+                    key: const ValueKey('preview'),
+                    state: state,
                   )
-                : Icon(
-                    effectiveOriginalPost != null
-                        ? Symbols.edit
-                        : Symbols.upload,
+                : PostComposeForm(
+                    key: const ValueKey('compose'),
+                    originalPost: effectiveOriginalPost,
+                    initialState: initialState,
+                    providedState: state,
+                    onSubmitRequest: performSubmit,
                   ),
-            tooltip: effectiveOriginalPost != null
-                ? 'postUpdate'.tr()
-                : 'postPublish'.tr(),
-          );
-        },
-      ),
-    ];
+          ),
+        ),
+      ],
+    );
 
     return PopScope(
       child: DropTarget(
@@ -265,38 +392,62 @@ class PostComposeScreen extends HookConsumerWidget {
         },
         child: Stack(
           children: [
-            AppScaffold(
-              appBar: AppBar(
-                leading: const AutoLeadingButton(),
-                title: Text(
-                  effectiveOriginalPost != null
-                      ? 'postEditing'.tr()
-                      : 'postCompose'.tr(),
+            switch (chrome) {
+              PostComposeChrome.page => AppScaffold(
+                // Solid page ground like every other content screen: the wide
+                // default paints the scaffold transparent, which washes the
+                // window backdrop's radial orbs through as a gradient.
+                isNoBackground: false,
+                appBar: AppBar(
+                  leading: const AutoLeadingButton(),
+                  title: Text(title),
+                  actions: [
+                    previewToggle,
+                    settingsButton,
+                    submitButton,
+                  ],
                 ),
-                actions: actions,
+                body: form,
               ),
-              body: Column(
+              // A pane's host draws the card; the composer floats the same
+              // glass pill the rest of the page uses, with its close, settings
+              // and publish actions in it. The form starts one pill below so
+              // its first field never hides under the header.
+              PostComposeChrome.pane => Stack(
                 children: [
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: showPreview.value
-                          ? _ComposePreviewPane(
-                              key: const ValueKey('preview'),
-                              state: state,
-                            )
-                          : PostComposeForm(
-                              key: const ValueKey('compose'),
-                              originalPost: effectiveOriginalPost,
-                              initialState: initialState,
-                              providedState: state,
-                              onSubmitRequest: performSubmit,
+                  Padding(
+                    padding: const EdgeInsets.only(top: kPillAppBarHeight),
+                    child: form,
+                  ),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: PillAppBar(
+                      statusTop: 0,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(
+                                context,
+                              ).appBarTheme.titleTextStyle,
                             ),
+                          ),
+                          previewToggle,
+                          settingsButton,
+                          submitButton,
+                          closeButton,
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
+            },
             if (isDragging.value)
               Positioned.fill(
                 child: IgnorePointer(
