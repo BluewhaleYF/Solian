@@ -66,11 +66,13 @@ void main() {
   // stretch the glass to whatever the slot happened to allow. The page below it
   // reserves `kPillAppBarHeight`, so the extra glass hung over the content and
   // the bar's own `preferredSize` lied about its height.
-  testWidgets('the capsule stays one control row tall', (tester) async {
+  testWidgets('the capsule stays a fixed height', (tester) async {
     await _pumpBar(tester, _titleRow());
 
     final capsule = _capsule(tester);
-    expect(capsule.height, SolSpace.control);
+    // Pinned to the capsule constant, not sized to its child — the header is
+    // taller than a bare control row so it reads as a relaxed pill.
+    expect(capsule.height, kPillBarContentHeight);
     // Centered in the band the bar reserves: status inset + 12px margin above,
     // and the band's remaining space below.
     expect(capsule.top, _kStatusTop + kPillSideGutter);
@@ -118,7 +120,7 @@ void main() {
         ],
       ),
     );
-    expect(_capsule(tester).height, SolSpace.control);
+    expect(_capsule(tester).height, kPillBarContentHeight);
 
     // A bare title with no `Align`, the shortest thing a bar can hold.
     await _pumpBar(
@@ -131,6 +133,6 @@ void main() {
         ],
       ),
     );
-    expect(_capsule(tester).height, SolSpace.control);
+    expect(_capsule(tester).height, kPillBarContentHeight);
   });
 }

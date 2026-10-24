@@ -12,13 +12,24 @@ export 'package:island/shared/widgets/pill_surface.dart'
 /// slid under the bar, the pill is fully surfaced and can carry its controls.
 const double kPillFadeDistance = 96.0;
 
+/// Inner height of a pill bar's capsule — the glass box itself, before the
+/// status-bar inset and the top gutter are added on top.
+///
+/// A step above a bare [SolSpace.control] row: it adds the chat composer's
+/// vertical padding (6px above and below the control row — [SolSpace.md]
+/// together) so the floating header reads at the same relaxed height as the
+/// composer capsule instead of the tight single-row band it had. Moving this
+/// moves [kPillAppBarHeight] with it, so the band every page reserves stays
+/// exactly the capsule plus its top gutter.
+const double kPillBarContentHeight = SolSpace.control + SolSpace.md;
+
 /// Total height of a pill bar, excluding the status-bar inset.
 ///
 /// A bar reserves `statusTop + kPillAppBarHeight`: the capsule's top margin
-/// plus one control row. Anything that has to clear a pill header — a body
-/// gap, a scaffold slot, a test assertion — should be computed from this so
-/// every pill lands on the same band.
-const double kPillAppBarHeight = SolSpace.control + SolSpace.md;
+/// plus [kPillBarContentHeight]. Anything that has to clear a pill header — a
+/// body gap, a scaffold slot, a test assertion — should be computed from this
+/// so every pill lands on the same band.
+const double kPillAppBarHeight = kPillBarContentHeight + SolSpace.md;
 
 /// Feeds a pill's fade ramp (0..1) from a scroll notification.
 ///
@@ -81,14 +92,15 @@ class PillBarSurface extends StatelessWidget {
       ),
       radius: SolRadius.pillRadius,
       contentPadding: const EdgeInsets.symmetric(horizontal: SolSpace.md),
-      // The capsule is one control row tall, always. `PillSurface` sizes the
-      // glass to its child, so leaving it to the row would let any child that
-      // fills its constraints — an `Expanded`, an `Align`, a `Center` — stretch
-      // the pill to whatever height the slot happens to offer, and the glass
-      // would then hang over the content the page reserved space for. Pinning
-      // it keeps every pill the same shape and makes the bar's
-      // `preferredSize` the whole truth.
-      child: SizedBox(height: SolSpace.control, child: child),
+      // The capsule is always exactly `kPillBarContentHeight` tall — a control
+      // row plus the composer's vertical padding, so the header is no longer
+      // cramped. `PillSurface` sizes the glass to its child, so leaving it to
+      // the row would let any child that fills its constraints — an `Expanded`,
+      // an `Align`, a `Center` — stretch the pill to whatever height the slot
+      // happens to offer, and the glass would then hang over the content the
+      // page reserved space for. Pinning it keeps every pill the same shape and
+      // makes the bar's `preferredSize` the whole truth.
+      child: SizedBox(height: kPillBarContentHeight, child: child),
     );
   }
 }

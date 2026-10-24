@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,12 +22,17 @@ import 'package:island/core/navigation/tab_destinations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/chat/pods/chat_summary.dart';
 import 'package:native_glass_navbar/native_glass_navbar.dart';
+import 'package:island/core/navigation/tab_action_button.dart';
 
 const double kBottomNavHeight = 56.0;
 
 /// The native glass bar draws a real `UITabBar`, which accepts at most five
 /// items — wider user-customized layouts keep the Material pill bar.
 const int kNativeGlassMaxTabs = 5;
+
+/// Blur sigma the incoming tab page settles out of, at the start of the
+/// transition. Subtle: the page must stay readable while it resolves.
+const double kTabBlurSigma = 12.0;
 
 @RoutePage()
 class TabsScreen extends StatelessWidget {
@@ -59,30 +66,31 @@ Widget _buildTabTransition(
   Widget child,
   Animation<double> animation,
 ) {
-  final tabsRouter = AutoTabsRouter.of(context);
   final theme = Theme.of(context);
-  final previousIndex = tabsRouter.previousIndex ?? tabsRouter.activeIndex;
-  final isForward = tabsRouter.activeIndex >= previousIndex;
-  final isWide = isWideScreen(context);
-
-  final offset = isWide
-      ? Offset(0, isForward ? 0.06 : -0.06)
-      : Offset(isForward ? 0.08 : -0.08, 0);
-
-  final position = Tween<Offset>(
-    begin: offset,
-    end: Offset.zero,
-  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-  final opacity = CurvedAnimation(
+  final curved = CurvedAnimation(
     parent: animation,
     curve: Curves.easeOutCubic,
   );
 
+  // The incoming page resolves out of a blur instead of sliding in: the
+  // stack's outgoing page is already gone (auto_route keeps an
+  // `IndexedStack`), so what the blur smears is the page's own content
+  // settling into focus. Fading in alongside keeps the settle legible.
+  //
+  // `BackdropFilter` would be wrong here: it blurs whatever is painted
+  // behind the child, which is the tab bar and the page under it, not the
+  // page itself.
   return ColoredBox(
     color: theme.colorScheme.surface,
     child: FadeTransition(
-      opacity: opacity,
-      child: SlideTransition(position: position, child: child),
+      opacity: curved,
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(
+          sigmaX: kTabBlurSigma * (1 - animation.value),
+          sigmaY: kTabBlurSigma * (1 - animation.value),
+        ),
+        child: child,
+      ),
     ),
   );
 }
@@ -103,6 +111,9 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   /// expands it instead of sliding a drawer over the page.
   bool _railExpanded = false;
 
+  /// Tab id → registered action, published by [TabActionRegistration]s.
+  final _tabActions = TabActionState();
+
   void _toggleRail() {
     setState(() => _railExpanded = !_railExpanded);
   }
@@ -118,7 +129,19 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   }
 
   @override
+  void dispose() {
+    _tabActions.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Installed above the tab stack so each tab can publish its action into
+    // the shell; registrations are keyed by destination id.
+    return TabActionScope(state: _tabActions, child: _buildShell(context));
+  }
+
+  Widget _buildShell(BuildContext context) {
     final tabsRouter = AutoTabsRouter.of(context);
 
     final token = ref.watch(tokenProvider);
@@ -137,6 +160,13 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     final navCustomization = ref.watch(navCustomizationProvider);
     final destinationById = {for (final d in allDestinations) d.id: d};
     final defaultRailNavIds = allDestinations.map((e) => e.id).toList();
+
+    // The active tab's id, for resolving its registered action button. The
+    // action map is read through the notifier so a tab registering after
+    // this build (it does so post-frame) still reaches the bar.
+    final activeDestination = allDestinations
+        .where((d) => d.routeIndex == tabsRouter.activeIndex)
+        .firstOrNull;
 
     List<TabDestination> resolveDestinations({
       required List<String> preferredIds,
@@ -490,6 +520,30 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       );
     }
 
+    // The active tab's registered action, as a floating button. Every
+    // surface that is not the iOS glass bar shows it this way — the glass
+    // bar paints its own inside the bar, so it skips this widget.
+    final fallbackActionFab = ValueListenableBuilder(
+      valueListenable: _tabActions,
+      builder: (context, actions, _) {
+        final action = activeDestination == null
+            ? null
+            : actions[activeDestination.id];
+        if (action == null) return const SizedBox.shrink();
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
+          child: FloatingActionButton(
+            heroTag: 'tab-action-${activeDestination!.id}',
+            tooltip: action.label,
+            onPressed: action.onPressed,
+            child: Icon(action.icon),
+          ),
+        );
+      },
+    );
+
     if (wideScreen) {
       if (railDestinations.isEmpty) {
         // No rail to expand: the drawer stays the navigation surface.
@@ -501,6 +555,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                 : null,
             drawerEnableOpenDragGesture: drawerEnabled,
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+            floatingActionButton: fallbackActionFab,
             body: SafeArea(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
@@ -518,6 +573,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       final railContent = Scaffold(
         key: rootScaffoldKey,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        floatingActionButton: fallbackActionFab,
         body: SafeArea(
           child: Row(
             children: [
@@ -617,29 +673,49 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
         bottomNavDestinations.length <= kNativeGlassMaxTabs;
-    final bottomBar = useGlassBar
-        ? NativeGlassNavBar(
-            currentIndex: bottomNavCurrentIndex,
-            onTap: onBottomNavDestinationSelected,
-            tabs: [
-              for (final destination in bottomNavDestinations)
-                NativeGlassNavBarItem(
-                  label: destination.label,
-                  symbol: destination.nativeSymbol,
-                  selectedSymbol: destination.nativeSelectedSymbol,
-                  badgeValue: switch (destination.id) {
-                    'chat' when (chatUnreadCount.value ?? 0) > 0 =>
-                      '${chatUnreadCount.value}',
-                    'account' when (notificationUnreadCount.value ?? 0) > 0 =>
-                      '${notificationUnreadCount.value}',
-                    _ => null,
-                  },
-                ),
-            ],
-            fallback: pillBar,
-          )
-        : pillBar;
-
+    final tabActions = ValueListenableBuilder(
+      valueListenable: _tabActions,
+      builder: (context, actions, _) {
+        final action = activeDestination == null
+            ? null
+            : actions[activeDestination.id];
+        return useGlassBar
+            ? NativeGlassNavBar(
+                currentIndex: bottomNavCurrentIndex,
+                onTap: onBottomNavDestinationSelected,
+                // The plugin's action button sits inside the bar, which is
+                // exactly where the tabs' old floating buttons belonged.
+                actionButton: action == null
+                    ? null
+                    : TabBarActionButton(
+                        symbol: action.symbol,
+                        onTap: action.onPressed,
+                      ),
+                tabs: [
+                  for (final destination in bottomNavDestinations)
+                    NativeGlassNavBarItem(
+                      // A titleless `UITabBar` item paints icon-only, which
+                      // is the look we want; the plugin exposes no label
+                      // toggle. Trade-off: VoiceOver then reads the tab
+                      // position only.
+                      label: '',
+                      symbol: destination.nativeSymbol,
+                      selectedSymbol: destination.nativeSelectedSymbol,
+                      badgeValue: switch (destination.id) {
+                        'chat' when (chatUnreadCount.value ?? 0) > 0 =>
+                          '${chatUnreadCount.value}',
+                        'account'
+                            when (notificationUnreadCount.value ?? 0) > 0 =>
+                          '${notificationUnreadCount.value}',
+                        _ => null,
+                      },
+                    ),
+                ],
+                fallback: pillBar,
+              )
+            : pillBar;
+      },
+    );
     final scaffold = Scaffold(
       key: rootScaffoldKey,
       backgroundColor: Colors.transparent,
@@ -650,11 +726,14 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
           : null,
       drawerEnableOpenDragGesture: drawerEnabled,
       body: mobileTabBody,
+      // The glass bar paints the action inside itself, so the floating
+      // button would duplicate it there.
+      floatingActionButton: useGlassBar ? null : fallbackActionFab,
       bottomNavigationBar: ConditionalBottomNav(
         routes: bottomNavRoutes,
         // The drawer's only entry point is the app bar's leading slot, so the
         // tab bar no longer carries a leading menu destination.
-        child: bottomBar,
+        child: tabActions,
       ),
     );
 

@@ -3226,16 +3226,32 @@ class PostDetailAttentionModal extends StatelessWidget {
           tooltip: 'open'.tr(),
         ),
       ],
-      child: _PostDetailBody(id: id, isEmbedded: true),
+      child: PostDetailBody(id: id, isEmbedded: true),
     );
   }
 }
 
-class _PostDetailBody extends HookConsumerWidget {
+/// The detail page's body, embeddable in a host that owns its own chrome
+/// (attention modals, wide-screen side panes).
+///
+/// [isEmbedded] drops the page's own app-bar sliver and the wide media
+/// layout — the embed carries those itself.
+class PostDetailBody extends HookConsumerWidget {
   final String id;
   final bool isEmbedded;
 
-  const _PostDetailBody({required this.id, this.isEmbedded = false});
+  /// Handles taps on posts embedded in this body — reference posts, chained
+  /// posts, replies and forwards — so a host can open them in place (e.g. a
+  /// wide screen's side pane) instead of navigating to the full page. Null
+  /// keeps the default full-page navigation.
+  final void Function(String)? onPostTap;
+
+  const PostDetailBody({
+    super.key,
+    required this.id,
+    this.isEmbedded = false,
+    this.onPostTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -3344,6 +3360,7 @@ class _PostDetailBody extends HookConsumerWidget {
                 post: postItem,
                 trailing: trailing,
                 showTableOfContents: true,
+                onPostTap: onPostTap,
                 headerSliver: isEmbedded
                     ? null
                     : buildPostDetailSliverAppBar(
@@ -3380,6 +3397,7 @@ class _PostDetailBody extends HookConsumerWidget {
                   child: PostInteractionsSlivers(
                     postId: id,
                     maxWidth: _postDetailMaxWidth,
+                    onPostTap: onPostTap,
                   ),
                 ),
               ),
@@ -3444,7 +3462,7 @@ class PostDetailScreen extends HookConsumerWidget {
               ],
             )
           : null,
-      body: _PostDetailBody(id: id),
+      body: PostDetailBody(id: id),
     );
   }
 }

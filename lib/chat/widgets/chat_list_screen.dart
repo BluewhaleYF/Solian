@@ -32,6 +32,7 @@ import 'package:island/core/lifecycle.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/services/event_bus.dart';
 import 'package:island/core/theme.dart';
+import 'package:island/core/navigation/tab_action_button.dart';
 import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/services/responsive.dart';
 import 'package:island/core/utils/share_utils.dart';
@@ -1153,6 +1154,8 @@ class ChatScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isWide = isWideScreen(context);
     final tabsRouter = AutoTabsRouter.of(context);
+    final userInfo = ref.watch(userInfoProvider);
+    final chatInvites = ref.watch(chatroomInvitesProvider);
 
     useEffect(() {
       StackRouter? chatRouter;
@@ -1203,65 +1206,74 @@ class ChatScreen extends HookConsumerWidget {
       };
     }, [tabsRouter]);
 
-    return AppBackground(
-      isRoot: true,
-      child: isWide
-          ? SafeArea(
-              child: Row(
-                children: [
-                  // One gutter (SolSpace.sm) on every edge of the split, so the
-                  // list pane reads as centred between the rail and the room
-                  // card instead of hugging the left at 8 while floating 20 off
-                  // the card. Matches the chat input's wide-screen margins.
-                  const ChatListWidget(isAside: true).padding(
-                    left: SolSpace.sm,
-                  ),
-                  const Gap(SolSpace.sm),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(SolRadius.card),
-                        topRight: Radius.circular(SolRadius.card),
-                      ),
-                      child: AutoRouter(
-                        builder: (context, child) {
-                          return Card(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerLowest,
-                            margin: .zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(SolRadius.card),
-                                topRight: Radius.circular(SolRadius.card),
+    // The chat tab's create action is registered with the shell's action
+    // button scope: the shell paints it once for the active tab — inside the
+    // iOS glass bar, or as the floating button the fallback bars use.
+    final createAction = userInfo.value == null
+        ? null
+        : TabActionButtonSpec(
+            symbol: 'plus',
+            icon: Symbols.add,
+            label: 'createChatRoom'.tr(),
+            onPressed: () => _showCreateSheet(context, ref, chatInvites),
+          );
+
+    return TabActionRegistration(
+      id: 'chat',
+      spec: createAction,
+      child: AppBackground(
+        isRoot: true,
+        child: isWide
+            ? SafeArea(
+                child: Row(
+                  children: [
+                    // One gutter (SolSpace.sm) on every edge of the split, so the
+                    // list pane reads as centred between the rail and the room
+                    // card instead of hugging the left at 8 while floating 20 off
+                    // the card. Matches the chat input's wide-screen margins.
+                    const ChatListWidget(isAside: true).padding(
+                      left: SolSpace.sm,
+                    ),
+                    const Gap(SolSpace.sm),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(SolRadius.card),
+                          topRight: Radius.circular(SolRadius.card),
+                        ),
+                        child: AutoRouter(
+                          builder: (context, child) {
+                            return Card(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerLowest,
+                              margin: .zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(SolRadius.card),
+                                  topRight: Radius.circular(SolRadius.card),
+                                ),
                               ),
-                            ),
-                            child: child,
-                          );
-                        },
-                      ),
-                    ).padding(top: 16, right: SolSpace.sm),
-                  ),
-                ],
-              ),
-            )
-          : const AutoRouter(),
+                              child: child,
+                            );
+                          },
+                        ),
+                      ).padding(top: 16, right: SolSpace.sm),
+                    ),
+                  ],
+                ),
+              )
+            : const AutoRouter(),
+      ),
     );
   }
-}
 
-class ChatFabWidget extends HookConsumerWidget {
-  const ChatFabWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userInfo = ref.watch(userInfoProvider);
-    final chatInvites = ref.watch(chatroomInvitesProvider);
-
-    if (userInfo.value == null) {
-      return const SizedBox.shrink();
-    }
-
+  /// The chat tab's create sheet: new room, direct message, invites.
+  static void _showCreateSheet(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<SnChatMember>> chatInvites,
+  ) {
     Future<void> openInvites() async {
       await showModalBottomSheet(
         useRootNavigator: true,
@@ -1271,89 +1283,84 @@ class ChatFabWidget extends HookConsumerWidget {
       );
     }
 
-    return FloatingActionButton(
-      heroTag: 'chat-fab',
-      child: const Icon(Symbols.add),
-      onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          useRootNavigator: true,
-          builder: (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Gap(40),
-              ListTile(
-                title: const Text('createChatRoom').tr(),
-                leading: const Icon(Symbols.add),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    useRootNavigator: true,
-                    isScrollControlled: true,
-                    builder: (context) => const EditChatScreen(),
-                  ).then((value) {
-                    if (value != null) {
-                      eventBus.fire(const ChatRoomsRefreshEvent());
-                    }
-                  });
-                },
-              ),
-              ListTile(
-                title: const Text('createDirectMessage').tr(),
-                leading: const Icon(Symbols.person),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                onTap: () async {
-                  final result = await showModalBottomSheet(
-                    context: context,
-                    useRootNavigator: true,
-                    isScrollControlled: true,
-                    builder: (context) => const AccountPickerSheet(),
-                  );
-                  if (result == null) return;
-                  if (!context.mounted) return;
-
-                  final client = ref.read(apiClientProvider);
-                  try {
-                    await client.post(
-                      '/messager/chat/direct',
-                      data: {'related_user_id': result.id},
-                    );
-                    eventBus.fire(const ChatRoomsRefreshEvent());
-                  } catch (err) {
-                    showErrorAlert(err);
-                  }
-                },
-              ),
-              ListTile(
-                title: const Text('invites').tr(),
-                leading: const Icon(Symbols.mail),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                trailing: Badge(
-                  label: Text(
-                    chatInvites.when(
-                      data: (invites) => invites.length.toString(),
-                      error: (_, _) => '0',
-                      loading: () => '0',
-                    ),
-                  ),
-                  isLabelVisible: chatInvites.when(
-                    data: (invites) => invites.isNotEmpty,
-                    error: (_, _) => false,
-                    loading: () => false,
-                  ),
-                ),
-                onTap: openInvites,
-              ),
-              const Gap(16),
-            ],
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Gap(40),
+          ListTile(
+            title: Text('createChatRoom'.tr()),
+            leading: const Icon(Symbols.add),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                builder: (context) => const EditChatScreen(),
+              ).then((value) {
+                if (value != null) {
+                  eventBus.fire(const ChatRoomsRefreshEvent());
+                }
+              });
+            },
           ),
-        );
-      },
+          ListTile(
+            title: Text('createDirectMessage'.tr()),
+            leading: const Icon(Symbols.person),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            onTap: () async {
+              final result = await showModalBottomSheet(
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                builder: (context) => const AccountPickerSheet(),
+              );
+              if (result == null) return;
+              if (!context.mounted) return;
+
+              final client = ref.read(apiClientProvider);
+              try {
+                await client.post(
+                  '/messager/chat/direct',
+                  data: {'related_user_id': result.id},
+                );
+                eventBus.fire(const ChatRoomsRefreshEvent());
+              } catch (err) {
+                showErrorAlert(err);
+              }
+            },
+          ),
+          ListTile(
+            title: Text('invites'.tr()),
+            leading: const Icon(Symbols.mail),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            trailing: Badge(
+              label: Text(
+                chatInvites.when(
+                  data: (invites) => invites.length.toString(),
+                  error: (_, _) => '0',
+                  loading: () => '0',
+                ),
+              ),
+              isLabelVisible: chatInvites.when(
+                data: (invites) => invites.isNotEmpty,
+                error: (_, _) => false,
+                loading: () => false,
+              ),
+            ),
+            onTap: openInvites,
+          ),
+          const Gap(16),
+        ],
+      ),
     );
   }
 }
+
 
 /// The three chat filters (all / direct / groups) as one dropdown, in the same
 /// shape as the explore page's section picker: the current filter's icon and
@@ -1615,11 +1622,8 @@ class ChatListWidget extends HookConsumerWidget {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 0,
-              right: 6,
-              child: ChatFabWidget().padding(bottom: 16, right: 8),
-            ),
+            // The create action lives in the shell's action button, which
+            // on iOS sits inside the glass tab bar.
             Positioned(
               top: 0,
               bottom: 0,
@@ -1660,9 +1664,6 @@ class ChatListWidget extends HookConsumerWidget {
       // The list scrolls under the pill and drives its glass, instead of being
       // pushed below a solid band.
       appBarOverContent: true,
-      floatingActionButton: const ChatFabWidget().padding(
-        bottom: MediaQuery.paddingOf(context).bottom,
-      ),
       appBar: PillAppBar(
         fade: fade,
         statusTop: statusTop,

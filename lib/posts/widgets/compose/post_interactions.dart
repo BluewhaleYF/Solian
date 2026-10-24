@@ -657,10 +657,17 @@ class PostRepliesListNonSliver extends HookConsumerWidget {
 class PostInteractionsSlivers extends HookConsumerWidget {
   final String postId;
   final double? maxWidth;
+
+  /// Handles taps on a listed post so a host can open it in place (e.g. a wide
+  /// screen's side pane) instead of navigating to the full detail page. Null
+  /// keeps the default full-page navigation.
+  final void Function(String)? onPostTap;
+
   const PostInteractionsSlivers({
     super.key,
     required this.postId,
     this.maxWidth,
+    this.onPostTap,
   });
 
   Widget _buildTabBar(BuildContext context) {
@@ -720,15 +727,27 @@ class PostInteractionsSlivers extends HookConsumerWidget {
 
     switch (tabController.index) {
       case 0:
-        return PostRepliesListSliver(postId: postId, maxWidth: maxWidth);
+        return PostRepliesListSliver(
+          postId: postId,
+          maxWidth: maxWidth,
+          onPostTap: onPostTap,
+        );
       case 1:
-        return PostForwardsListSliver(postId: postId, maxWidth: maxWidth);
+        return PostForwardsListSliver(
+          postId: postId,
+          maxWidth: maxWidth,
+          onPostTap: onPostTap,
+        );
       case 2:
         return PostBoostsListSliver(postId: postId, maxWidth: maxWidth);
       case 3:
         return PostReactionsListSliver(postId: postId, maxWidth: maxWidth);
       default:
-        return PostRepliesListSliver(postId: postId, maxWidth: maxWidth);
+        return PostRepliesListSliver(
+          postId: postId,
+          maxWidth: maxWidth,
+          onPostTap: onPostTap,
+        );
     }
   }
 
@@ -755,7 +774,18 @@ class PostInteractionsSlivers extends HookConsumerWidget {
 class PostRepliesListSliver extends HookConsumerWidget {
   final String postId;
   final double? maxWidth;
-  const PostRepliesListSliver({super.key, required this.postId, this.maxWidth});
+
+  /// Handles taps on a reply so a host can open it in place (e.g. a wide
+  /// screen's side pane) instead of navigating to the full detail page. Null
+  /// keeps the default full-page navigation.
+  final void Function(String)? onPostTap;
+
+  const PostRepliesListSliver({
+    super.key,
+    required this.postId,
+    this.maxWidth,
+    this.onPostTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -788,6 +818,7 @@ class PostRepliesListSliver extends HookConsumerWidget {
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,
+            onPostTap: onPostTap,
             onUpdate: (newPost) {
               notifier.updatePost(newPost);
             },
@@ -811,10 +842,17 @@ class PostRepliesListSliver extends HookConsumerWidget {
 class PostForwardsListSliver extends HookConsumerWidget {
   final String postId;
   final double? maxWidth;
+
+  /// Handles taps on a forward so a host can open it in place (e.g. a wide
+  /// screen's side pane) instead of navigating to the full detail page. Null
+  /// keeps the default full-page navigation.
+  final void Function(String)? onPostTap;
+
   const PostForwardsListSliver({
     super.key,
     required this.postId,
     this.maxWidth,
+    this.onPostTap,
   });
 
   @override
@@ -847,6 +885,7 @@ class PostForwardsListSliver extends HookConsumerWidget {
             item: item,
             isShowReference: false,
             isEmbedOpenable: true,
+            onPostTap: onPostTap,
             onUpdate: (newPost) {
               // Forward posts are separate posts, not replies
             },

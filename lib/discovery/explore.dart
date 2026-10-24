@@ -37,6 +37,7 @@ import 'package:island/posts/widgets/compose/post_list.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/theme.dart';
+import 'package:island/core/navigation/tab_action_button.dart';
 
 @RoutePage()
 class ExploreScreen extends HookConsumerWidget {
@@ -84,6 +85,22 @@ class ExploreScreen extends HookConsumerWidget {
 
     final isWide = isWideScreen(context);
 
+    // The wide layout's second column: the id of the post open beside the
+    // feed, or null while the feed owns the whole window.
+    final detailPostId = useState<String?>(null);
+
+    // Opens a post the way the wide layout wants it. Articles keep their
+    // two-pane reading layout and blogs their webview page — both need the
+    // whole window, so they stay full-page navigations. Every other post
+    // reads in the side pane next to the feed.
+    void openPost(SnPost post) {
+      if (post.type == 1 || post.type == 2) {
+        context.router.push(PostDetailRoute(id: post.id));
+        return;
+      }
+      detailPostId.value = post.id;
+    }
+
     final hasSubscriptionFiltersApplied =
         selectedPublisherNames.value.isNotEmpty ||
         exploreSettings.selectedCategoryIds.isNotEmpty ||
@@ -101,72 +118,62 @@ class ExploreScreen extends HookConsumerWidget {
       handleFilterChange: handleFilterChange,
       currentFilter: exploreSettings.filter,
       isWide: isWide,
-      onOpenPost: isWide ? (post) => _openPost(context, post) : null,
+      onOpenPost: isWide ? openPost : null,
     );
 
-    final composeFab = userInfo.value != null
-        ? _buildComposeFab(context)
+    // The compose action is registered with the shell's action button scope,
+    // which paints it once per active tab instead of as a floating button.
+    // The registration wraps both layouts, and only offers the action when
+    // signed in — a signed-out visitor gets no button.
+    final composeAction = userInfo.value != null
+        ? _buildComposeAction(context)
         : null;
-
     if (isWide) {
-      return AppScaffold(
-        isNoBackground: false,
-        appBar: null,
-        floatingActionButton: composeFab,
-        // The pill spans the whole window instead of the reading column, so it
-        // floats over the feed rather than being one of its slivers. The feed
-        // still drives `fade`, so its rows slide underneath and the surface
-        // glassies in exactly as it does on narrow.
-        body: Stack(
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: kDiscoveryWideColumnWidth,
-                ),
-                child: SizedBox.expand(child: feed),
-              ),
+      // Two even columns around a floating detail card: the feed keeps its
+      // reading measure on the left and yields half the window to the pane
+      // while it is open. The pill spans only the feed's column so it never
+      // floats over the pane; the feed still drives `fade`, so its rows slide
+      // underneath and the surface glassies in exactly as it does on narrow.
+      return TabActionRegistration(
+        id: 'explore',
+        spec: composeAction,
+        child: AppScaffold(
+          isNoBackground: false,
+          appBar: null,
+          body: _WideExploreLayout(
+            fade: fade,
+            detailPostId: detailPostId.value,
+            barControls: _buildExploreBarControls(
+              currentFilter: exploreSettings.filter,
+              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+              handleFilterChange: handleFilterChange,
             ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              // The same measurement the sliver's toolbar height gives it, so
-              // the capsule is exactly one control row tall either way.
-              height: MediaQuery.paddingOf(context).top + kPillAppBarHeight,
-              child: PillAppBar(
-                fade: fade,
-                statusTop: MediaQuery.paddingOf(context).top,
-                child: _buildExploreBarControls(
-                  currentFilter: exploreSettings.filter,
-                  hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-                  handleFilterChange: handleFilterChange,
-                ),
-              ),
-            ),
-          ],
+            feed: feed,
+            onOpenFullPage: (id) =>
+                context.router.push(PostDetailRoute(id: id)),
+            // Reference posts and replies tapped inside the pane swap the
+            // pane's own content; only the feed's first open picks between the
+            // pane and a full-page article/blog route.
+            onOpenInPane: (id) => detailPostId.value = id,
+            onCloseDetail: () => detailPostId.value = null,
+          ),
         ),
       );
     }
 
-    return AppScaffold(floatingActionButton: composeFab, body: feed);
+    return TabActionRegistration(
+      id: 'explore',
+      spec: composeAction,
+      child: AppScaffold(body: feed),
+    );
   }
 
-  /// Opens a post the way the wide layout wants it: short posts in the
-  /// attention modal, anything that needs room on the full detail page.
-  void _openPost(BuildContext context, SnPost post) {
-    if (postFitsAttentionModal(post)) {
-      showPostDetailAttentionModal(post.id);
-      return;
-    }
-    context.router.push(PostDetailRoute(id: post.id));
-  }
-
-  /// The compose action, shared by both layouts.
-  Widget _buildComposeFab(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'explore-fab',
-      child: const Icon(Symbols.create),
+  /// The compose action's spec: the sheet offering post/article/blog.
+  TabActionButtonSpec _buildComposeAction(BuildContext context) {
+    return TabActionButtonSpec(
+      symbol: 'plus',
+      icon: Symbols.create,
+      label: 'postCompose'.tr(),
       onPressed: () {
         final parentContext = context;
         showModalBottomSheet(
@@ -180,7 +187,7 @@ class ExploreScreen extends HookConsumerWidget {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                 leading: const Icon(Symbols.post_add_rounded),
-                title: Text('postCompose').tr(),
+                title: Text('postCompose'.tr()),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await PostComposeScreen.show(parentContext);
@@ -189,7 +196,7 @@ class ExploreScreen extends HookConsumerWidget {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                 leading: const Icon(Symbols.article),
-                title: Text('articleCompose').tr(),
+                title: Text('articleCompose'.tr()),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await context.router.push(ArticleComposeRoute());
@@ -198,7 +205,7 @@ class ExploreScreen extends HookConsumerWidget {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
                 leading: const Icon(Symbols.docs),
-                title: Text('linkBlog').tr(),
+                title: Text('linkBlog'.tr()),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
                   await BlogComposeDialog.show(parentContext);
@@ -209,7 +216,7 @@ class ExploreScreen extends HookConsumerWidget {
           ),
         );
       },
-    ).padding(bottom: MediaQuery.of(context).padding.bottom);
+    );
   }
 
   /// The pill's single row of controls: the drawer toggle and the section
@@ -478,6 +485,228 @@ class ExploreScreen extends HookConsumerWidget {
     );
   }
 }
+
+/// The explore page's wide layout: the feed and, beside it, the post currently
+/// open.
+///
+/// The pane is a floating card of its own — same tone, radius and gap family
+/// as the feed's rows — inset from the window edges so the page ground shows
+/// around it. It animates width in and out rather than snapping the window in
+/// two; while it moves the feed keeps its reading measure (centred in whatever
+/// width is left to it) and the pill stays over the feed column, so the pane
+/// never slides under the bar's controls.
+class _WideExploreLayout extends StatelessWidget {
+  /// The feed's glass ramp: 0 transparent at the top of the timeline, 1 fully
+  /// surfaced once scrolled.
+  final ValueNotifier<double> fade;
+
+  final String? detailPostId;
+  final Widget barControls;
+  final Widget feed;
+  final ValueChanged<String> onOpenFullPage;
+
+  /// Opens another post in the pane itself, replacing what it shows — the
+  /// path reference posts and replies take when tapped inside the pane.
+  final ValueChanged<String> onOpenInPane;
+  final VoidCallback onCloseDetail;
+
+  const _WideExploreLayout({
+    required this.fade,
+    required this.detailPostId,
+    required this.barControls,
+    required this.feed,
+    required this.onOpenFullPage,
+    required this.onOpenInPane,
+    required this.onCloseDetail,
+  });
+
+  /// How long the pane takes to slide in or out.
+  static const _duration = Duration(milliseconds: 260);
+
+  static const _curve = Curves.easeOutCubic;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusTop = MediaQuery.paddingOf(context).top;
+    final openId = detailPostId;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The feed column keeps the reading measure the wide layout has always
+        // used: centred, capped at the column width. It yields half the window
+        // while the pane is open and takes it back on close — the pane's
+        // [AnimatedSize] is what makes that handover a slide rather than a cut.
+        Expanded(
+          child: Stack(
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: kDiscoveryWideColumnWidth,
+                  ),
+                  child: SizedBox.expand(child: feed),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                // The same measurement the sliver's toolbar height gives it,
+                // so the capsule is exactly one control row tall either way.
+                height: statusTop + kPillAppBarHeight,
+                child: PillAppBar(
+                  fade: fade,
+                  statusTop: statusTop,
+                  child: barControls,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // The pane column: zero width while closed so the feed owns the whole
+        // window, half the window while open. The card inside fades and slides
+        // with the width, and stays mounted through the close animation so the
+        // transition does not flash the empty ground.
+        AnimatedSize(
+          duration: _duration,
+          curve: _curve,
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: openId != null ? _paneWidth(context) : 0,
+            child: openId == null
+                ? null
+                : _DetailPaneCard(
+                    key: ValueKey(openId),
+                    postId: openId,
+                    statusTop: statusTop,
+                    onOpenFullPage: onOpenFullPage,
+                    onOpenInPane: onOpenInPane,
+                    onClose: onCloseDetail,
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The pane's width: an even split of the window with the feed column, so a
+  /// post reads in as much room as the timeline beside it.
+  double _paneWidth(BuildContext context) =>
+      MediaQuery.sizeOf(context).width / 2;
+}
+
+/// The detail pane as a floating card: the feed's own surface tone and radius,
+/// inset from the window edges so it hovers over the page ground instead of
+/// bleeding into it.
+///
+/// The chrome is a real [PillAppBar], not a flat header row — the same glass
+/// capsule the feed and chat pages use. It floats over the body and its fill
+/// fades in on the body's own scroll offset ([updatePillFade]), so the post
+/// slides under the bar exactly as timeline rows slide under the feed's pill.
+/// [statusTop] keeps the card clear of the status bar; the pill then insets a
+/// further [SolSpace.md] inside the card, reading as a control hovering on the
+/// card's surface.
+///
+/// The embed carries no app bar of its own ([PostDetailBody] with
+/// `isEmbedded`), so the pill supplies the chrome — the post-detail title with
+/// open-in-full-page and close actions. Taps on posts inside the body
+/// (reference posts, replies) go to [onOpenInPane], which swaps the pane's own
+/// content instead of navigating away.
+class _DetailPaneCard extends HookConsumerWidget {
+  final String postId;
+  final double statusTop;
+  final ValueChanged<String> onOpenFullPage;
+  final ValueChanged<String> onOpenInPane;
+  final VoidCallback onClose;
+
+  const _DetailPaneCard({
+    super.key,
+    required this.postId,
+    required this.statusTop,
+    required this.onOpenFullPage,
+    required this.onOpenInPane,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // The pill's glass ramp, driven by the body's scroll. A notifier rather
+    // than a rebuild so a scroll tick repaints the capsule only, never the
+    // post content underneath it.
+    final fade = useValueNotifier(0.0);
+    return Padding(
+      padding: EdgeInsets.only(
+        top: statusTop + SolSpace.md,
+        bottom: SolSpace.md,
+        right: SolSpace.md,
+      ),
+      child: ClipRRect(
+        borderRadius: SolRadius.cardRadius,
+        child: ColoredBox(
+          color: colorScheme.surfaceContainerLow,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // The body scrolls; its top padding reserves the pill's band plus
+              // the feed's own card gap, so the first content clears the
+              // capsule with the same breathing room the timeline gives its
+              // rows — and later slides back under it.
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: kPillAppBarHeight + kExploreCardGap,
+                ),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) =>
+                      updatePillFade(notification, fade),
+                  child: PostDetailBody(
+                    id: postId,
+                    isEmbedded: true,
+                    // Reference posts and replies open in the pane, replacing
+                    // its content, rather than navigating to the full page.
+                    onPostTap: onOpenInPane,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: PillAppBar(
+                  fade: fade,
+                  // The card already clears the status bar; the pill only needs
+                  // its own side/top gutter inside the card.
+                  statusTop: 0,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'postDetail'.tr(),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Symbols.open_in_new),
+                        tooltip: 'open'.tr(),
+                        onPressed: () => onOpenFullPage(postId),
+                      ),
+                      IconButton(
+                        icon: const Icon(Symbols.close),
+                        tooltip: 'close'.tr(),
+                        onPressed: onClose,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _DiscoveryActivityItem extends ConsumerWidget {
   final Map<String, dynamic> data;

@@ -22,7 +22,6 @@ import 'package:island/posts/widgets/compose/post_featured.dart';
 import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
-import 'package:island_ui_foundation/island_ui_foundation.dart';
 import 'package:island/shared/widgets/layouts/sidebar_panel_host.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -255,6 +254,9 @@ void main() {
     List<SnPost>? featuredPosts,
     ActivityListNotifier Function()? feed,
     GlobalKey<NavigatorState>? navigatorKey,
+    // Posts the detail pane resolves by id, so a test can drive the pane's own
+    // content (reference posts, replies) without a live backend.
+    Map<String, SnPost> detailPosts = const {},
   }) async {
     final prefs = await SharedPreferences.getInstance();
     tester.view.devicePixelRatio = 1.0;
@@ -292,6 +294,11 @@ void main() {
                   ),
                   friendsOverviewExpandedProvider.overrideWith(
                     (ref) async => [_friendOverviewItem()],
+                  ),
+                  // Lets a test hand the pane a post to render, so reference
+                  // cards and reply rows can be exercised without a backend.
+                  postProvider.overrideWith(
+                    (ref, id) async => detailPosts[id],
                   ),
                 ],
                 child: const ExploreScreen(),
@@ -505,27 +512,192 @@ void main() {
     await disposeTree(tester);
   });
 
-  testWidgets('wide explore: a short post opens in the attention modal', (
+  testWidgets('wide explore: a short post opens in the side pane', (
     tester,
   ) async {
-    final navigatorKey = GlobalKey<NavigatorState>();
-    IslandUIFoundation.configureNavigator(navigatorKey);
-
     await pumpExplore(
       tester,
       const Size(1400, 900),
       feed: () => _OnePostFeed(_smallPost()),
-      navigatorKey: navigatorKey,
       // No featured strip, so the feed row is the only tappable post.
       featuredPosts: const <SnPost>[],
     );
 
     expect(find.byType(PostActionableItem), findsOneWidget);
+    expect(find.byType(PostDetailBody), findsNothing);
+
     await tester.tap(find.textContaining('A short post body.'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.byType(PostDetailAttentionModal), findsOneWidget);
+    // The post opens beside the feed instead of over it, and the two columns
+    // split the window evenly (the card is inset by its own floating margin).
+    final detail = find.byType(PostDetailBody);
+    expect(detail, findsOneWidget);
+    final feedCard = find.byType(PostActionableItem);
+    expect(
+      tester.getRect(detail).left,
+      moreOrLessEquals(1400 / 2, epsilon: 1),
+    );
+    expect(
+      tester.getRect(feedCard).left + tester.getRect(feedCard).width,
+      lessThanOrEqualTo(tester.getRect(detail).left + 1),
+    );
+
+    // The pane's own header closes it and hands the window back to the feed.
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(PostDetailBody), findsNothing);
+    expect(find.byType(PostActionableItem), findsOneWidget);
+
+    // Closing must not wedge the pane shut: the same post opens it again.
+    await tester.tap(find.textContaining('A short post body.'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      find.byType(PostDetailBody),
+      findsOneWidget,
+      reason: 'a closed pane still opens on the next tap',
+    );
+
+    await disposeTree(tester);
+  });
+
+  testWidgets('wide explore: the pane slides in as a floating card', (
+    tester,
+  ) async {
+    await pumpExplore(
+      tester,
+      const Size(1400, 900),
+      feed: () => _OnePostFeed(_smallPost()),
+      featuredPosts: const <SnPost>[],
+    );
+
+    // Opening animates width rather than snapping: one frame in, the pane is
+    // present but only part-way to its half-window measure.
+    await tester.tap(find.textContaining('A short post body.'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    final midTransition = tester.getRect(find.byType(PostDetailBody)).width;
+    expect(midTransition, greaterThan(0));
+    expect(
+      midTransition,
+      lessThan(1400 / 2),
+      reason: 'the pane is still growing, so it has not reached full width',
+    );
+
+    await tester.pump(const Duration(milliseconds: 300));
+    final settled = tester.getRect(find.byType(PostDetailBody)).width;
+    expect(settled, closeTo(1400 / 2 - SolSpace.md, 1));
+
+    // The pane is a floating card, not a bleeding panel: rounded corners in
+    // the feed's card radius, the feed's own surface tone, and clear of the
+    // window edge so the page ground shows around it.
+    final card = find.ancestor(
+      of: find.byType(PostDetailBody),
+      matching: find.byType(ClipRRect),
+    );
+    expect(card, findsOneWidget);
+    final clip = tester.widget<ClipRRect>(card);
+    expect(clip.borderRadius, SolRadius.cardRadius);
+
+    final coloredBox = find.descendant(
+      of: card,
+      matching: find.byType(ColoredBox),
+    );
+    expect(coloredBox, findsOneWidget);
+    expect(
+      tester.widget<ColoredBox>(coloredBox).color,
+      equals(Theme.of(tester.element(card)).colorScheme.surfaceContainerLow),
+    );
+
+    final rect = tester.getRect(card);
+    expect(rect.right, closeTo(1400 - SolSpace.md, 1), reason: 'inset margin');
+    expect(
+      rect.top,
+      greaterThanOrEqualTo(MediaQuery.paddingOf(tester.element(card)).top),
+    );
+
+    await disposeTree(tester);
+  });
+
+  testWidgets('wide explore: the pane header is a pill bar', (tester) async {
+    await pumpExplore(
+      tester,
+      const Size(1400, 900),
+      feed: () => _OnePostFeed(_smallPost()),
+      featuredPosts: const <SnPost>[],
+    );
+
+    // Only the feed's pill floats before the pane opens.
+    expect(find.byType(PillAppBar), findsOneWidget);
+
+    await tester.tap(find.textContaining('A short post body.'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The pane carries its own pill — the same glass bar the feed uses — so the
+    // window now floats two, and the pane's holds the detail chrome.
+    expect(find.byType(PillAppBar), findsNWidgets(2));
+    expect(find.text('Post Detail'), findsOneWidget);
+    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.byTooltip('Open'), findsOneWidget);
+
+    await disposeTree(tester);
+  });
+
+  testWidgets('wide explore: a reference post opens in the pane', (
+    tester,
+  ) async {
+    final reference = _smallPost(
+      id: 'ref-post',
+      overrides: {'content': 'The referenced body.'},
+    );
+    final main = _smallPost(
+      id: 'main-post',
+      overrides: {
+        'content': 'Main post body.',
+        'forwarded_post': reference.toJson(),
+      },
+    );
+
+    await pumpExplore(
+      tester,
+      const Size(1400, 900),
+      feed: () => _OnePostFeed(main),
+      featuredPosts: const <SnPost>[],
+      detailPosts: {'main-post': main, 'ref-post': reference},
+    );
+
+    // Open the main post in the pane.
+    await tester.tap(find.textContaining('Main post body.'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      tester.widget<PostDetailBody>(find.byType(PostDetailBody)).id,
+      'main-post',
+    );
+
+    // The feed row renders the same reference, so scope to the pane's own copy.
+    final paneReference = find.descendant(
+      of: find.byType(PostDetailBody),
+      matching: find.textContaining('The referenced body.'),
+    );
+    expect(paneReference, findsOneWidget);
+
+    // Tapping it swaps the pane's own content instead of navigating away: the
+    // window stays one pane, now showing the referenced post.
+    await tester.tap(paneReference);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(PostDetailBody), findsOneWidget);
+    expect(
+      tester.widget<PostDetailBody>(find.byType(PostDetailBody)).id,
+      'ref-post',
+      reason: 'the reference opens in the pane, replacing its content',
+    );
 
     await disposeTree(tester);
   });
