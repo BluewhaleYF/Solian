@@ -3525,6 +3525,7 @@
   "statusCreate": "新增狀態",
   "statusCreateHint": "您在想些什麼？新增狀態。",
   "statusCreatePrompt": "點擊設定目前活動，讓其他人知道你在做什麼",
+  "statusDeleteHint": "狀態將從你的個人檔案中移除。",
   "statusFetching": "正在取得目前狀態",
   "statusIcon": "圖示",
   "statusInvisible": "隱身",

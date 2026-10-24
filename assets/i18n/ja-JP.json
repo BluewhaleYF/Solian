@@ -2065,6 +2065,7 @@
   "statusCreate": "ステータスを追加",
   "statusCreateHint": "何を考えていますか？ステータスを追加。",
   "statusCreatePrompt": "タップして現在のアクティビティを設定し、他の人に共有",
+  "statusDeleteHint": "ステータスはプロフィールから削除されます。",
   "statusFetching": "現在のステータスを取得中",
   "statusIcon": "アイコン",
   "statusInvisible": "ステルス",

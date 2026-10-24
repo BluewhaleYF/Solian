@@ -2316,6 +2316,7 @@
   "statusCreate": "상태 추가",
   "statusCreateHint": "무엇을 생각하고 계신가요? 상태를 추가하세요.",
   "statusCreatePrompt": "탭하여 현재 활동을 설정하고 다른 사람에게 알려주세요",
+  "statusDeleteHint": "상태가 프로필에서 삭제됩니다.",
   "statusFetching": "현재 상태를 가져오는 중",
   "statusIcon": "아이콘",
   "statusInvisible": "오프라인 표시",

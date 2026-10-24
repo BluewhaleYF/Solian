@@ -1973,6 +1973,7 @@
   "statusCreate": "增境況",
   "statusCreateHint": "何所思？可添近況。",
   "statusCreatePrompt": "點以設當下之行，使人知君之所為",
+  "statusDeleteHint": "心境將自卿之畫像滌除。",
   "statusFetching": "正在取近況",
   "statusIcon": "圖記",
   "statusInvisible": "隱跡",

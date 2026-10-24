@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/screens/profile.dart';
 import 'package:island/accounts/utils/account_status_utils.dart';
+import 'package:island/accounts/widgets/account/status_card.dart';
 import 'package:island/accounts/widgets/account/status_creation.dart';
 import 'package:island/core/network.dart';
 import 'package:island/accounts/account_pod.dart';
@@ -89,7 +90,7 @@ class AccountStatusCreationWidget extends HookConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Symbols.keyboard_arrow_up),
+                        const Icon(Symbols.keyboard_arrow_up_rounded),
                         const SizedBox(width: 4),
                         Text('statusCreate'.tr()),
                       ],
@@ -104,13 +105,13 @@ class AccountStatusCreationWidget extends HookConsumerWidget {
               ).opacity(0.85),
         error: (error, _) => _StatusStateCard(
           padding: renderPadding,
-          icon: Symbols.error,
+          icon: Symbols.error_rounded,
           title: 'statusUnavailable'.tr(),
           subtitle: '$error',
         ),
         loading: () => _StatusStateCard(
           padding: renderPadding,
-          icon: Symbols.more_horiz,
+          icon: Symbols.more_horiz_rounded,
           title: 'loading'.tr(),
           subtitle: 'statusFetching'.tr(),
         ),
@@ -152,7 +153,7 @@ class AccountStatusWidget extends HookConsumerWidget {
     if (statusValue == null) {
       return _StatusStateCard(
         padding: padding,
-        icon: Symbols.circle,
+        icon: Symbols.circle_rounded,
         title: getStatusDisplayLabel(context, statusValue),
         subtitle: 'statusNoCustom'.tr(),
       ).opacity(0.85);
@@ -160,93 +161,43 @@ class AccountStatusWidget extends HookConsumerWidget {
 
     final hasMedia = statusValue.icon != null || statusValue.background != null;
     if (!hasMedia) {
-      return Padding(
-        padding:
-            padding ?? const EdgeInsets.symmetric(horizontal: 27, vertical: 4),
-        child: Row(
-          spacing: 4,
-          children: [
-            Icon(
-              getStatusIndicatorIcon(statusValue),
-              fill: getStatusIndicatorFill(statusValue),
-              color: getStatusIndicatorColor(statusValue),
-              size: 16,
-            ).padding(right: 4),
-            if (statusValue.isCustomized)
-              Flexible(
-                child: GestureDetector(
-                  onLongPress: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('activityDetails'.tr()),
-                        content: buildActivityDetails(status.value),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text('close'.tr()),
-                          ),
-                        ],
+      return AccountStatusInline(
+        indicatorIcon: getStatusIndicatorIcon(statusValue),
+        indicatorFill: getStatusIndicatorFill(statusValue),
+        indicatorColor: getStatusIndicatorColor(statusValue),
+        title:
+            getActivityTitle(statusValue.label, statusValue.meta) ??
+            getStatusDisplayLabel(context, statusValue),
+        titleTooltip: statusValue.isCustomized
+            ? getActivityFullMessage(statusValue)
+            : null,
+        onLongPress: statusValue.isCustomized
+            ? () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('activityDetails'.tr()),
+                    content: buildActivityDetails(status.value),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text('close'.tr()),
                       ),
-                    );
-                  },
-                  child: Tooltip(
-                    richMessage: getActivityFullMessage(statusValue),
-                    child: Text(
-                      getActivityTitle(statusValue.label, statusValue.meta) ??
-                          getStatusDisplayLabel(context, statusValue),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ],
                   ),
-                ),
-              )
-            else
-              Flexible(
-                child: Text(
-                  getStatusDisplayLabel(context, statusValue),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            if (statusValue.isIdleOrOnline)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'idle',
-                  style: TextStyle(fontSize: 11, color: Colors.amber.shade700),
-                ).tr(),
-              ),
-            if (getActivitySubtitle(statusValue.meta) != null)
-              Flexible(
-                child: Text(
-                  getActivitySubtitle(statusValue.meta)!,
-                ).opacity(0.75),
-              )
-            else if (getStatusOnlineDeviceLabel(statusValue) case final device?)
-              Flexible(
-                child: Tooltip(
-                  message: device,
-                  child: Text(
-                    device,
-                    maxLines: 1,
-                    overflow: .ellipsis,
-                  ).opacity(0.75),
-                ),
-              )
-            else if (!statusValue.isOnline &&
-                account.value?.profile.lastSeenAt != null)
-              Flexible(
-                child: Text(
-                  account.value!.profile.lastSeenAt!.formatRelative(context),
-                ).opacity(0.75),
-              ),
-          ],
-        ),
+                );
+              }
+            : null,
+        showIdleBadge: statusValue.isIdleOrOnline,
+        attitude: statusValue.attitude,
+        meta:
+            getActivitySubtitle(statusValue.meta) ??
+            getStatusOnlineDeviceLabel(statusValue) ??
+            ((!statusValue.isOnline &&
+                    account.value?.profile.lastSeenAt != null)
+                ? account.value!.profile.lastSeenAt!.formatRelative(context)
+                : null),
+        padding: padding,
       ).opacity(statusValue.isCustomized ? 1 : 0.85);
     }
 
@@ -396,182 +347,26 @@ class _StatusDisplayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final hasBackground = status.background != null;
-    final title =
-        getActivityTitle(status.label, status.meta) ??
-        getStatusDisplayLabel(context, status);
-    final subtitle = (status.symbol?.isNotEmpty ?? false)
-        ? status.symbol
-        : getStatusDisplayLabel(context, status);
-    final textShadow = hasBackground
-        ? const [
-            Shadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 2)),
-          ]
-        : null;
-    final indicatorColor = getStatusIndicatorColor(status);
+    final typeLabel = getStatusDisplayLabel(context, status);
+    final symbol = status.symbol;
 
-    Widget leading = status.icon != null
-        ? ProfilePictureWidget(
-            file: status.icon,
-            radius: hasBackground ? 24 : 20,
-            borderRadius: hasBackground ? 14 : 12,
-            fallbackIcon: getStatusIndicatorIcon(status),
-            fallbackColor: hasBackground ? Colors.white : null,
-          )
-        : Container(
-            width: hasBackground ? 48 : 40,
-            height: hasBackground ? 48 : 40,
-            decoration: BoxDecoration(
-              color: hasBackground
-                  ? Colors.white24
-                  : colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(hasBackground ? 14 : 12),
-            ),
-            child: Icon(
-              getStatusIndicatorIcon(status),
-              fill: getStatusIndicatorFill(status),
-              color: hasBackground
-                  ? Colors.white
-                  : indicatorColor == Colors.transparent
-                  ? colorScheme.onPrimaryContainer
-                  : indicatorColor,
-            ),
-          );
-
-    Widget card = Container(
+    return AccountStatusCard(
+      title: getActivityTitle(status.label, status.meta) ?? typeLabel,
+      subtitle: (symbol?.isNotEmpty ?? false) ? symbol : typeLabel,
+      trailingText: trailingText,
+      icon: status.icon,
+      background: status.background,
+      indicatorIcon: getStatusIndicatorIcon(status),
+      indicatorFill: getStatusIndicatorFill(status),
+      indicatorColor: getStatusIndicatorColor(status),
+      attitude: status.attitude,
+      showIdleBadge: status.isIdleOrOnline,
       margin: hasBackground
           ? EdgeInsets.zero
           : (padding ??
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            if (hasBackground)
-              Positioned.fill(
-                child: CloudImageWidget(
-                  file: status.background,
-                  aspectRatio: 16 / 9,
-                  noBlurhash: true,
-                ),
-              ),
-            if (hasBackground)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.08),
-                        Colors.black.withOpacity(0.38),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            Align(
-              alignment: hasBackground
-                  ? Alignment.bottomLeft
-                  : Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    leading,
-                    const Gap(12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: hasBackground ? 2 : 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: hasBackground ? Colors.white : null,
-                                  shadows: textShadow,
-                                ),
-                          ),
-                          if ((subtitle?.isNotEmpty ?? false))
-                            Text(
-                              subtitle!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: hasBackground
-                                        ? Colors.white.withOpacity(0.92)
-                                        : colorScheme.onSurfaceVariant,
-                                    shadows: textShadow,
-                                  ),
-                            ),
-                          if ((trailingText?.isNotEmpty ?? false))
-                            Text(
-                              trailingText!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: hasBackground
-                                        ? Colors.white.withOpacity(0.82)
-                                        : colorScheme.onSurfaceVariant,
-                                    shadows: textShadow,
-                                  ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (status.isIdleOrOnline)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: hasBackground
-                              ? Colors.white24
-                              : Colors.amber.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'idle'.tr(),
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: hasBackground
-                                    ? Colors.white
-                                    : Colors.amber.shade700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      onLongPress: onLongPress,
     );
-
-    if (onLongPress != null) {
-      card = GestureDetector(onLongPress: onLongPress, child: card);
-    }
-
-    if (hasBackground) {
-      return AspectRatio(aspectRatio: 16 / 9, child: card);
-    }
-
-    return card;
   }
 }

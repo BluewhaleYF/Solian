@@ -3751,6 +3751,7 @@
   "statusCreate": "添加状态",
   "statusCreateHint": "在想些什么？添加一个状态，分享你的心情！",
   "statusCreatePrompt": "点击设置当前活动，让其他人知道你在做什么",
+  "statusDeleteHint": "状态将从你的个人资料中移除。",
   "statusFetching": "获取当前状态",
   "statusIcon": "图标",
   "statusInvisible": "隐身",

@@ -3776,6 +3776,7 @@
   "statusCreate": "Add a Status",
   "statusCreateHint": "What's on your mind? Add a status.",
   "statusCreatePrompt": "Tap to set your current activity and let others know what you're up to",
+  "statusDeleteHint": "Your status will be removed from your profile.",
   "statusFetching": "Fetching current status",
   "statusIcon": "Icon",
   "statusInvisible": "Invisible",

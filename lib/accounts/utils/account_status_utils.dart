@@ -49,21 +49,21 @@ String? getStatusDisplaySymbol(SnAccountStatus? status) {
   return symbol;
 }
 
-IconData getStatusIndicatorIcon(SnAccountStatus? status) {
-  if (status == null) {
-    return Symbols.circle;
-  }
-
-  if (status.isIdleOrOnline) {
-    return Symbols.nights_stay;
-  }
-
-  return switch (status.type) {
-    SnAccountStatusType.busy => Symbols.circle,
-    SnAccountStatusType.doNotDisturb => Symbols.do_not_disturb_on,
-    SnAccountStatusType.invisible => Symbols.visibility_off,
-    _ => Symbols.circle,
+/// Presence tint for a status type, matching [getStatusIndicatorColor] for an
+/// account that is currently online.
+Color statusTypeIndicatorColor(int type) {
+  return switch (type) {
+    SnAccountStatusType.busy => Colors.orange,
+    SnAccountStatusType.doNotDisturb => Colors.deepOrange,
+    SnAccountStatusType.invisible => Colors.grey,
+    _ => Colors.green,
   };
+}
+
+/// The presence glyph is always a dot: what changes between statuses is its
+/// color and fill, not its shape, so the same mark reads the same everywhere.
+IconData getStatusIndicatorIcon(SnAccountStatus? status) {
+  return Symbols.circle_rounded;
 }
 
 double getStatusIndicatorFill(SnAccountStatus? status) {
@@ -80,10 +80,9 @@ Color getStatusIndicatorColor(SnAccountStatus? status) {
     return Colors.amber;
   }
 
-  return switch (status.type) {
-    SnAccountStatusType.busy => Colors.orange,
-    SnAccountStatusType.doNotDisturb => Colors.deepOrange,
-    SnAccountStatusType.invisible => Colors.grey,
-    _ => status.isOnline ? Colors.green : Colors.grey,
-  };
+  if (status.type == SnAccountStatusType.defaultType) {
+    return status.isOnline ? Colors.green : Colors.grey;
+  }
+
+  return statusTypeIndicatorColor(status.type);
 }

@@ -481,7 +481,8 @@ class FriendPresenceBadge extends StatelessWidget {
     final statusColor = hasActivities
         ? Colors.blue.withOpacity(0.8)
         : getStatusIndicatorColor(friend.status);
-    final squared = hasActivities || statusIcon != Symbols.circle;
+    // Activities get a rounded square; presence is always a dot.
+    final squared = hasActivities;
 
     return Container(
       width: size,

@@ -1,19 +1,26 @@
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/widgets/account/status.dart';
+import 'package:island/accounts/widgets/account/status_card.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/widgets/content/cloud_file_picker.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:styled_widget/styled_widget.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+
+/// How the status expires. Presets are resolved against the moment of
+/// submission, not against the moment they were tapped, so a sheet left open
+/// does not publish a status that has already expired.
+enum _ClearPreset { never, in30Minutes, inOneHour, inFourHours, custom }
 
 class AccountStatusCreationSheet extends HookConsumerWidget {
   final SnAccountStatus? initialStatus;
@@ -21,17 +28,30 @@ class AccountStatusCreationSheet extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isEditing = initialStatus != null;
+
     final attitude = useState<int>(initialStatus?.attitude ?? 1);
     final statusType = useState<int>(
       initialStatus?.type ?? SnAccountStatusType.defaultType,
     );
-    final clearedAt = useState<DateTime?>(initialStatus?.clearedAt);
+    final clearPreset = useState<_ClearPreset>(
+      initialStatus?.clearedAt == null
+          ? _ClearPreset.never
+          : _ClearPreset.custom,
+    );
+    final customClearedAt = useState<DateTime?>(initialStatus?.clearedAt);
     final labelController = useTextEditingController(
       text: initialStatus?.label ?? '',
     );
     final symbolController = useTextEditingController(
       text: initialStatus?.symbol ?? '',
     );
+    // Listening to the controllers is what makes the card below live; reading
+    // `.text` during build alone leaves it frozen at the initial value.
+    final label = useValueListenable(labelController).text.trim();
+    final symbol = useValueListenable(symbolController).text.trim();
     final icon = useState<IDisplayableCloudFile?>(initialStatus?.icon);
     final background = useState<IDisplayableCloudFile?>(
       initialStatus?.background,
@@ -39,7 +59,22 @@ class AccountStatusCreationSheet extends HookConsumerWidget {
 
     final submitting = useState(false);
 
-    Future<void> pickImage(String target) async {
+    DateTime? resolveClearedAt(DateTime now) => switch (clearPreset.value) {
+      _ClearPreset.never => null,
+      _ClearPreset.in30Minutes => now.add(const Duration(minutes: 30)),
+      _ClearPreset.inOneHour => now.add(const Duration(hours: 1)),
+      _ClearPreset.inFourHours => now.add(const Duration(hours: 4)),
+      _ClearPreset.custom => customClearedAt.value,
+    };
+
+    String typeLabel() => switch (statusType.value) {
+      SnAccountStatusType.busy => 'statusBusy'.tr(),
+      SnAccountStatusType.doNotDisturb => 'statusNotDisturb'.tr(),
+      SnAccountStatusType.invisible => 'statusInvisible'.tr(),
+      _ => 'online'.tr(),
+    };
+
+    Future<void> pickImage({required bool forBackground}) async {
       final result = await showModalBottomSheet<SnCloudFile>(
         context: context,
         isScrollControlled: true,
@@ -48,21 +83,66 @@ class AccountStatusCreationSheet extends HookConsumerWidget {
             const CloudFilePicker(allowedTypes: {UniversalFileType.image}),
       );
       if (result == null) return;
-      if (target == 'icon') {
-        icon.value = result;
-      } else {
+      if (forBackground) {
         background.value = result;
+      } else {
+        icon.value = result;
       }
     }
 
-    Future<void> clearStatus() async {
+    Future<void> pickCustomClearTime() async {
+      final now = DateTime.now();
+      final current = customClearedAt.value;
+      final seed = (current != null && current.isAfter(now))
+          ? current
+          : now.add(const Duration(hours: 1));
+
+      final date = await showDatePicker(
+        context: context,
+        initialDate: seed,
+        firstDate: DateTime(now.year, now.month, now.day),
+        lastDate: now.add(const Duration(days: 365)),
+      );
+      if (date == null || !context.mounted) return;
+
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(seed),
+      );
+      if (time == null) return;
+
+      final picked = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+      // The pickers happily return "today, earlier". A clear time in the past
+      // would publish a status that disappears instantly, so keep the nearest
+      // usable moment — the resolved time is shown right next to the chips.
+      customClearedAt.value = picked.isAfter(now)
+          ? picked
+          : now.add(const Duration(minutes: 5));
+      clearPreset.value = _ClearPreset.custom;
+    }
+
+    Future<void> deleteStatus() async {
+      final confirmed = await showConfirmAlert(
+        'statusDeleteHint'.tr(),
+        'delete'.tr(),
+        isDanger: true,
+      );
+      if (!confirmed) return;
+
+      final apiClient = ref.read(apiClientProvider);
+      final name = ref.read(userInfoProvider).value?.name;
       try {
         submitting.value = true;
-        final user = ref.watch(userInfoProvider);
-        final apiClient = ref.read(apiClientProvider);
         await apiClient.delete('/passport/accounts/me/statuses');
+        ref.read(currentAccountStatusProvider.notifier).clearStatus();
+        if (name != null) ref.invalidate(accountStatusProvider(name));
         if (!context.mounted) return;
-        ref.invalidate(accountStatusProvider(user.value!.name));
         Navigator.pop(context);
       } catch (err) {
         showErrorAlert(err);
@@ -72,28 +152,32 @@ class AccountStatusCreationSheet extends HookConsumerWidget {
     }
 
     Future<void> submitStatus() async {
+      if (submitting.value) return;
+      final apiClient = ref.read(apiClientProvider);
+      final name = ref.read(userInfoProvider).value?.name;
+      final clearedAt = resolveClearedAt(DateTime.now());
+
       try {
         submitting.value = true;
-        final user = ref.watch(userInfoProvider);
-        final apiClient = ref.read(apiClientProvider);
-        await apiClient.request(
+        final response = await apiClient.request(
           '/passport/accounts/me/statuses',
           data: {
             'attitude': attitude.value,
             'type': statusType.value,
-            'cleared_at': clearedAt.value?.toUtc().toIso8601String(),
-            if (labelController.text.isNotEmpty) 'label': labelController.text,
-            if (symbolController.text.isNotEmpty)
-              'symbol': symbolController.text,
-            if (icon.value?.id != null) 'icon_id': icon.value!.id,
-            if (background.value?.id != null)
-              'background_id': background.value!.id,
+            'cleared_at': clearedAt?.toUtc().toIso8601String(),
+            'label': label,
+            'symbol': symbol.isEmpty ? null : symbol,
+            'icon_id': icon.value?.id,
+            'background_id': background.value?.id,
           },
-          options: Options(method: initialStatus == null ? 'POST' : 'PATCH'),
+          options: Options(method: isEditing ? 'PATCH' : 'POST'),
         );
-        if (user.value != null) {
-          ref.invalidate(accountStatusProvider(user.value!.name));
+        final updated = _tryParseStatus(response.data);
+        if (updated != null) {
+          // Publish locally first so every surface updates without a refetch.
+          ref.read(currentAccountStatusProvider.notifier).setStatus(updated);
         }
+        if (name != null) ref.invalidate(accountStatusProvider(name));
         if (!context.mounted) return;
         Navigator.pop(context);
       } catch (err) {
@@ -103,498 +187,488 @@ class AccountStatusCreationSheet extends HookConsumerWidget {
       }
     }
 
-    return SheetScaffold(
-      heightFactor: 0.6,
-      titleText: initialStatus == null
-          ? 'statusCreate'.tr()
-          : 'statusUpdate'.tr(),
-      actions: [
-        TextButton.icon(
-          onPressed: submitting.value
-              ? null
-              : () {
-                  submitStatus();
-                },
-          icon: const Icon(Symbols.upload),
-          label: Text(initialStatus == null ? 'create' : 'update').tr(),
-          style: ButtonStyle(
-            visualDensity: VisualDensity(
-              horizontal: VisualDensity.minimumDensity,
-            ),
-            foregroundColor: WidgetStatePropertyAll(
-              Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-        if (initialStatus != null)
-          IconButton(
-            icon: const Icon(Symbols.delete),
-            onPressed: submitting.value ? null : () => clearStatus(),
-            style: IconButton.styleFrom(minimumSize: const Size(36, 36)),
-          ),
-      ],
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Gap(24),
-            TextField(
-              controller: labelController,
-              decoration: InputDecoration(labelText: 'statusLabel'.tr()),
-              maxLength: 1024,
-              onTapOutside: (_) =>
-                  FocusManager.instance.primaryFocus?.unfocus(),
-            ),
-            const Gap(16),
-            TextField(
-              controller: symbolController,
-              decoration: InputDecoration(labelText: 'statusSymbol'.tr()),
-              maxLength: 128,
-              onTapOutside: (_) =>
-                  FocusManager.instance.primaryFocus?.unfocus(),
-            ),
-            const Gap(8),
-            Text('statusAppearance'.tr(), style: Theme.of(context).textTheme.titleMedium),
-            const Gap(8),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatusAssetPickerTile(
-                    label: 'statusIcon'.tr(),
-                    icon: Symbols.image,
-                    file: icon.value,
-                    onTap: () => pickImage('icon'),
-                  ),
-                ),
-                const Gap(12),
-                Expanded(
-                  child: _StatusAssetPickerTile(
-                    label: 'statusBackground'.tr(),
-                    icon: Symbols.wallpaper,
-                    file: background.value,
-                    onTap: () => pickImage('background'),
-                  ),
-                ),
-              ],
-            ),
-            const Gap(12),
-            _StatusPreviewCard(
-              label: labelController.text.trim(),
-              symbol: symbolController.text.trim(),
-              icon: icon.value,
-              background: background.value,
-              attitude: attitude.value,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'statusAttitude'.tr(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton(
-              segments: [
-                ButtonSegment(
-                  value: 0,
-                  icon: const Icon(Symbols.sentiment_satisfied),
-                  label: Text('attitudePositive'.tr()),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  icon: const Icon(Symbols.sentiment_stressed),
-                  label: Text('attitudeNeutral'.tr()),
-                ),
-                ButtonSegment(
-                  value: 2,
-                  icon: const Icon(Symbols.sentiment_sad),
-                  label: Text('attitudeNegative'.tr()),
-                ),
-              ],
-              selected: {attitude.value},
-              onSelectionChanged: (Set<int> newSelection) {
-                attitude.value = newSelection.first;
-              },
-            ),
-            const Gap(12),
-            Text(
-              'statusVisibility'.tr(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<int>(
-              segments: [
-                ButtonSegment<int>(
-                  value: SnAccountStatusType.defaultType,
-                  icon: const Icon(Symbols.circle),
-                  label: Text('online'.tr()),
-                ),
-                ButtonSegment<int>(
-                  value: SnAccountStatusType.busy,
-                  icon: const Icon(Symbols.schedule),
-                  label: Text('statusBusy'.tr()),
-                ),
-                ButtonSegment<int>(
-                  value: SnAccountStatusType.doNotDisturb,
-                  icon: const Icon(Symbols.do_not_disturb_on),
-                  label: Text('statusNotDisturb'.tr()),
-                ),
-                ButtonSegment<int>(
-                  value: SnAccountStatusType.invisible,
-                  icon: const Icon(Symbols.visibility_off),
-                  label: Text('statusInvisible'.tr()),
-                ),
-              ],
-              selected: {statusType.value},
-              onSelectionChanged: (Set<int> newSelection) {
-                statusType.value = newSelection.first;
-              },
-            ),
-            const Gap(8),
-            Text(switch (statusType.value) {
-              SnAccountStatusType.busy => 'statusBusyDescription'.tr(),
-              SnAccountStatusType.doNotDisturb =>
-                'statusNotDisturbDescription'.tr(),
-              SnAccountStatusType.invisible =>
-                'statusInvisibleDescription'.tr(),
-              _ => 'statusVisibleDescription'.tr(),
-            }).opacity(0.75),
-            const SizedBox(height: 24),
-            Text(
-              'statusClearTime'.tr(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              title: Text(
-                clearedAt.value == null
-                    ? 'statusNoAutoClear'.tr()
-                    : DateFormat.yMMMd().add_jm().format(clearedAt.value!),
-              ),
-              trailing: const Icon(Symbols.schedule),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Theme.of(context).colorScheme.outline),
-              ),
-              onTap: () async {
-                final now = DateTime.now();
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: now,
-                  firstDate: now,
-                  lastDate: now.add(const Duration(days: 365)),
-                );
-                if (date == null) return;
-                if (!context.mounted) return;
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time == null) return;
-                clearedAt.value = DateTime(
-                  date.year,
-                  date.month,
-                  date.day,
-                  time.hour,
-                  time.minute,
-                );
-              },
-            ),
-            Gap(MediaQuery.of(context).padding.bottom + 24),
-          ],
-        ),
-      ),
+    final previewClearedAt = resolveClearedAt(DateTime.now());
+
+    final sectionStyle = theme.textTheme.labelMedium?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w600,
     );
-  }
-}
 
-class _StatusAssetPickerTile extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final IDisplayableCloudFile? file;
-  final VoidCallback onTap;
+    Widget sectionHeader(String title) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: SolSpace.md),
+        child: Text(title, style: sectionStyle),
+      );
+    }
 
-  const _StatusAssetPickerTile({
-    required this.label,
-    required this.icon,
-    required this.file,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasBackground = file != null;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Ink(
-        height: 132,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outlineVariant),
-          color: colorScheme.surfaceContainerLow,
-        ),
-        child: file != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CloudFileWidget(
-                      item: file!,
-                      fit: BoxFit.cover,
-                      useInternalGate: false,
-                    ),
-                    Positioned(
-                      left: 10,
-                      right: 10,
-                      bottom: 10,
+    Widget optionTile({
+      required String label,
+      required bool selected,
+      required VoidCallback onTap,
+      IconData? icon,
+      double height = 48,
+    }) {
+      return Semantics(
+        button: true,
+        selected: selected,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(SolRadius.sm),
+          child: Ink(
+            height: height,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(SolRadius.sm),
+              color: selected
+                  ? colorScheme.secondaryContainer.withValues(alpha: 0.55)
+                  : Colors.transparent,
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SolSpace.sm),
+              child: icon == null
+                  ? Align(
+                      alignment: Alignment.centerLeft,
                       child: Text(
                         label,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(
-                              color: Colors.black54,
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          icon,
+                          size: 20,
+                          fill: 1,
+                          color: selected
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                        const Gap(SolSpace.xxs),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: selected
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurfaceVariant,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: colorScheme.primary),
-                  const Gap(8),
-                  Text(label, style: Theme.of(context).textTheme.titleSmall),
-                  const Gap(4),
-                  Text(
-                    'statusTapToUpload'.tr(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: hasBackground
-                          ? Colors.white
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-class _StatusPreviewCard extends StatelessWidget {
-  final String label;
-  final String symbol;
-  final IDisplayableCloudFile? icon;
-  final IDisplayableCloudFile? background;
-  final int attitude;
-
-  const _StatusPreviewCard({
-    required this.label,
-    required this.symbol,
-    required this.icon,
-    required this.background,
-    required this.attitude,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final previewLabel = label.isNotEmpty ? label : 'statusPreview'.tr();
-    final hasMedia = icon != null || background != null;
-    final hasBackground = background != null;
-    final textShadow = hasBackground
-        ? const [
-            Shadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 2)),
-          ]
-        : null;
-    final statusIcon = switch (attitude) {
-      0 => Symbols.sentiment_satisfied,
-      2 => Symbols.sentiment_sad,
-      _ => Symbols.sentiment_stressed,
-    };
-
-    if (!hasMedia) {
-      return Container(
-        height: 72,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(statusIcon, color: colorScheme.onPrimaryContainer),
             ),
-            const Gap(12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    previewLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (symbol.isNotEmpty)
-                    Text(
-                      symbol,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       );
     }
 
-    final card = Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(12),
+    final attitudeOptions = [
+      (
+        value: 0,
+        icon: Symbols.sentiment_satisfied_rounded,
+        label: 'attitudePositive'.tr(),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: StackFit.expand,
+      (
+        value: 1,
+        icon: Symbols.sentiment_neutral_rounded,
+        label: 'attitudeNeutral'.tr(),
+      ),
+      (
+        value: 2,
+        icon: Symbols.sentiment_dissatisfied_rounded,
+        label: 'attitudeNegative'.tr(),
+      ),
+    ];
+
+    final presenceOptions = [
+      (type: SnAccountStatusType.defaultType, label: 'online'.tr()),
+      (type: SnAccountStatusType.busy, label: 'statusBusy'.tr()),
+      (type: SnAccountStatusType.doNotDisturb, label: 'statusNotDisturb'.tr()),
+      (type: SnAccountStatusType.invisible, label: 'statusInvisible'.tr()),
+    ];
+
+    final clearOptions = [
+      (preset: _ClearPreset.never, label: 'statusNoAutoClear'.tr()),
+      (
+        preset: _ClearPreset.in30Minutes,
+        label: 'minutesAbbrev'.tr(args: ['30']),
+      ),
+      (preset: _ClearPreset.inOneHour, label: 'hoursAbbrev'.tr(args: ['1'])),
+      (preset: _ClearPreset.inFourHours, label: 'hoursAbbrev'.tr(args: ['4'])),
+      (
+        preset: _ClearPreset.custom,
+        label:
+            clearPreset.value == _ClearPreset.custom &&
+                customClearedAt.value != null
+            ? DateFormat.MMMd().add_jm().format(customClearedAt.value!)
+            : 'custom'.tr(),
+      ),
+    ];
+
+    return SheetScaffold(
+      heightFactor: 0.92,
+      titleText: isEditing ? 'statusUpdate'.tr() : 'statusCreate'.tr(),
+      actions: [
+        TextButton.icon(
+          onPressed: submitting.value ? null : submitStatus,
+          icon: submitting.value
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Symbols.upload_rounded, size: 18, fill: 1),
+          label: Text(isEditing ? 'update'.tr() : 'create'.tr()),
+        ),
+      ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          SolSpace.xl,
+          SolSpace.sm,
+          SolSpace.xl,
+          0,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (background != null)
-              CloudImageWidget(
-                file: background,
-                aspectRatio: 16 / 9,
-                noBlurhash: true,
+            // Same widgets the profile renders, in the same order: a status
+            // without artwork is a compact line, and only artwork earns the
+            // full card. The preview can therefore never drift from reality.
+            if (icon.value == null && background.value == null)
+              AccountStatusInline(
+                indicatorIcon: Symbols.circle_rounded,
+                indicatorColor: colorScheme.primary,
+                title: label.isNotEmpty ? label : typeLabel(),
+                attitude: attitude.value,
+                meta: previewClearedAt == null
+                    ? null
+                    : DateFormat.MMMd().add_jm().format(previewClearedAt),
+                padding: EdgeInsets.zero,
+              )
+            else
+              AccountStatusCard(
+                title: label.isNotEmpty ? label : typeLabel(),
+                subtitle: symbol,
+                trailingText: previewClearedAt == null
+                    ? null
+                    : DateFormat.MMMd().add_jm().format(previewClearedAt),
+                trailingIcon: previewClearedAt == null
+                    ? null
+                    : Symbols.schedule_rounded,
+                icon: icon.value,
+                background: background.value,
+                indicatorIcon: Symbols.circle_rounded,
+                attitude: attitude.value,
               ),
-            if (background != null)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.08),
-                        Colors.black.withOpacity(0.38),
-                      ],
+            const Gap(SolSpace.xl),
+            TextField(
+              controller: labelController,
+              decoration: InputDecoration(
+                labelText: 'statusLabel'.tr(),
+                hintText: 'statusCreateHint'.tr(),
+              ),
+              minLines: 1,
+              maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
+              inputFormatters: [LengthLimitingTextInputFormatter(1024)],
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+            ),
+            const Gap(SolSpace.md),
+            TextField(
+              controller: symbolController,
+              decoration: InputDecoration(labelText: 'statusSymbol'.tr()),
+              textInputAction: TextInputAction.done,
+              inputFormatters: [LengthLimitingTextInputFormatter(128)],
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+            ),
+            const Gap(SolSpace.xxl),
+
+            sectionHeader('statusAppearance'.tr()),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatusAssetTile(
+                    label: 'statusIcon'.tr(),
+                    icon: Symbols.image_rounded,
+                    file: icon.value,
+                    onTap: () => pickImage(forBackground: false),
+                    onRemove: icon.value == null
+                        ? null
+                        : () => icon.value = null,
+                  ),
+                ),
+                const Gap(SolSpace.md),
+                Expanded(
+                  child: _StatusAssetTile(
+                    label: 'statusBackground'.tr(),
+                    icon: Symbols.wallpaper_rounded,
+                    file: background.value,
+                    onTap: () => pickImage(forBackground: true),
+                    onRemove: background.value == null
+                        ? null
+                        : () => background.value = null,
+                  ),
+                ),
+              ],
+            ),
+            const Gap(SolSpace.xxl),
+
+            sectionHeader('statusAttitude'.tr()),
+            Row(
+              spacing: SolSpace.md,
+              children: [
+                for (final option in attitudeOptions)
+                  Expanded(
+                    child: optionTile(
+                      label: option.label,
+                      icon: option.icon,
+                      height: 64,
+                      selected: attitude.value == option.value,
+                      onTap: () => attitude.value = option.value,
                     ),
+                  ),
+              ],
+            ),
+            const Gap(SolSpace.xxl),
+
+            sectionHeader('statusVisibility'.tr()),
+            Row(
+              children: [
+                Expanded(
+                  child: optionTile(
+                    label: presenceOptions[0].label,
+                    selected: statusType.value == presenceOptions[0].type,
+                    onTap: () => statusType.value = presenceOptions[0].type,
+                  ),
+                ),
+                const Gap(SolSpace.md),
+                Expanded(
+                  child: optionTile(
+                    label: presenceOptions[1].label,
+                    selected: statusType.value == presenceOptions[1].type,
+                    onTap: () => statusType.value = presenceOptions[1].type,
+                  ),
+                ),
+              ],
+            ),
+            const Gap(SolSpace.md),
+            Row(
+              children: [
+                Expanded(
+                  child: optionTile(
+                    label: presenceOptions[2].label,
+                    selected: statusType.value == presenceOptions[2].type,
+                    onTap: () => statusType.value = presenceOptions[2].type,
+                  ),
+                ),
+                const Gap(SolSpace.md),
+                Expanded(
+                  child: optionTile(
+                    label: presenceOptions[3].label,
+                    selected: statusType.value == presenceOptions[3].type,
+                    onTap: () => statusType.value = presenceOptions[3].type,
+                  ),
+                ),
+              ],
+            ),
+            const Gap(SolSpace.sm),
+            Text(
+              switch (statusType.value) {
+                SnAccountStatusType.busy => 'statusBusyDescription'.tr(),
+                SnAccountStatusType.doNotDisturb =>
+                  'statusNotDisturbDescription'.tr(),
+                SnAccountStatusType.invisible =>
+                  'statusInvisibleDescription'.tr(),
+                _ => 'statusVisibleDescription'.tr(),
+              },
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Gap(SolSpace.xxl),
+
+            sectionHeader('statusClearTime'.tr()),
+            Wrap(
+              spacing: SolSpace.sm,
+              runSpacing: SolSpace.sm,
+              children: [
+                for (final option in clearOptions)
+                  ChoiceChip(
+                    label: Text(option.label),
+                    showCheckmark: false,
+                    selected: clearPreset.value == option.preset,
+                    onSelected: (_) {
+                      if (option.preset == _ClearPreset.custom) {
+                        pickCustomClearTime();
+                      } else {
+                        clearPreset.value = option.preset;
+                      }
+                    },
+                  ),
+              ],
+            ),
+            if (isEditing) ...[
+              const Gap(SolSpace.xl),
+              Center(
+                child: TextButton.icon(
+                  onPressed: submitting.value ? null : deleteStatus,
+                  icon: const Icon(Symbols.delete_rounded, size: 18, fill: 1),
+                  label: Text('delete'.tr()),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.error,
                   ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  if (icon != null)
-                    ProfilePictureWidget(
-                      file: icon,
-                      radius: hasBackground ? 24 : 20,
-                      borderRadius: hasBackground ? 14 : 12,
-                      fallbackIcon: statusIcon,
-                      fallbackColor: hasBackground ? Colors.white : null,
-                    )
-                  else
-                    Container(
-                      width: hasBackground ? 48 : 40,
-                      height: hasBackground ? 48 : 40,
-                      decoration: BoxDecoration(
-                        color: hasBackground
-                            ? Colors.white24
-                            : colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(
-                          hasBackground ? 14 : 12,
-                        ),
-                      ),
-                      child: Icon(
-                        statusIcon,
-                        color: hasBackground
-                            ? Colors.white
-                            : colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          previewLabel,
-                          maxLines: hasBackground ? 2 : 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: hasBackground
-                                    ? Colors.white
-                                    : colorScheme.onSurface,
-                                fontWeight: FontWeight.w600,
-                                shadows: textShadow,
-                              ),
-                        ),
-                        if (symbol.isNotEmpty)
-                          Text(
-                            symbol,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: hasBackground
-                                      ? Colors.white.withOpacity(0.9)
-                                      : colorScheme.onSurfaceVariant,
-                                  shadows: textShadow,
-                                ),
-                          ),
-                        Text(
-                          'statusPreviewHint'.tr(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: hasBackground
-                                    ? Colors.white.withOpacity(0.82)
-                                    : colorScheme.onSurfaceVariant,
-                                shadows: textShadow,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
+            Gap(MediaQuery.of(context).padding.bottom + SolSpace.xxl),
           ],
         ),
       ),
     );
+  }
+}
 
-    if (hasBackground) {
-      return AspectRatio(aspectRatio: 16 / 9, child: card);
-    }
+SnAccountStatus? _tryParseStatus(Object? data) {
+  if (data is! Map) return null;
+  try {
+    return SnAccountStatus.fromJson(Map<String, dynamic>.from(data));
+  } catch (_) {
+    // The server answers with the new status, but an empty 204 body or a
+    // changed envelope must not fail a write that already succeeded.
+    return null;
+  }
+}
 
-    return SizedBox(height: 88, child: card);
+class _StatusAssetTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final IDisplayableCloudFile? file;
+  final VoidCallback onTap;
+  final VoidCallback? onRemove;
+
+  const _StatusAssetTile({
+    required this.label,
+    required this.icon,
+    required this.file,
+    required this.onTap,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const radius = BorderRadius.all(Radius.circular(12));
+
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Ink(
+          height: 104,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: colorScheme.outlineVariant),
+            color: colorScheme.surfaceContainerLow,
+          ),
+          child: file == null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 22, color: colorScheme.primary, fill: 1),
+                    const Gap(SolSpace.xs),
+                    Text(label, style: theme.textTheme.titleSmall),
+                    const Gap(SolSpace.xxs),
+                    Text(
+                      'statusTapToUpload'.tr(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CloudFileWidget(
+                        item: file!,
+                        fit: BoxFit.cover,
+                        useInternalGate: false,
+                      ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black54],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: SolSpace.sm,
+                        right: SolSpace.sm,
+                        bottom: SolSpace.sm,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (onRemove != null)
+                        Positioned(
+                          top: SolSpace.xs,
+                          right: SolSpace.xs,
+                          child: Material(
+                            color: colorScheme.surface.withValues(alpha: 0.9),
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: onRemove,
+                              child: Padding(
+                                padding: const EdgeInsets.all(SolSpace.xs),
+                                child: Icon(
+                                  Symbols.close_rounded,
+                                  size: 14,
+                                  fill: 1,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+    );
   }
 }

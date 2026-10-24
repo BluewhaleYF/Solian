@@ -1976,6 +1976,7 @@
   "statusCreate": "Add a Status",
   "statusCreateHint": "What's on your mind? Add a status.",
   "statusCreatePrompt": "Toca para establecer tu actividad actual y deja que otros sepan qué estás haciendo",
+  "statusDeleteHint": "Tu estado se eliminará de tu perfil.",
   "statusFetching": "Obteniendo estado actual",
   "statusIcon": "Icono",
   "statusInvisible": "Invisible",
