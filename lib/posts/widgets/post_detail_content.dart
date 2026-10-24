@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:auto_route/auto_route.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter_blurhash/flutter_blurhash.dart';
@@ -15,6 +16,7 @@ import 'package:island/core/translate.dart';
 import 'package:island/core/widgets/content/cloud_file_lightbox.dart';
 import 'package:island/core/widgets/content/cloud_file_collection.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/posts/pods/post_chain.dart';
 import 'package:island/posts/widgets/article_toc.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
@@ -347,7 +349,18 @@ class PostDetailContent extends HookConsumerWidget {
   final Widget? realmSection;
   final Widget interactionsSection;
   final PostDetailActionBuilder actionBuilder;
-  final Widget? headerSliver;
+
+  /// Space kept above the first sliver for chrome that floats over this
+  /// content rather than sitting in it — the wide explore pane's pill, say.
+  /// The scroll view still starts at the top of its box, so the post slides
+  /// under that chrome; this only keeps the first screen clear of it.
+  final double topInset;
+
+  /// Builds the pinned header from the fade notifier this page's own scroll
+  /// drives. A builder, not a widget: the bar has to listen to the very scroll
+  /// view it sits in, which only this content knows about.
+  final Widget Function(BuildContext context, ValueListenable<double> fade)?
+  headerSliverBuilder;
 
   /// Whether a table-of-contents entry point (floating button + sheet) is
   /// offered for long-form content. Hosts on the full page set this; embedded
@@ -363,7 +376,8 @@ class PostDetailContent extends HookConsumerWidget {
     required this.onReplyPosted,
     required this.interactionsSection,
     required this.actionBuilder,
-    this.headerSliver,
+    this.headerSliverBuilder,
+    this.topInset = 0,
     this.trailing,
     this.onPostTap,
     this.maxWidth = postDetailMaxWidth,
@@ -495,140 +509,154 @@ class PostDetailContent extends HookConsumerWidget {
       );
     }
 
+    // Drives the header pill's glass. A notifier rather than state so a scroll
+    // tick repaints the capsule only, never the post underneath it.
+    final fade = useValueNotifier(0.0);
+
     return Stack(
       fit: StackFit.expand,
       children: [
         ExtendedRefreshIndicator(
           onRefresh: onRefresh,
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              ?headerSliver,
-              if (isMediaPost)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    ClipRect(
-                      child: _PostDetailMediaCarousel(
-                        post: post,
-                        maxHeight: _postDetailAttachmentMaxHeight,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) =>
+                updatePillFade(notification, fade),
+            child: CustomScrollView(
+              controller: scrollController,
+              slivers: [
+                // Chrome floating over this content reserves its band here,
+                // inside the scroll view, so the first card starts below it
+                // and later slides back under it.
+                if (topInset > 0) SliverGap(topInset),
+                ?headerSliverBuilder?.call(context, fade),
+                if (isMediaPost)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      ClipRect(
+                        child: _PostDetailMediaCarousel(
+                          post: post,
+                          maxHeight: _postDetailAttachmentMaxHeight,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (thumbnail != null)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    ClipRRect(
-                      borderRadius: const BorderRadius.all(Radius.circular(12)),
-                      child: CloudFileList(
-                        files: [thumbnail],
-                        sourcePost: post,
-                        maxHeight: _postDetailAttachmentMaxHeight,
-                        padding: EdgeInsets.zero,
-                        disableConstraint: true,
+                if (thumbnail != null)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      ClipRRect(
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(12),
+                        ),
+                        child: CloudFileList(
+                          files: [thumbnail],
+                          sourcePost: post,
+                          maxHeight: _postDetailAttachmentMaxHeight,
+                          padding: EdgeInsets.zero,
+                          disableConstraint: true,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (precedingChain.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        _chainColumnInset,
-                        12,
-                        _chainColumnInset,
-                        0,
-                      ),
-                      child: PostChainPrecedingSection(
-                        posts: precedingChain,
-                        onPostTap: onPostTap,
-                      ),
-                    ),
-                  ),
-                ),
-              SliverToBoxAdapter(
-                child: wrapContent(
-                  PostItem(
-                    item: post,
-                    isFullPost: true,
-                    isEmbedReply: false,
-                    isTranslatable: false,
-                    hideAttachments: isMediaPost,
-                    textScale: post.type == 1 ? 1.2 : 1.1,
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    onUpdate: onUpdate,
-                    trailing: headerSliver != null ? null : trailing,
-                    onPostTap: onPostTap,
-                    connectChainAbove: precedingChain.isNotEmpty,
-                    connectChainBelow: showsFollowingChain,
-                    headingAnchors: headingRegistry.value,
-                  ),
-                ),
-              ),
-              if (showsFollowingChain)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _chainColumnInset,
-                      ),
-                      child: PostChainedSection(
-                        head: post,
-                        children: followingChain,
-                        onPostTap: onPostTap,
+                if (precedingChain.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          _chainColumnInset,
+                          12,
+                          _chainColumnInset,
+                          0,
+                        ),
+                        child: PostChainPrecedingSection(
+                          posts: precedingChain,
+                          onPostTap: onPostTap,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (collectionSection != null)
                 SliverToBoxAdapter(
                   child: wrapContent(
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: collectionSection!,
+                    PostItem(
+                      item: post,
+                      isFullPost: true,
+                      isEmbedReply: false,
+                      isTranslatable: false,
+                      hideAttachments: isMediaPost,
+                      textScale: post.type == 1 ? 1.2 : 1.1,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      onUpdate: onUpdate,
+                      trailing: headerSliverBuilder != null ? null : trailing,
+                      onPostTap: onPostTap,
+                      connectChainAbove: precedingChain.isNotEmpty,
+                      connectChainBelow: showsFollowingChain,
+                      headingAnchors: headingRegistry.value,
                     ),
                   ),
                 ),
-              if (realmSection != null)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    realmSection!.padding(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              if (translatedText.value != null || translating.value)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: buildPostTranslationSection(
-                        context: context,
-                        item: post,
-                        isTextSelectable: true,
-                        textScale: post.type == 1 ? 1.2 : 1.1,
-                        translatedText: translatedText.value,
-                        isTranslating: translating.value,
-                        onTranslate: () => translatePost(post.content ?? ''),
-                        showTranslateButton: false,
+                if (showsFollowingChain)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: _chainColumnInset,
+                        ),
+                        child: PostChainedSection(
+                          head: post,
+                          children: followingChain,
+                          onPostTap: onPostTap,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (user.value != null)
-                SliverToBoxAdapter(
-                  child: wrapContent(
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: PostWatchIndicator(post: post),
+                if (collectionSection != null)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: collectionSection!,
+                      ),
                     ),
                   ),
+                if (realmSection != null)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      realmSection!.padding(horizontal: 16, vertical: 8),
+                    ),
+                  ),
+                if (translatedText.value != null || translating.value)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: buildPostTranslationSection(
+                          context: context,
+                          item: post,
+                          isTextSelectable: true,
+                          textScale: post.type == 1 ? 1.2 : 1.1,
+                          translatedText: translatedText.value,
+                          isTranslating: translating.value,
+                          onTranslate: () => translatePost(post.content ?? ''),
+                          showTranslateButton: false,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (user.value != null)
+                  SliverToBoxAdapter(
+                    child: wrapContent(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: PostWatchIndicator(post: post),
+                      ),
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: wrapContent(actionBuilder(context, translatePost)),
                 ),
-              SliverToBoxAdapter(
-                child: wrapContent(actionBuilder(context, translatePost)),
-              ),
-              interactionsSection,
-              SliverGap(MediaQuery.of(context).padding.bottom + 80),
-            ],
+                interactionsSection,
+                SliverGap(MediaQuery.of(context).padding.bottom + 80),
+              ],
+            ),
           ),
         ),
         if (user.value != null)

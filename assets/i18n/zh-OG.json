@@ -1864,6 +1864,8 @@
   "settingsDefaultScreen": "默屏",
   "settingsDesktop": "桌案",
   "settingsDisableAnimation": "禁動",
+  "settingsGlassEffects": "玻璃效果",
+  "settingsGlassEffectsHelper": "將膠囊標題欄同輸入框畫成液態玻璃。閂咗就用純色表面，慳電啲。",
   "settingsDisplayLanguage": "顯示言語",
   "settingsEnableTts": "啟語音",
   "settingsEnterToSend": "叩回車鍵即送",

@@ -3529,6 +3529,8 @@
   "settingsDesktopRpcServerEnabled": "启用 RPC 服务器",
   "settingsDesktopRpcServerEnabledHelper": "允许第三方应用通过兼容 Discord 的 RPC 协议设置您的活动状态。",
   "settingsDisableAnimation": "禁用动画",
+  "settingsGlassEffects": "玻璃效果",
+  "settingsGlassEffectsHelper": "将胶囊标题栏和输入框绘制为液态玻璃。关闭后改用纯色表面，更省电。",
   "settingsDisplayLanguage": "显示语言",
   "settingsEnableTts": "启用 TTS",
   "settingsEnterToSend": "按下 Enter 发送",

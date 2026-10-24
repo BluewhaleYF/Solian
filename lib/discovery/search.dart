@@ -129,6 +129,12 @@ class UniversalSearchScreen extends HookConsumerWidget {
     // `extendBodyBehindAppBar` puts the results under the pill, which is what
     // lets them slide beneath it and fade its surface in; the background comes
     // from [AppBackground], the same one the old scaffold wrapper painted.
+    //
+    // The pill's band is *not* reserved here: a fixed gap above the sections
+    // would stop their rows at the capsule instead of letting them run under
+    // it, and the glass would have nothing to refract. Each section reserves
+    // the band as its own first sliver/padding instead, so the first result
+    // starts below the pill and everything after it slides underneath.
     return AppBackground(
       isRoot: true,
       child: Scaffold(
@@ -137,20 +143,8 @@ class UniversalSearchScreen extends HookConsumerWidget {
         // The results fade the bar's surface in as they slide under it, the same
         // way the explore feed drives its own header.
         body: NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            updatePillFade(notification, fade);
-            return false;
-          },
-          // The pill's band, plus the one card gap every feed leaves under it:
-          // the sections own fixed chrome (the filter panel, the scope switch)
-          // above their own lists, so the band is reserved once here rather
-          // than repeated inside each scroll view.
-          child: Column(
-            children: [
-              Gap(statusTop + kPillAppBarHeight + _kResultGap),
-              Expanded(child: buildResults(activeTab.value)),
-            ],
-          ),
+          onNotification: (notification) => updatePillFade(notification, fade),
+          child: buildResults(activeTab.value),
         ),
         appBar: PillAppBar(
           fade: fade,
@@ -357,8 +351,12 @@ class _RealmsSearchTab extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return CustomScrollView(
       slivers: [
+        // The pill's band lives inside the scroll view, so rows pass under
+        // the capsule instead of stopping at it.
+        SliverGap(
+          MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
+        ),
         // The same gutter the posts rows and the explore feed use, so a card
-        // keeps one edge across the sections.
         SliverPadding(
           padding: explorePageGutter(context),
           sliver: SliverRealmList(
@@ -429,7 +427,11 @@ class _PostsSearchTab extends HookConsumerWidget {
 
     final filterSidebarContent = buildFilterPanel();
 
-    Widget buildMainContent() {
+    Widget buildMainContent({
+      double topGap = 0,
+      Widget? header,
+      EdgeInsetsGeometry? gutter,
+    }) {
       return Consumer(
         builder: (context, ref, child) {
           final searchState = ref.watch(
@@ -439,6 +441,14 @@ class _PostsSearchTab extends HookConsumerWidget {
             onRefresh: noti.refresh,
             child: CustomScrollView(
               slivers: [
+                // The pill's band, inside the scroll view so the rows travel
+                // under the capsule rather than stopping short of it.
+                if (topGap > 0) SliverGap(topGap),
+                if (header != null)
+                  SliverPadding(
+                    padding: gutter ?? EdgeInsets.zero,
+                    sliver: SliverToBoxAdapter(child: header),
+                  ),
                 PaginationList(
                   provider: postListProvider(
                     PostListQueryConfig(id: kSearchPostListId),
@@ -496,16 +506,28 @@ class _PostsSearchTab extends HookConsumerWidget {
             ),
             child: Padding(
               padding: explorePageGutter(context),
-              child: buildMainContent(),
+              child: buildMainContent(
+                topGap:
+                    MediaQuery.paddingOf(context).top +
+                    kPillAppBarHeight +
+                    _kResultGap,
+              ),
             ),
           ),
         ),
       );
     }
 
-    return Column(
-      children: [
-        AnimatedSlide(
+    // Narrow: the filter panel is the list's first sliver instead of a fixed
+    // band above it. Pinned above the list it would stop the rows at the
+    // capsule; inside the scroll view they pass under the glass, and the panel
+    // scrolls away with them.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: SolSpace.md),
+      child: buildMainContent(
+        topGap:
+            MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
+        header: AnimatedSlide(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           offset: filtersVisible.value ? Offset.zero : const Offset(0, -0.08),
@@ -520,46 +542,14 @@ class _PostsSearchTab extends HookConsumerWidget {
               child: filtersVisible.value
                   ? Padding(
                       key: const ValueKey('filters-visible'),
-                      // The feed's gutter, and no top inset: the page column
-                      // already leaves one card gap under the pill.
-                      padding: const EdgeInsets.fromLTRB(
-                        SolSpace.md,
-                        0,
-                        SolSpace.md,
-                        _kResultGap,
-                      ),
+                      padding: const EdgeInsets.only(bottom: _kResultGap),
                       child: buildFilterPanel(),
                     )
                   : const SizedBox(key: ValueKey('filters-hidden')),
             ),
           ),
         ),
-        Expanded(
-          child: PaginationList(
-            provider: postListProvider(
-              PostListQueryConfig(id: kSearchPostListId),
-            ),
-            notifier: postListProvider(
-              PostListQueryConfig(id: kSearchPostListId),
-            ).notifier,
-            // The feed's own gutter plus the card gap; the bottom stays
-            // clear of the tab shell's bottom bar.
-            padding: EdgeInsets.fromLTRB(
-              SolSpace.md,
-              0,
-              SolSpace.md,
-              MediaQuery.of(context).padding.bottom + _kResultGap,
-            ),
-            seperatorBuilder: (context, index, post) =>
-                const SizedBox(height: _kResultGap),
-            footerSkeletonChild: const PostItemSkeleton(
-              maxWidth: double.infinity,
-              showCard: false,
-            ),
-            itemBuilder: (context, index, post) => buildPostRow(post),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -658,300 +648,304 @@ class _AccountSearchTab extends HookConsumerWidget {
       ),
     ];
 
-    return Column(
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              // The feed's gutter; the page column already leaves the card
-              // gap under the pill, so only the row's own breathing room below.
-              padding: const EdgeInsets.fromLTRB(
-                SolSpace.md,
-                0,
-                SolSpace.md,
-                SolSpace.sm,
-              ),
-              child: SegmentedButton<SearchScope>(
-                segments: [
-                  ButtonSegment(
-                    value: SearchScope.local,
-                    icon: const Icon(Symbols.home),
-                    label: Text('localOnly'.tr()),
-                  ),
-                  ButtonSegment(
-                    value: SearchScope.remote,
-                    icon: const Icon(Symbols.public),
-                    label: Text('includeFediverse'.tr()),
-                  ),
-                ],
-                selected: {searchScope.value},
-                onSelectionChanged: (selection) {
-                  searchScope.value = selection.first;
-                },
-                showSelectedIcon: false,
-              ),
-            ).width(double.infinity),
+    // One scroll view for the whole section, so the scope switch and the
+    // results both travel under the pill instead of the switch pinning the
+    // list below the capsule.
+    return ExtendedRefreshIndicator(
+      onRefresh: () => performSearch(searchQuery.value),
+      child: CustomScrollView(
+        slivers: [
+          SliverGap(
+            MediaQuery.paddingOf(context).top + kPillAppBarHeight + _kResultGap,
           ),
-        ),
-        Expanded(
-          child: isSearching.value
-              ? const Center(child: CircularProgressIndicator())
-              : allResults.isEmpty
-              ? EmptyState(
-                  key: const Key('accountSearchEmpty'),
-                  icon: searchQuery.value.isEmpty
-                      ? Symbols.search
-                      : Symbols.search_off,
-                  title: searchQuery.value.isEmpty
-                      ? 'searchUsersEmpty'.tr()
-                      : 'searchUsersNoResults'.tr(),
-                  description: searchQuery.value.isEmpty
-                      ? 'searchAccountsHint'.tr()
-                      : 'tryDifferentKeywords'.tr(),
-                )
-              : ExtendedRefreshIndicator(
-                  onRefresh: () => performSearch(searchQuery.value),
-                  child: ListView.separated(
-                    // The feed's gutter, with the last card clear of the tab
-                    // shell's bottom bar.
-                    padding: EdgeInsets.only(
-                      left: SolSpace.md,
-                      right: SolSpace.md,
-                      top: 0,
-                      bottom:
-                          MediaQuery.paddingOf(context).bottom + _kResultGap,
-                    ),
-                    itemCount: allResults.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: _kResultGap),
-                    itemBuilder: (context, index) {
-                      final result = allResults[index];
-                      if (result['type'] == 'publisher') {
-                        final publisher = result['data'] as SnPublisher;
-                        return SearchResultCard(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.only(
-                              left: 16,
-                              right: 12,
+          SliverToBoxAdapter(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Padding(
+                  // The feed's gutter, and only the row's own breathing room
+                  // below: the band above already cleared the pill.
+                  padding: const EdgeInsets.fromLTRB(
+                    SolSpace.md,
+                    0,
+                    SolSpace.md,
+                    SolSpace.sm,
+                  ),
+                  child: SegmentedButton<SearchScope>(
+                    segments: [
+                      ButtonSegment(
+                        value: SearchScope.local,
+                        icon: const Icon(Symbols.home),
+                        label: Text('localOnly'.tr()),
+                      ),
+                      ButtonSegment(
+                        value: SearchScope.remote,
+                        icon: const Icon(Symbols.public),
+                        label: Text('includeFediverse'.tr()),
+                      ),
+                    ],
+                    selected: {searchScope.value},
+                    onSelectionChanged: (selection) {
+                      searchScope.value = selection.first;
+                    },
+                    showSelectedIcon: false,
+                  ),
+                ).width(double.infinity),
+              ),
+            ),
+          ),
+          if (isSearching.value)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (allResults.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                key: const Key('accountSearchEmpty'),
+                icon: searchQuery.value.isEmpty
+                    ? Symbols.search
+                    : Symbols.search_off,
+                title: searchQuery.value.isEmpty
+                    ? 'searchUsersEmpty'.tr()
+                    : 'searchUsersNoResults'.tr(),
+                description: searchQuery.value.isEmpty
+                    ? 'searchAccountsHint'.tr()
+                    : 'tryDifferentKeywords'.tr(),
+              ),
+            )
+          else
+            SliverPadding(
+              // The feed's gutter, with the last card clear of the tab shell's
+              // bottom bar.
+              padding: EdgeInsets.only(
+                left: SolSpace.md,
+                right: SolSpace.md,
+                bottom: MediaQuery.paddingOf(context).bottom + _kResultGap,
+              ),
+              sliver: SliverList.separated(
+                itemCount: allResults.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: _kResultGap),
+                itemBuilder: (context, index) {
+                  final result = allResults[index];
+                  if (result['type'] == 'publisher') {
+                    final publisher = result['data'] as SnPublisher;
+                    return SearchResultCard(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.only(
+                          left: 16,
+                          right: 12,
+                        ),
+                        onTap: () {
+                          context.router.push(
+                            PublisherProfileRoute(name: publisher.name),
+                          );
+                        },
+                        leading: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            ProfilePictureWidget(
+                              file: publisher.picture,
+                              fallbackName: publisher.nick,
+                              borderRadius: publisher.type == 0 ? null : 6,
                             ),
-                            onTap: () {
-                              context.router.push(
-                                PublisherProfileRoute(name: publisher.name),
-                              );
-                            },
-                            leading: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                ProfilePictureWidget(
-                                  file: publisher.picture,
-                                  fallbackName: publisher.nick,
-                                  borderRadius: publisher.type == 0 ? null : 6,
-                                ),
-                                Positioned(
-                                  right: -2,
-                                  bottom: -2,
-                                  child: Container(
-                                    width: 16,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primaryContainer,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: publisher.account != null
-                                        ? ProfilePictureWidget(
-                                            file: publisher
-                                                .account
-                                                ?.profile
-                                                .picture,
-                                            fallbackName:
-                                                publisher.account?.nick,
-                                          )
-                                        : Icon(
-                                            publisher.type == 0
-                                                ? Symbols.person
-                                                : Symbols.corporate_fare,
-                                            size: 10,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimaryContainer,
-                                          ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            title: Text(
-                              publisher.nick.isNotEmpty
-                                  ? publisher.nick
-                                  : publisher.name,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            subtitle: Text(
-                              publisher.bio,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            trailing: const Icon(
-                              Symbols.chevron_right,
-                            ).padding(right: 12),
-                          ),
-                        );
-                      } else if (result['type'] == 'fediverse') {
-                        final actor = result['data'] as SnPublisher;
-                        // Remote actors summarise themselves in HTML; the row
-                        // shows the plain-text excerpt.
-                        final actorBio = actor.bio.htmlToPlainText();
-                        final actorAvatar = actor.picture?.storageUrl;
-                        return SearchResultCard(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.only(
-                              left: 16,
-                              right: 12,
-                            ),
-                            onTap: () {
-                              context.router.push(
-                                FediverseActorProfileRoute(
-                                  id: actor.id,
-                                  fullHandle: actor.activitypub?.fullHandle,
-                                ),
-                              );
-                            },
-                            leading: Stack(
-                              children: [
-                                CircleAvatar(
-                                  backgroundImage: actorAvatar != null
-                                      ? CachedNetworkImageProvider(actorAvatar)
-                                      : null,
-                                  radius: 24,
-                                  backgroundColor: Theme.of(
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
                                     context,
-                                  ).colorScheme.surfaceContainer,
-                                  child: actorAvatar == null
-                                      ? Icon(Symbols.person)
-                                      : null,
-                                ),
-                                Positioned(
-                                  right: 0,
-                                  bottom: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.tertiary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Symbols.public,
-                                      size: 12,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onTertiary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            title: Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    actor.effectiveName,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
+                                  ).colorScheme.primaryContainer,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    actor.domain ?? '',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                    ),
+                                    ).colorScheme.surface,
+                                    width: 1.5,
                                   ),
                                 ),
-                              ],
+                                child: publisher.account != null
+                                    ? ProfilePictureWidget(
+                                        file:
+                                            publisher.account?.profile.picture,
+                                        fallbackName: publisher.account?.nick,
+                                      )
+                                    : Icon(
+                                        publisher.type == 0
+                                            ? Symbols.person
+                                            : Symbols.corporate_fare,
+                                        size: 10,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimaryContainer,
+                                      ),
+                              ),
                             ),
-                            subtitle: actorBio.isNotEmpty
-                                ? Text(
-                                    actorBio,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  )
-                                : null,
-                            trailing: const Icon(
-                              Symbols.chevron_right,
-                            ).padding(right: 12),
-                          ),
-                        );
-                      } else {
-                        final account = result['data'] as SnAccount;
-                        return SearchResultCard(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.only(
-                              left: 16,
-                              right: 12,
+                          ],
+                        ),
+                        title: Text(
+                          publisher.nick.isNotEmpty
+                              ? publisher.nick
+                              : publisher.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        subtitle: Text(
+                          publisher.bio,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        trailing: const Icon(
+                          Symbols.chevron_right,
+                        ).padding(right: 12),
+                      ),
+                    );
+                  } else if (result['type'] == 'fediverse') {
+                    final actor = result['data'] as SnPublisher;
+                    // Remote actors summarise themselves in HTML; the row
+                    // shows the plain-text excerpt.
+                    final actorBio = actor.bio.htmlToPlainText();
+                    final actorAvatar = actor.picture?.storageUrl;
+                    return SearchResultCard(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.only(
+                          left: 16,
+                          right: 12,
+                        ),
+                        onTap: () {
+                          context.router.push(
+                            FediverseActorProfileRoute(
+                              id: actor.id,
+                              fullHandle: actor.activitypub?.fullHandle,
                             ),
-                            onTap: () {
-                              context.router.push(
-                                AccountProfileRoute(name: account.name),
-                              );
-                            },
-                            leading: Stack(
-                              children: [
-                                ProfilePictureWidget(
-                                  file: account.profile.picture,
-                                  fallbackName: account.nick,
+                          );
+                        },
+                        leading: Stack(
+                          children: [
+                            CircleAvatar(
+                              backgroundImage: actorAvatar != null
+                                  ? CachedNetworkImageProvider(actorAvatar)
+                                  : null,
+                              radius: 24,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainer,
+                              child: actorAvatar == null
+                                  ? Icon(Symbols.person)
+                                  : null,
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                  shape: BoxShape.circle,
                                 ),
-                              ],
+                                child: Icon(
+                                  Symbols.public,
+                                  size: 12,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onTertiary,
+                                ),
+                              ),
                             ),
-                            title: AccountName(
-                              account: account,
-                              style: Theme.of(context).textTheme.titleMedium,
+                          ],
+                        ),
+                        title: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                actor.effectiveName,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
                             ),
-                            subtitle: Text(
-                              account.profile.bio,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall,
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                actor.domain ?? '',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                                ),
+                              ),
                             ),
-                            trailing: const Icon(
-                              Symbols.chevron_right,
-                            ).padding(right: 12),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
-        ),
-      ],
+                          ],
+                        ),
+                        subtitle: actorBio.isNotEmpty
+                            ? Text(
+                                actorBio,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              )
+                            : null,
+                        trailing: const Icon(
+                          Symbols.chevron_right,
+                        ).padding(right: 12),
+                      ),
+                    );
+                  } else {
+                    final account = result['data'] as SnAccount;
+                    return SearchResultCard(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.only(
+                          left: 16,
+                          right: 12,
+                        ),
+                        onTap: () {
+                          context.router.push(
+                            AccountProfileRoute(name: account.name),
+                          );
+                        },
+                        leading: Stack(
+                          children: [
+                            ProfilePictureWidget(
+                              file: account.profile.picture,
+                              fallbackName: account.nick,
+                            ),
+                          ],
+                        ),
+                        title: AccountName(
+                          account: account,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        subtitle: Text(
+                          account.profile.bio,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        trailing: const Icon(
+                          Symbols.chevron_right,
+                        ).padding(right: 12),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

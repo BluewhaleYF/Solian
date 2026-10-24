@@ -27,6 +27,7 @@ import 'package:island/core/widgets/embeds/link.dart';
 import 'package:island/data/message.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/discovery/widgets/explore_card.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/discovery/search_navigation.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/route.gr.dart';
@@ -1240,6 +1241,22 @@ class ChatMessageSearchView extends HookConsumerWidget {
       onFiltersChanged: () => search(query),
     );
 
+    // The host page's pill floats over this section, so its band is reserved
+    // as the scroll view's first sliver: the first result clears the capsule
+    // and everything after it travels under the glass.
+    final topGap =
+        MediaQuery.paddingOf(context).top + kPillAppBarHeight + kExploreCardGap;
+
+    Widget buildGroup(_SearchRoomGroup group) => _SearchRoomSection(
+      group: group,
+      query: query,
+      onOpenRoom: () =>
+          context.router.navigate(ChatRoomRoute(id: group.roomId)),
+      onJumpMessage: (messageId) => context.router.navigate(
+        ChatRoomRoute(id: group.roomId, initialMessageId: messageId),
+      ),
+    );
+
     final results = Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: kChatSearchLedgerWidth),
@@ -1265,33 +1282,21 @@ class ChatMessageSearchView extends HookConsumerWidget {
                 description: 'chatSearchNoResultsBody'.tr(),
               )
             : SuperListView.separated(
-                // The card stack's own gutter, with the last card clear
-                // of the shell's bottom bar.
+                // The card stack's own gutter, with the pill's band on top
+                // (so rows scroll under the glass) and the last card clear of
+                // the shell's bottom bar.
                 padding: EdgeInsets.only(
                   left: SolSpace.md,
                   right: SolSpace.md,
+                  top: topGap,
                   bottom:
                       MediaQuery.paddingOf(context).bottom + kExploreCardGap,
                 ),
                 itemCount: displayGroups.length,
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: kExploreCardGap),
-                itemBuilder: (context, index) {
-                  final group = displayGroups[index];
-                  return _SearchRoomSection(
-                    group: group,
-                    query: query,
-                    onOpenRoom: () => context.router.navigate(
-                      ChatRoomRoute(id: group.roomId),
-                    ),
-                    onJumpMessage: (messageId) => context.router.navigate(
-                      ChatRoomRoute(
-                        id: group.roomId,
-                        initialMessageId: messageId,
-                      ),
-                    ),
-                  );
-                },
+                itemBuilder: (context, index) =>
+                    buildGroup(displayGroups[index]),
               ),
       ),
     );
@@ -1310,18 +1315,71 @@ class ChatMessageSearchView extends HookConsumerWidget {
       );
     }
 
-    return Column(
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kChatSearchLedgerWidth),
-            child: _CollapsibleFilterHeader(
-              visible: filterVisible,
-              child: filterBar,
+    // Narrow: one scroll view for the whole section. The filter bar and the
+    // result cards are its slivers, so both travel under the host page's pill
+    // instead of a fixed bar stopping them at the capsule.
+    return CustomScrollView(
+      slivers: [
+        SliverGap(topGap),
+        SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: kChatSearchLedgerWidth,
+              ),
+              child: _CollapsibleFilterHeader(
+                visible: filterVisible,
+                child: filterBar,
+              ),
             ),
           ),
         ),
-        Expanded(child: results),
+        if (!hasSearched.value)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              key: const Key('chatSearchIdle'),
+              icon: Symbols.search,
+              title: 'chatSearchIdleTitle'.tr(),
+              description: 'chatSearchIdleBody'.tr(),
+            ),
+          )
+        else if (error.value != null && displayGroups.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              key: const Key('chatSearchError'),
+              icon: Symbols.error_outline,
+              iconColor: Theme.of(context).colorScheme.error,
+              title: 'searchError'.tr(),
+            ),
+          )
+        else if (displayGroups.isEmpty && !isSearching.value)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              key: const Key('chatSearchNoResults'),
+              icon: Symbols.search_off,
+              title: 'noMessagesFound'.tr(),
+              description: 'chatSearchNoResultsBody'.tr(),
+            ),
+          )
+        else
+          SliverPadding(
+            // The card stack's own gutter, with the last card clear of the
+            // shell's bottom bar.
+            padding: EdgeInsets.only(
+              left: SolSpace.md,
+              right: SolSpace.md,
+              bottom: MediaQuery.paddingOf(context).bottom + kExploreCardGap,
+            ),
+            sliver: SliverList.separated(
+              itemCount: displayGroups.length,
+              separatorBuilder: (context, index) =>
+                  const SizedBox(height: kExploreCardGap),
+              itemBuilder: (context, index) => buildGroup(displayGroups[index]),
+            ),
+          ),
       ],
     );
   }

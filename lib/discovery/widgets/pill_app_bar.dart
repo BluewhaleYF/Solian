@@ -49,7 +49,9 @@ bool updatePillFade(
 }
 
 /// [PillSurface] for a header: the capsule sits 12px in from each side and
-/// 12px below the status bar, and carries [SolSpace.md] of inner inset.
+/// 12px below the status bar, and carries [SolSpace.lg] of inner inset — one
+/// step wider than the side gutter, so the first control clears the end cap's
+/// curve instead of crowding it.
 ///
 /// Wide pages give the bar the window's full width, so the pill spans the
 /// viewport rather than hugging the feed column.
@@ -88,7 +90,7 @@ class PillBarSurface extends StatelessWidget {
         0,
       ),
       radius: SolRadius.pillRadius,
-      contentPadding: const EdgeInsets.symmetric(horizontal: SolSpace.md),
+      contentPadding: const EdgeInsets.symmetric(horizontal: SolSpace.lg),
       // The capsule is always exactly `kPillBarContentHeight` tall — a control
       // row plus the composer's vertical padding, so the header is no longer
       // cramped. `PillSurface` sizes the glass to its child, so leaving it to

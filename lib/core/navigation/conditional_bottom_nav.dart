@@ -385,12 +385,16 @@ class _BlurFade extends StatelessWidget {
         child: child,
         builder: (context, child) {
           final sigma = blur.value;
-          // A zero filter still costs a save layer, so an unfiltered bar is
-          // the plain child.
-          if (sigma <= 0) return child!;
+          // The filter node stays mounted for the whole animation, disabled
+          // while sigma is zero: a disabled filter costs no save layer, but
+          // swapping it for the bare child would rebuild the bar's subtree at
+          // the first tick. For the native glass bar that means tearing down
+          // and recreating its `UiKitView` mid-fade, which reads as a bar
+          // that pops instead of dissolves.
           return ImageFiltered(
             imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-            child: child,
+            enabled: sigma > 0,
+            child: child!,
           );
         },
       ),

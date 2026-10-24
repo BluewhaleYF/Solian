@@ -635,24 +635,21 @@ class _DetailPaneCard extends HookConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // The body scrolls; its top padding reserves the pill's band plus
-              // the feed's own card gap, so the first content clears the
-              // capsule with the same breathing room the timeline gives its
-              // rows — and later slides back under it.
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: kPillAppBarHeight + kExploreCardGap,
-                ),
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) =>
-                      updatePillFade(notification, fade),
-                  child: PostDetailBody(
-                    id: postId,
-                    isEmbedded: true,
-                    // Reference posts and replies open in the pane, replacing
-                    // its content, rather than navigating to the full page.
-                    onPostTap: onOpenInPane,
-                  ),
+              // The body scrolls the full height of the card, so its rows pass
+              // under the pill and the glass has something to refract. The
+              // band the capsule occupies is reserved inside that scroll view
+              // (plus the feed's own card gap), so the first screen of the
+              // post still clears it.
+              NotificationListener<ScrollNotification>(
+                onNotification: (notification) =>
+                    updatePillFade(notification, fade),
+                child: PostDetailBody(
+                  id: postId,
+                  isEmbedded: true,
+                  topInset: kPillAppBarHeight + kExploreCardGap,
+                  // Reference posts and replies open in the pane, replacing
+                  // its content, rather than navigating to the full page.
+                  onPostTap: onOpenInPane,
                 ),
               ),
               Positioned(

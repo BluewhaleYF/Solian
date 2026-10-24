@@ -9,8 +9,11 @@ import 'package:island/accounts/widgets/account/status.dart';
 import 'package:island/activity/activity_rpc.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/theme.dart';
+import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/notifications/notification.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
@@ -70,10 +73,11 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  // Regression: the header title lives in a `FlexibleSpaceBar`, which ignores
-  // `AppBarTheme.centerTitle` and defaults per platform. The account header must
-  // thread `appBarCenterTitle(theme)` into it explicitly; the app-wide design is
-  // now left-aligned titles.
+  // Regression: the header title used to live in `FlexibleSpaceBar.title`,
+  // which ignores `AppBarTheme.centerTitle` and pins the title 72px in and
+  // 16px above the bottom edge instead of centering it in the toolbar. It now
+  // sits in the app bar's own title slot, so it must start right of the drawer
+  // toggle and share its vertical center.
   testWidgets('account header left aligns its title on Windows', (tester) async {
     final theme = await _windowsTheme();
     final prefs = await SharedPreferences.getInstance();
@@ -119,17 +123,48 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    final header = find.byType(FlexibleSpaceBar);
-    expect(header, findsOneWidget);
-    final title = find.descendant(of: header, matching: find.byType(Text));
+    final appBar = find.byType(PillAppBar);
+    expect(appBar, findsOneWidget);
+    final leading = find.byType(SolDrawerButton);
+    expect(leading, findsOneWidget);
+    final title = find.descendant(
+      of: appBar,
+      matching: find.text('Account'),
+    );
     expect(title, findsOneWidget);
 
     expect(
       tester.getTopLeft(title).dx,
-      lessThan(tester.getCenter(header).dx),
-      reason:
-          'FlexibleSpaceBar title must follow the app-wide left alignment and '
-          'start after the leading drawer button',
+      greaterThan(tester.getTopRight(leading).dx),
+      reason: 'the title must start after the leading drawer button',
+    );
+    expect(
+      tester.getTopLeft(title).dx,
+      lessThan(tester.getCenter(find.byType(Scaffold)).dx),
+      reason: 'the title must follow the app-wide left alignment',
+    );
+    expect(
+      tester.getCenter(title).dy,
+      closeTo(tester.getCenter(leading).dy, 1.0),
+      reason: 'the title must be vertically centered against the toggle',
+    );
+
+    // An account with no artwork must not reserve artwork space: the page
+    // opens on the identity block, not on a blank band the height of a picture
+    // that does not exist.
+    expect(find.byKey(const ValueKey('header-image')), findsNothing);
+    final avatar = tester.getRect(find.byType(ProfilePictureWidget));
+    expect(
+      avatar.top,
+      lessThanOrEqualTo(
+        tester.widget<PillAppBar>(appBar).preferredSize.height + 24,
+      ),
+      reason: 'without artwork the identity block starts just under the pill',
+    );
+    expect(
+      tester.getRect(find.byType(Card).first).top,
+      greaterThan(avatar.bottom),
+      reason: 'the cards follow the identity block, not a reserved banner',
     );
 
     // Dispose so the presence-refresh timer is cancelled.

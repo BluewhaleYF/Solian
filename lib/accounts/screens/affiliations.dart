@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
@@ -12,6 +13,8 @@ import 'package:island/core/server_compatibility.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/payments/payment_overlay.dart';
 import 'package:island/route.gr.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -77,6 +80,10 @@ class AffiliationScreen extends HookConsumerWidget {
     // so superuser is the proxy: the server bypasses permission checks for
     // superusers.
     final canManage = ref.watch(userInfoProvider).value?.isSuperuser == true;
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The spell list sliding under the pill drives its glass; at rest the
+    // capsule is invisible and the page is just its cards.
+    final fade = useValueNotifier(0.0);
 
     if (!serverFeatureEnabled(capabilities, 'affiliations')) {
       return AppScaffold(
@@ -105,179 +112,206 @@ class AffiliationScreen extends HookConsumerWidget {
     }
 
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('affiliations').tr(),
-        scrolledUnderElevation: 4,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Symbols.sort),
-            onSelected: (value) {
-              notifier.applyFilter(value);
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'date',
-                child: Text('affiliationSortByDate').tr(),
+      // The spell list runs the full height of the pane and the pill floats
+      // its glass over the top of it.
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.sm),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'affiliations'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
               ),
-              PopupMenuItem(
-                value: 'usage',
-                child: Text('affiliationSortByUsage').tr(),
-              ),
-            ],
-          ),
-          const Gap(8),
-        ],
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Symbols.sort),
+              onSelected: (value) {
+                notifier.applyFilter(value);
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'date',
+                  child: Text('affiliationSortByDate').tr(),
+                ),
+                PopupMenuItem(
+                  value: 'usage',
+                  child: Text('affiliationSortByUsage').tr(),
+                ),
+              ],
+            ),
+            const Gap(8),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () =>
             _showCreateSpellSheet(context, ref, canManage: canManage),
         child: const Icon(Symbols.add),
       ),
-      body: PaginationList(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        provider: affiliationsNotifierProvider,
-        notifier: affiliationsNotifierProvider.notifier,
-        itemBuilder: (context, idx, spell) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            elevation: 0,
-            color: colorScheme.surfaceContainerLow,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                context.router.push(AffiliationDetailRoute(id: spell.id));
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => updatePillFade(notification, fade),
+        child: PaginationList(
+          // The pill's band, so the first card starts below the capsule.
+          padding: EdgeInsets.fromLTRB(
+            16,
+            statusTop + kPillAppBarHeight,
+            16,
+            16,
+          ),
+          provider: affiliationsNotifierProvider,
+          notifier: affiliationsNotifierProvider.notifier,
+          itemBuilder: (context, idx, spell) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 0,
+              color: colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  context.router.push(AffiliationDetailRoute(id: spell.id));
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          spell.isRegistrationInvite
+                              ? Symbols.card_giftcard
+                              : Symbols.auto_fix_high,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 24,
+                        ),
                       ),
-                      child: Icon(
-                        spell.isRegistrationInvite
-                            ? Symbols.card_giftcard
-                            : Symbols.auto_fix_high,
-                        color: colorScheme.onPrimaryContainer,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  spell.spell,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              if (spell.isRegistrationInvite) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
                                   child: Text(
-                                    'affiliationTypeInvite',
+                                    spell.spell,
+                                    overflow: TextOverflow.ellipsis,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color:
-                                              colorScheme.onSecondaryContainer,
-                                        ),
-                                  ).tr(),
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                if (spell.isRegistrationInvite) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.secondaryContainer,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      'affiliationTypeInvite',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: colorScheme
+                                                .onSecondaryContainer,
+                                          ),
+                                    ).tr(),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Symbols.schedule,
+                                  size: 14,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  spell.createdAt.toLocal().formatSystem(),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
                                 ),
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Symbols.schedule,
-                                size: 14,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                spell.createdAt.toLocal().formatSystem(),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: Icon(
-                        Symbols.more_vert,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'copy',
-                          child: ListTile(
-                            leading: const Icon(Symbols.content_copy),
-                            title: Text('affiliationCopy').tr(),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
+                            ),
+                          ],
                         ),
-                        if (canManage)
+                      ),
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          Symbols.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        itemBuilder: (context) => [
                           PopupMenuItem(
-                            value: 'delete',
+                            value: 'copy',
                             child: ListTile(
-                              leading: Icon(
-                                Symbols.delete,
-                                color: colorScheme.error,
-                              ),
-                              title: Text('affiliationDelete').tr(),
+                              leading: const Icon(Symbols.content_copy),
+                              title: Text('affiliationCopy').tr(),
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                      ],
-                      onSelected: (value) async {
-                        if (value == 'copy') {
-                          await Clipboard.setData(
-                            ClipboardData(text: spell.spell),
-                          );
-                          if (context.mounted) {
-                            showSnackBar('affiliationCopied'.tr());
+                          if (canManage)
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: ListTile(
+                                leading: Icon(
+                                  Symbols.delete,
+                                  color: colorScheme.error,
+                                ),
+                                title: Text('affiliationDelete').tr(),
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                        ],
+                        onSelected: (value) async {
+                          if (value == 'copy') {
+                            await Clipboard.setData(
+                              ClipboardData(text: spell.spell),
+                            );
+                            if (context.mounted) {
+                              showSnackBar('affiliationCopied'.tr());
+                            }
+                          } else if (value == 'delete') {
+                            _confirmDelete(context, ref, spell);
                           }
-                        } else if (value == 'delete') {
-                          _confirmDelete(context, ref, spell);
-                        }
-                      },
-                    ),
-                  ],
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

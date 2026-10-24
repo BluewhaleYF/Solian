@@ -18,6 +18,7 @@ import 'package:island/core/config.dart';
 import 'package:island/posts/widgets/compose/post_watch_sheet.dart';
 import 'package:island/core/network.dart';
 import 'package:island/core/translate.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/posts/pods/bookmarks.dart';
 import 'package:island/posts/pods/post_chain.dart';
@@ -1937,39 +1938,48 @@ bool _useArticleReadingLayout(BuildContext context, SnPost post) {
   return post.type == 1 && isWideScreen(context);
 }
 
-/// Pinned sliver app bar for the full-screen post detail. It names the post
-/// (its title, when it has one) and keeps the save/share/more actions
-/// reachable while the conversation scrolls underneath.
-SliverAppBar buildPostDetailSliverAppBar({
+/// Pinned header for the full-screen post detail. It names the post (its
+/// title, when it has one) and keeps the save/share/more actions reachable
+/// while the conversation scrolls underneath.
+///
+/// The same glass capsule every other page uses ([PillSliverAppBar]), faded in
+/// off the page's own scroll offset, so a post slides under the bar exactly as
+/// timeline rows slide under the feed's pill.
+PillSliverAppBar buildPostDetailSliverAppBar({
   required BuildContext context,
   required SnPost post,
   required Widget trailing,
+  required ValueListenable<double> fade,
   Widget leading = const AutoLeadingButton(),
 }) {
   final theme = Theme.of(context);
   final title = post.title?.trim();
   final hasTitle = title != null && title.isNotEmpty;
-  return SliverAppBar(
-    pinned: true,
-    // Opaque on purpose: this bar stays pinned over scrolling content, so it
-    // must not inherit the "transparent app bar" user setting.
-    leading: leading,
-    title: hasTitle
-        ? Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          )
-        : null,
-    actions: [
-      _PostBarBookmarkButton(post: post),
-      _PostBarShareButton(post: post),
-      trailing,
-      const Gap(8),
-    ],
+  return PillSliverAppBar(
+    fade: fade,
+    statusTop: MediaQuery.paddingOf(context).top,
+    child: Row(
+      children: [
+        leading,
+        const Gap(SolSpace.xs),
+        Expanded(
+          child: hasTitle
+              ? Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.appBarTheme.titleTextStyle,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        _PostBarBookmarkButton(post: post),
+        _PostBarShareButton(post: post),
+        trailing,
+      ],
+    ),
   );
 }
 
@@ -1999,6 +2009,8 @@ class _PostDetailLargeScreenLayout extends HookConsumerWidget {
     final chainContext = watchChainContext(ref, post);
     final preceding = chainContext?.preceding ?? const <SnPost>[];
     final following = chainContext?.following ?? const <SnPost>[];
+    // The reading column's own scroll drives the pill's glass.
+    final fade = useValueNotifier(0.0);
 
     final trailing = _PostActionsMenu(
       post: post,
@@ -2051,191 +2063,209 @@ class _PostDetailLargeScreenLayout extends HookConsumerWidget {
                   child: Column(
                     children: [
                       Expanded(
-                        child: CustomScrollView(
-                          slivers: [
-                            buildPostDetailSliverAppBar(
-                              context: context,
-                              post: post,
-                              trailing: trailing,
-                            ),
-                            SliverToBoxAdapter(
-                              child: Center(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: _postDetailMaxWidth,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      16,
-                                      16,
-                                      0,
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) =>
+                              updatePillFade(notification, fade),
+                          child: CustomScrollView(
+                            slivers: [
+                              buildPostDetailSliverAppBar(
+                                context: context,
+                                post: post,
+                                trailing: trailing,
+                                fade: fade,
+                              ),
+                              SliverToBoxAdapter(
+                                child: Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: _postDetailMaxWidth,
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (preceding.isNotEmpty)
-                                          PostChainPrecedingSection(
-                                            posts: preceding,
-                                            onPostTap: (id) => context.router
-                                                .push(PostDetailRoute(id: id)),
-                                          ),
-                                        PostHeader(
-                                          item: post,
-                                          isFullPost: true,
-                                          isCompact: false,
-                                          renderingPadding: EdgeInsets.zero,
-                                          trailing: null,
-                                          showUpperLine: preceding.isNotEmpty,
-                                        ),
-                                        const Gap(8),
-                                        PostBody(
-                                          item: post,
-                                          isFullPost: true,
-                                          isTextSelectable: true,
-                                          renderingPadding: EdgeInsets.zero,
-                                          hideAttachments: true,
-                                          textScale: post.type == 1 ? 1.2 : 1.1,
-                                        ),
-                                        // Blog CTA: open blog URL
-                                        if (post.type == 2 &&
-                                            post.embedView != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 12,
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        16,
+                                        16,
+                                        0,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (preceding.isNotEmpty)
+                                            PostChainPrecedingSection(
+                                              posts: preceding,
+                                              onPostTap: (id) =>
+                                                  context.router.push(
+                                                    PostDetailRoute(id: id),
+                                                  ),
                                             ),
-                                            child: FilledButton.icon(
-                                              onPressed: () async {
-                                                final uri = Uri.tryParse(
-                                                  post.embedView!.uri,
-                                                );
-                                                if (uri != null &&
-                                                    await canLaunchUrl(uri)) {
-                                                  await launchUrl(
-                                                    uri,
-                                                    mode: LaunchMode
-                                                        .externalApplication,
-                                                  );
-                                                }
-                                              },
-                                              icon: const Icon(
-                                                Symbols.open_in_new,
-                                              ),
-                                              label: Text('openBlog'.tr()),
-                                            ),
+                                          PostHeader(
+                                            item: post,
+                                            isFullPost: true,
+                                            isCompact: false,
+                                            renderingPadding: EdgeInsets.zero,
+                                            trailing: null,
+                                            showUpperLine: preceding.isNotEmpty,
                                           ),
-                                        if (post
-                                            .publisherCollections
-                                            .isNotEmpty)
                                           const Gap(8),
-                                        if (post
-                                            .publisherCollections
-                                            .isNotEmpty)
-                                          PostCollectionNavigation(post: post),
-                                        if (post.embedView != null)
-                                          EmbedViewRenderer(
-                                            embedView: post.embedView!,
-                                            maxHeight: 400,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ).padding(vertical: 8),
-                                        if (isTranslating ||
-                                            translatedText != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8,
-                                            ),
-                                            child: buildPostTranslationSection(
-                                              context: context,
-                                              item: post,
-                                              isTextSelectable: true,
-                                              textScale: post.type == 1
-                                                  ? 1.2
-                                                  : 1.1,
-                                              translatedText: translatedText,
-                                              isTranslating: isTranslating,
-                                              onTranslate: onTranslate == null
-                                                  ? null
-                                                  : () => onTranslate!(
-                                                      post.content!,
-                                                    ),
-                                              showTranslateButton: false,
-                                            ),
+                                          PostBody(
+                                            item: post,
+                                            isFullPost: true,
+                                            isTextSelectable: true,
+                                            renderingPadding: EdgeInsets.zero,
+                                            hideAttachments: true,
+                                            textScale: post.type == 1
+                                                ? 1.2
+                                                : 1.1,
                                           ),
-                                        PostReactionList(
-                                          padding: EdgeInsets.only(top: 8),
-                                          item: post,
-                                          reactions: post.reactionsCount,
-                                          reactionsMade: post.reactionsMade,
-                                          onReact: (symbol, attitude, delta) {
-                                            final reactionsCount =
-                                                Map<String, int>.from(
-                                                  post.reactionsCount,
-                                                );
-                                            reactionsCount[symbol] =
-                                                (reactionsCount[symbol] ?? 0) +
-                                                delta;
-                                            final reactionsMade =
-                                                Map<String, bool>.from(
-                                                  post.reactionsMade,
-                                                );
-                                            reactionsMade[symbol] = delta == 1
-                                                ? true
-                                                : false;
-                                            onUpdate.call(
-                                              post.copyWith(
-                                                reactionsCount: reactionsCount,
-                                                reactionsMade: reactionsMade,
+                                          // Blog CTA: open blog URL
+                                          if (post.type == 2 &&
+                                              post.embedView != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 12,
                                               ),
-                                            );
-                                          },
-                                        ),
-                                        PostActionButtons(
-                                          post: post,
-                                          noBottomPadding: true,
-                                          renderingPadding:
-                                              const EdgeInsets.only(top: 8),
-                                          onRefresh: onRefresh,
-                                          onUpdate: onUpdate,
-                                          onTranslate: onTranslate,
-                                        ).alignment(Alignment.centerLeft),
-                                        if (post.repliedPostId != null ||
-                                            post.forwardedPostId != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8,
-                                              bottom: 8,
+                                              child: FilledButton.icon(
+                                                onPressed: () async {
+                                                  final uri = Uri.tryParse(
+                                                    post.embedView!.uri,
+                                                  );
+                                                  if (uri != null &&
+                                                      await canLaunchUrl(uri)) {
+                                                    await launchUrl(
+                                                      uri,
+                                                      mode: LaunchMode
+                                                          .externalApplication,
+                                                    );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Symbols.open_in_new,
+                                                ),
+                                                label: Text('openBlog'.tr()),
+                                              ),
                                             ),
-                                            child: PostThreadCard(post: post),
+                                          if (post
+                                              .publisherCollections
+                                              .isNotEmpty)
+                                            const Gap(8),
+                                          if (post
+                                              .publisherCollections
+                                              .isNotEmpty)
+                                            PostCollectionNavigation(
+                                              post: post,
+                                            ),
+                                          if (post.embedView != null)
+                                            EmbedViewRenderer(
+                                              embedView: post.embedView!,
+                                              maxHeight: 400,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ).padding(vertical: 8),
+                                          if (isTranslating ||
+                                              translatedText != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 8,
+                                              ),
+                                              child:
+                                                  buildPostTranslationSection(
+                                                    context: context,
+                                                    item: post,
+                                                    isTextSelectable: true,
+                                                    textScale: post.type == 1
+                                                        ? 1.2
+                                                        : 1.1,
+                                                    translatedText:
+                                                        translatedText,
+                                                    isTranslating:
+                                                        isTranslating,
+                                                    onTranslate:
+                                                        onTranslate == null
+                                                        ? null
+                                                        : () => onTranslate!(
+                                                            post.content!,
+                                                          ),
+                                                    showTranslateButton: false,
+                                                  ),
+                                            ),
+                                          PostReactionList(
+                                            padding: EdgeInsets.only(top: 8),
+                                            item: post,
+                                            reactions: post.reactionsCount,
+                                            reactionsMade: post.reactionsMade,
+                                            onReact: (symbol, attitude, delta) {
+                                              final reactionsCount =
+                                                  Map<String, int>.from(
+                                                    post.reactionsCount,
+                                                  );
+                                              reactionsCount[symbol] =
+                                                  (reactionsCount[symbol] ??
+                                                      0) +
+                                                  delta;
+                                              final reactionsMade =
+                                                  Map<String, bool>.from(
+                                                    post.reactionsMade,
+                                                  );
+                                              reactionsMade[symbol] = delta == 1
+                                                  ? true
+                                                  : false;
+                                              onUpdate.call(
+                                                post.copyWith(
+                                                  reactionsCount:
+                                                      reactionsCount,
+                                                  reactionsMade: reactionsMade,
+                                                ),
+                                              );
+                                            },
                                           ),
-                                        if (post.chainedPosts.isNotEmpty ||
-                                            following.isNotEmpty)
-                                          PostChainedSection(
-                                            head: post,
-                                            children: following,
-                                            onPostTap: (id) => context.router
-                                                .push(PostDetailRoute(id: id)),
-                                          ).padding(top: 8, bottom: 8),
-                                        if (post.realm != null)
-                                          PostRealmBadge(
-                                            realm: post.realm!,
-                                          ).padding(top: 8, bottom: 8),
-                                      ],
+                                          PostActionButtons(
+                                            post: post,
+                                            noBottomPadding: true,
+                                            renderingPadding:
+                                                const EdgeInsets.only(top: 8),
+                                            onRefresh: onRefresh,
+                                            onUpdate: onUpdate,
+                                            onTranslate: onTranslate,
+                                          ).alignment(Alignment.centerLeft),
+                                          if (post.repliedPostId != null ||
+                                              post.forwardedPostId != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 8,
+                                                bottom: 8,
+                                              ),
+                                              child: PostThreadCard(post: post),
+                                            ),
+                                          if (post.chainedPosts.isNotEmpty ||
+                                              following.isNotEmpty)
+                                            PostChainedSection(
+                                              head: post,
+                                              children: following,
+                                              onPostTap: (id) =>
+                                                  context.router.push(
+                                                    PostDetailRoute(id: id),
+                                                  ),
+                                            ).padding(top: 8, bottom: 8),
+                                          if (post.realm != null)
+                                            PostRealmBadge(
+                                              realm: post.realm!,
+                                            ).padding(top: 8, bottom: 8),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            DefaultTabController(
-                              length: 4,
-                              child: PostInteractionsSlivers(
-                                postId: postId,
-                                maxWidth: _postDetailMaxWidth,
+                              DefaultTabController(
+                                length: 4,
+                                child: PostInteractionsSlivers(
+                                  postId: postId,
+                                  maxWidth: _postDetailMaxWidth,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -2289,6 +2319,11 @@ class _ArticleDetailLayout extends HookConsumerWidget {
   final VoidCallback onRefresh;
   final ValueChanged<SnPost> onUpdate;
 
+  /// Band reserved for the scaffold's floating pill. It is applied inside the
+  /// article's own scroll view, so the first screen clears the capsule and the
+  /// text then scrolls underneath it.
+  final double topInset;
+
   const _ArticleDetailLayout({
     required this.post,
     required this.postId,
@@ -2297,6 +2332,7 @@ class _ArticleDetailLayout extends HookConsumerWidget {
     required this.onTranslate,
     required this.onRefresh,
     required this.onUpdate,
+    this.topInset = 0,
   });
 
   @override
@@ -2653,6 +2689,10 @@ class _ArticleDetailLayout extends HookConsumerWidget {
                 child: CustomScrollView(
                   controller: scrollController,
                   slivers: [
+                    // The pill floats over this column, so its band belongs to
+                    // the scroll content: the article starts below the capsule
+                    // and slides under it from there.
+                    if (topInset > 0) SliverGap(topInset),
                     SliverToBoxAdapter(child: buildArticleColumn()),
                     SliverGap(MediaQuery.of(context).padding.bottom + 48),
                   ],
@@ -2816,6 +2856,11 @@ class _BlogPostDetailLayout extends HookConsumerWidget {
   final VoidCallback onRefresh;
   final ValueChanged<SnPost> onUpdate;
 
+  /// Band reserved for the scaffold's floating pill, applied inside the
+  /// summary's own scroll view so it starts below the capsule and then scrolls
+  /// under it. The webview behind the sheet keeps the full height.
+  final double topInset;
+
   const _BlogPostDetailLayout({
     required this.post,
     required this.postId,
@@ -2825,6 +2870,7 @@ class _BlogPostDetailLayout extends HookConsumerWidget {
     required this.onTranslate,
     required this.onRefresh,
     required this.onUpdate,
+    this.topInset = 0,
   });
 
   @override
@@ -2873,6 +2919,10 @@ class _BlogPostDetailLayout extends HookConsumerWidget {
                   length: 4,
                   child: CustomScrollView(
                     slivers: [
+                      // The pill floats over the summary sheet, so its band is
+                      // the scroll view's first gap: the post's header starts
+                      // below the capsule and slides under it.
+                      if (topInset > 0) SliverGap(topInset),
                       SliverToBoxAdapter(
                         child: Center(
                           child: ConstrainedBox(
@@ -3240,6 +3290,12 @@ class PostDetailBody extends HookConsumerWidget {
   final String id;
   final bool isEmbedded;
 
+  /// Band reserved for chrome floating over this body — a scaffold pill or the
+  /// explore pane's capsule. The inset is applied *inside* the body's own
+  /// scroll views, so the first screen of the post starts below that chrome
+  /// while everything after it scrolls underneath.
+  final double topInset;
+
   /// Handles taps on posts embedded in this body — reference posts, chained
   /// posts, replies and forwards — so a host can open them in place (e.g. a
   /// wide screen's side pane) instead of navigating to the full page. Null
@@ -3250,6 +3306,7 @@ class PostDetailBody extends HookConsumerWidget {
     super.key,
     required this.id,
     this.isEmbedded = false,
+    this.topInset = 0,
     this.onPostTap,
   });
 
@@ -3322,6 +3379,7 @@ class PostDetailBody extends HookConsumerWidget {
                         isTranslating: translating.value,
                         onTranslate: translatePost,
                         onRefresh: refreshPost,
+                        topInset: topInset,
                         onUpdate: (newItem) {
                           ref
                               .read(postStateProvider(id).notifier)
@@ -3350,6 +3408,7 @@ class PostDetailBody extends HookConsumerWidget {
                 isTranslating: translating.value,
                 onTranslate: translatePost,
                 onRefresh: refreshPost,
+                topInset: topInset,
                 onUpdate: (newItem) {
                   ref.read(postStateProvider(id).notifier).updatePost(newItem);
                 },
@@ -3361,12 +3420,14 @@ class PostDetailBody extends HookConsumerWidget {
                 trailing: trailing,
                 showTableOfContents: true,
                 onPostTap: onPostTap,
-                headerSliver: isEmbedded
+                topInset: topInset,
+                headerSliverBuilder: isEmbedded
                     ? null
-                    : buildPostDetailSliverAppBar(
+                    : (context, fade) => buildPostDetailSliverAppBar(
                         context: context,
                         post: postItem,
                         trailing: trailing,
+                        fade: fade,
                       ),
                 onRefresh: () async {
                   refreshPost();
@@ -3435,34 +3496,56 @@ class PostDetailScreen extends HookConsumerWidget {
       ref.read(postRepliesProvider(postRepliesQuery(id)).notifier).refresh();
     }
 
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // Blog and article layouts own a body that scrolls behind a static header,
+    // so their pill is persistent: there is no single offset to track.
+    final hasPillBar = (isBlog || isArticleReading) && post != null;
+
     return AppScaffold(
       isNoBackground: false,
       // Blog posts keep a static bar: their webview sheet needs persistent
       // chrome. Every other layout owns its app bar inside the scroll view.
-      appBar: (isBlog || isArticleReading) && post != null
-          ? AppBar(
-              leading: const AutoLeadingButton(),
-              title: Text(
-                hasTitle ? title : 'postDetail'.tr(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              actions: [
-                _PostBarBookmarkButton(post: post),
-                _PostBarShareButton(post: post),
-                if (isArticleReading)
-                  _PostActionsMenu(
-                    post: post,
-                    onRefresh: refreshPost,
-                    onUpdate: (newItem) => ref
-                        .read(postStateProvider(id).notifier)
-                        .updatePost(newItem),
+      appBarOverContent: hasPillBar,
+      appBar: hasPillBar
+          ? PillAppBar(
+              statusTop: statusTop,
+              child: Row(
+                children: [
+                  const AutoLeadingButton(),
+                  const Gap(SolSpace.xs),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        hasTitle ? title : 'postDetail'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).appBarTheme.titleTextStyle,
+                      ),
+                    ),
                   ),
-                const Gap(8),
-              ],
+                  _PostBarBookmarkButton(post: post),
+                  _PostBarShareButton(post: post),
+                  if (isArticleReading)
+                    _PostActionsMenu(
+                      post: post,
+                      onRefresh: refreshPost,
+                      onUpdate: (newItem) => ref
+                          .read(postStateProvider(id).notifier)
+                          .updatePost(newItem),
+                    ),
+                ],
+              ),
             )
           : null,
-      body: PostDetailBody(id: id),
+      // The pill floats over the body, so the band it occupies is reserved
+      // *inside* the body's own scroll views, which the article and blog
+      // layouts do themselves. A fixed inset here would stop their content at
+      // the capsule instead of letting it scroll under the glass.
+      body: PostDetailBody(
+        id: id,
+        topInset: hasPillBar ? kPillAppBarHeight : 0,
+      ),
     );
   }
 }

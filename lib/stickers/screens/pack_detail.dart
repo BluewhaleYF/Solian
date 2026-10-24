@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/creators/screens/stickers/stickers.dart';
 import 'package:island/stickers/models/sticker.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/network.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
@@ -91,41 +93,177 @@ class StickerMarketplacePackDetailScreen extends HookConsumerWidget {
       showSnackBar('stickerPackRemoved'.tr());
     }
 
+    final statusTop = MediaQuery.paddingOf(context).top;
     return AppScaffold(
-      appBar: AppBar(
-        title: Text(pack.value?.name ?? 'loading'.tr()),
-        actions: [
-          if (pack.value?.publisher != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: _PublisherChip(publisher: pack.value!.publisher!),
-            ),
-        ],
-      ),
-      body: pack.when(
-        data: (p) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Pack meta section with Material 3 Card
-              Card.filled(
-                margin: const EdgeInsets.all(16),
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  pack.value?.name ?? 'loading'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 12,
-                    children: [
-                      // Pack icon and name header
-                      Row(
-                        spacing: 16,
-                        children: [
-                          if (p?.icon != null)
-                            Card.outlined(
+              ),
+            ),
+            if (pack.value?.publisher != null)
+              Padding(
+                padding: const EdgeInsets.only(right: SolSpace.xs),
+                child: _PublisherChip(publisher: pack.value!.publisher!),
+              ),
+          ],
+        ),
+      ),
+      // The pack page pins a metadata card above a grid, so nothing scrolls
+      // through the pill's band: the scaffold reserves it instead.
+      body: Padding(
+        padding: EdgeInsets.only(top: statusTop + kPillAppBarHeight),
+        child: pack.when(
+          data: (p) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Pack meta section with Material 3 Card
+                Card.filled(
+                  margin: const EdgeInsets.all(16),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 12,
+                      children: [
+                        // Pack icon and name header
+                        Row(
+                          spacing: 16,
+                          children: [
+                            if (p?.icon != null)
+                              Card.outlined(
+                                elevation: 0,
+                                margin: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    width: 64,
+                                    height: 64,
+                                    child: CloudImageWidget(
+                                      file: p!.icon!,
+                                      fit: BoxFit.cover,
+                                      noBlurhash: true,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Card.outlined(
+                                elevation: 0,
+                                margin: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: SizedBox(
+                                  width: 64,
+                                  height: 64,
+                                  child: Icon(
+                                    Symbols.folder,
+                                    size: 32,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: 4,
+                                children: [
+                                  Text(
+                                    p?.name ?? '',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  if (p?.description != null &&
+                                      p!.description.isNotEmpty)
+                                    Text(
+                                      p.description,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Metadata chips
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _MetadataChip(
+                              icon: Symbols.folder,
+                              label: '${packContent.value?.length ?? 0}/24',
+                            ),
+                            if (p?.prefix != null && p!.prefix.isNotEmpty)
+                              _MetadataChip(
+                                icon: Symbols.sell,
+                                label: p.prefix,
+                              ),
+                            _MetadataChip(
+                              icon: Symbols.tag,
+                              label: p?.id ?? id,
+                              isSelectable: true,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Stickers grid
+                Expanded(
+                  child: packContent.when(
+                    data: (stickers) => RefreshIndicator(
+                      onRefresh: () => ref.refresh(
+                        marketplaceStickerPackContentProvider(
+                          packId: id,
+                        ).future,
+                      ),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 96,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                            ),
+                        itemCount: stickers.length,
+                        itemBuilder: (context, index) {
+                          final sticker = stickers[index];
+                          return Tooltip(
+                            message: ':${p?.prefix ?? ''}+${sticker.slug}:',
+                            child: Card.outlined(
                               elevation: 0,
                               margin: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
@@ -133,185 +271,78 @@ class StickerMarketplacePackDetailScreen extends HookConsumerWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: SizedBox(
-                                  width: 64,
-                                  height: 64,
-                                  child: CloudImageWidget(
-                                    file: p!.icon!,
-                                    fit: BoxFit.cover,
-                                    noBlurhash: true,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            Card.outlined(
-                              elevation: 0,
-                              margin: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: SizedBox(
-                                width: 64,
-                                height: 64,
-                                child: Icon(
-                                  Symbols.folder,
-                                  size: 32,
+                                child: Container(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: 4,
-                              children: [
-                                Text(
-                                  p?.name ?? '',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                if (p?.description != null &&
-                                    p!.description.isNotEmpty)
-                                  Text(
-                                    p.description,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Metadata chips
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _MetadataChip(
-                            icon: Symbols.folder,
-                            label: '${packContent.value?.length ?? 0}/24',
-                          ),
-                          if (p?.prefix != null && p!.prefix.isNotEmpty)
-                            _MetadataChip(icon: Symbols.sell, label: p.prefix),
-                          _MetadataChip(
-                            icon: Symbols.tag,
-                            label: p?.id ?? id,
-                            isSelectable: true,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Stickers grid
-              Expanded(
-                child: packContent.when(
-                  data: (stickers) => RefreshIndicator(
-                    onRefresh: () => ref.refresh(
-                      marketplaceStickerPackContentProvider(packId: id).future,
-                    ),
-                    child: GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 96,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                          ),
-                      itemCount: stickers.length,
-                      itemBuilder: (context, index) {
-                        final sticker = stickers[index];
-                        return Tooltip(
-                          message: ':${p?.prefix ?? ''}+${sticker.slug}:',
-                          child: Card.outlined(
-                            elevation: 0,
-                            margin: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerLow,
-                                child: AspectRatio(
-                                  aspectRatio: 1,
-                                  child: CloudImageWidget(
-                                    file: sticker.image,
-                                    fit: BoxFit.contain,
-                                    noBlurhash: true,
+                                  ).colorScheme.surfaceContainerLow,
+                                  child: AspectRatio(
+                                    aspectRatio: 1,
+                                    child: CloudImageWidget(
+                                      file: sticker.image,
+                                      fit: BoxFit.contain,
+                                      noBlurhash: true,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
+                    error: (err, _) => Text(
+                      'Error: $err',
+                    ).textAlignment(TextAlign.center).center(),
+                    loading: () => const CircularProgressIndicator().center(),
                   ),
-                  error: (err, _) => Text(
-                    'Error: $err',
-                  ).textAlignment(TextAlign.center).center(),
-                  loading: () => const CircularProgressIndicator().center(),
                 ),
-              ),
-              // Action button
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: owned.when(
-                  data: (isOwned) => FilledButton.icon(
-                    onPressed: isOwned
-                        ? removePackFromMyCollection
-                        : addPackToMyCollection,
-                    icon: Icon(
-                      isOwned ? Symbols.remove_circle : Symbols.add_circle,
-                    ),
-                    label: Text(isOwned ? 'removePack'.tr() : 'addPack'.tr()),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
+                // Action button
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  loading: () => const SizedBox(
-                    height: 48,
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                  child: owned.when(
+                    data: (isOwned) => FilledButton.icon(
+                      onPressed: isOwned
+                          ? removePackFromMyCollection
+                          : addPackToMyCollection,
+                      icon: Icon(
+                        isOwned ? Symbols.remove_circle : Symbols.add_circle,
+                      ),
+                      label: Text(isOwned ? 'removePack'.tr() : 'addPack'.tr()),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                    loading: () => const SizedBox(
+                      height: 48,
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                    error: (_, _) => OutlinedButton.icon(
+                      onPressed: addPackToMyCollection,
+                      icon: const Icon(Symbols.add_circle),
+                      label: Text('addPack').tr(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
                   ),
-                  error: (_, _) => OutlinedButton.icon(
-                    onPressed: addPackToMyCollection,
-                    icon: const Icon(Symbols.add_circle),
-                    label: Text('addPack').tr(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
                 ),
-              ),
-              Gap(MediaQuery.of(context).padding.bottom + 16),
-            ],
-          );
-        },
-        error: (err, _) =>
-            Text('Error: $err').textAlignment(TextAlign.center).center(),
-        loading: () => const CircularProgressIndicator().center(),
+                Gap(MediaQuery.of(context).padding.bottom + 16),
+              ],
+            );
+          },
+          error: (err, _) =>
+              Text('Error: $err').textAlignment(TextAlign.center).center(),
+          loading: () => const CircularProgressIndicator().center(),
+        ),
       ),
     );
   }

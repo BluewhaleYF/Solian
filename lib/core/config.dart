@@ -78,6 +78,7 @@ const kAppAskedReview = 'app_asked_review';
 const kAppDashSearchEngine = 'app_dash_search_engine';
 const kAppDefaultScreen = 'app_default_screen';
 const kAppShowChatSystemMessages = 'app_show_chat_system_messages';
+const kAppGlassEffects = 'app_glass_effects';
 const kAppShowChatEventMessages = kAppShowChatSystemMessages;
 const kAppChatEventMessageMode = 'app_chat_event_message_mode';
 const kAppPushProvider = 'app_push_provider';
@@ -480,6 +481,10 @@ sealed class AppSettings with _$AppSettings {
     required bool weatherNoGeolocation,
     // Attachments start uploading as soon as they are picked.
     required bool autoUploadAttachments,
+    // Liquid glass surfaces (pill headers, the chat and reply composers) are
+    // drawn as real glass. Off swaps them for flat solid chrome, which skips
+    // the backdrop sample and shader pass on every frame they are on screen.
+    required bool glassEffects,
   }) = _AppSettings;
 }
 
@@ -542,6 +547,7 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       outgoingCallKitEnabled: prefs.getBool(kAppOutgoingCallKitEnabled) ?? true,
       weatherNoGeolocation: prefs.getBool(kAppWeatherNoGeolocation) ?? true,
       autoUploadAttachments: prefs.getBool(kAppAutoUploadAttachments) ?? true,
+      glassEffects: prefs.getBool(kAppGlassEffects) ?? true,
     );
   }
 
@@ -944,6 +950,12 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
     final prefs = ref.read(sharedPreferencesProvider);
     prefs.setBool(kAppAutoUploadAttachments, value);
     state = state.copyWith(autoUploadAttachments: value);
+  }
+
+  void setGlassEffects(bool value) {
+    final prefs = ref.read(sharedPreferencesProvider);
+    prefs.setBool(kAppGlassEffects, value);
+    state = state.copyWith(glassEffects: value);
   }
 
   void setIpOverrideMode(IpOverrideMode mode) {

@@ -13,6 +13,8 @@ import 'package:island/wallets/wallet.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 
 @RoutePage()
 class WalletOrderDetailScreen extends ConsumerStatefulWidget {
@@ -32,12 +34,33 @@ class _WalletOrderDetailScreenState
     extends ConsumerState<WalletOrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
+    final statusTop = MediaQuery.paddingOf(context).top;
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('walletOrder'.tr()),
-        leading: const AutoLeadingButton(),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'walletOrder'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      body: WalletOrderDetailView(orderId: widget.orderId),
+      // The pill floats over the body; its band is reserved inside the list so
+      // the order scrolls under the glass.
+      body: WalletOrderDetailView(
+        orderId: widget.orderId,
+        topInset: statusTop + kPillAppBarHeight,
+      ),
     );
   }
 }
@@ -47,7 +70,16 @@ class _WalletOrderDetailScreenState
 class WalletOrderDetailView extends ConsumerStatefulWidget {
   final String orderId;
 
-  const WalletOrderDetailView({super.key, required this.orderId});
+  /// Band reserved for chrome floating over this view — the route's pill. It
+  /// is applied inside the list, so the order starts below the capsule and
+  /// then scrolls under the glass. Pane hosts pass nothing.
+  final double topInset;
+
+  const WalletOrderDetailView({
+    super.key,
+    required this.orderId,
+    this.topInset = 0,
+  });
 
   @override
   ConsumerState<WalletOrderDetailView> createState() =>
@@ -103,8 +135,7 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
   bool get _isPayable {
     final order = _order;
     if (order == null || order.status != 0) return false;
-    return order.expiredAt == null ||
-        order.expiredAt!.isAfter(DateTime.now());
+    return order.expiredAt == null || order.expiredAt!.isAfter(DateTime.now());
   }
 
   Future<void> _pay() async {
@@ -156,11 +187,10 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
     final info = _orderInfo;
     final app = info?.app;
     final appName = app?.name.isNotEmpty == true ? app!.name : null;
-    final productIdentifier =
-        info?.productIdentifier?.isNotEmpty == true
-            ? info!.productIdentifier
-            : order.meta['product_identifier']?.toString() ??
-                  order.meta['productIdentifier']?.toString();
+    final productIdentifier = info?.productIdentifier?.isNotEmpty == true
+        ? info!.productIdentifier
+        : order.meta['product_identifier']?.toString() ??
+              order.meta['productIdentifier']?.toString();
     final developerName = info?.developer?.publisherName;
     final statusText = _statusText(order.status);
     final statusColor = _statusColor(order.status);
@@ -185,7 +215,7 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
     ].join(' · ');
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: EdgeInsets.fromLTRB(16, 16 + widget.topInset, 16, 32),
       children: [
         // Solar Core hero: the order's value as a core of light.
         WalletGlow(
@@ -239,9 +269,7 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
                             color: scheme.onPrimaryContainer,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -1.0,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
                       ),
@@ -267,9 +295,7 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
           decoration: BoxDecoration(
             color: scheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(kSolarRadiusSm),
-            border: Border.all(
-              color: scheme.outlineVariant.withOpacity(0.5),
-            ),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +307,11 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
                 ),
               ),
               const Gap(12),
-              _DetailRow(label: 'status'.tr(), value: statusText, color: statusColor),
+              _DetailRow(
+                label: 'status'.tr(),
+                value: statusText,
+                color: statusColor,
+              ),
               _DetailRow(
                 label: 'orderId'.tr(),
                 value: order.id,
@@ -301,12 +331,13 @@ class _WalletOrderDetailViewState extends ConsumerState<WalletOrderDetailView> {
               if (order.expiredAt != null)
                 _DetailRow(
                   label: 'expiresAt'.tr(),
-                  value: DateFormat.yMMMd()
-                      .add_Hm()
-                      .format(order.expiredAt!),
+                  value: DateFormat.yMMMd().add_Hm().format(order.expiredAt!),
                 ),
               if (developerName != null && developerName.isNotEmpty)
-                _DetailRow(label: 'developerBadgeName'.tr(), value: developerName),
+                _DetailRow(
+                  label: 'developerBadgeName'.tr(),
+                  value: developerName,
+                ),
               _DetailRow(
                 label: 'payerWalletId'.tr(),
                 value: order.payerWalletId ?? '-',

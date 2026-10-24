@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:ui' show ImageFilter;
 
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -23,7 +22,6 @@ import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/shared/widgets/layouts/sidebar_panel_host.dart';
-import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -803,8 +801,8 @@ void main() {
         )
         .firstWhere((container) => container.margin != null);
 
-    // The painted glass: the pill's own [DecoratedBox], which is the first one
-    // in the surface — the controls inside it come after.
+    // The pill's own [DecoratedBox], the first one in the surface — the
+    // controls inside it come after.
     BoxDecoration barDecoration() =>
         (tester
                 .widgetList<DecoratedBox>(
@@ -816,10 +814,6 @@ void main() {
                 .first
                 .decoration
             as BoxDecoration);
-
-    BackdropFilter? glass() => tester
-        .widgetList<BackdropFilter>(find.byType(BackdropFilter))
-        .firstOrNull;
 
     // The bar's own geometry never changes with the scroll: the container
     // keeps the same height, margins and capsule at every offset. On wide it
@@ -843,19 +837,9 @@ void main() {
 
     expectBarGeometry();
     expect(
-      barDecoration().color!.a,
-      0,
-      reason: 'the feed starts flush, so the bar has no surface yet',
-    );
-    expect(
       barDecoration().boxShadow,
       isNull,
       reason: 'a transparent pill over the empty page top has no shadow',
-    );
-    expect(
-      glass(),
-      isNull,
-      reason: 'nothing is under the bar yet, so there is no layer to blur',
     );
 
     // The pill deliberately no longer aligns with the cards: it owns the
@@ -880,18 +864,10 @@ void main() {
     // the scroll is still animating.
     await tester.pumpAndSettle();
 
-    // Scrolled: same geometry, but now glass — a blur layer over the feed, a
-    // translucent tint short of opaque, a hairline and a soft shadow.
+    // Scrolled: same geometry, and the surfaced pill casts its soft shadow.
     expectBarGeometry();
-    expect(barDecoration().color!.a, closeTo(kPillGlassTint, 0.01));
-    expect(barDecoration().border, isNotNull);
     final shadow = barDecoration().boxShadow!.single;
     expect(shadow.color.a, greaterThan(0));
-    expect(
-      glass()!.filter,
-      ImageFilter.blur(sigmaX: kPillGlassSigma, sigmaY: kPillGlassSigma),
-      reason: 'the fully surfaced pill blurs the rows sliding under it',
-    );
 
     await disposeTree(tester);
   });

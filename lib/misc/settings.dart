@@ -1772,6 +1772,8 @@ class SettingsScreen extends HookConsumerWidget {
           'automatic upload',
           'upload attachments',
           'settingsDisableAnimation',
+          'settingsGlassEffects',
+          'settingsGlassEffectsHelper',
           'settingsDefaultScreen',
           'settingsDashSearchEngine',
           'settingsWeatherNoGeolocation',
@@ -1791,6 +1793,19 @@ class SettingsScreen extends HookConsumerWidget {
                 ref
                     .read(appSettingsProvider.notifier)
                     .setDisableAnimation(value);
+              },
+            ),
+          ),
+          ListTile(
+            minLeadingWidth: 48,
+            title: Text('settingsGlassEffects').tr(),
+            subtitle: Text('settingsGlassEffectsHelper').tr(),
+            contentPadding: _kSettingsTilePadding,
+            leading: const Icon(Symbols.blur_on),
+            trailing: Switch(
+              value: settings.glassEffects,
+              onChanged: (value) {
+                ref.read(appSettingsProvider.notifier).setGlassEffects(value);
               },
             ),
           ),

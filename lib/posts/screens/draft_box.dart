@@ -15,6 +15,8 @@ import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/pagination_list.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 
 /// The authoring box: cloud drafts, posts waiting for their publish time and
 /// the drafts that only exist on this device, in one list.
@@ -26,8 +28,30 @@ class DraftBoxScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = draftBoxProvider;
 
+    final statusTop = MediaQuery.paddingOf(context).top;
+
     return AppScaffold(
-      appBar: AppBar(title: Text('draftBox').tr()),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'draftBox'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      // The pill floats over the body; its band is reserved by the list
+      // itself, so drafts scroll under the glass.
       body: PaginationWidget<DraftBoxEntry>(
         provider: provider,
         notifier: provider.notifier,
@@ -39,7 +63,12 @@ class DraftBoxScreen extends HookConsumerWidget {
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              statusTop + kPillAppBarHeight + SolSpace.sm,
+              12,
+              24,
+            ),
             itemCount: items.length + 1,
             separatorBuilder: (_, _) => const Gap(8),
             itemBuilder: (context, index) {

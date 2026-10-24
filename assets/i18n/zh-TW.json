@@ -3340,6 +3340,8 @@
   "settingsDefaultScreen": "預設起始頁面",
   "settingsDesktop": "桌面",
   "settingsDisableAnimation": "禁用動畫",
+  "settingsGlassEffects": "玻璃效果",
+  "settingsGlassEffectsHelper": "將膠囊標題列與輸入框繪製為液態玻璃。關閉後改用純色表面，更省電。",
   "settingsDisplayLanguage": "顯示語言",
   "settingsEnableTts": "啟用 TTS",
   "settingsEnterToSend": "按下 Enter 傳送",

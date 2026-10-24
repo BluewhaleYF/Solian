@@ -2201,6 +2201,8 @@
   "settingsDefaultScreen": "기본 화면",
   "settingsDesktop": "데스크톱",
   "settingsDisableAnimation": "애니메이션 비활성화",
+  "settingsGlassEffects": "유리 효과",
+  "settingsGlassEffectsHelper": "필 헤더와 작성기를 리퀴드 글래스로 그립니다. 끄면 단색 표면으로 바뀌어 배터리를 절약합니다.",
   "settingsDisplayLanguage": "표시 언어",
   "settingsEnableTts": "TTS 활성화",
   "settingsEnterToSend": "Enter로 보내기",

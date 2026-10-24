@@ -1,5 +1,13 @@
 platform :osx, '13.5'
 
+# Firebase stopped publishing to CocoaPods in Oct 2026; 12.19.2+ are SPM-only.
+# firebase_core pins 12.19.3, which does not exist on the CocoaPods CDN, so
+# `pod install` fails to resolve. Every FlutterFire podspec honours this global
+# before falling back to its hardcoded pin, so 12.19.0 (the last version
+# published to CocoaPods) satisfies FirebaseAnalytics/Firebase/CoreOnly and its
+# whole dependency tree. Must match ios/Podfile.
+$FirebaseSDKVersion = '12.19.0'
+
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 

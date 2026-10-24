@@ -1,22 +1,13 @@
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:island/core/theme.dart';
+import 'package:island/shared/widgets/glass_effects.dart';
 
 /// Alpha of the pill's shadow once it is fully surfaced.
 const double _kPillShadowOpacity = 0.12;
 
-/// Blur radius of the hand-rolled glass recipe used by the chat composer.
-///
-/// The pills themselves no longer blur by hand: [PillSurface] draws the iOS 27
-/// material from `liquid_glass_renderer`. The composer still builds its shell
-/// from this recipe, so the values stay public until it moves over too.
-const double kPillGlassSigma = 14.0;
-
-/// Alpha of that recipe's tint once it is fully surfaced.
-const double kPillGlassTint = 0.4;
-
-/// Alpha of that recipe's hairline once it is fully surfaced.
-const double kPillBorderOpacity = 0.5;
+/// Alpha of the solid chrome's hairline once it is fully surfaced.
+const double _kPillBorderOpacity = 0.5;
 
 /// Stroke of the ring a loading pill paints along its own edge.
 const double _kPillRingStroke = 2.0;
@@ -48,6 +39,11 @@ const Duration _kPillRingFade = Duration(milliseconds: 220);
 /// lighting all dissolve together and the controls on top stay fully opaque.
 /// A soft shadow comes with the fill and is scaled by [t], so a pill over an
 /// empty page stays completely flat.
+///
+/// When [GlassEffects] is off — or the platform cannot run the shader — the
+/// capsule is painted as a flat fill plus a hairline instead. Same geometry,
+/// same fade, no backdrop sample: the setting exists so a user can trade the
+/// material for the frames it costs.
 ///
 /// The layer is skipped while [t] is 0: there is nothing under the bar, and
 /// an idle layer would still copy the backdrop.
@@ -91,6 +87,7 @@ class PillSurface extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final brightness = theme.brightness;
+    final glass = GlassEffects.of(context);
     return Container(
       margin: margin,
       // `passthrough` so the pill's height comes from its controls: the glass
@@ -98,28 +95,46 @@ class PillSurface extends StatelessWidget {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          // The glass, painted under everything else the bar draws.
+          // The surface, painted under everything else the bar draws.
           if (t > 0)
             Positioned.fill(
-              child: LiquidGlassLayer(
-                settings: LiquidGlassSettings.ios27Regular(
-                  brightness: brightness,
-                ),
-                // `defaultAppearance` rather than a per-shape appearance: the
-                // pill holds a single shape, and the layer-level appearance is
-                // the cheaper shader path.
-                defaultAppearance: LiquidGlassAppearance.ios27Regular(
-                  brightness: brightness,
-                ).copyWith(visibility: t),
-                // The layer sizes itself from this box; the shape takes the
-                // capsule's whole area and paints no content of its own.
-                child: LiquidGlass(
-                  shape: LiquidRoundedSuperellipse(
-                    borderRadius: radius.topLeft.x,
-                  ),
-                  child: const SizedBox.expand(),
-                ),
-              ),
+              child: glass
+                  ? LiquidGlassLayer(
+                      settings: LiquidGlassSettings.ios27Regular(
+                        brightness: brightness,
+                      ),
+                      // `defaultAppearance` rather than a per-shape appearance:
+                      // the pill holds a single shape, and the layer-level
+                      // appearance is the cheaper shader path.
+                      defaultAppearance: LiquidGlassAppearance.ios27Regular(
+                        brightness: brightness,
+                      ).copyWith(visibility: t),
+                      // The layer sizes itself from this box; the shape takes
+                      // the capsule's whole area and paints no content of its
+                      // own.
+                      child: LiquidGlass(
+                        shape: LiquidRoundedSuperellipse(
+                          borderRadius: radius.topLeft.x,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    )
+                  // Solid fallback: the same capsule, filled from the theme
+                  // and edged with a hairline, faded by the same [t]. No
+                  // backdrop copy, no shader pass.
+                  : DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHigh.withValues(
+                          alpha: t,
+                        ),
+                        borderRadius: radius,
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: _kPillBorderOpacity * t,
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           // The shadow lives outside the glass layer: the layer's backdrop
           // pass is bounded by the capsule, while a box shadow has to spill

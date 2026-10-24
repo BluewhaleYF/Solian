@@ -12,6 +12,8 @@ import 'package:island/posts/compose.dart';
 import 'package:island/posts/screens/compose_post.dart';
 import 'package:island/posts/widgets/compose/publishers_modal.dart';
 import 'package:island/shared/widgets/alert.dart';
+import 'package:island/shared/widgets/glass_effects.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -109,12 +111,11 @@ class PostQuickReply extends HookConsumerWidget {
     }
 
     const kInputChipHeight = 54.0;
+    const radius = BorderRadius.all(Radius.circular(28));
 
     return publishers.when(
-      data: (data) => Material(
-        elevation: 2,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(28),
+      data: (data) => _GlassReplySurface(
+        radius: radius,
         child: Container(
           constraints: BoxConstraints(minHeight: kInputChipHeight),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -209,6 +210,71 @@ class PostQuickReply extends HookConsumerWidget {
       ),
       loading: () => const SizedBox.shrink(),
       error: (e, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// The reply composer's floating shell: the same iOS 27 material as the chat
+/// composer and the pill headers.
+///
+/// Unlike a pill header this surface is never at rest — it always floats over
+/// the post it answers — so its material is always on. [GlassEffects] off
+/// paints the same capsule as a flat theme fill instead, which is the point of
+/// the setting: no backdrop copy and no shader pass per frame.
+class _GlassReplySurface extends StatelessWidget {
+  final BorderRadius radius;
+  final Widget child;
+
+  const _GlassReplySurface({required this.radius, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          if (GlassEffects.of(context))
+            Positioned.fill(
+              child: LiquidGlassLayer(
+                settings: LiquidGlassSettings.ios27Regular(
+                  brightness: theme.brightness,
+                ),
+                defaultAppearance: LiquidGlassAppearance.ios27Regular(
+                  brightness: theme.brightness,
+                ),
+                child: LiquidGlass(
+                  shape: LiquidRoundedSuperellipse(
+                    borderRadius: radius.topLeft.x,
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            )
+          else
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: radius,
+                ),
+              ),
+            ),
+          Material(type: MaterialType.transparency, child: child),
+        ],
+      ),
     );
   }
 }

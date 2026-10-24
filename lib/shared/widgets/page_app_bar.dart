@@ -15,11 +15,16 @@ import 'package:island/shared/widgets/app_scaffold.dart';
 /// On the wide layout the rail replaces the drawer, so the same button expands
 /// and collapses the rail over every destination instead.
 class SolDrawerButton extends StatelessWidget {
-  const SolDrawerButton({super.key});
+  final Color? color;
+  const SolDrawerButton({super.key, this.color});
 
   @override
   Widget build(BuildContext context) {
+    // An explicit [color] wins in both layouts: callers pass it when the
+    // button sits on a custom backdrop (e.g. the account header image) where
+    // the theme's app bar foreground would be unreadable.
     final foreground =
+        color ??
         Theme.of(context).appBarTheme.foregroundColor ??
         Theme.of(context).colorScheme.onSurface;
     final rail = NavigationRailScope.maybeOf(context);
@@ -72,7 +77,8 @@ class PageAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foreground = theme.appBarTheme.foregroundColor ?? colorScheme.onSurface;
+    final foreground =
+        theme.appBarTheme.foregroundColor ?? colorScheme.onSurface;
 
     return AppBar(
       automaticallyImplyLeading: false,
@@ -88,11 +94,7 @@ class PageAppBar extends StatelessWidget implements PreferredSizeWidget {
           title ??
           (titleText == null
               ? null
-              : Text(
-                  titleText!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                )),
+              : Text(titleText!, maxLines: 1, overflow: TextOverflow.ellipsis)),
       actions: actions,
       bottom: bottom,
     );
@@ -114,7 +116,9 @@ class _PageLeadingButton extends StatelessWidget {
     if (context.router.canPop()) {
       final useIosArrow = defaultTargetPlatform == TargetPlatform.iOS;
       return IconButton(
-        icon: Icon(useIosArrow ? Symbols.arrow_back_ios_new : Symbols.arrow_back),
+        icon: Icon(
+          useIosArrow ? Symbols.arrow_back_ios_new : Symbols.arrow_back,
+        ),
         color: foreground,
         tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         onPressed: () => context.router.maybePop(),

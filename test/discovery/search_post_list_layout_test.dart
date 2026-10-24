@@ -229,17 +229,17 @@ void main() {
     );
 
     // Its icon sits at the capsule's left inset, and the section picker starts
-    // at the same x as the explore bar's picker: drawer box 36..60, picker
-    // icon 88..108 — one control row apart, matching explore exactly.
+    // at the same x as the explore bar's picker: drawer box 40..64, picker
+    // icon 92..112 — one control row apart, matching explore exactly.
     expect(
       tester.getRect(find.byIcon(Symbols.menu_rounded)).left,
-      closeTo(36, 1),
+      closeTo(40, 1),
     );
     final pickerIcon = find.descendant(
       of: find.byType(PillAppBar),
       matching: find.byIcon(Symbols.article),
     );
-    expect(tester.getRect(pickerIcon).left, closeTo(88, 1));
+    expect(tester.getRect(pickerIcon).left, closeTo(92, 1));
 
     await disposeTree(tester);
   });
@@ -449,6 +449,8 @@ void main() {
     expect(find.byIcon(Symbols.cloud), findsNothing);
 
     await tester.tap(filterAction());
+    // One frame for the switch to start, then its animation.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byIcon(Symbols.cloud), findsOneWidget);
 

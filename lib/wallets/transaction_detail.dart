@@ -14,6 +14,8 @@ import 'package:island/wallets/wallet.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 
 part 'transaction_detail.g.dart';
 
@@ -36,21 +38,43 @@ class TransactionDetailScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionAsync = ref.watch(transactionDetailProvider(transactionId));
+    final transactionAsync = ref.watch(
+      transactionDetailProvider(transactionId),
+    );
+
+    final statusTop = MediaQuery.paddingOf(context).top;
 
     return AppScaffold(
       isNoBackground: false,
-      appBar: AppBar(
-        title: Text('transactionDetails'.tr()),
-        leading: IconButton(
-          icon: const Icon(Symbols.arrow_back),
-          onPressed: () => context.router.pop(),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Symbols.arrow_back),
+              onPressed: () => context.router.pop(),
+            ),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'transactionDetails'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+      // The pill floats over the body; the band is reserved inside the
+      // content's own scroll view so it slides under the glass.
       body: transactionAsync.when(
         data: (transaction) => _TransactionDetailContent(
           transaction: transaction,
           currentWalletId: currentWalletId,
+          topInset: statusTop + kPillAppBarHeight,
           onStatusChanged: () {
             ref.invalidate(transactionDetailProvider(transactionId));
             ref.invalidate(walletCurrentProvider);
@@ -61,7 +85,8 @@ class TransactionDetailScreen extends HookConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => ResponseErrorWidget(
           error: error,
-          onRetry: () => ref.invalidate(transactionDetailProvider(transactionId)),
+          onRetry: () =>
+              ref.invalidate(transactionDetailProvider(transactionId)),
         ),
       ),
     );
@@ -81,7 +106,9 @@ class TransactionDetailEmbedded extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionAsync = ref.watch(transactionDetailProvider(transactionId));
+    final transactionAsync = ref.watch(
+      transactionDetailProvider(transactionId),
+    );
 
     return transactionAsync.when(
       data: (transaction) => _TransactionDetailContent(
@@ -108,10 +135,16 @@ class _TransactionDetailContent extends ConsumerWidget {
   final String? currentWalletId;
   final VoidCallback? onStatusChanged;
 
+  /// Band reserved for chrome floating over this content — the route's pill.
+  /// Applied inside the scroll view so the receipt starts below the capsule
+  /// and then slides under the glass.
+  final double topInset;
+
   const _TransactionDetailContent({
     required this.transaction,
     this.currentWalletId,
     this.onStatusChanged,
+    this.topInset = 0,
   });
 
   String _getStatusText(int status) {
@@ -167,7 +200,8 @@ class _TransactionDetailContent extends ConsumerWidget {
     final isPayee = currentWalletId == transaction.payeeWalletId;
 
     final content = SingleChildScrollView(
-      padding: EdgeInsets.all(isWide ? 32 : 24),
+      padding: (isWide ? const EdgeInsets.all(32) : const EdgeInsets.all(24))
+          .add(EdgeInsets.only(top: topInset)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -181,7 +215,8 @@ class _TransactionDetailContent extends ConsumerWidget {
 
           // Transaction info section
           _buildInfoSection(context, theme),
-          if (transaction.isFrozen || transaction.requireConfirmation ||
+          if (transaction.isFrozen ||
+              transaction.requireConfirmation ||
               transaction.frozenAt != null ||
               transaction.expiresAt != null ||
               transaction.confirmedAt != null) ...[
@@ -278,7 +313,10 @@ class _TransactionDetailContent extends ConsumerWidget {
           ),
           const Gap(8),
           Text(
-            DateFormat.yMMMd().add_Hm().format(transaction.createdAt).toUpperCase(),
+            DateFormat.yMMMd()
+                .add_Hm()
+                .format(transaction.createdAt)
+                .toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
@@ -412,12 +450,7 @@ class _TransactionDetailContent extends ConsumerWidget {
   Widget _buildRemarksSection(BuildContext context, ThemeData theme) {
     return _SectionCard(
       title: 'remarks'.tr(),
-      children: [
-        Text(
-          transaction.remarks!,
-          style: theme.textTheme.bodyMedium,
-        ),
-      ],
+      children: [Text(transaction.remarks!, style: theme.textTheme.bodyMedium)],
     );
   }
 
@@ -454,10 +487,7 @@ class _TransactionDetailContent extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmTransaction(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmTransaction(BuildContext context, WidgetRef ref) async {
     final client = ref.read(solarNetworkClientProvider);
     try {
       showLoadingModal(context);
@@ -473,10 +503,7 @@ class _TransactionDetailContent extends ConsumerWidget {
     }
   }
 
-  Future<void> _rejectTransaction(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _rejectTransaction(BuildContext context, WidgetRef ref) async {
     final client = ref.read(solarNetworkClientProvider);
     try {
       showLoadingModal(context);

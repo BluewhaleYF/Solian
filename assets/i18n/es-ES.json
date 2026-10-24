@@ -1867,6 +1867,8 @@
   "settingsDefaultScreen": "Default Screen",
   "settingsDesktop": "Escritorio",
   "settingsDisableAnimation": "Disable Animation",
+  "settingsGlassEffects": "Efectos de cristal",
+  "settingsGlassEffectsHelper": "Dibuja las cabeceras y el compositor como cristal líquido. Desactívalo para usar superficies sólidas y ahorrar batería.",
   "settingsDisplayLanguage": "Display Language",
   "settingsEnableTts": "Activar TTS",
   "settingsEnterToSend": "Enter to Send",

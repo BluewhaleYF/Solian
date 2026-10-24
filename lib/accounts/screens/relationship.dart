@@ -11,6 +11,8 @@ import 'package:island/accounts/widgets/account/account_pfc.dart';
 import 'package:island/accounts/widgets/account/account_picker.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/core/database.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island_ui_foundation/island_ui_foundation.dart';
@@ -94,8 +96,7 @@ class RelationshipListNotifier
       await db.saveRelationships(items);
 
       // Update state with fresh data
-      final total =
-          int.tryParse(response.headers['x-total']?.first ?? '') ?? 0;
+      final total = int.tryParse(response.headers['x-total']?.first ?? '') ?? 0;
       state = AsyncData(
         PaginationState(
           items: items,
@@ -269,12 +270,18 @@ class RelationshipListTile extends StatelessWidget {
                     onPressed: submitting ? null : onCancel,
                     icon: const Icon(Symbols.close),
                   ),
-                if (isEstablished && (onUpdateStatus != null || onBlockWithExpiry != null || onMuteWithExpiry != null || onDelete != null || onToggleCloseFriend != null))
+                if (isEstablished &&
+                    (onUpdateStatus != null ||
+                        onBlockWithExpiry != null ||
+                        onMuteWithExpiry != null ||
+                        onDelete != null ||
+                        onToggleCloseFriend != null))
                   PopupMenuButton(
                     padding: EdgeInsets.zero,
                     icon: const Icon(Symbols.more_vert),
                     itemBuilder: (context) => [
-                      if (relationship.status >= 100 && onToggleCloseFriend != null)
+                      if (relationship.status >= 100 &&
+                          onToggleCloseFriend != null)
                         PopupMenuItem(
                           onTap: () => onToggleCloseFriend?.call(relationship),
                           child: Row(
@@ -293,9 +300,11 @@ class RelationshipListTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (relationship.status > -100 && onBlockWithExpiry != null)
+                      if (relationship.status > -100 &&
+                          onBlockWithExpiry != null)
                         PopupMenuItem(
-                          onTap: () => _showBlockExpirySheet(context, relationship),
+                          onTap: () =>
+                              _showBlockExpirySheet(context, relationship),
                           child: Row(
                             children: [
                               const Icon(Symbols.block),
@@ -304,7 +313,8 @@ class RelationshipListTile extends StatelessWidget {
                             ],
                           ),
                         )
-                      else if (relationship.status <= -100 && onUpdateStatus != null)
+                      else if (relationship.status <= -100 &&
+                          onUpdateStatus != null)
                         PopupMenuItem(
                           onTap: () => onUpdateStatus?.call(relationship, 100),
                           child: Row(
@@ -317,7 +327,8 @@ class RelationshipListTile extends StatelessWidget {
                         ),
                       if (onMuteWithExpiry != null)
                         PopupMenuItem(
-                          onTap: () => _showMuteExpirySheet(context, relationship),
+                          onTap: () =>
+                              _showMuteExpirySheet(context, relationship),
                           child: Row(
                             children: [
                               Icon(
@@ -379,10 +390,7 @@ class RelationshipListTile extends StatelessWidget {
     );
   }
 
-  void _showMuteExpirySheet(
-    BuildContext context,
-    SnRelationship relationship,
-  ) {
+  void _showMuteExpirySheet(BuildContext context, SnRelationship relationship) {
     final isMuted = relationship.status == -50;
     showModalBottomSheet(
       context: context,
@@ -395,15 +403,14 @@ class RelationshipListTile extends StatelessWidget {
         onDurationSelected: (expiresIn, degradeTo) {
           onMuteWithExpiry?.call(relationship, expiresIn);
         },
-        onUnmute: isMuted ? () => onMuteWithExpiry?.call(relationship, null) : null,
+        onUnmute: isMuted
+            ? () => onMuteWithExpiry?.call(relationship, null)
+            : null,
       ),
     );
   }
 
-  void _showAliasEditor(
-    BuildContext context,
-    SnRelationship relationship,
-  ) {
+  void _showAliasEditor(BuildContext context, SnRelationship relationship) {
     final controller = TextEditingController(text: relationship.alias ?? '');
     showDialog(
       context: context,
@@ -677,10 +684,7 @@ class RelationshipScreen extends HookConsumerWidget {
       }
     }
 
-    Future<void> updateAlias(
-      SnRelationship relationship,
-      String? alias,
-    ) async {
+    Future<void> updateAlias(SnRelationship relationship, String? alias) async {
       try {
         final client = ref.read(apiClientProvider);
         await client.patch(
@@ -688,9 +692,7 @@ class RelationshipScreen extends HookConsumerWidget {
           data: {'alias': alias},
         );
         relationshipNotifier.refresh();
-        showSnackBar(
-          alias != null ? 'aliasUpdated'.tr() : 'aliasCleared'.tr(),
-        );
+        showSnackBar(alias != null ? 'aliasUpdated'.tr() : 'aliasCleared'.tr());
       } catch (err) {
         showErrorAlert(err);
       }
@@ -699,59 +701,85 @@ class RelationshipScreen extends HookConsumerWidget {
     final user = ref.watch(userInfoProvider);
     final requests = ref.watch(friendRequestProvider);
 
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The relationship list sliding under the pill drives its glass.
+    final fade = useValueNotifier(0.0);
+
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('relationships').tr(),
-        leading: const AutoLeadingButton(),
-      ),
-      body: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Symbols.add),
-            title: Text('addFriend').tr(),
-            subtitle: Text('addFriendHint').tr(),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-            onTap: addFriend,
-          ),
-          if (requests.hasValue && requests.value!.isNotEmpty)
-            ListTile(
-              leading: const Icon(Symbols.send),
-              title: Text('friendRequests').tr(),
-              subtitle: Text(
-                'friendRequestsHint'.plural(requests.value!.length),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.sm),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'relationships'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
               ),
+            ),
+          ],
+        ),
+      ),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => updatePillFade(notification, fade),
+        child: Column(
+          children: [
+            // The pill's band: the first row starts below the capsule and
+            // slides up under the glass as the list scrolls.
+            SizedBox(height: statusTop + kPillAppBarHeight),
+            ListTile(
+              leading: const Icon(Symbols.add),
+              title: Text('addFriend').tr(),
+              subtitle: Text('addFriendHint').tr(),
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              onTap: () {
-                showModalBottomSheet(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (context) => const _SentFriendRequestsSheet(),
-                );
-              },
+              onTap: addFriend,
             ),
-          const Divider(height: 1),
-          Expanded(
-            child: PaginationList(
-              padding: EdgeInsets.zero,
-              provider: relationshipListNotifierProvider,
-              notifier: relationshipListNotifierProvider.notifier,
-              itemBuilder: (context, index, relationship) {
-                return RelationshipListTile(
-                  relationship: relationship,
-                  submitting: submitting.value,
-                  currentUserId: user.value?.id,
-                  showRelatedAccount: true,
-                  onUpdateStatus: updateRelationship,
-                  onBlockWithExpiry: blockWithExpiry,
-                  onMuteWithExpiry: muteWithExpiry,
-                  onDelete: deleteRelationship,
-                  onToggleCloseFriend: toggleCloseFriend,
-                  onUpdateAlias: updateAlias,
-                );
-              },
+            if (requests.hasValue && requests.value!.isNotEmpty)
+              ListTile(
+                leading: const Icon(Symbols.send),
+                title: Text('friendRequests').tr(),
+                subtitle: Text(
+                  'friendRequestsHint'.plural(requests.value!.length),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                onTap: () {
+                  showModalBottomSheet(
+                    isScrollControlled: true,
+                    context: context,
+                    builder: (context) => const _SentFriendRequestsSheet(),
+                  );
+                },
+              ),
+            const Divider(height: 1),
+            Expanded(
+              child: PaginationList(
+                padding: EdgeInsets.zero,
+                provider: relationshipListNotifierProvider,
+                notifier: relationshipListNotifierProvider.notifier,
+                itemBuilder: (context, index, relationship) {
+                  return RelationshipListTile(
+                    relationship: relationship,
+                    submitting: submitting.value,
+                    currentUserId: user.value?.id,
+                    showRelatedAccount: true,
+                    onUpdateStatus: updateRelationship,
+                    onBlockWithExpiry: blockWithExpiry,
+                    onMuteWithExpiry: muteWithExpiry,
+                    onDelete: deleteRelationship,
+                    onToggleCloseFriend: toggleCloseFriend,
+                    onUpdateAlias: updateAlias,
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

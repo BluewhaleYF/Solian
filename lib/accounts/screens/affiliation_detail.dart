@@ -6,6 +6,8 @@ import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/core/services/time.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/alert.dart';
@@ -33,180 +35,201 @@ class AffiliationDetailScreen extends HookConsumerWidget {
     // proxy (server bypasses permission checks for superusers).
     final canManage = ref.watch(userInfoProvider).value?.isSuperuser == true;
 
+    final statusTop = MediaQuery.paddingOf(context).top;
+
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('affiliationDetail').tr(),
-        scrolledUnderElevation: 4,
-        actions: [
-          spellAsync.whenOrNull(
-                data: (spell) => PopupMenuButton<String>(
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'copy',
-                      child: ListTile(
-                        leading: const Icon(Symbols.content_copy),
-                        title: Text('affiliationCopyWord').tr(),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    if (canManage)
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'affiliationDetail'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+              ),
+            ),
+            spellAsync.whenOrNull(
+                  data: (spell) => PopupMenuButton<String>(
+                    itemBuilder: (context) => [
                       PopupMenuItem(
-                        value: 'delete',
+                        value: 'copy',
                         child: ListTile(
-                          leading: Icon(
-                            Symbols.delete,
-                            color: colorScheme.error,
-                          ),
-                          title: Text('affiliationDelete').tr(),
+                          leading: const Icon(Symbols.content_copy),
+                          title: Text('affiliationCopyWord').tr(),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                  ],
-                  onSelected: (value) async {
-                    if (value == 'copy') {
-                      await Clipboard.setData(ClipboardData(text: spell.spell));
-                      if (context.mounted) {
-                        showSnackBar('affiliationCopied'.tr());
-                      }
-                    } else if (value == 'delete') {
-                      _confirmDelete(context, ref, spell);
-                    }
-                  },
-                ),
-              ) ??
-              const SizedBox.shrink(),
-          const Gap(8),
-        ],
-      ),
-      body: spellAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => EmptyState(
-          icon: Symbols.error,
-          title: 'error'.tr(),
-          iconColor: colorScheme.error,
-          action: OutlinedButton(
-            onPressed: () => ref.invalidate(affiliationSpellProvider(id)),
-            child: Text('retry').tr(),
-          ),
-        ),
-        data: (spell) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
+                      if (canManage)
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: Icon(
+                              Symbols.delete,
+                              color: colorScheme.error,
+                            ),
+                            title: Text('affiliationDelete').tr(),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                    ],
+                    onSelected: (value) async {
+                      if (value == 'copy') {
                         await Clipboard.setData(
                           ClipboardData(text: spell.spell),
                         );
                         if (context.mounted) {
                           showSnackBar('affiliationCopied'.tr());
                         }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              spell.spell,
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Symbols.content_copy,
-                              size: 18,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'affiliationCreatedBy'.tr(
-                        namedArgs: {
-                          'date': spell.createdAt.toLocal().formatSystem(),
-                        },
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (spell.isRegistrationInvite) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                      } else if (value == 'delete') {
+                        _confirmDelete(context, ref, spell);
+                      }
+                    },
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Symbols.card_giftcard,
-                          size: 24,
+                ) ??
+                const SizedBox.shrink(),
+          ],
+        ),
+      ),
+      // The pill floats over the body, so its band is taken out by hand.
+      body: Padding(
+        padding: EdgeInsets.only(top: statusTop + kPillAppBarHeight),
+        child: spellAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => EmptyState(
+            icon: Symbols.error,
+            title: 'error'.tr(),
+            iconColor: colorScheme.error,
+            action: OutlinedButton(
+              onPressed: () => ref.invalidate(affiliationSpellProvider(id)),
+              child: Text('retry').tr(),
+            ),
+          ),
+          data: (spell) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                elevation: 0,
+                color: colorScheme.surfaceContainerLow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: spell.spell),
+                          );
+                          if (context.mounted) {
+                            showSnackBar('affiliationCopied'.tr());
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                spell.spell,
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Symbols.content_copy,
+                                size: 18,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'affiliationCreatedBy'.tr(
+                          namedArgs: {
+                            'date': spell.createdAt.toLocal().formatSystem(),
+                          },
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'affiliationInviteDescription',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ).tr(),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                child: Row(
-                  children: [
-                    Text(
-                      'affiliationResults',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+              if (spell.isRegistrationInvite) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    color: colorScheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Symbols.card_giftcard,
+                            size: 24,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'affiliationInviteDescription',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ).tr(),
+                          ),
+                        ],
                       ),
-                    ).tr(),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
-              Expanded(child: _ResultsList(spellId: id)),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'affiliationResults',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ).tr(),
+                    ],
+                  ),
+                ),
+                Expanded(child: _ResultsList(spellId: id)),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -348,6 +348,27 @@ void main() {
     expect(_barBlurSigma(tester), kBottomNavBlurSigma);
   });
 
+  testWidgets('the bar subtree survives a hide and show', (tester) async {
+    // The filter node has to stay mounted while the blur animates: swapping
+    // it for the bare child at sigma 0 rebuilds the bar's whole subtree on the
+    // first frame. For the native glass bar that is a `UiKitView` teardown
+    // mid-fade, which shows as a bar that pops out instead of dissolving.
+    await tester.pumpWidget(
+      _app(_tallList(), hideDuration: const Duration(seconds: 1)),
+    );
+    final barElement = tester.element(find.byKey(_barChildKey));
+
+    await tester.drag(find.byType(ListView), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    expect(_barOffset(tester), 1.0);
+    expect(tester.element(find.byKey(_barChildKey)), same(barElement));
+
+    await tester.drag(find.byType(ListView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(_barOffset(tester), 0.0);
+    expect(tester.element(find.byKey(_barChildKey)), same(barElement));
+  });
+
   _shellWiringTests();
 }
 

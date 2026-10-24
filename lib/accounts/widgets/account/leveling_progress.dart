@@ -56,6 +56,7 @@ class LevelingProgressCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,

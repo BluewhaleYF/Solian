@@ -12,6 +12,8 @@ import 'package:island/shared/widgets/app_scaffold.dart' hide PageBackButton;
 import 'package:island/route.gr.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:styled_widget/styled_widget.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
@@ -81,23 +83,37 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
     final userAsync = ref.watch(userInfoProvider);
     final isAdmin = userAsync.value?.isSuperuser == true;
 
+    final statusTop = MediaQuery.paddingOf(context).top;
+
     return AppScaffold(
-      appBar: AppBar(
-        title: Text('tickets').tr(),
-        leading: const AutoLeadingButton(),
-        actions: [
-          if (isAdmin)
-            IconButton(
-              icon: Icon(
-                _showAllTickets ? Icons.people_outline : Icons.person_outline,
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.xs),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'tickets'.tr(),
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
               ),
-              tooltip: _showAllTickets
-                  ? 'Showing all tickets'
-                  : 'Showing my tickets',
-              onPressed: _toggleShowAllTickets,
             ),
-          const Gap(8),
-        ],
+            if (isAdmin)
+              IconButton(
+                icon: Icon(
+                  _showAllTickets ? Icons.people_outline : Icons.person_outline,
+                ),
+                tooltip: _showAllTickets
+                    ? 'Showing all tickets'
+                    : 'Showing my tickets',
+                onPressed: _toggleShowAllTickets,
+              ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
@@ -105,6 +121,9 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
           showAbuseReportSheet(context);
         },
       ).padding(bottom: MediaQuery.paddingOf(context).bottom + 8),
+      // The pill floats over the body, so its band is reserved *inside* the
+      // list: the first ticket starts below the capsule and later ones scroll
+      // under the glass.
       body: FutureBuilder<List<SnTicket>>(
         future: _ticketsFuture,
         builder: (context, snapshot) {
@@ -117,7 +136,10 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
             return RefreshIndicator(
               onRefresh: _refreshTickets,
               child: ListView.separated(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.only(
+                  top: statusTop + kPillAppBarHeight + SolSpace.lg,
+                  bottom: SolSpace.lg,
+                ),
                 itemCount: tickets.length,
                 separatorBuilder: (_, _) => const Gap(16),
                 itemBuilder: (context, index) {

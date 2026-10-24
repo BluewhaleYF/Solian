@@ -25,6 +25,7 @@ import 'package:island/core/session_cookie.dart';
 import 'package:island/core/network/relay.dart';
 import 'package:island/shared/services/location_search_service.dart';
 import 'package:island/shared/widgets/app_wrapper.dart';
+import 'package:island/shared/widgets/glass_effects.dart';
 import 'package:island/firebase_options.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/auth_wiring.dart';
@@ -634,8 +635,14 @@ class IslandApp extends HookConsumerWidget {
                       OverlayEntry(
                         builder: (_) {
                           return WindowScaffold(
-                            child: AppWrapper(
-                              child: child ?? const SizedBox.shrink(),
+                            // One scope for every glass surface in the app:
+                            // flipping the setting repaints the pills and the
+                            // composers solid without touching their layouts.
+                            child: GlassEffects(
+                              enabled: settings.glassEffects,
+                              child: AppWrapper(
+                                child: child ?? const SizedBox.shrink(),
+                              ),
                             ),
                           );
                         },

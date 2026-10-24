@@ -4,7 +4,6 @@ import 'package:island/core/config.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
-import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -103,38 +102,4 @@ void main() {
     await disposeTree(tester);
   });
 
-  testWidgets('scrolling the body drives the pill surface', (tester) async {
-    final fade = await pump(tester, appBarOverContent: true);
-
-    BoxDecoration surface() =>
-        (tester
-                .widgetList<DecoratedBox>(
-                  find.descendant(
-                    of: find.byType(PillBarSurface),
-                    matching: find.byType(DecoratedBox),
-                  ),
-                )
-                .first
-                .decoration
-            as BoxDecoration);
-
-    expect(fade.value, 0, reason: 'a body at its origin leaves the pill flat');
-    expect(surface().color!.a, 0);
-    expect(
-      find.byType(BackdropFilter),
-      findsNothing,
-      reason: 'nothing has slid under the bar yet, so there is no layer',
-    );
-
-    await tester.drag(find.byType(ListView), const Offset(0, -200));
-    for (var i = 0; i < 12; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-
-    expect(fade.value, 1.0);
-    expect(surface().color!.a, closeTo(kPillGlassTint, 0.01));
-    expect(find.byType(BackdropFilter), findsOneWidget);
-
-    await disposeTree(tester);
-  });
 }

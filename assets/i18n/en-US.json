@@ -3553,6 +3553,8 @@
   "settingsDesktopRpcServerEnabled": "Enable RPC Server",
   "settingsDesktopRpcServerEnabledHelper": "Allow third-party apps to set your activity status via Discord-compatible RPC protocol.",
   "settingsDisableAnimation": "Disable Animation",
+  "settingsGlassEffects": "Glass Effects",
+  "settingsGlassEffectsHelper": "Draw pill headers and composers as liquid glass. Turn off for solid surfaces that save battery.",
   "settingsDisplayLanguage": "Display Language",
   "settingsEnableTts": "Enable TTS",
   "settingsEnterToSend": "Enter to Send",

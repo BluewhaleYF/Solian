@@ -5,6 +5,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/accounts/punishment_service.dart';
 import 'package:island/accounts/screens/punishment_create_sheet.dart';
@@ -101,27 +104,45 @@ class PunishmentsScreen extends HookConsumerWidget {
     final user = ref.watch(userInfoProvider).value;
     final isSuperuser = user?.isSuperuser == true;
     final isAdminMode = ref.watch(punishmentAdminModeProvider);
+    final statusTop = MediaQuery.paddingOf(context).top;
+    // The punishment list sliding under the pill drives its glass.
+    final fade = useValueNotifier(0.0);
 
     return AppScaffold(
-      appBar: AppBar(
-        title: Text(isAdminMode ? 'adminPunishments'.tr() : 'punishments'.tr()),
-        actions: isSuperuser
-            ? [
-                IconButton(
-                  icon: Icon(
-                    isAdminMode ? Symbols.person : Symbols.admin_panel_settings,
-                  ),
-                  onPressed: () {
-                    ref.read(punishmentAdminModeProvider.notifier).toggle();
-                    ref.invalidate(punishmentsNotifierProvider);
-                  },
-                  tooltip: isAdminMode
-                      ? 'myPunishments'.tr()
-                      : 'adminPunishments'.tr(),
+      appBarOverContent: true,
+      appBar: PillAppBar(
+        fade: fade,
+        statusTop: statusTop,
+        child: Row(
+          children: [
+            const AutoLeadingButton(),
+            const Gap(SolSpace.sm),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isAdminMode ? 'adminPunishments'.tr() : 'punishments'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
                 ),
-                const Gap(8),
-              ]
-            : null,
+              ),
+            ),
+            if (isSuperuser)
+              IconButton(
+                icon: Icon(
+                  isAdminMode ? Symbols.person : Symbols.admin_panel_settings,
+                ),
+                onPressed: () {
+                  ref.read(punishmentAdminModeProvider.notifier).toggle();
+                  ref.invalidate(punishmentsNotifierProvider);
+                },
+                tooltip: isAdminMode
+                    ? 'myPunishments'.tr()
+                    : 'adminPunishments'.tr(),
+              ),
+          ],
+        ),
       ),
       floatingActionButton: isSuperuser
           ? FloatingActionButton.extended(
@@ -130,21 +151,25 @@ class PunishmentsScreen extends HookConsumerWidget {
               label: Text('createPunishment'.tr()),
             )
           : null,
-      body: PaginationList<SnAccountPunishment>(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        provider: punishmentsNotifierProvider,
-        notifier: punishmentsNotifierProvider.notifier,
-        itemBuilder: (context, idx, punishment) {
-          return PunishmentCard(
-            punishment: punishment,
-            showAccount: true,
-            showCreator: true,
-            canDelete: isSuperuser && isAdminMode,
-            onDelete: isSuperuser && isAdminMode
-                ? () => _confirmDelete(context, ref, punishment)
-                : null,
-          );
-        },
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) => updatePillFade(notification, fade),
+        child: PaginationList<SnAccountPunishment>(
+          // The pill's band, so the first card starts below the capsule.
+          padding: EdgeInsets.fromLTRB(0, statusTop + kPillAppBarHeight, 0, 8),
+          provider: punishmentsNotifierProvider,
+          notifier: punishmentsNotifierProvider.notifier,
+          itemBuilder: (context, idx, punishment) {
+            return PunishmentCard(
+              punishment: punishment,
+              showAccount: true,
+              showCreator: true,
+              canDelete: isSuperuser && isAdminMode,
+              onDelete: isSuperuser && isAdminMode
+                  ? () => _confirmDelete(context, ref, punishment)
+                  : null,
+            );
+          },
+        ),
       ),
     );
   }
