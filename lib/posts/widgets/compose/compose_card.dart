@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/creators/screens/publishers_form.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/posts/compose.dart';
@@ -301,9 +302,13 @@ class PostComposeForm extends HookConsumerWidget {
   }
 }
 
-/// Material-style banner shown above the compose content when the current
-/// post will be auto-chained to the publisher's previous post. Tapping the
-/// cancel action opts this submission out of auto-chaining.
+/// Card shown above the compose content when the current post will be
+/// auto-chained to the publisher's previous post. Tapping the cancel action
+/// opts this submission out of auto-chaining.
+///
+/// It floats like the other compose indicators ([ComposeIndicatorCard])
+/// rather than bleeding edge to edge, so the composer reads as one stack of
+/// cards over the page ground.
 class _AutoChainBanner extends StatelessWidget {
   final VoidCallback onCancel;
 
@@ -312,10 +317,15 @@ class _AutoChainBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.secondaryContainer.withOpacity(0.55),
+    return ComposeIndicatorCard(
+      color: theme.colorScheme.secondaryContainer,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.fromLTRB(
+          SolSpace.lg,
+          SolSpace.xs,
+          SolSpace.sm,
+          SolSpace.xs,
+        ),
         child: Row(
           children: [
             Icon(
@@ -323,7 +333,7 @@ class _AutoChainBanner extends StatelessWidget {
               size: 18,
               color: theme.colorScheme.onSecondaryContainer,
             ),
-            const Gap(8),
+            const Gap(SolSpace.sm),
             Expanded(
               child: Text(
                 'postWillBeChained'.tr(),

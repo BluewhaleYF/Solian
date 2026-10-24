@@ -7,6 +7,44 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:island/core/theme.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 
+/// A compose indicator — editing, replying, forwarding, chaining — as a
+/// floating card.
+///
+/// The composer page has no page-wide surface: the fields sit straight on the
+/// page ground, so these indicators are the only chrome above them. They
+/// float like the cards in the feed instead of bleeding off both edges as
+/// bands: inset from the form's sides, one corner radius, one tone.
+class ComposeIndicatorCard extends StatelessWidget {
+  final Widget child;
+
+  /// The card's fill. Defaults to the feed's card tone; a caller overrides it
+  /// to mark a mode (editing) with a color.
+  final Color? color;
+
+  const ComposeIndicatorCard({super.key, required this.child, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      // The top margin is what floats the card: the first indicator keeps
+      // clear of the top edge, and a second one steps down by the same gap.
+      margin: const EdgeInsets.fromLTRB(
+        SolSpace.lg,
+        SolSpace.md,
+        SolSpace.lg,
+        0,
+      ),
+      decoration: BoxDecoration(
+        color: color ?? Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: SolRadius.cardRadius,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
+}
+
 /// A reusable widget for displaying info banners in compose screens.
 /// Shows editing, reply, forward, and chain information.
 class ComposeInfoBanner extends StatelessWidget {
@@ -31,109 +69,93 @@ class ComposeInfoBanner extends StatelessWidget {
     final effectiveForwardedPost = forwardingTo ?? originalPost?.forwardedPost;
     final effectiveChainedPost = chainingTo ?? originalPost?.chainedPost;
 
-    // Show editing banner when editing a post
-    if (originalPost != null) {
-      return Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Row(
-              children: [
-                Icon(
-                  Symbols.edit,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                const Gap(8),
-                Text(
-                  'postEditing'.tr(),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ).padding(horizontal: 16, vertical: 8),
-          ),
-          // Show reply/forward/chain banners below editing banner if they exist
-          if (effectiveRepliedPost != null)
-            _buildReferenceBanner(
-              context,
-              effectiveRepliedPost,
-              Symbols.reply,
-              'postReplyingTo'.tr(),
-            ),
-          if (effectiveForwardedPost != null)
-            _buildReferenceBanner(
-              context,
-              effectiveForwardedPost,
-              Symbols.forward,
-              'postForwardingTo'.tr(),
-            ),
-          if (effectiveChainedPost != null)
-            _buildReferenceBanner(
-              context,
-              effectiveChainedPost,
-              Symbols.link,
-              'postChainingTo'.tr(),
-            ),
-        ],
-      );
-    }
+    // One list, one shape: every indicator is a floating card, and an edited
+    // post simply carries its mode's card above the ones it also relates to.
+    final indicators = <Widget>[
+      if (originalPost != null) _buildEditingIndicator(context),
+      if (effectiveRepliedPost != null)
+        _buildReferenceIndicator(
+          context,
+          effectiveRepliedPost,
+          Symbols.reply,
+          'postReplyingTo'.tr(),
+        ),
+      if (effectiveForwardedPost != null)
+        _buildReferenceIndicator(
+          context,
+          effectiveForwardedPost,
+          Symbols.forward,
+          'postForwardingTo'.tr(),
+        ),
+      if (effectiveChainedPost != null)
+        _buildReferenceIndicator(
+          context,
+          effectiveChainedPost,
+          Symbols.link,
+          'postChainingTo'.tr(),
+        ),
+    ];
 
-    // Show banner for replies
-    if (effectiveRepliedPost != null) {
-      return _buildReferenceBanner(
-        context,
-        effectiveRepliedPost,
-        Symbols.reply,
-        'postReplyingTo'.tr(),
-      );
-    }
+    if (indicators.isEmpty) return const SizedBox.shrink();
 
-    // Show banner for forwards
-    if (effectiveForwardedPost != null) {
-      return _buildReferenceBanner(
-        context,
-        effectiveForwardedPost,
-        Symbols.forward,
-        'postForwardingTo'.tr(),
-      );
-    }
-
-    // Show banner for chained posts
-    if (effectiveChainedPost != null) {
-      return _buildReferenceBanner(
-        context,
-        effectiveChainedPost,
-        Symbols.link,
-        'postChainingTo'.tr(),
-      );
-    }
-
-    return const SizedBox.shrink();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: indicators,
+    );
   }
 
-  Widget _buildReferenceBanner(
+  /// The card announcing that an existing post is being edited.
+  Widget _buildEditingIndicator(BuildContext context) {
+    final theme = Theme.of(context);
+    return ComposeIndicatorCard(
+      color: theme.colorScheme.primaryContainer,
+      child: Row(
+        children: [
+          Icon(
+            Symbols.edit,
+            size: 16,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+          const Gap(8),
+          Text(
+            'postEditing'.tr(),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ).padding(horizontal: SolSpace.lg, vertical: SolSpace.sm),
+    );
+  }
+
+  /// The card naming the post a reply, forward or chain relates to, with the
+  /// post itself inlined below the label.
+  Widget _buildReferenceIndicator(
     BuildContext context,
     SnPost post,
     IconData icon,
-    String labelKey,
+    String label,
   ) {
-    return Container(
-      width: double.infinity,
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+    final theme = Theme.of(context);
+    return ComposeIndicatorCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16),
-              const Gap(4),
-              Text(labelKey, style: Theme.of(context).textTheme.labelMedium),
+              Icon(icon, size: 16, color: theme.colorScheme.primary),
+              const Gap(6),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ],
           ),
-          const Gap(8),
+          const Gap(SolSpace.sm),
           CompactReferencePost(
             post: post,
             onTap: onReferencePostTap != null
@@ -141,7 +163,7 @@ class ComposeInfoBanner extends StatelessWidget {
                 : null,
           ),
         ],
-      ).padding(all: 16),
+      ).padding(all: SolSpace.lg),
     );
   }
 }
@@ -204,78 +226,75 @@ class CompactReferencePost extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: SolRadius.cardRadius,
-        ),
-        child: Row(
-          children: [
-            _buildProfilePicture(context),
-            const Gap(8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _getDisplayName(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+      // Flat: the indicator card around this row is the card, so the
+      // reference post itself carries no surface of its own — only its
+      // content and the affordance that opens it.
+      child: Row(
+        children: [
+          _buildProfilePicture(context),
+          const Gap(8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _getDisplayName(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                  if (post.title?.isNotEmpty ?? false)
-                    Text(
-                      post.title!,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                ),
+                if (post.title?.isNotEmpty ?? false)
+                  Text(
+                    post.title!,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface,
                     ),
-                  if (post.content?.isNotEmpty ?? false)
-                    Text(
-                      post.content!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (post.content?.isNotEmpty ?? false)
+                  Text(
+                    post.content!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  if (post.attachments.isNotEmpty)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Symbols.attach_file,
-                          size: 12,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (post.attachments.isNotEmpty)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Symbols.attach_file,
+                        size: 12,
+                        color: theme.colorScheme.secondary,
+                      ),
+                      const Gap(4),
+                      Text(
+                        'postHasAttachments'.plural(post.attachments.length),
+                        style: TextStyle(
                           color: theme.colorScheme.secondary,
+                          fontSize: 11,
                         ),
-                        const Gap(4),
-                        Text(
-                          'postHasAttachments'.plural(post.attachments.length),
-                          style: TextStyle(
-                            color: theme.colorScheme.secondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
-            if (onTap != null)
-              Icon(
-                Symbols.open_in_full,
-                size: 16,
-                color: theme.colorScheme.outline,
-              ),
-          ],
-        ),
+          ),
+          if (onTap != null)
+            Icon(
+              Symbols.open_in_full,
+              size: 16,
+              color: theme.colorScheme.outline,
+            ),
+        ],
       ),
     );
   }
