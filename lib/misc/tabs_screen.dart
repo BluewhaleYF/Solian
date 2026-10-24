@@ -22,13 +22,26 @@ import 'package:island/core/navigation/tab_destinations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/chat/pods/chat_summary.dart';
 import 'package:native_glass_navbar/native_glass_navbar.dart';
-import 'package:island/core/navigation/tab_action_button.dart';
 
 const double kBottomNavHeight = 56.0;
 
-/// The native glass bar draws a real `UITabBar`, which accepts at most five
-/// items — wider user-customized layouts keep the Material pill bar.
-const int kNativeGlassMaxTabs = 5;
+/// The native glass bar reserves one slot for its trailing action button, so
+/// its tab list holds at most four destinations. Wider user-customized
+/// layouts keep the Material pill bar.
+///
+/// The count is also why the bar's action slot is never toggled: adding or
+/// removing it makes the plugin tear down and rebuild the whole `UITabBar`
+/// (`setViewControllers(animated: false)`), which snaps every item width and
+/// leaves the selection indicator a frame behind.
+const int kNativeGlassMaxTabs = 4;
+
+/// Id of the destination the glass bar's action slot stands in for.
+///
+/// Search is a destination of its own, but on iOS it is the bar's action
+/// button instead of a tab: that keeps the tab count fixed across tabs (a
+/// per-tab action would change the native item count) and gives the glass
+/// bar the search affordance Liquid Glass draws in that slot anyway.
+const String kGlassActionDestinationId = 'search';
 
 /// Blur sigma the incoming tab page settles out of, at the start of the
 /// transition. Subtle: the page must stay readable while it resolves.
@@ -67,10 +80,7 @@ Widget _buildTabTransition(
   Animation<double> animation,
 ) {
   final theme = Theme.of(context);
-  final curved = CurvedAnimation(
-    parent: animation,
-    curve: Curves.easeOutCubic,
-  );
+  final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
 
   // The incoming page resolves out of a blur instead of sliding in: the
   // stack's outgoing page is already gone (auto_route keeps an
@@ -111,8 +121,13 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   /// expands it instead of sliding a drawer over the page.
   bool _railExpanded = false;
 
-  /// Tab id → registered action, published by [TabActionRegistration]s.
-  final _tabActions = TabActionState();
+  /// Last index the glass bar showed selected.
+  ///
+  /// The bar has no tab for the action destination (Search on iOS), so while
+  /// Search is open no tab represents the route. Holding the previous index
+  /// keeps the indicator where the user left it, which is also what the
+  /// native bar does when its action button is tapped.
+  int _lastGlassIndex = 0;
 
   void _toggleRail() {
     setState(() => _railExpanded = !_railExpanded);
@@ -129,16 +144,8 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   }
 
   @override
-  void dispose() {
-    _tabActions.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Installed above the tab stack so each tab can publish its action into
-    // the shell; registrations are keyed by destination id.
-    return TabActionScope(state: _tabActions, child: _buildShell(context));
+    return _buildShell(context);
   }
 
   Widget _buildShell(BuildContext context) {
@@ -146,9 +153,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
 
     final token = ref.watch(tokenProvider);
     final userInfo = ref.watch(userInfoProvider);
-    final notificationUnreadCount = ref.watch(
-      notificationUnreadCountProvider,
-    );
+    final notificationUnreadCount = ref.watch(notificationUnreadCountProvider);
     final chatUnreadCount = ref.watch(chatUnreadCountProvider);
     final wideScreen = isWideScreen(context);
 
@@ -160,13 +165,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     final navCustomization = ref.watch(navCustomizationProvider);
     final destinationById = {for (final d in allDestinations) d.id: d};
     final defaultRailNavIds = allDestinations.map((e) => e.id).toList();
-
-    // The active tab's id, for resolving its registered action button. The
-    // action map is read through the notifier so a tab registering after
-    // this build (it does so post-frame) still reaches the bar.
-    final activeDestination = allDestinations
-        .where((d) => d.routeIndex == tabsRouter.activeIndex)
-        .firstOrNull;
 
     List<TabDestination> resolveDestinations({
       required List<String> preferredIds,
@@ -285,9 +283,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
 
     void onRailDestinationSelected(int index) {
       if (index < 0 || index >= displayedRailDestinations.length) return;
-      tabsRouter.setActiveIndex(
-        displayedRailDestinations[index].routeIndex,
-      );
+      tabsRouter.setActiveIndex(displayedRailDestinations[index].routeIndex);
       if (_railExpanded) setState(() => _railExpanded = false);
     }
 
@@ -520,30 +516,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       );
     }
 
-    // The active tab's registered action, as a floating button. Every
-    // surface that is not the iOS glass bar shows it this way — the glass
-    // bar paints its own inside the bar, so it skips this widget.
-    final fallbackActionFab = ValueListenableBuilder(
-      valueListenable: _tabActions,
-      builder: (context, actions, _) {
-        final action = activeDestination == null
-            ? null
-            : actions[activeDestination.id];
-        if (action == null) return const SizedBox.shrink();
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.paddingOf(context).bottom,
-          ),
-          child: FloatingActionButton(
-            heroTag: 'tab-action-${activeDestination!.id}',
-            tooltip: action.label,
-            onPressed: action.onPressed,
-            child: Icon(action.icon),
-          ),
-        );
-      },
-    );
-
     if (wideScreen) {
       if (railDestinations.isEmpty) {
         // No rail to expand: the drawer stays the navigation surface.
@@ -555,7 +527,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                 : null,
             drawerEnableOpenDragGesture: drawerEnabled,
             backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-            floatingActionButton: fallbackActionFab,
             body: SafeArea(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
@@ -573,7 +544,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
       final railContent = Scaffold(
         key: rootScaffoldKey,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        floatingActionButton: fallbackActionFab,
         body: SafeArea(
           child: Row(
             children: [
@@ -582,9 +552,7 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
                 extended: railExpanded,
                 // Extended rails always paint their labels and reject any
                 // other label type.
-                labelType: railExpanded
-                    ? NavigationRailLabelType.none
-                    : null,
+                labelType: railExpanded ? NavigationRailLabelType.none : null,
                 // Short windows cannot fit every destination, and the
                 // expanded rail shows all of them.
                 scrollable: true,
@@ -667,55 +635,73 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     // On iOS the glass bar renders a real `UITabBar`; the widget swaps to
     // [pillBar] itself when the async Liquid Glass support check comes back
     // negative (older iOS), so an unsupported device just keeps the pill bar.
-    // It also rejects more than five items, so a wider user-customized
-    // layout stays on the pill bar outright.
+    //
+    // Search rides in the bar's action slot instead of as a tab, and neither
+    // the slot nor the tab list is ever toggled: the plugin tears the whole
+    // `UITabBar` down and rebuilds it (`setViewControllers(animated: false)`)
+    // whenever the item count or the action's presence changes. That rebuild
+    // is what showed as a width snap plus a selection indicator a frame
+    // behind. A fixed shape means only in-place property updates reach UIKit.
+    final glassDestinations = bottomNavDestinations
+        .where((destination) => destination.id != kGlassActionDestinationId)
+        .toList(growable: false);
+    // A bar with no tab at all is not a navigation bar; a user who only kept
+    // Search on the bottom bar keeps the pill bar, which does draw it.
     final useGlassBar =
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
-        bottomNavDestinations.length <= kNativeGlassMaxTabs;
-    final tabActions = ValueListenableBuilder(
-      valueListenable: _tabActions,
-      builder: (context, actions, _) {
-        final action = activeDestination == null
-            ? null
-            : actions[activeDestination.id];
-        return useGlassBar
-            ? NativeGlassNavBar(
-                currentIndex: bottomNavCurrentIndex,
-                onTap: onBottomNavDestinationSelected,
-                // The plugin's action button sits inside the bar, which is
-                // exactly where the tabs' old floating buttons belonged.
-                actionButton: action == null
-                    ? null
-                    : TabBarActionButton(
-                        symbol: action.symbol,
-                        onTap: action.onPressed,
-                      ),
-                tabs: [
-                  for (final destination in bottomNavDestinations)
-                    NativeGlassNavBarItem(
-                      // A titleless `UITabBar` item paints icon-only, which
-                      // is the look we want; the plugin exposes no label
-                      // toggle. Trade-off: VoiceOver then reads the tab
-                      // position only.
-                      label: '',
-                      symbol: destination.nativeSymbol,
-                      selectedSymbol: destination.nativeSelectedSymbol,
-                      badgeValue: switch (destination.id) {
-                        'chat' when (chatUnreadCount.value ?? 0) > 0 =>
-                          '${chatUnreadCount.value}',
-                        'account'
-                            when (notificationUnreadCount.value ?? 0) > 0 =>
-                          '${notificationUnreadCount.value}',
-                        _ => null,
-                      },
-                    ),
-                ],
-                fallback: pillBar,
-              )
-            : pillBar;
-      },
+        glassDestinations.isNotEmpty &&
+        glassDestinations.length <= kNativeGlassMaxTabs;
+    final selectedGlassIndex = glassDestinations.indexWhere(
+      (d) => d.routeIndex == tabsRouter.activeIndex,
     );
+    // While the action destination is open no glass tab matches the route;
+    // the indicator stays on the tab the user came from.
+    if (selectedGlassIndex >= 0) _lastGlassIndex = selectedGlassIndex;
+    final lastGlass = glassDestinations.isEmpty
+        ? 0
+        : glassDestinations.length - 1;
+    final glassCurrentIndex = selectedGlassIndex >= 0
+        ? selectedGlassIndex
+        : _lastGlassIndex.clamp(0, lastGlass);
+    final searchDestination = allDestinations.firstWhere(
+      (d) => d.id == kGlassActionDestinationId,
+    );
+    final bottomBar = useGlassBar
+        ? NativeGlassNavBar(
+            currentIndex: glassCurrentIndex,
+            onTap: (index) {
+              if (index < 0 || index >= glassDestinations.length) return;
+              tabsRouter.setActiveIndex(glassDestinations[index].routeIndex);
+            },
+            // Constant: tapping opens Search, which has no tab of its own here.
+            actionButton: TabBarActionButton(
+              symbol: 'magnifyingglass',
+              onTap: () =>
+                  tabsRouter.setActiveIndex(searchDestination.routeIndex),
+            ),
+            tabs: [
+              for (final destination in glassDestinations)
+                NativeGlassNavBarItem(
+                  // A titleless `UITabBar` item paints icon-only, which
+                  // is the look we want; the plugin exposes no label
+                  // toggle. Trade-off: VoiceOver then reads the tab
+                  // position only.
+                  label: '',
+                  symbol: destination.nativeSymbol,
+                  selectedSymbol: destination.nativeSelectedSymbol,
+                  badgeValue: switch (destination.id) {
+                    'chat' when (chatUnreadCount.value ?? 0) > 0 =>
+                      '${chatUnreadCount.value}',
+                    'account' when (notificationUnreadCount.value ?? 0) > 0 =>
+                      '${notificationUnreadCount.value}',
+                    _ => null,
+                  },
+                ),
+            ],
+            fallback: pillBar,
+          )
+        : pillBar;
     final scaffold = Scaffold(
       key: rootScaffoldKey,
       backgroundColor: Colors.transparent,
@@ -726,14 +712,11 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
           : null,
       drawerEnableOpenDragGesture: drawerEnabled,
       body: mobileTabBody,
-      // The glass bar paints the action inside itself, so the floating
-      // button would duplicate it there.
-      floatingActionButton: useGlassBar ? null : fallbackActionFab,
       bottomNavigationBar: ConditionalBottomNav(
         routes: bottomNavRoutes,
         // The drawer's only entry point is the app bar's leading slot, so the
         // tab bar no longer carries a leading menu destination.
-        child: tabActions,
+        child: bottomBar,
       ),
     );
 

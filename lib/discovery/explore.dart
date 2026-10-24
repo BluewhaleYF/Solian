@@ -37,7 +37,6 @@ import 'package:island/posts/widgets/compose/post_list.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
 import 'package:island/core/config.dart';
 import 'package:island/core/theme.dart';
-import 'package:island/core/navigation/tab_action_button.dart';
 
 @RoutePage()
 class ExploreScreen extends HookConsumerWidget {
@@ -121,59 +120,47 @@ class ExploreScreen extends HookConsumerWidget {
       onOpenPost: isWide ? openPost : null,
     );
 
-    // The compose action is registered with the shell's action button scope,
-    // which paints it once per active tab instead of as a floating button.
-    // The registration wraps both layouts, and only offers the action when
-    // signed in — a signed-out visitor gets no button.
-    final composeAction = userInfo.value != null
-        ? _buildComposeAction(context)
+    final composeFab = userInfo.value != null
+        ? _buildComposeFab(context)
         : null;
+
     if (isWide) {
       // Two even columns around a floating detail card: the feed keeps its
       // reading measure on the left and yields half the window to the pane
       // while it is open. The pill spans only the feed's column so it never
       // floats over the pane; the feed still drives `fade`, so its rows slide
       // underneath and the surface glassies in exactly as it does on narrow.
-      return TabActionRegistration(
-        id: 'explore',
-        spec: composeAction,
-        child: AppScaffold(
-          isNoBackground: false,
-          appBar: null,
-          body: _WideExploreLayout(
-            fade: fade,
-            detailPostId: detailPostId.value,
-            barControls: _buildExploreBarControls(
-              currentFilter: exploreSettings.filter,
-              hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
-              handleFilterChange: handleFilterChange,
-            ),
-            feed: feed,
-            onOpenFullPage: (id) =>
-                context.router.push(PostDetailRoute(id: id)),
-            // Reference posts and replies tapped inside the pane swap the
-            // pane's own content; only the feed's first open picks between the
-            // pane and a full-page article/blog route.
-            onOpenInPane: (id) => detailPostId.value = id,
-            onCloseDetail: () => detailPostId.value = null,
+      return AppScaffold(
+        isNoBackground: false,
+        appBar: null,
+        floatingActionButton: composeFab,
+        body: _WideExploreLayout(
+          fade: fade,
+          detailPostId: detailPostId.value,
+          barControls: _buildExploreBarControls(
+            currentFilter: exploreSettings.filter,
+            hasSubscriptionFiltersApplied: hasSubscriptionFiltersApplied,
+            handleFilterChange: handleFilterChange,
           ),
+          feed: feed,
+          onOpenFullPage: (id) => context.router.push(PostDetailRoute(id: id)),
+          // Reference posts and replies tapped inside the pane swap the
+          // pane's own content; only the feed's first open picks between the
+          // pane and a full-page article/blog route.
+          onOpenInPane: (id) => detailPostId.value = id,
+          onCloseDetail: () => detailPostId.value = null,
         ),
       );
     }
 
-    return TabActionRegistration(
-      id: 'explore',
-      spec: composeAction,
-      child: AppScaffold(body: feed),
-    );
+    return AppScaffold(floatingActionButton: composeFab, body: feed);
   }
 
-  /// The compose action's spec: the sheet offering post/article/blog.
-  TabActionButtonSpec _buildComposeAction(BuildContext context) {
-    return TabActionButtonSpec(
-      symbol: 'plus',
-      icon: Symbols.create,
-      label: 'postCompose'.tr(),
+  /// The compose action, shared by both layouts.
+  Widget _buildComposeFab(BuildContext context) {
+    return FloatingActionButton(
+      heroTag: 'explore-fab',
+      child: const Icon(Symbols.create),
       onPressed: () {
         final parentContext = context;
         showModalBottomSheet(
@@ -216,7 +203,7 @@ class ExploreScreen extends HookConsumerWidget {
           ),
         );
       },
-    );
+    ).padding(bottom: MediaQuery.of(context).padding.bottom);
   }
 
   /// The pill's single row of controls: the drawer toggle and the section
@@ -706,7 +693,6 @@ class _DetailPaneCard extends HookConsumerWidget {
     );
   }
 }
-
 
 class _DiscoveryActivityItem extends ConsumerWidget {
   final Map<String, dynamic> data;

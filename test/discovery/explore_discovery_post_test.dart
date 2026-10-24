@@ -216,7 +216,7 @@ void main() {
     for (final e in find.byType(SingleChildScrollView).evaluate()) {
       final box = e.renderObject as RenderBox?;
       // ignore: avoid_print
-      print('SCROLL ${box?.size} at ${box == null ? null : box.localToGlobal(Offset.zero)}');
+      print('SCROLL ${box?.size} at ${box?.localToGlobal(Offset.zero)}');
     }
     // ignore: avoid_print
     print('POST ROW: ${tester.getRect(find.byType(PostActionableItem))}');

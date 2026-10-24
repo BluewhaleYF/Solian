@@ -23,6 +23,7 @@ import 'package:island/posts/screens/post_detail.dart';
 import 'package:island/posts/widgets/compose/post_item.dart';
 import 'package:island/posts/widgets/compose/post_shared.dart';
 import 'package:island/shared/widgets/layouts/sidebar_panel_host.dart';
+import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';

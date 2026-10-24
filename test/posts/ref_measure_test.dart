@@ -80,7 +80,7 @@ void main() {
       for (final e in f.evaluate()) {
         final box = e.renderObject as RenderBox?;
         // ignore: avoid_print
-        print('$label ${box?.size} at ${box == null ? null : box.localToGlobal(Offset.zero)}');
+        print('$label ${box?.size} at ${box?.localToGlobal(Offset.zero)}');
       }
     }
 

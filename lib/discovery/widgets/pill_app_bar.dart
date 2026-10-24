@@ -3,9 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/shared/widgets/pill_surface.dart';
 
-export 'package:island/shared/widgets/pill_surface.dart'
-    show kPillGlassSigma, kPillGlassTint;
-
 /// Scroll distance over which a pill header finishes fading its surface in.
 ///
 /// Tied to roughly one header height: by the time the content has meaningfully
@@ -57,16 +54,16 @@ bool updatePillFade(
 /// Wide pages give the bar the window's full width, so the pill spans the
 /// viewport rather than hugging the feed column.
 ///
-/// [loading] is forwarded to the [PillSurface], which draws the capsule's own
-/// border as a spinner while it is set.
+/// [loading] is forwarded to the [PillSurface], which laps the capsule's own
+/// outline as a spinner while it is set.
 class PillBarSurface extends StatelessWidget {
-  /// Fade position, 0..1. Drives the blur, tint, border and shadow together.
+  /// Fade position, 0..1. Drives the glass and shadow together.
   final double t;
 
   /// Status-bar inset, reserved inside the bar's own box.
   final double statusTop;
 
-  /// Draw the capsule's border as a spinner instead of a hairline.
+  /// Lap the capsule's outline as a spinner.
   final bool loading;
 
   final Widget child;
@@ -117,7 +114,7 @@ class PillSliverAppBar extends StatelessWidget {
   /// Status-bar inset, measured by the caller so the sliver's height matches.
   final double statusTop;
 
-  /// Draw the capsule's border as a spinner instead of a hairline.
+  /// Lap the capsule's outline as a spinner.
   final bool loading;
 
   /// The bar's single row of controls.
@@ -170,7 +167,7 @@ class PillAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Status-bar inset, measured by the caller so the bar's height matches.
   final double statusTop;
 
-  /// Draw the capsule's border as a spinner instead of a hairline.
+  /// Lap the capsule's outline as a spinner.
   final bool loading;
 
   final Widget child;

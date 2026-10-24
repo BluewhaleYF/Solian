@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:island/core/services/responsive.dart';
@@ -51,7 +53,7 @@ bool shouldShowBottomNavForCurrentPath(
 }
 
 /// Tab shell's bottom bar: shows only on the configured tab routes, and — on
-/// those — slides out of the way while the page below is scrolled down (see
+/// those — dissolves out of the way while the page below is scrolled down (see
 /// [ScrollHideBottomNav]). Use it as a `Scaffold.bottomNavigationBar`.
 class ConditionalBottomNav extends StatefulWidget {
   final Widget child;
@@ -81,7 +83,8 @@ class _ConditionalBottomNavState extends State<ConditionalBottomNav>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _sizeAnimation;
-  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _blurAnimation;
   bool _isVisible = true;
 
   @override
@@ -92,14 +95,19 @@ class _ConditionalBottomNavState extends State<ConditionalBottomNav>
       duration: const Duration(milliseconds: 300),
       value: 1.0, // Start fully visible
     );
-    _sizeAnimation = CurvedAnimation(
+    final curve = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOutCubic,
     );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
-        );
+    _sizeAnimation = curve;
+    _fadeAnimation = curve;
+    // Blur runs inverse to the fade: the bar smears out as it leaves and
+    // resolves as it returns, so the motion reads as defocus rather than as
+    // a slab travelling across the page.
+    _blurAnimation = Tween<double>(
+      begin: kBottomNavBlurSigma,
+      end: 0,
+    ).animate(curve);
   }
 
   @override
@@ -141,13 +149,14 @@ class _ConditionalBottomNavState extends State<ConditionalBottomNav>
     return SizeTransition(
       sizeFactor: _sizeAnimation,
       axisAlignment: -1,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: ClipRect(
+      child: ClipRect(
+        child: _BlurFade(
+          fade: _fadeAnimation,
+          blur: _blurAnimation,
           child: IgnorePointer(
             ignoring: !_isVisible,
-            // Scrolling only translates the bar inside its slot: the height
-            // that keeps the body clear of it stays put. Only the route check
+            // The slot keeps its height and only paint leaves, so the body
+            // never jumps when the bar comes or goes. Only the route check
             // above collapses the slot.
             child: ScrollHideBottomNav(
               enabled: _isVisible,
@@ -181,10 +190,15 @@ const double kBottomNavHideScrollThreshold = 8.0;
 /// Default time the bar takes to leave or return.
 const Duration kBottomNavHideDuration = Duration(milliseconds: 200);
 
-/// Bottom bar that slides off the bottom edge while the page below it is
-/// scrolled down.
+/// Blur a leaving bar dissolves through.
 ///
-/// The bar keeps the height its slot declared: only paint moves. The
+/// Only the bar is filtered, never the page under it: the smear is what makes
+/// the capsule's edge stop reading as a hard line part-way through the fade.
+const double kBottomNavBlurSigma = 12.0;
+
+/// Bottom bar that dissolves away while the page below it is scrolled down.
+///
+/// The bar keeps the height its slot declared: only paint is affected. The
 /// `MediaQuery.padding.bottom` a `Scaffold` injects into its body under
 /// `extendBody: true` therefore never changes, so the page does not jump when
 /// the bar leaves or returns, and the body stays reachable in the meantime.
@@ -229,7 +243,8 @@ class ScrollHideBottomNav extends StatefulWidget {
 class _ScrollHideBottomNavState extends State<ScrollHideBottomNav>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<Offset> _hideOffset;
+  late final Animation<double> _hideOpacity;
+  late final Animation<double> _hideBlur;
   ScrollNotificationObserverState? _observer;
   double _scrollDistance = 0;
 
@@ -240,10 +255,20 @@ class _ScrollHideBottomNavState extends State<ScrollHideBottomNav>
       vsync: this,
       duration: widget.hideDuration,
     );
-    _hideOffset = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(0, 1),
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    final curve = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    // The bar defocuses out of its slot instead of sliding out of it: the
+    // capsule's blurred edge reads as a hard line otherwise, and a full-width
+    // bar travelling down the page pulls the eye away from the content it is
+    // supposed to uncover. The blur peaks while the fade is mid-way and
+    // vanishes with it, so the bar never sits visible-but-smeared.
+    _hideOpacity = Tween<double>(begin: 1, end: 0).animate(curve);
+    _hideBlur = Tween<double>(
+      begin: 0,
+      end: kBottomNavBlurSigma,
+    ).animate(curve);
   }
 
   @override
@@ -324,10 +349,51 @@ class _ScrollHideBottomNavState extends State<ScrollHideBottomNav>
 
   @override
   Widget build(BuildContext context) {
-    // Clipped to the slot, so the parked bar costs nothing to paint and the
-    // body it uncovers takes the pointers.
+    // Clipped to the slot: the defocused bar paints nothing outside its own
+    // band, and the body it uncovers takes the pointers.
     return ClipRect(
-      child: SlideTransition(position: _hideOffset, child: widget.child),
+      child: _BlurFade(
+        fade: _hideOpacity,
+        blur: _hideBlur,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Fades [child] with [fade] while filtering it by [blur].
+///
+/// The blur is the bar's own content, never a [BackdropFilter]: a bottom bar
+/// dissolving has to smear itself, not whatever it is floating over.
+class _BlurFade extends StatelessWidget {
+  final Animation<double> fade;
+  final Animation<double> blur;
+  final Widget child;
+
+  const _BlurFade({
+    required this.fade,
+    required this.blur,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: fade,
+      child: AnimatedBuilder(
+        animation: blur,
+        child: child,
+        builder: (context, child) {
+          final sigma = blur.value;
+          // A zero filter still costs a save layer, so an unfiltered bar is
+          // the plain child.
+          if (sigma <= 0) return child!;
+          return ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+            child: child,
+          );
+        },
+      ),
     );
   }
 }

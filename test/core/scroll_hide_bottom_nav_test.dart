@@ -7,16 +7,31 @@ const double _barHeight = 72.0;
 const Key _bodyKey = Key('body');
 const Key _barChildKey = Key('bar-child');
 
-/// The vertical offset the bar is parked at: 0 is fully in its slot, 1 is one
-/// bar height below it (fully gone).
+/// How far the bar has dissolved out of its slot: 0 is fully visible, 1 is
+/// fully gone. The bar fades rather than slides, so this is the inverse of its
+/// opacity.
 double _barOffset(WidgetTester tester) {
-  final slide = tester.widget<SlideTransition>(
+  final fade = tester.widget<FadeTransition>(
     find.descendant(
       of: find.byType(ScrollHideBottomNav),
-      matching: find.byType(SlideTransition),
+      matching: find.byType(FadeTransition),
     ),
   );
-  return slide.position.value.dy;
+  return 1 - fade.opacity.value;
+}
+
+/// The blur sigma the bar is currently filtered by; 0 when it paints plainly.
+double _barBlurSigma(WidgetTester tester) {
+  final filtered = find.descendant(
+    of: find.byType(ScrollHideBottomNav),
+    matching: find.byType(ImageFiltered),
+  );
+  if (filtered.evaluate().isEmpty) return 0;
+  final filter = tester.widget<ImageFiltered>(filtered).imageFilter;
+  // `ImageFilter.blur` exposes no getters, so the sigma is recovered from the
+  // filter's own description.
+  final match = RegExp(r'blur\((\d+(?:\.\d+)?)').firstMatch('$filter');
+  return match == null ? 0 : double.parse(match.group(1)!);
 }
 
 /// The bottom inset the scaffold hands to its body. Under `extendBody: true`
@@ -304,6 +319,35 @@ void main() {
     expect(_barOffset(tester), 1.0);
   });
 
+  testWidgets('the bar dissolves rather than slides out of its slot', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(_tallList(), hideDuration: const Duration(seconds: 1)),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -200));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Mid-way the bar is both partly transparent and smeared: the motion is a
+    // defocus, and nothing under the slot translates.
+    final opacity = 1 - _barOffset(tester);
+    expect(opacity, greaterThan(0.0));
+    expect(opacity, lessThan(1.0));
+    expect(_barBlurSigma(tester), greaterThan(0.0));
+    expect(
+      find.descendant(
+        of: find.byType(ScrollHideBottomNav),
+        matching: find.byType(SlideTransition),
+      ),
+      findsNothing,
+    );
+
+    await tester.pumpAndSettle();
+    expect(_barOffset(tester), 1.0);
+    expect(_barBlurSigma(tester), kBottomNavBlurSigma);
+  });
+
   _shellWiringTests();
 }
 
@@ -316,18 +360,19 @@ void _shellWiringTests() {
     );
     await tester.pumpAndSettle();
 
-    double offset() => tester
-        .widget<SlideTransition>(
-          find
-              .descendant(
-                of: find.byType(ScrollHideBottomNav),
-                matching: find.byType(SlideTransition),
-              )
-              .first,
-        )
-        .position
-        .value
-        .dy;
+    double offset() =>
+        1 -
+        tester
+            .widget<FadeTransition>(
+              find
+                  .descendant(
+                    of: find.byType(ScrollHideBottomNav),
+                    matching: find.byType(FadeTransition),
+                  )
+                  .first,
+            )
+            .opacity
+            .value;
 
     expect(offset(), 0.0);
     await tester.drag(find.byType(ListView), const Offset(0, -200));

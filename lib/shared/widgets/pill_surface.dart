@@ -1,30 +1,21 @@
-import 'dart:ui' show ImageFilter;
-
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:island/core/theme.dart';
 
 /// Alpha of the pill's shadow once it is fully surfaced.
 const double _kPillShadowOpacity = 0.12;
 
-/// Blur radius of the glass once it is fully surfaced.
+/// Blur radius of the hand-rolled glass recipe used by the chat composer.
 ///
-/// Enough to dissolve the rows sliding under the bar without flattening them
-/// into a slab: at a lower radius the feed's own colours still bleed through
-/// blurred, which is what reads as glass rather than a translucent fill.
+/// The pills themselves no longer blur by hand: [PillSurface] draws the iOS 27
+/// material from `liquid_glass_renderer`. The composer still builds its shell
+/// from this recipe, so the values stay public until it moves over too.
 const double kPillGlassSigma = 14.0;
 
-/// Alpha of the glass tint once it is fully surfaced.
-///
-/// Well short of opaque on purpose — the blur, not the fill, is what separates
-/// the bar from what is behind it. The tint only has to pull the blurred
-/// pixels towards the page's own surface colour so the blur reads as dirtied
-/// glass.
+/// Alpha of that recipe's tint once it is fully surfaced.
 const double kPillGlassTint = 0.4;
 
-/// Alpha of the hairline outlining the glass once it is fully surfaced.
-///
-/// Public so other floating chrome built from the same glass recipe — the chat
-/// composer, for one — draws an edge of the same weight as the pills.
+/// Alpha of that recipe's hairline once it is fully surfaced.
 const double kPillBorderOpacity = 0.5;
 
 /// Stroke of the ring a loading pill paints along its own edge.
@@ -38,8 +29,8 @@ const Duration _kPillRingPeriod = Duration(milliseconds: 1100);
 
 /// How long the loading border takes to fade in or out.
 ///
-/// Long enough for the ring and the hairline to hand over to each other
-/// without a blink, short enough that the bar still reads as reacting at once.
+/// Long enough for the ring and the glass to hand over to each other without
+/// a blink, short enough that the bar still reads as reacting at once.
 const Duration _kPillRingFade = Duration(milliseconds: 220);
 
 /// The painted chrome of a floating pill.
@@ -49,18 +40,22 @@ const Duration _kPillRingFade = Duration(milliseconds: 220);
 /// Only the surface fades in with [t] (0..1): invisible at rest, glass over
 /// the content beneath once the page moves.
 ///
-/// The glass is a real [BackdropFilter] over that content, not a translucent
-/// fill: what is behind the capsule is blurred ([kPillGlassSigma]) and tinted
-/// towards `surfaceContainerLow` ([kPillGlassTint]). The tint alone would
-/// leave the content legible through the bar; the blur is what separates the
-/// layer, and it stays soft enough that the page's colours still bleed
-/// through. A hairline border and a soft shadow come with the fill, and both
-/// are scaled by [t], so a pill over an empty page stays completely flat.
+/// The glass is the iOS 27 regular material from `liquid_glass_renderer`: a
+/// [LiquidGlassLayer] samples the page behind the capsule and refracts it
+/// through a [LiquidRoundedSuperellipse], drawing the contour, glint and inner
+/// shadow from Apple's measured profile rather than from a flat blur + tint.
+/// The fade rides the material's own visibility, so the refraction, frost and
+/// lighting all dissolve together and the controls on top stay fully opaque.
+/// A soft shadow comes with the fill and is scaled by [t], so a pill over an
+/// empty page stays completely flat.
 ///
-/// A loading pill drops the hairline and laps its own outline instead: see
+/// The layer is skipped while [t] is 0: there is nothing under the bar, and
+/// an idle layer would still copy the backdrop.
+///
+/// A loading pill laps its own outline instead of sitting still: see
 /// [loading].
 class PillSurface extends StatelessWidget {
-  /// Fade position, 0..1. Drives the blur, tint, border and shadow together.
+  /// Fade position, 0..1. Drives the glass and shadow together.
   final double t;
 
   /// Outer margin of the capsule, painted against the container it floats in.
@@ -74,8 +69,7 @@ class PillSurface extends StatelessWidget {
 
   final Widget child;
 
-  /// Draw the capsule's border as a spinner: the hairline is dropped and an
-  /// arc laps the outline instead.
+  /// Draw the capsule's outline as a spinner: an arc laps the edge.
   ///
   /// The ring deliberately ignores [t]. The glass only exists once content has
   /// slid under the bar, but a loader has to be legible while the page is
@@ -94,7 +88,9 @@ class PillSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final brightness = theme.brightness;
     return Container(
       margin: margin,
       // `passthrough` so the pill's height comes from its controls: the glass
@@ -102,46 +98,38 @@ class PillSurface extends StatelessWidget {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          // The glass, painted under everything else the bar draws. At rest
-          // there is no layer at all: nothing to blur, and skipping it keeps
-          // the content free of a save layer while the page sits at the top.
+          // The glass, painted under everything else the bar draws.
           if (t > 0)
             Positioned.fill(
-              child: ClipRRect(
-                // Load-bearing clip: the filter's save layer is bounded by it,
-                // so the blur stays inside the capsule instead of smearing the
-                // window during a route transition.
-                borderRadius: radius,
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: kPillGlassSigma * t,
-                    sigmaY: kPillGlassSigma * t,
+              child: LiquidGlassLayer(
+                settings: LiquidGlassSettings.ios27Regular(
+                  brightness: brightness,
+                ),
+                // `defaultAppearance` rather than a per-shape appearance: the
+                // pill holds a single shape, and the layer-level appearance is
+                // the cheaper shader path.
+                defaultAppearance: LiquidGlassAppearance.ios27Regular(
+                  brightness: brightness,
+                ).copyWith(visibility: t),
+                // The layer sizes itself from this box; the shape takes the
+                // capsule's whole area and paints no content of its own.
+                child: LiquidGlass(
+                  shape: LiquidRoundedSuperellipse(
+                    borderRadius: radius.topLeft.x,
                   ),
-                  child: const ColoredBox(color: Color(0x00000000)),
+                  child: const SizedBox.expand(),
                 ),
               ),
             ),
-          // Animated rather than a bare [DecoratedBox]: entering and leaving
-          // the loading state swaps the hairline for the ring, and both halves
-          // of that swap should arrive and leave with the same timing instead
-          // of the edge snapping twice.
+          // The shadow lives outside the glass layer: the layer's backdrop
+          // pass is bounded by the capsule, while a box shadow has to spill
+          // past it. Animated rather than a bare [DecoratedBox] so entering
+          // and leaving the loading state dissolves the edge with the ring.
           AnimatedContainer(
             duration: _kPillRingFade,
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow.withValues(
-                alpha: kPillGlassTint * t,
-              ),
               borderRadius: radius,
-              // While loading the edge carries the spinner, so the static
-              // hairline stands down rather than doubling it up.
-              border: t == 0 || loading
-                  ? null
-                  : Border.all(
-                      color: colorScheme.outlineVariant.withValues(
-                        alpha: kPillBorderOpacity * t,
-                      ),
-                    ),
               boxShadow: t == 0
                   ? null
                   : [
@@ -245,7 +233,7 @@ class _PillRingPainter extends CustomPainter {
     if (size.isEmpty) return;
 
     // Inset by half the stroke so the ring's outer edge lands on the capsule
-    // outline the hairline used to draw, not half a stroke outside it.
+    // outline the glass contour follows, not half a stroke outside it.
     final outline = radius
         .toRRect(Offset.zero & size)
         .deflate(_kPillRingStroke / 2);

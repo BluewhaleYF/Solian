@@ -194,6 +194,8 @@ dependencies:
   flutter_image_compress: ^2.5.1
   flutter_quill: ^11.6.0
   markdown_quill: ^4.3.0
+  liquid_glass_renderer: ^1.0.0-dev.1
+  shared_preferences_platform_interface: ^2.4.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -315,6 +317,8 @@ msix_config:
   store: true
 
 dependency_overrides:
+  # liquid_glass_renderer 1.0 needs hooks 2, openmls pins hooks 1.
+  hooks: ^2.0.2
   # super_context_menu 0.9.1 pins device_info_plus <12 but livekit_client needs >=12; override to unblock
   device_info_plus: ^13.2.0
   # open_meteo pins flat_buffers ^23.

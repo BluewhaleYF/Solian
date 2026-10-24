@@ -4,6 +4,7 @@ import 'package:island/core/config.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/discovery/widgets/pill_app_bar.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
