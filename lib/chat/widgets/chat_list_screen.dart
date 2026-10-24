@@ -1209,8 +1209,14 @@ class ChatScreen extends HookConsumerWidget {
           ? SafeArea(
               child: Row(
                 children: [
-                  const ChatListWidget(isAside: true).padding(left: 8),
-                  const Gap(SolSpace.card),
+                  // One gutter (SolSpace.sm) on every edge of the split, so the
+                  // list pane reads as centred between the rail and the room
+                  // card instead of hugging the left at 8 while floating 20 off
+                  // the card. Matches the chat input's wide-screen margins.
+                  const ChatListWidget(isAside: true).padding(
+                    left: SolSpace.sm,
+                  ),
+                  const Gap(SolSpace.sm),
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
@@ -1234,7 +1240,7 @@ class ChatScreen extends HookConsumerWidget {
                           );
                         },
                       ),
-                    ).padding(top: 16, right: 8),
+                    ).padding(top: 16, right: SolSpace.sm),
                   ),
                 ],
               ),
