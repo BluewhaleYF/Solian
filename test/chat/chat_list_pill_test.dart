@@ -16,6 +16,8 @@ import 'package:island/core/database.dart';
 import 'package:island/core/network.dart';
 import 'package:island/data/database.dart';
 import 'package:island/discovery/widgets/pill_app_bar.dart';
+import 'package:island/shared/widgets/page_app_bar.dart';
+import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_network_sdk/solar_network_sdk.dart';
@@ -174,7 +176,9 @@ void main() {
     while (tester.takeException() != null) {}
   }
 
-  testWidgets('narrow: the rooms render under a glass pill', (tester) async {
+  testWidgets('narrow: the rooms render under the split glass header', (
+    tester,
+  ) async {
     await pumpList(
       tester,
       const Size(400, 800),
@@ -184,18 +188,21 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(ChatRoomListTile), findsNWidgets(2));
     expect(find.text('Design crew'), findsOneWidget);
-    expect(find.byType(PillAppBar), findsOneWidget);
+    // The portrait header is two separate glass surfaces: navigation on the
+    // left and the section picker on the right.
+    expect(find.byType(PillAppBar), findsNothing);
+    expect(find.byType(GlassNavigationButton), findsOneWidget);
+    expect(find.byType(PillSurface), findsNWidgets(2));
     // The switcher is the explore page's dropdown: one trigger naming the
     // current filter, and no leftover tab strip.
     expect(find.byType(TabBar), findsNothing);
     expect(find.byType(MenuAnchor), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
 
-    // The first room sits exactly under the capsule: the bar's band is reserved
-    // once, not once by the scaffold's spacer and again by the list.
+    // The first room sits exactly under the split header's band.
     expect(
       tester.getTopLeft(find.byType(ChatRoomListTile).first).dy,
-      closeTo(kPillAppBarHeight, 1),
+      closeTo(kChatSplitBarBand, 1),
     );
 
     await disposeTree(tester);

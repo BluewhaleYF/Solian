@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:island/core/navigation/navigation_rail_scope.dart';
 import 'package:island/core/theme.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
+import 'package:island/shared/widgets/pill_surface.dart';
 
 /// The navigation toggle shared by the root tabs.
 ///
@@ -51,6 +52,31 @@ class SolDrawerButton extends StatelessWidget {
       color: foreground,
       tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
       onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
+    );
+  }
+}
+
+/// A single glass-circle navigation toggle.
+///
+/// Pages without a header pill (the dashboard) and the portrait chat header use
+/// it as a standalone control: the same [SolDrawerButton] behaviour wrapped in
+/// the app's liquid-glass surface.
+class GlassNavigationButton extends StatelessWidget {
+  final Color? color;
+
+  const GlassNavigationButton({super.key, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return PillSurface(
+      t: 1,
+      margin: EdgeInsets.zero,
+      radius: SolRadius.pillRadius,
+      contentPadding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: SolDrawerButton(color: color),
+      ),
     );
   }
 }

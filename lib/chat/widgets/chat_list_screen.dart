@@ -41,6 +41,7 @@ import 'package:island/route.gr.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:island/shared/widgets/app_scaffold.dart';
 import 'package:island/shared/widgets/page_app_bar.dart';
+import 'package:island/shared/widgets/pill_surface.dart';
 import 'package:island/shared/widgets/confuse_spinner.dart';
 import 'package:island/shared/widgets/empty_state.dart';
 import 'package:island/shared/widgets/response.dart';
@@ -1488,6 +1489,94 @@ class _MarkAllReadButton extends ConsumerWidget {
   }
 }
 
+/// Height of each half of the portrait chat header. Matches the dashboard's
+/// standalone glass navigation control.
+const double _kChatSplitControlHeight = 48;
+
+/// Vertical band the split portrait chat header occupies below the status bar.
+///
+/// Kept public alongside the other pill bands so tests and neighbouring chrome
+/// can reserve the same space.
+const double kChatSplitBarBand =
+    kPillSideGutter + _kChatSplitControlHeight + SolSpace.xs;
+
+/// Portrait chat header, split into two independent glass surfaces.
+///
+/// The navigation toggle sits alone at the top-left, mirroring the dashboard;
+/// the section picker (and its trailing actions) keeps the top-right corner.
+class _ChatSplitBar extends StatelessWidget implements PreferredSizeWidget {
+  final double statusTop;
+  final TabController tabController;
+  final bool isSyncing;
+  final Color foreground;
+
+  const _ChatSplitBar({
+    required this.statusTop,
+    required this.tabController,
+    required this.isSyncing,
+    required this.foreground,
+  });
+
+  @override
+  Size get preferredSize => Size.fromHeight(statusTop + kChatSplitBarBand);
+
+  @override
+  Widget build(BuildContext context) {
+    final top = statusTop + kPillSideGutter;
+    return SizedBox(
+      height: preferredSize.height,
+      child: Stack(
+        children: [
+          Positioned(
+            left: kPillSideGutter,
+            top: top,
+            child: const GlassNavigationButton(),
+          ),
+          Positioned(
+            right: kPillSideGutter,
+            top: top,
+            child: SizedBox(
+              height: _kChatSplitControlHeight,
+              child: PillSurface(
+                t: 1,
+                margin: EdgeInsets.zero,
+                radius: SolRadius.pillRadius,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: SolSpace.xs,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ChatSectionButton(tabController: tabController),
+                      if (isSyncing)
+                        Padding(
+                          padding: const EdgeInsets.only(right: SolSpace.sm),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: ConfuseSpinner(
+                              size: 24,
+                              speed: 7,
+                              fontSize: 12,
+                              color: foreground.withOpacity(0.65),
+                            ),
+                          ),
+                        ),
+                      _MarkAllReadButton(color: foreground),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ChatListWidget extends HookConsumerWidget {
   final bool isAside;
   const ChatListWidget({super.key, this.isAside = false});
@@ -1574,6 +1663,8 @@ class ChatListWidget extends HookConsumerWidget {
     }, [lifecycleState.value]);
 
     final asideLayout = isAside || isWideScreen(context);
+    final isPortrait =
+        MediaQuery.orientationOf(context) == Orientation.portrait;
     final sidebarWidth = useState(320.0);
     const minSidebarWidth = 260.0;
     const maxSidebarWidth = 520.0;
@@ -1595,33 +1686,44 @@ class ChatListWidget extends HookConsumerWidget {
               chatGroups: chatGroups,
               onChatGroupsChanged: refreshChatGroups,
               accountId: accountId,
-              headerGap: kPillAppBarHeight,
-              onScroll: (notification) => updatePillFade(notification, fade),
+              headerGap: isPortrait ? kChatSplitBarBand : kPillAppBarHeight,
+              onScroll: isPortrait
+                  ? null
+                  : (notification) => updatePillFade(notification, fade),
             ),
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              child: PillAppBar(
-                fade: fade,
-                statusTop: 0,
-                child: Row(
-                  children: [
-                    // Same toggle the narrow page's pill carries, so the
-                    // navigation is reachable from the chat pane too — it
-                    // expands the rail on the wide layout.
-                    const SolDrawerButton(),
-                    const Gap(SolSpace.sm),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: _ChatSectionButton(tabController: tabController),
+              child: isPortrait
+                  ? _ChatSplitBar(
+                      statusTop: 0,
+                      tabController: tabController,
+                      isSyncing: false,
+                      foreground: Theme.of(context).colorScheme.onSurface,
+                    )
+                  : PillAppBar(
+                      fade: fade,
+                      statusTop: 0,
+                      child: Row(
+                        children: [
+                          // Same toggle the narrow page's pill carries, so the
+                          // navigation is reachable from the chat pane too — it
+                          // expands the rail on the wide layout.
+                          const SolDrawerButton(),
+                          const Gap(SolSpace.sm),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: _ChatSectionButton(
+                                tabController: tabController,
+                              ),
+                            ),
+                          ),
+                          const _MarkAllReadButton(),
+                        ],
                       ),
                     ),
-                    const _MarkAllReadButton(),
-                  ],
-                ),
-              ),
             ),
             Positioned(
               bottom: 0,
@@ -1671,39 +1773,46 @@ class ChatListWidget extends HookConsumerWidget {
       floatingActionButton: const ChatFabWidget().padding(
         bottom: MediaQuery.paddingOf(context).bottom,
       ),
-      appBar: PillAppBar(
-        fade: fade,
-        statusTop: statusTop,
-        child: Row(
-          children: [
-            const SolDrawerButton(),
-            const Gap(SolSpace.sm),
-            // Same placement as the explore bar: the picker takes the title
-            // slot and the actions stay flush right.
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _ChatSectionButton(tabController: tabController),
+      appBar: isPortrait
+          ? _ChatSplitBar(
+              statusTop: statusTop,
+              tabController: tabController,
+              isSyncing: isSyncing,
+              foreground: appBarForeground,
+            )
+          : PillAppBar(
+              fade: fade,
+              statusTop: statusTop,
+              child: Row(
+                children: [
+                  const SolDrawerButton(),
+                  const Gap(SolSpace.sm),
+                  // Same placement as the explore bar: the picker takes the
+                  // title slot and the actions stay flush right.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _ChatSectionButton(tabController: tabController),
+                    ),
+                  ),
+                  if (isSyncing)
+                    Padding(
+                      padding: const EdgeInsets.only(right: SolSpace.sm),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: ConfuseSpinner(
+                          size: 24,
+                          speed: 7,
+                          fontSize: 12,
+                          color: appBarForeground.withOpacity(0.65),
+                        ),
+                      ),
+                    ),
+                  _MarkAllReadButton(color: appBarForeground),
+                ],
               ),
             ),
-            if (isSyncing)
-              Padding(
-                padding: const EdgeInsets.only(right: SolSpace.sm),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: ConfuseSpinner(
-                    size: 24,
-                    speed: 7,
-                    fontSize: 12,
-                    color: appBarForeground.withOpacity(0.65),
-                  ),
-                ),
-              ),
-            _MarkAllReadButton(color: appBarForeground),
-          ],
-        ),
-      ),
       body: userInfo.value == null
           ? const ResponseUnauthorizedWidget()
           : Column(
@@ -1716,9 +1825,12 @@ class ChatListWidget extends HookConsumerWidget {
                     chatGroups: chatGroups,
                     onChatGroupsChanged: refreshChatGroups,
                     accountId: accountId,
-                    headerGap: statusTop + kPillAppBarHeight,
-                    onScroll: (notification) =>
-                        updatePillFade(notification, fade),
+                    headerGap: isPortrait
+                        ? statusTop + kChatSplitBarBand
+                        : statusTop + kPillAppBarHeight,
+                    onScroll: isPortrait
+                        ? null
+                        : (notification) => updatePillFade(notification, fade),
                   ),
                 ),
               ],
