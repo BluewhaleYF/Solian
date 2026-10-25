@@ -50,8 +50,8 @@ IconData _taskStatusIcon(AppTask? task) {
       AppTaskType.accountCheckIn => Symbols.local_fire_department,
       _ => Symbols.upload,
     },
-    AppTaskStatus.paused => Symbols.pause_circle,
-    AppTaskStatus.completed => Symbols.check_circle,
+    AppTaskStatus.paused => Symbols.pause,
+    AppTaskStatus.completed => Symbols.check,
     AppTaskStatus.failed => Symbols.error,
     AppTaskStatus.cancelled => Symbols.cancel,
     AppTaskStatus.expired => Symbols.timer_off,
@@ -305,9 +305,9 @@ class _TaskOverlayHostState extends ConsumerState<TaskOverlayHost>
     final shut = reduceMotion ? !snapshot.isVisible : _lane.isDismissed;
     if (!snapshot.isVisible && shut) return const SizedBox.shrink();
 
-    // The pill is anchored to the lane's bottom edge, which travels under it:
-    // the clip reveals the capsule rising out of the edge while the lane's
-    // height opens up, so nothing below is pushed by a full-height gap.
+    // The lane is a full-width band pinned to the window's bottom edge, so
+    // its height never moves anything above it; the clip lets the capsule
+    // rise out of that edge as the lane opens, over the content.
     return AnimatedBuilder(
       animation: _laneCurve,
       builder: (context, child) {

@@ -139,8 +139,17 @@ class WindowScaffold extends HookConsumerWidget {
               children: [
                 Expanded(child: child),
                 const MediaPlaybackDock(),
-                const TaskOverlayHost(),
               ],
+            ),
+            // The task pill floats over the bottom edge like a Live
+            // Activity. An overlay, so a running task never resizes the
+            // page below it; only the transparent parts of its lane let
+            // taps through to what's underneath.
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TaskOverlayHost(),
             ),
             // Video keeps playing in a floating picture-in-picture overlay;
             // the audio dock stays in the column above.
