@@ -25,6 +25,16 @@ class SolDrawerButton extends StatelessWidget {
 
   const SolDrawerButton({super.key, this.color, this.pinnedToRail = false});
 
+  /// Whether a page-level (non-rail) copy of this button would be visible.
+  ///
+  /// In landscape the rail owns the toggle, so page headers drop theirs.
+  static bool isShownIn(BuildContext context) {
+    final rail = NavigationRailScope.maybeOf(context);
+    return rail == null ||
+        !rail.available ||
+        MediaQuery.orientationOf(context) == Orientation.portrait;
+  }
+
   @override
   Widget build(BuildContext context) {
     // An explicit [color] wins in both layouts: callers pass it when the

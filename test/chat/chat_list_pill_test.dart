@@ -272,7 +272,7 @@ void main() {
     await disposeTree(tester);
   });
 
-  testWidgets('wide: the sidebar is a pill over the list, with no outer card', (
+  testWidgets('wide: the title scrolls while the controls float', (
     tester,
   ) async {
     await pumpList(
@@ -283,22 +283,30 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(ChatRoomListTile), findsNWidgets(2));
-    expect(find.byType(PillAppBar), findsOneWidget);
+    // The pane title now scrolls with the rooms; the section picker still
+    // floats above the list.
+    expect(find.byType(PillAppBar), findsNothing);
+    final heading = find.text('Chat');
+    expect(heading, findsOneWidget);
+    expect(find.byType(PillSurface), findsNWidgets(2));
+    expect(find.byType(BackdropFilter), findsNothing);
     // The three-way switcher is the explore page's dropdown, not a tab strip.
     expect(find.byType(TabBar), findsNothing);
     expect(find.byType(MenuAnchor), findsOneWidget);
 
-    // The sidebar pill is floated in a Stack rather than placed in a scaffold
-    // slot, so it has to measure the same band as every other pill and the list
-    // has to start under it.
-    expect(tester.getSize(find.byType(PillAppBar)).height, kPillAppBarHeight);
+    // The floating controls own the same band as the list's title row: the
+    // title sits at the picker's height but still scrolls with the rooms.
+    expect(
+      tester.getCenter(heading).dy,
+      closeTo(tester.getCenter(find.byType(MenuAnchor)).dy, 1),
+    );
     expect(
       tester.getTopLeft(find.byType(ChatRoomListTile).first).dy,
-      closeTo(kPillAppBarHeight, 1),
+      closeTo(kChatSplitBarBand, 1),
     );
 
-    // The pane no longer paints a card surface of its own: only the pill header
-    // carries a surface, and the list floats on the page background.
+    // The pane no longer paints a card surface of its own: only the header
+    // pills carry a surface, and the list floats on the page background.
     expect(
       find.descendant(
         of: find.byType(ChatListWidget),
