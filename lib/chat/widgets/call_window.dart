@@ -15,6 +15,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/chat/pods/call.dart';
+import 'package:island/chat/widgets/call_chrome.dart';
 import 'package:island/chat/widgets/call_content.dart';
 import 'package:island/chat/widgets/call_invite_sheet.dart';
 import 'package:island/chat/widgets/call_overlay.dart'
@@ -380,9 +381,9 @@ class _CallBody extends HookConsumerWidget {
     ref.watch(callProvider.select((state) => state.participantSyncVersion));
     final controlsVisible = useState(true);
     final mediaQuery = MediaQuery.of(context);
-    final topOverlayInset = controlsVisible.value ? 64.0 : 0.0;
+    final topOverlayInset = controlsVisible.value ? kCallHeaderBandHeight : 0.0;
     final bottomOverlayInset = controlsVisible.value
-        ? mediaQuery.padding.bottom + 104
+        ? mediaQuery.padding.bottom + kCallControlsHeight
         : 0.0;
     final toolParticipants = ref
         .read(callProvider.notifier)
@@ -409,14 +410,15 @@ class _CallBody extends HookConsumerWidget {
             .firstOrNull ??
         'Call';
 
+    final stageColor = Theme.of(context).colorScheme.surface;
+
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: stageColor,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => controlsVisible.value = !controlsVisible.value,
         child: Stack(
           children: [
-            // Content
             SafeArea(
               bottom: false,
               child: AnimatedPadding(
@@ -426,139 +428,68 @@ class _CallBody extends HookConsumerWidget {
                   top: topOverlayInset,
                   bottom: bottomOverlayInset,
                 ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 6),
-                    const Expanded(child: CallContent()),
-                  ],
-                ),
+                child: const CallContent(),
               ),
             ),
-            // In-call info overlay (room name + actions)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              top: controlsVisible.value ? 0 : -72,
+              top: controlsVisible.value ? 0 : -kCallHeaderBandHeight,
               left: 0,
               right: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.64),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            roomTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            statusText,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
+              child: CallHeaderPill(
+                // The window has an OS title bar of its own, so the capsule
+                // only carries the session state, not a second leave action.
+                statusTop: 0,
+                title: roomTitle,
+                status: statusText,
+                actions: [
+                  IconButton(
+                    onPressed: () =>
+                        ref.read(callProvider.notifier).toggleViewMode(),
+                    tooltip: callState.viewMode == ViewMode.grid
+                        ? 'Stage view'
+                        : 'Grid view',
+                    icon: Icon(
+                      callState.viewMode == ViewMode.grid
+                          ? Symbols.view_list
+                          : Symbols.grid_view,
+                      size: 20,
                     ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  if (toolParticipants.isNotEmpty)
                     IconButton(
                       onPressed: () =>
-                          ref.read(callProvider.notifier).toggleViewMode(),
-                      tooltip: callState.viewMode == ViewMode.grid
-                          ? 'Stage view'
-                          : 'Grid view',
-                      icon: Icon(
-                        callState.viewMode == ViewMode.grid
-                            ? Symbols.view_list
-                            : Symbols.grid_view,
-                        color: Colors.white,
-                        size: 20,
+                          showToolParticipantsSheet(context, toolParticipants),
+                      tooltip: 'toolsInCall'.tr(),
+                      icon: Badge.count(
+                        count: toolParticipants.length,
+                        child: const Icon(Symbols.terminal, size: 20),
                       ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
+                      visualDensity: VisualDensity.compact,
                     ),
-                    if (toolParticipants.isNotEmpty)
-                      IconButton(
-                        onPressed: () => showToolParticipantsSheet(
-                          context,
-                          toolParticipants,
-                        ),
-                        tooltip: 'toolsInCall'.tr(),
-                        icon: Badge.count(
-                          count: toolParticipants.length,
-                          child: const Icon(
-                            Symbols.terminal,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                      ),
-                    IconButton(
-                      onPressed: () => _doInvite(context, ref, chatRoom.value),
-                      tooltip: 'inviteToCall'.tr(),
-                      icon: const Icon(
-                        Symbols.person_add,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-                  ],
-                ),
+                  IconButton(
+                    onPressed: () => _doInvite(context, ref, chatRoom.value),
+                    tooltip: 'inviteToCall'.tr(),
+                    icon: const Icon(Symbols.person_add, size: 20),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
               ),
             ),
-            // Bottom controls
             AnimatedPositioned(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              bottom: controlsVisible.value ? 0 : -160,
+              bottom: controlsVisible.value ? 0 : -kCallControlsHeight,
               left: 0,
               right: 0,
-              child: Container(
+              child: Padding(
                 padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: MediaQuery.of(context).padding.bottom + 8,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.64),
-                      Colors.transparent,
-                    ],
-                  ),
+                  left: kCallChromeGutter,
+                  right: kCallChromeGutter,
+                  top: SolSpace.md,
+                  bottom: mediaQuery.padding.bottom + SolSpace.lg,
                 ),
                 child: const Center(
                   child: CallControlsBar(

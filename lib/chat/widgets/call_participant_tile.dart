@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/chat/pods/call.dart';
 import 'package:island/chat/pods/call_participants.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/chat/widgets/call_participant_card.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -24,6 +25,7 @@ class SpeakingRipple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final avatarRadius = size / 2;
     final clampedLevel = audioLevel.clamp(0.0, 1.0);
     final rippleRadius = avatarRadius + clampedLevel * (size * 0.333);
@@ -48,7 +50,12 @@ class SpeakingRipple extends StatelessWidget {
                   height: animatedRadius * 2,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.green.withOpacity(0.75 + 0.25 * clampedLevel),
+                    // The speaker's own accent: the ring marks *who* is
+                    // talking, so it takes the theme's primary rather than a
+                    // fixed green that clashes with a custom seed color.
+                    color: colorScheme.primary.withValues(
+                      alpha: 0.35 + 0.35 * clampedLevel,
+                    ),
                   ),
                 ),
               child!,
@@ -110,14 +117,17 @@ class SpeakingRippleAvatar extends HookConsumerWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.error,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.surface,
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Symbols.mic_off,
                     size: 14,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onError,
                   ),
                 ),
               ),
@@ -167,6 +177,7 @@ class CallParticipantTile extends HookConsumerWidget {
       return SpeakingRippleAvatar(size: 84, live: live);
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
     final isSpeaking = live.remoteParticipant.isSpeaking;
     final audioLevel = live.remoteParticipant.audioLevel.clamp(0.0, 1.0);
     final tileRadius = forceLarge ? 18.0 : 14.0;
@@ -180,16 +191,17 @@ class CallParticipantTile extends HookConsumerWidget {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: const Color(0xFF171A1F),
+        // The tile is a media frame on the call's dark stage, so it takes the
+        // theme's container role rather than a fixed slate; the speaker ring
+        // is the same primary accent the avatar ripple uses.
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(tileRadius),
         border: Border.all(
           color: isSpeaking
-              ? Color.lerp(
-                  const Color(0xFF3FCF8E),
-                  const Color(0xFF9DFFCB),
-                  audioLevel,
-                )!
-              : Colors.white12,
+              ? colorScheme.primary.withValues(
+                  alpha: (0.7 + 0.3 * audioLevel).clamp(0.0, 1.0),
+                )
+              : colorScheme.outlineVariant,
           width: isSpeaking ? 2.4 : 1.0,
         ),
       ),
@@ -215,14 +227,8 @@ class CallParticipantTile extends HookConsumerWidget {
                   ),
                 )
               else
-                DecoratedBox(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF222831), Color(0xFF151A20)],
-                    ),
-                  ),
+                ColoredBox(
+                  color: colorScheme.surfaceContainerLowest,
                   child: Center(
                     child: account.when(
                       data: (value) => CallParticipantRegion(
@@ -244,38 +250,48 @@ class CallParticipantTile extends HookConsumerWidget {
                     ),
                   ),
                 ),
+              // The caption is a scrim over video, not a themed surface: it has
+              // to stay legible whatever frame is playing behind it, so it
+              // keeps a translucent ink while its text takes onInverseSurface.
               Positioned(
-                left: 8,
-                right: 8,
-                bottom: 8,
+                left: SolSpace.sm,
+                right: SolSpace.sm,
+                bottom: SolSpace.sm,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                    horizontal: SolSpace.sm,
+                    vertical: SolSpace.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.62),
-                    borderRadius: BorderRadius.circular(10),
+                    color: colorScheme.scrim.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(SolRadius.sm),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: account.value == null
-                            ? Text(participantName)
+                            ? Text(
+                                participantName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onInverseSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
                             : AccountName(
                                 account: account.value!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.white,
+                                  color: colorScheme.onInverseSurface,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                       ),
                       if (live.remoteParticipant.isMuted)
-                        const Icon(
+                        Icon(
                           Symbols.mic_off,
                           size: 14,
-                          color: Colors.redAccent,
+                          color: colorScheme.error,
                         ),
                     ],
                   ),

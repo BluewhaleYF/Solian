@@ -2,12 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:collection/collection.dart';
+import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/widgets/account/account_name.dart';
 import 'package:island/chat/pods/call.dart';
 import 'package:island/chat/pods/call_participants.dart';
+import 'package:island/core/theme.dart';
+import 'package:island/chat/widgets/call_chrome.dart' show kCallChromeGutter;
 import 'package:island/chat/widgets/call_participant_tile.dart';
-import 'package:island/drive/widgets/cloud_files.dart' show ProfilePictureWidget;
+import 'package:island/drive/widgets/cloud_files.dart'
+    show ProfilePictureWidget;
 import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -25,7 +29,9 @@ class ToolCallParticipantInfo {
 ToolCallParticipantInfo? parseToolCallParticipant(
   CallParticipantLive participant,
 ) {
-  final match = _toolParticipantPattern.firstMatch(participant.participant.identity);
+  final match = _toolParticipantPattern.firstMatch(
+    participant.participant.identity,
+  );
   if (match == null) return null;
   return ToolCallParticipantInfo(
     username: match.group(1) ?? '',
@@ -103,9 +109,8 @@ class _ToolParticipantListTile extends HookConsumerWidget {
             ),
           ],
         ),
-        error: (_, _) => const CircleAvatar(
-          child: Icon(Symbols.terminal, size: 18),
-        ),
+        error: (_, _) =>
+            const CircleAvatar(child: Icon(Symbols.terminal, size: 18)),
         loading: () => const CircleAvatar(
           child: SizedBox(
             width: 18,
@@ -202,12 +207,17 @@ class CallStageView extends HookConsumerWidget {
             height: 108,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+              padding: const EdgeInsets.fromLTRB(
+                kCallChromeGutter,
+                SolSpace.sm,
+                kCallChromeGutter,
+                SolSpace.xs,
+              ),
               itemCount: stripParticipants.length,
               itemBuilder: (context, index) {
                 final participant = stripParticipants[index];
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: SolSpace.sm),
                   child: SizedBox(
                     width: 160,
                     child: GestureDetector(
@@ -227,7 +237,12 @@ class CallStageView extends HookConsumerWidget {
           ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(
+              kCallChromeGutter,
+              0,
+              kCallChromeGutter,
+              SolSpace.sm,
+            ),
             child: CallParticipantTile(
               live: focusedParticipant,
               allTiles: true,
@@ -255,7 +270,9 @@ class CallContent extends HookConsumerWidget {
         .where((participant) => !isToolCallParticipant(participant))
         .toList();
     final hasRenderableCall =
-        participants.isNotEmpty || callState.hasJoined || callState.isReconnecting;
+        participants.isNotEmpty ||
+        callState.hasJoined ||
+        callState.isReconnecting;
 
     if (!hasRenderableCall) {
       return const Center(child: CircularProgressIndicator());
@@ -280,41 +297,10 @@ class CallContent extends HookConsumerWidget {
           constraints: const BoxConstraints(maxWidth: 760),
           child: Wrap(
             alignment: WrapAlignment.center,
-            spacing: 24,
-            runSpacing: 24,
+            spacing: SolSpace.xxl,
+            runSpacing: SolSpace.xxl,
             children: [
-              for (final live in participants)
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SpeakingRippleAvatar(live: live, size: 108),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: 108,
-                      child: Consumer(
-                        builder: (context, ref, _) {
-                          final account = ref.watch(
-                            callParticipantAccountProvider(
-                              live.participant.identity,
-                            ),
-                          );
-                          return account.value == null
-                              ? Text(
-                                  live.participant.name.isNotEmpty
-                                      ? live.participant.name
-                                      : live.participant.identity,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.white),
-                                )
-                              : AccountName(
-                                  account: account.value!,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ).center();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+              for (final live in participants) _AudioParticipant(live: live),
             ],
           ),
         ),
@@ -340,11 +326,16 @@ class CallContent extends HookConsumerWidget {
         };
 
         return GridView.builder(
-          padding: const EdgeInsets.all(10),
+          // Tiles share the chrome's side gutter, so the grid, the header
+          // capsule and the controls row all sit on the same column edges.
+          padding: const EdgeInsets.symmetric(
+            horizontal: kCallChromeGutter,
+            vertical: SolSpace.xs,
+          ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+            mainAxisSpacing: SolSpace.sm,
+            crossAxisSpacing: SolSpace.sm,
             childAspectRatio: 16 / 9,
           ),
           itemCount: participants.length,
@@ -357,6 +348,54 @@ class CallContent extends HookConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// One participant in the audio-only layout: speaking avatar over their name.
+///
+/// The name follows the account identity the same way a message author does
+/// ([AccountName]), so a call and the timeline agree on how a person is drawn.
+class _AudioParticipant extends HookConsumerWidget {
+  static const _avatarSize = 108.0;
+
+  final CallParticipantLive live;
+
+  const _AudioParticipant({required this.live});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final account = ref.watch(
+      callParticipantAccountProvider(live.participant.identity),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SpeakingRippleAvatar(live: live, size: _avatarSize),
+        const Gap(SolSpace.sm),
+        SizedBox(
+          width: _avatarSize,
+          child: account.value == null
+              ? Text(
+                  live.participant.name.isNotEmpty
+                      ? live.participant.name
+                      : live.participant.identity,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                )
+              : AccountName(
+                  account: account.value!,
+                  style: theme.textTheme.bodyMedium,
+                  hideOverlay: true,
+                ).center(),
+        ),
+      ],
     );
   }
 }

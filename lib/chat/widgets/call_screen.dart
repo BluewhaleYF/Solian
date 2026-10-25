@@ -4,18 +4,20 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart' hide ConnectionState;
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/chat/pods/call.dart';
 import 'package:island/chat/pods/chat_room.dart';
 import 'package:island/chat/pods/native_call_bridge.dart';
 import 'package:island/chat/widgets/call_button.dart';
+import 'package:island/chat/widgets/call_chrome.dart';
 import 'package:island/chat/widgets/call_content.dart';
 import 'package:island/chat/widgets/call_invite_sheet.dart';
 import 'package:island/chat/widgets/call_overlay.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/shared/widgets/alert.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:logging/logging.dart';
@@ -72,9 +74,15 @@ class CallScreen extends HookConsumerWidget {
     }
 
     final controlsVisible = useState(true);
-    final topOverlayInset = controlsVisible.value ? 84.0 : 0.0;
+    // Both bands are derived from the chrome that paints into them
+    // ([kCallHeaderBandHeight], [kCallControlsHeight]) rather than guessed, so
+    // the stage clears the chrome exactly and nothing hides behind it at rest.
+    final statusTop = mediaQuery.padding.top;
+    final topOverlayInset = controlsVisible.value
+        ? statusTop + kCallHeaderBandHeight
+        : 0.0;
     final bottomOverlayInset = controlsVisible.value
-        ? mediaQuery.padding.bottom + 112
+        ? mediaQuery.padding.bottom + kCallControlsHeight
         : 0.0;
     final toolParticipants = callNotifier.participants
         .where(isToolCallParticipant)
@@ -233,139 +241,66 @@ class CallScreen extends HookConsumerWidget {
       }
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0E1117),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => controlsVisible.value = !controlsVisible.value,
-        child: Stack(
-          children: [
-            SafeArea(
-              bottom: false,
-              child: AnimatedPadding(
+    void retryJoin() {
+      callNotifier.disconnect();
+      callNotifier.dispose();
+      callNotifier.joinRoom(
+        room,
+        cameraEnabled: cameraEnabled,
+        microphoneEnabled: microphoneEnabled,
+      );
+    }
+
+    final theme = Theme.of(context);
+    final stageColor = theme.colorScheme.surface;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // The status bar follows the stage it sits on, not a fixed light style:
+      // the stage is the app's own surface, so it can be a light page.
+      value: theme.brightness == Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: stageColor,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => controlsVisible.value = !controlsVisible.value,
+          child: Stack(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  padding: EdgeInsets.only(
+                    top: topOverlayInset,
+                    bottom: bottomOverlayInset,
+                  ),
+                  child: callState.error != null
+                      ? _CallErrorState(
+                          error: callState.error!,
+                          onRetry: retryJoin,
+                        )
+                      : CallContent(outerMaxHeight: mediaQuery.size.height),
+                ),
+              ),
+              // Identity and call-level actions float over the stage as a flat
+              // tonal capsule: no scrim, no glass, same height as every other
+              // page's header band.
+              AnimatedPositioned(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                padding: EdgeInsets.only(
-                  top: topOverlayInset,
-                  bottom: bottomOverlayInset,
-                ),
-                child: callState.error != null
-                    ? Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 320),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Symbols.error_outline,
-                                size: 48,
-                                color: Colors.white70,
-                              ),
-                              const Gap(8),
-                              Text(
-                                callState.error!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                              const Gap(10),
-                              TextButton(
-                                onPressed: () {
-                                  callNotifier.disconnect();
-                                  callNotifier.dispose();
-                                  callNotifier.joinRoom(
-                                    room,
-                                    cameraEnabled: cameraEnabled,
-                                    microphoneEnabled: microphoneEnabled,
-                                  );
-                                },
-                                child: Text('retry').tr(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          const SizedBox(height: 6),
-                          Expanded(
-                            child: CallContent(
-                              outerMaxHeight: MediaQuery.of(
-                                context,
-                              ).size.height,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              top: controlsVisible.value ? 0 : -(mediaQuery.padding.top + 96),
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(
-                  10,
-                  mediaQuery.padding.top + 6,
-                  10,
-                  10,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.64),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => context.router.maybePop(),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            roomTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black54,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            statusText,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black54,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                top: controlsVisible.value
+                    ? 0
+                    : -(statusTop + kCallHeaderBandHeight),
+                left: 0,
+                right: 0,
+                child: CallHeaderPill(
+                  statusTop: statusTop,
+                  title: roomTitle,
+                  status: statusText,
+                  onBack: () => context.router.maybePop(),
+                  actions: [
                     IconButton(
                       onPressed: callNotifier.toggleViewMode,
                       tooltip: callState.viewMode == ViewMode.grid
@@ -375,13 +310,8 @@ class CallScreen extends HookConsumerWidget {
                         callState.viewMode == ViewMode.grid
                             ? Symbols.view_list
                             : Symbols.grid_view,
-                        color: Colors.white,
                       ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
+                      visualDensity: VisualDensity.compact,
                     ),
                     if (toolParticipants.isNotEmpty)
                       IconButton(
@@ -392,116 +322,117 @@ class CallScreen extends HookConsumerWidget {
                         tooltip: 'toolsInCall'.tr(),
                         icon: Badge.count(
                           count: toolParticipants.length,
-                          child: const Icon(
-                            Symbols.terminal,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Symbols.terminal, size: 20),
                         ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
+                        visualDensity: VisualDensity.compact,
                       ),
                     IconButton(
                       onPressed: inviteToCall,
                       tooltip: 'inviteToCall'.tr(),
-                      icon: const Icon(
-                        Symbols.person_add,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
+                      icon: const Icon(Symbols.person_add, size: 20),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),
               ),
-            ),
-            Positioned(
-              top: mediaQuery.padding.top + 68,
-              left: 16,
-              right: 16,
-              child: IgnorePointer(
-                ignoring: !showReconnectBanner,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 180),
-                  opacity: showReconnectBanner ? 1 : 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.72),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const Gap(10),
-                          Text(
-                            callState.reconnectAttempt > 0
-                                ? 'Reconnecting... (${callState.reconnectAttempt}/${CallNotifier.maxReconnectAttempts})'
-                                : 'Reconnecting...',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+              // Reconnection is a state of the session, not of the chrome: the
+              // banner stays put while the controls are hidden so the reason
+              // for the silence is always visible.
+              Positioned(
+                top: statusTop + kCallHeaderBandHeight + SolSpace.sm,
+                left: kCallChromeGutter,
+                right: kCallChromeGutter,
+                child: IgnorePointer(
+                  ignoring: !showReconnectBanner,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 180),
+                    opacity: showReconnectBanner ? 1 : 0,
+                    child: Center(
+                      child: CallStatusPill(
+                        loading: true,
+                        message: callState.reconnectAttempt > 0
+                            ? 'Reconnecting... (${callState.reconnectAttempt}/${CallNotifier.maxReconnectAttempts})'
+                            : 'Reconnecting...',
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              bottom: controlsVisible.value
-                  ? 0
-                  : -(mediaQuery.padding.bottom + 140),
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: mediaQuery.padding.bottom + 8,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.64),
-                      Colors.transparent,
-                    ],
+              // The controls are not wrapped in a surface: they are the only
+              // actions on the page and the tiles already carry their own
+              // contrast, so a capsule around them would be a second frame
+              // around the same row.
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                bottom: controlsVisible.value
+                    ? 0
+                    : -(mediaQuery.padding.bottom + kCallControlsHeight),
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: kCallChromeGutter,
+                    right: kCallChromeGutter,
+                    top: SolSpace.md,
+                    bottom: mediaQuery.padding.bottom + SolSpace.lg,
                   ),
-                ),
-                child: const Center(
-                  child: CallControlsBar(
-                    popOnLeaves: true,
-                    showViewToggle: false,
+                  child: const Center(
+                    child: CallControlsBar(
+                      popOnLeaves: true,
+                      showViewToggle: false,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The call's failure placeholder.
+///
+/// Shown in the stage's own area, so the header pill keeps describing which
+/// call failed and the retry stays the single next action.
+class _CallErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _CallErrorState({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SolSpace.xxl),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Symbols.error_outline, size: 40, color: colorScheme.error),
+              const Gap(SolSpace.md),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const Gap(SolSpace.lg),
+              FilledButton.tonalIcon(
+                onPressed: onRetry,
+                icon: const Icon(Symbols.refresh),
+                label: Text('retry'.tr()),
+              ),
+            ],
+          ),
         ),
       ),
     );

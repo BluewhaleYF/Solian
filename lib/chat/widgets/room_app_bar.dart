@@ -9,8 +9,12 @@ import 'package:island/accounts/relationship_pod.dart';
 import 'package:island/accounts/utils/account_status_utils.dart';
 import 'package:island/chat/widgets/chat_member_list_tile.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/core/websocket.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
+import 'package:island/shared/widgets/empty_state.dart';
+import 'package:island/shared/widgets/layouts/sheet_scaffold.dart';
+import 'package:island/shared/widgets/response.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -19,134 +23,104 @@ import 'package:solar_network_sdk/solar_network_sdk.dart';
 void _showOnlineMembers(BuildContext context, String roomId) {
   showModalBottomSheet(
     context: context,
-    builder: (context) => _OnlineMembersSheet(roomId: roomId),
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (context) => OnlineMembersSheet(roomId: roomId),
   );
 }
 
-class _OnlineMembersSheet extends HookConsumerWidget {
+/// Who is in the room right now.
+///
+/// The room list is sorted online-first by the server, so the sheet pages
+/// until the first offline member and stops: everything after that point is
+/// the room's membership, which the member sheet in the room details already
+/// covers.
+class OnlineMembersSheet extends HookConsumerWidget {
+  static const _pageSize = 10;
+
   final String roomId;
-  const _OnlineMembersSheet({required this.roomId});
+  const OnlineMembersSheet({super.key, required this.roomId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const pageSize = 10;
     final members = useState<List<SnChatMember>>(const []);
     final loading = useState(true);
-    final error = useState<String?>(null);
-    final noMore = useState(false);
+    final error = useState<Object?>(null);
 
-    useEffect(() {
-      Future<void> fetch() async {
-        loading.value = true;
-        error.value = null;
-        members.value = [];
-        noMore.value = false;
+    Future<void> fetch() async {
+      loading.value = true;
+      error.value = null;
+      members.value = const [];
 
-        try {
-          final apiClient = ref.read(apiClientProvider);
-          var offset = 0;
+      final apiClient = ref.read(apiClientProvider);
+      final found = <SnChatMember>[];
+      try {
+        var offset = 0;
+        while (true) {
+          final response = await apiClient.get(
+            '/messager/chat/$roomId/members',
+            queryParameters: {
+              'offset': offset.toString(),
+              'take': _pageSize.toString(),
+              'withStatus': true,
+            },
+          );
+          final page = (response.data as List)
+              .map((e) => SnChatMember.fromJson(e))
+              .cast<SnChatMember>()
+              .toList();
 
-          while (true) {
-            final response = await apiClient.get(
-              '/messager/chat/$roomId/members',
-              queryParameters: {
-                'offset': offset.toString(),
-                'take': pageSize.toString(),
-                'withStatus': true,
-              },
-            );
-            final page = (response.data as List)
-                .map((e) => SnChatMember.fromJson(e))
-                .cast<SnChatMember>()
-                .toList();
-
-            if (page.isEmpty) break;
-
-            // Server sorts online first; stop at first offline member.
-            final firstOffline = page.indexWhere(
-              (m) => m.status?.isOnline != true,
-            );
-            final onlineOnPage = firstOffline == -1
-                ? page
-                : page.sublist(0, firstOffline);
-            members.value = [...members.value, ...onlineOnPage];
-
-            if (firstOffline != -1 || page.length < pageSize) {
-              noMore.value = true;
-              break;
-            }
-            offset += pageSize;
-          }
-        } catch (e) {
-          error.value = e.toString();
+          final firstOffline = page.indexWhere(
+            (member) => member.status?.isOnline != true,
+          );
+          found.addAll(
+            firstOffline == -1 ? page : page.sublist(0, firstOffline),
+          );
+          if (firstOffline != -1 || page.length < _pageSize) break;
+          offset += _pageSize;
         }
-
+        members.value = found;
+      } catch (err) {
+        error.value = err;
+      } finally {
         loading.value = false;
       }
+    }
 
-      fetch();
+    useEffect(() {
+      Future.microtask(fetch);
       return null;
     }, [roomId]);
 
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  error.value != null
-                      ? 'chatPeopleOnline'.plural(0)
-                      : loading.value
-                      ? 'chatPeopleOnline'.plural(0)
-                      : 'chatPeopleOnline'.plural(members.value.length),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          if (loading.value && members.value.isEmpty)
-            const SizedBox(
-              height: 200,
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (error.value != null)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(child: Text('Error: ${error.value}')),
-            )
-          else if (members.value.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(child: Text('chatNoOnlineMembers'.tr())),
-            )
-          else
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount:
-                    members.value.length +
-                    (loading.value && !noMore.value ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == members.value.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  }
-                  return ChatMemberListTile(member: members.value[index]);
-                },
-              ),
-            ),
-        ],
-      ),
+    return SheetScaffold(
+      titleText: 'chatPeopleOnline'.plural(members.value.length),
+      heightFactor: 0.6,
+      actions: [
+        IconButton(
+          onPressed: loading.value ? null : fetch,
+          tooltip: 'refresh'.tr(),
+          icon: const Icon(Symbols.refresh),
+          style: IconButton.styleFrom(minimumSize: const Size(36, 36)),
+        ),
+      ],
+      child: switch ((loading.value, error.value)) {
+        (true, _) => const Center(child: CircularProgressIndicator()),
+        (_, final Object err) => ResponseErrorWidget(
+          error: err,
+          onRetry: fetch,
+        ),
+        (_, _) when members.value.isEmpty => EmptyState(
+          compact: true,
+          icon: Symbols.group_off,
+          title: 'chatNoOnlineMembers'.tr(),
+        ),
+        _ => ListView.builder(
+          padding: const EdgeInsets.only(bottom: SolSpace.lg),
+          itemCount: members.value.length,
+          itemBuilder: (context, index) =>
+              ChatMemberListTile(member: members.value[index]),
+        ),
+      },
     );
   }
 }
@@ -263,7 +237,9 @@ class RoomAppBar extends ConsumerWidget {
                     ? const SizedBox.shrink(key: ValueKey('subtitle-none'))
                     : GestureDetector(
                         key: ValueKey(
-                          statusLine != null ? 'subtitle-status' : 'subtitle-info',
+                          statusLine != null
+                              ? 'subtitle-status'
+                              : 'subtitle-info',
                         ),
                         onTap: hasOnlineAccounts && statusLine == null
                             ? () => _showOnlineMembers(context, room.id)

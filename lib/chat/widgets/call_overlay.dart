@@ -10,10 +10,12 @@ import 'package:island/chat/pods/call.dart';
 import 'package:island/chat/pods/call_participants.dart';
 import 'package:island/accounts/account_pod.dart';
 import 'package:island/chat/widgets/call_button.dart';
+import 'package:island/chat/widgets/call_chrome.dart';
 import 'package:island/chat/widgets/call_participant_tile.dart';
 import 'package:island/chat/widgets/call_screen.dart';
 import 'package:island/chat/widgets/call_window.dart';
 import 'package:island/core/network.dart';
+import 'package:island/core/theme.dart';
 import 'package:island/drive/widgets/cloud_files.dart';
 import 'package:island/main.dart';
 import 'package:island/route.dart';
@@ -240,42 +242,35 @@ void toggleCallOverlay(SnChatRoom room) {
   }
 }
 
-/// Shared rounded, shadowed panel decoration used by the floating call
-/// overlay and the join prompt. Both previously duplicated this exact
-/// container (surface fill, 16 radius, outlineVariant border, same shadows)
-/// under `_buildPanelContainer` and `_buildPanelContainerStatic`.
+/// The floating call panel's chrome: a rounded, elevated surface on the app's
+/// own container role with the theme's shadow.
+///
+/// The panel floats over arbitrary pages, so it borrows the menu elevation
+/// language (surface container, one shadow scaled from `colorScheme.shadow`)
+/// instead of stacking three hand-mixed black shadows.
 Widget _buildCallPanelShell(
   BuildContext context,
   ThemeData theme, {
   required Widget child,
   double? width,
 }) {
+  final colorScheme = theme.colorScheme;
   return Container(
     width: width,
     clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+      color: colorScheme.surfaceContainerHigh,
+      borderRadius: SolRadius.cardRadius,
+      border: Border.all(color: colorScheme.outlineVariant),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
-          blurRadius: 32,
-          offset: const Offset(0, 12),
-        ),
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 16,
-          offset: const Offset(0, 6),
-        ),
-        BoxShadow(
-          color: theme.colorScheme.shadow.withOpacity(0.08),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
+          color: colorScheme.shadow.withValues(alpha: 0.18),
+          blurRadius: 28,
+          offset: const Offset(0, 10),
         ),
       ],
     ),
-    child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
+    child: ClipRRect(borderRadius: SolRadius.cardRadius, child: child),
   );
 }
 
@@ -604,6 +599,15 @@ class _CallOverlayPanelState extends ConsumerState<_CallOverlayPanel>
   }
 }
 
+/// The call's action row.
+///
+/// Every control is the same tonal circle from the theme's own surface roles,
+/// with a single semantic rule on top: an active capability (camera on, mic
+/// open, screen shared) is neutral, a capability that is *off* or in a warning
+/// state takes the error container, and ending the call is the only filled
+/// error control. The row used to be hardcoded near-black discs with white
+/// glyphs, which only made sense on the old dark gradient scrim and read as a
+/// foreign widget anywhere else.
 class CallControlsBar extends HookConsumerWidget {
   final bool isCompact;
   final bool popOnLeaves;
@@ -622,178 +626,125 @@ class CallControlsBar extends HookConsumerWidget {
     final callState = ref.watch(callProvider);
     final callNotifier = ref.read(callProvider.notifier);
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 12 : 20,
-        vertical: isCompact ? 8 : 16,
-      ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        runSpacing: isCompact ? 12 : 16,
-        spacing: isCompact ? 12 : 16,
-        children: [
-          _buildCircularButtonWithDropdown(
-            context: context,
-            ref: ref,
-            icon: callState.isCameraEnabled
-                ? Symbols.videocam
-                : Symbols.videocam_off,
-            onPressed: () => callNotifier.toggleCamera(),
-            backgroundColor: const Color(0xFF424242),
-            hasDropdown: true,
-            deviceType: 'videoinput',
-          ),
-          _buildCircularButton(
-            icon: callState.isScreenSharing
-                ? Symbols.stop_screen_share
-                : Symbols.screen_share,
-            onPressed: () => callNotifier.toggleScreenShare(context),
-            backgroundColor: const Color(0xFF424242),
-          ),
-          _buildCircularButtonWithDropdown(
-            context: context,
-            ref: ref,
-            icon: callState.isMicrophoneEnabled ? Symbols.mic : Symbols.mic_off,
-            onPressed: () => callNotifier.toggleMicrophone(),
-            backgroundColor: const Color(0xFF424242),
-            hasDropdown: true,
-            deviceType: 'audioinput',
-          ),
-          if (showSpeakerToggle)
-            _buildCircularButton(
-              icon: callState.isSpeakerphone
-                  ? Symbols.mobile_speaker
-                  : Symbols.ear_sound,
-              onPressed: () => callNotifier.toggleSpeakerphone(),
-              backgroundColor: const Color(0xFF424242),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Six controls do not always fit a phone-width capsule. Shrinking the
+        // row a step keeps every control reachable instead of wrapping into a
+        // second line that the capsule's fixed height would clip.
+        final size = isCompact || constraints.maxWidth < 340
+            ? kCallControlCompactSize
+            : kCallControlSize;
+
+        return Wrap(
+          alignment: WrapAlignment.center,
+          runSpacing: SolSpace.md,
+          spacing: SolSpace.md,
+          children: [
+            _CallControlButton(
+              size: size,
+              icon: callState.isCameraEnabled
+                  ? Symbols.videocam
+                  : Symbols.videocam_off,
+              tone: callState.isCameraEnabled
+                  ? _CallControlTone.neutral
+                  : _CallControlTone.muted,
+              tooltip: callState.isCameraEnabled
+                  ? 'Turn camera off'
+                  : 'Turn camera on',
+              onPressed: callNotifier.toggleCamera,
+              onPickDevice: () =>
+                  _showDeviceSelectionDialog(context, ref, 'videoinput'),
             ),
-          if (showViewToggle)
-            _buildCircularButton(
-              icon: callState.viewMode == ViewMode.grid
-                  ? Symbols.grid_view
-                  : Symbols.view_list,
-              onPressed: () => callNotifier.toggleViewMode(),
-              backgroundColor: const Color(0xFF424242),
+            _CallControlButton(
+              size: size,
+              icon: callState.isScreenSharing
+                  ? Symbols.stop_screen_share
+                  : Symbols.screen_share,
+              tone: callState.isScreenSharing
+                  ? _CallControlTone.active
+                  : _CallControlTone.neutral,
+              tooltip: callState.isScreenSharing
+                  ? 'Stop sharing screen'
+                  : 'Share screen',
+              onPressed: () => callNotifier.toggleScreenShare(context),
             ),
-          _buildCircularButton(
-            icon: Icons.call_end,
-            onPressed: () async {
-              final confirmed = await showConfirmAlert(
-                'Are you sure you want to leave this call?',
-                'callLeave'.tr(),
-                icon: Symbols.logout,
-                isDanger: true,
-              );
-              if (!confirmed) return;
-              if (!context.mounted) return;
-
-              final apiClient = ref.watch(apiClientProvider);
-              try {
-                showLoadingModal(context);
-                await apiClient.delete(
-                  '/messager/chat/realtime/${callNotifier.roomId}',
-                );
-                await callNotifier.disconnect();
-                callNotifier.dispose();
-                if (context.mounted && popOnLeaves) {
-                  final router = ref.read(routerProvider);
-                  if (router.canPop()) {
-                    router.pop();
-                  }
-                }
-              } catch (err) {
-                showErrorAlert(err);
-              } finally {
-                if (context.mounted) hideLoadingModal(context);
-              }
-            },
-            backgroundColor: const Color(0xFFE53E3E),
-            iconColor: Colors.white,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCircularButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    required Color backgroundColor,
-    Color? iconColor,
-  }) {
-    final size = isCompact ? 40.0 : 56.0;
-    final iconSize = isCompact ? 20.0 : 24.0;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
-      child: IconButton(
-        icon: Icon(icon, color: iconColor ?? Colors.white, size: iconSize),
-        onPressed: onPressed,
-      ),
-    );
-  }
-
-  Widget _buildCircularButtonWithDropdown({
-    required BuildContext context,
-    required WidgetRef ref,
-    required IconData icon,
-    required VoidCallback onPressed,
-    required Color backgroundColor,
-    required bool hasDropdown,
-    Color? iconColor,
-    String? deviceType, // 'videoinput' or 'audioinput'
-  }) {
-    final size = isCompact ? 40.0 : 56.0;
-    final iconSize = isCompact ? 20.0 : 24.0;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(icon, color: iconColor ?? Colors.white, size: iconSize),
-            onPressed: onPressed,
-          ),
-        ),
-        if (hasDropdown && deviceType != null)
-          Positioned(
-            bottom: 0,
-            right: isCompact ? 0 : -4,
-            child: Material(
-              color: Colors
-                  .transparent, // Make Material transparent to show underlying color
-              child: InkWell(
-                onTap: () =>
-                    _showDeviceSelectionDialog(context, ref, deviceType),
-                borderRadius: BorderRadius.circular((isCompact ? 16 : 24) / 2),
-                child: Container(
-                  width: isCompact ? 16 : 24,
-                  height: isCompact ? 16 : 24,
-                  decoration: BoxDecoration(
-                    color: backgroundColor.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.arrow_drop_down,
-                    color: Colors.white,
-                    size: isCompact ? 12 : 20,
-                  ),
-                ),
+            _CallControlButton(
+              size: size,
+              icon: callState.isMicrophoneEnabled
+                  ? Symbols.mic
+                  : Symbols.mic_off,
+              tone: callState.isMicrophoneEnabled
+                  ? _CallControlTone.neutral
+                  : _CallControlTone.muted,
+              tooltip: callState.isMicrophoneEnabled ? 'Mute' : 'Unmute',
+              onPressed: callNotifier.toggleMicrophone,
+              onPickDevice: () =>
+                  _showDeviceSelectionDialog(context, ref, 'audioinput'),
+            ),
+            if (showSpeakerToggle)
+              _CallControlButton(
+                size: size,
+                icon: callState.isSpeakerphone
+                    ? Symbols.mobile_speaker
+                    : Symbols.ear_sound,
+                tone: callState.isSpeakerphone
+                    ? _CallControlTone.active
+                    : _CallControlTone.neutral,
+                tooltip: callState.isSpeakerphone
+                    ? 'Use earpiece'
+                    : 'Use speaker',
+                onPressed: callNotifier.toggleSpeakerphone,
               ),
+            if (showViewToggle)
+              _CallControlButton(
+                size: size,
+                icon: callState.viewMode == ViewMode.grid
+                    ? Symbols.grid_view
+                    : Symbols.view_list,
+                tone: _CallControlTone.neutral,
+                tooltip: callState.viewMode == ViewMode.grid
+                    ? 'Stage view'
+                    : 'Grid view',
+                onPressed: callNotifier.toggleViewMode,
+              ),
+            _CallControlButton(
+              size: size,
+              icon: Symbols.call_end,
+              tone: _CallControlTone.danger,
+              tooltip: 'callLeave'.tr(),
+              onPressed: () => _leaveCall(context, ref),
             ),
-          ),
-      ],
+          ],
+        );
+      },
     );
+  }
+
+  Future<void> _leaveCall(BuildContext context, WidgetRef ref) async {
+    final callNotifier = ref.read(callProvider.notifier);
+    final confirmed = await showConfirmAlert(
+      'Are you sure you want to leave this call?',
+      'callLeave'.tr(),
+      icon: Symbols.logout,
+      isDanger: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final apiClient = ref.read(apiClientProvider);
+    try {
+      showLoadingModal(context);
+      await apiClient.delete('/messager/chat/realtime/${callNotifier.roomId}');
+      await callNotifier.disconnect();
+      callNotifier.dispose();
+      if (context.mounted && popOnLeaves) {
+        final router = ref.read(routerProvider);
+        if (router.canPop()) router.pop();
+      }
+    } catch (err) {
+      showErrorAlert(err);
+    } finally {
+      if (context.mounted) hideLoadingModal(context);
+    }
   }
 
   Future<void> _showDeviceSelectionDialog(
@@ -812,6 +763,7 @@ class CallControlsBar extends HookConsumerWidget {
 
       showModalBottomSheet(
         context: navContext,
+        isScrollControlled: true,
         builder: (BuildContext dialogContext) {
           return SheetScaffold(
             titleText: deviceType == 'videoinput'
@@ -884,6 +836,105 @@ class CallControlsBar extends HookConsumerWidget {
     } catch (err) {
       showErrorAlert(err);
     }
+  }
+}
+
+enum _CallControlTone {
+  /// Capability available, nothing to report.
+  neutral,
+
+  /// Capability on and worth seeing at a glance (sharing, speaker).
+  active,
+
+  /// Capability switched off — the call is still running without it.
+  muted,
+
+  /// Ends the call.
+  danger,
+}
+
+/// One circular call control, with an optional device-picker tab.
+///
+/// The tab hangs off the control's lower-right corner rather than being a
+/// separate row: it belongs to *that* device, and a second row of arrows in a
+/// capsule this tight reads as unrelated chrome.
+class _CallControlButton extends StatelessWidget {
+  final double size;
+  final IconData icon;
+  final _CallControlTone tone;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  /// Opens the device picker for the control's own device class. Null leaves
+  /// the control without the picker tab.
+  final VoidCallback? onPickDevice;
+
+  const _CallControlButton({
+    required this.size,
+    required this.icon,
+    required this.tone,
+    required this.tooltip,
+    required this.onPressed,
+    this.onPickDevice,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final (background, foreground) = switch (tone) {
+      _CallControlTone.neutral => (
+        colorScheme.surfaceContainerHighest,
+        colorScheme.onSurface,
+      ),
+      _CallControlTone.active => (
+        colorScheme.secondaryContainer,
+        colorScheme.onSecondaryContainer,
+      ),
+      _CallControlTone.muted => (
+        colorScheme.errorContainer,
+        colorScheme.onErrorContainer,
+      ),
+      _CallControlTone.danger => (colorScheme.error, colorScheme.onError),
+    };
+
+    final button = IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon, size: size * 0.46),
+      style: IconButton.styleFrom(
+        fixedSize: Size.square(size),
+        backgroundColor: background,
+        foregroundColor: foreground,
+      ),
+    );
+    final onPickDevice = this.onPickDevice;
+    if (onPickDevice == null) return button;
+
+    final tabSize = size * 0.42;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: IconButton(
+            onPressed: onPickDevice,
+            tooltip: 'devices'.tr(),
+            icon: Icon(Symbols.expand_more, size: tabSize * 0.72),
+            style: IconButton.styleFrom(
+              fixedSize: Size.square(tabSize),
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              backgroundColor: colorScheme.surfaceContainerHigh,
+              foregroundColor: colorScheme.onSurfaceVariant,
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
