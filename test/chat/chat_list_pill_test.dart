@@ -192,7 +192,13 @@ void main() {
     // left and the section picker on the right.
     expect(find.byType(PillAppBar), findsNothing);
     expect(find.byType(GlassNavigationButton), findsOneWidget);
-    expect(find.byType(PillSurface), findsNWidgets(2));
+    final pills = find.byType(PillSurface);
+    expect(pills, findsNWidgets(2));
+    expect(
+      tester.getSize(pills.at(0)).height,
+      tester.getSize(pills.at(1)).height,
+      reason: 'both portrait header controls share one row height',
+    );
     // The switcher is the explore page's dropdown: one trigger naming the
     // current filter, and no leftover tab strip.
     expect(find.byType(TabBar), findsNothing);

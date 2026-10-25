@@ -1500,9 +1500,9 @@ class _MarkAllReadButton extends ConsumerWidget {
   }
 }
 
-/// Height of each half of the portrait chat header. Matches the dashboard's
-/// standalone glass navigation control.
-const double _kChatSplitControlHeight = 48;
+/// Height of each half of the portrait chat header. Shares the standalone
+/// glass navigation control's diameter so the two pills line up.
+const double _kChatSplitControlHeight = kGlassNavigationButtonSize;
 
 /// Vertical band the split portrait chat header occupies below the status bar.
 ///

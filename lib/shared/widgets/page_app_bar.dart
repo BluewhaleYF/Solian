@@ -66,6 +66,12 @@ class SolDrawerButton extends StatelessWidget {
   }
 }
 
+/// Diameter of the standalone glass navigation control.
+///
+/// The control is pinned to the height the split chat headers use, so the
+/// hamburger and the piped section picker read as one row.
+const double kGlassNavigationButtonSize = 48;
+
 /// A single glass-circle navigation toggle.
 ///
 /// Pages without a header pill (the dashboard) and the portrait chat header use
@@ -83,9 +89,12 @@ class GlassNavigationButton extends StatelessWidget {
       margin: EdgeInsets.zero,
       radius: SolRadius.pillRadius,
       contentPadding: EdgeInsets.zero,
-      child: Material(
-        color: Colors.transparent,
-        child: SolDrawerButton(color: color),
+      child: SizedBox.square(
+        dimension: kGlassNavigationButtonSize,
+        child: Material(
+          color: Colors.transparent,
+          child: SolDrawerButton(color: color),
+        ),
       ),
     );
   }
