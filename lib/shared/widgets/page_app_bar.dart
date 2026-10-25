@@ -13,10 +13,16 @@ import 'package:island/shared/widgets/app_scaffold.dart';
 /// navigation bar, so every root tab's leading slot uses this exact button.
 ///
 /// On the wide layout the rail replaces the drawer, so the same button expands
-/// and collapses the rail over every destination instead.
+/// and collapses the rail over every destination instead. In landscape the
+/// shell moves that toggle to the rail's bottom-left corner and page app bars
+/// drop their copy, leaving a single entry point.
 class SolDrawerButton extends StatelessWidget {
   final Color? color;
-  const SolDrawerButton({super.key, this.color});
+
+  /// Set when the shell renders this button in the rail's bottom slot.
+  final bool pinnedToRail;
+
+  const SolDrawerButton({super.key, this.color, this.pinnedToRail = false});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +35,10 @@ class SolDrawerButton extends StatelessWidget {
         Theme.of(context).colorScheme.onSurface;
     final rail = NavigationRailScope.maybeOf(context);
     if (rail != null && rail.available) {
+      if (!pinnedToRail &&
+          MediaQuery.orientationOf(context) == Orientation.landscape) {
+        return const SizedBox.shrink();
+      }
       return IconButton(
         icon: const Icon(Symbols.menu_rounded),
         color: foreground,
