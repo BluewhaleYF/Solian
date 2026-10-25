@@ -25,23 +25,11 @@ import 'package:native_glass_navbar/native_glass_navbar.dart';
 
 const double kBottomNavHeight = 56.0;
 
-/// The native glass bar reserves one slot for its trailing action button, so
-/// its tab list holds at most four destinations. Wider user-customized
-/// layouts keep the Material pill bar.
+/// The native glass bar's item limit. Without an action button taking the
+/// trailing slot, the plugin allows five tabs.
 ///
-/// The count is also why the bar's action slot is never toggled: adding or
-/// removing it makes the plugin tear down and rebuild the whole `UITabBar`
-/// (`setViewControllers(animated: false)`), which snaps every item width and
-/// leaves the selection indicator a frame behind.
-const int kNativeGlassMaxTabs = 4;
-
-/// Id of the destination the glass bar's action slot stands in for.
-///
-/// Search is a destination of its own, but on iOS it is the bar's action
-/// button instead of a tab: that keeps the tab count fixed across tabs (a
-/// per-tab action would change the native item count) and gives the glass
-/// bar the search affordance Liquid Glass draws in that slot anyway.
-const String kGlassActionDestinationId = 'search';
+/// Wider user-customized layouts keep the Material pill bar.
+const int kNativeGlassMaxTabs = 5;
 
 /// Blur sigma the incoming tab page settles out of, at the start of the
 /// transition. Subtle: the page must stay readable while it resolves.
@@ -120,14 +108,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
   /// The rail replaces the drawer there, so a request to open the navigation
   /// expands it instead of sliding a drawer over the page.
   bool _railExpanded = false;
-
-  /// Last index the glass bar showed selected.
-  ///
-  /// The bar has no tab for the action destination (Search on iOS), so while
-  /// Search is open no tab represents the route. Holding the previous index
-  /// keeps the indicator where the user left it, which is also what the
-  /// native bar does when its action button is tapped.
-  int _lastGlassIndex = 0;
 
   void _toggleRail() {
     setState(() => _railExpanded = !_railExpanded);
@@ -635,18 +615,8 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     // On iOS the glass bar renders a real `UITabBar`; the widget swaps to
     // [pillBar] itself when the async Liquid Glass support check comes back
     // negative (older iOS), so an unsupported device just keeps the pill bar.
-    //
-    // Search rides in the bar's action slot instead of as a tab, and neither
-    // the slot nor the tab list is ever toggled: the plugin tears the whole
-    // `UITabBar` down and rebuilds it (`setViewControllers(animated: false)`)
-    // whenever the item count or the action's presence changes. That rebuild
-    // is what showed as a width snap plus a selection indicator a frame
-    // behind. A fixed shape means only in-place property updates reach UIKit.
-    final glassDestinations = bottomNavDestinations
-        .where((destination) => destination.id != kGlassActionDestinationId)
-        .toList(growable: false);
-    // A bar with no tab at all is not a navigation bar; a user who only kept
-    // Search on the bottom bar keeps the pill bar, which does draw it.
+    final glassDestinations = bottomNavDestinations;
+    // A bar with no tab at all is not a navigation bar.
     final useGlassBar =
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
@@ -655,18 +625,9 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
     final selectedGlassIndex = glassDestinations.indexWhere(
       (d) => d.routeIndex == tabsRouter.activeIndex,
     );
-    // While the action destination is open no glass tab matches the route;
-    // the indicator stays on the tab the user came from.
-    if (selectedGlassIndex >= 0) _lastGlassIndex = selectedGlassIndex;
-    final lastGlass = glassDestinations.isEmpty
-        ? 0
-        : glassDestinations.length - 1;
-    final glassCurrentIndex = selectedGlassIndex >= 0
-        ? selectedGlassIndex
-        : _lastGlassIndex.clamp(0, lastGlass);
-    final searchDestination = allDestinations.firstWhere(
-      (d) => d.id == kGlassActionDestinationId,
-    );
+    // A route the bar does not carry (reached from the drawer) selects no
+    // tab, same as the pill bar.
+    final glassCurrentIndex = selectedGlassIndex >= 0 ? selectedGlassIndex : 0;
     final bottomBar = useGlassBar
         ? NativeGlassNavBar(
             currentIndex: glassCurrentIndex,
@@ -674,12 +635,6 @@ class _TabsScreenContentState extends ConsumerState<_TabsScreenContent> {
               if (index < 0 || index >= glassDestinations.length) return;
               tabsRouter.setActiveIndex(glassDestinations[index].routeIndex);
             },
-            // Constant: tapping opens Search, which has no tab of its own here.
-            actionButton: TabBarActionButton(
-              symbol: 'magnifyingglass',
-              onTap: () =>
-                  tabsRouter.setActiveIndex(searchDestination.routeIndex),
-            ),
             tabs: [
               for (final destination in glassDestinations)
                 NativeGlassNavBarItem(
